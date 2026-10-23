@@ -1,0 +1,22 @@
+ERROR: LoadError: Some tests did not pass: 13 passed, 0 failed, 1 errored, 0 broken.
+in expression starting at /private/tmp/e1-likelihood-profile-pev-independent-20260930/challenge.jl:2
+Independent likelihood arithmetic and bracket challenges: Error During Test at /private/tmp/e1-likelihood-profile-pev-independent-20260930/challenge.jl:2
+  Got exception outside of a @test
+  ArgumentError: profile anchor must lie strictly inside the interval (target < 0)
+  Stacktrace:
+   [1] _profile_root(target::var"#4#10", bound::Float64, anchor::Float64)
+     @ HSquared /private/tmp/e1-likelihood-profile-pev-independent-20260930/package/src/likelihood.jl:3969
+   [2] macro expansion
+     @ /private/tmp/e1-likelihood-profile-pev-independent-20260930/challenge.jl:15 [inlined]
+   [3] macro expansion
+     @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+   [4] top-level scope
+     @ /private/tmp/e1-likelihood-profile-pev-independent-20260930/challenge.jl:4
+   [5] include(mod::Module, _path::String)
+     @ Base ./Base.jl:495
+   [6] exec_options(opts::Base.JLOptions)
+     @ Base ./client.jl:318
+   [7] _start()
+     @ Base ./client.jl:552
+Test Summary:                                            | Pass  Error  Total  Time
+Independent likelihood arithmetic and bracket challenges |   13      1     14  0.5s

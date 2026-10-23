@@ -1,0 +1,50 @@
+hsquared is an experimental 0.9.0 release (not production; CRAN availability is tracked separately). Default fitting needs Julia + HSquared.jl; preview with hs_control(engine = "validate").
+What you may report is listed on Can I fit and report this? -- not in validation_status(). Intervals are not coverage-calibrated.
+See https://itchyshin.github.io/hsquared/articles/current-limits.html
+── Building pkgdown site for package hsquared ──────────────────────────────────
+Reading from:
+/private/tmp/hsq-final-integrated-checks-20260930/r-package-source/hsquared
+Writing to:
+/private/tmp/hsq-final-integrated-checks-20260930/r-package-source/hsquared/pkgdown-site
+── Sitrep ──────────────────────────────────────────────────────────────────────
+✔ URLs ok.
+✔ Favicons ok.
+✔ Open graph metadata ok.
+✔ Articles metadata ok.
+✔ Reference metadata ok.
+── Initialising site ───────────────────────────────────────────────────────────
+── Building home ───────────────────────────────────────────────────────────────
+Writing `authors.html`
+Reading AGENTS.md
+Writing `AGENTS.html`
+Reading CLAUDE.md
+Writing `CLAUDE.html`
+Reading ROADMAP.md
+Writing `ROADMAP.html`
+Writing `LICENSE-text.html`
+Error in `httr2::req_perform()`:
+! Failed to perform HTTP request.
+Caused by error in `curl::curl_fetch_memory()`:
+! Could not resolve hostname [cloud.r-project.org]:
+Could not resolve host: cloud.r-project.org
+Backtrace:
+     ▆
+  1. └─pkgdown::build_site(...)
+  2.   └─pkgdown:::build_site_local(...)
+  3.     └─pkgdown::build_home(...)
+  4.       └─pkgdown::build_home_index(pkg, quiet = quiet)
+  5.         └─pkgdown:::data_home(pkg)
+  6.           ├─pkgdown:::print_yaml(...)
+  7.           │ └─base::structure(x, class = "print_yaml")
+  8.           └─pkgdown:::data_home_sidebar(pkg, call = call)
+  9.             └─pkgdown:::data_home_sidebar_links(pkg)
+ 10.               └─pkgdown:::cran_link(pkg$package)
+ 11.                 └─httr2::req_perform(req)
+ 12.                   └─httr2:::handle_resp(req, resp, error_call = error_call)
+ 13.                     └─rlang::cnd_signal(resp)
+Warning messages:
+1: In file(con, "wb") :
+  cannot open file '/Users/z3437171/Library/Caches/org.R-project.R/R/sass/65ed40f5c5e89a0a2147f4f7ebd397ee': Operation not permitted
+2: In file.remove(info$name[to_remove]) :
+  cannot remove file '/Users/z3437171/Library/Caches/org.R-project.R/R/pkgdown/http/402f32f7ce261ccdb3a214f0043516b4.rds', reason 'Operation not permitted'
+Execution halted

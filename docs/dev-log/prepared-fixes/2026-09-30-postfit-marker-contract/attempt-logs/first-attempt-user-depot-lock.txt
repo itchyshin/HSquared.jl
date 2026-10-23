@@ -1,0 +1,2 @@
+Command: JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 julia --project=. check_marker_contract.jl
+Result: LoadError; IOError opening /Users/z3437171/.julia/compiled/v1.10/HSquared/SJSgi_FRwgh.ji.pidfile, operation not permitted (EPERM). No test code executed.

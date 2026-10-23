@@ -1,0 +1,31 @@
+Julia=1.10.0 JuliaThreads=1 BLASThreads=1
+Test Summary:                                       | Pass  Total  Time
+direct sparse REML validates relationship precision |    9      9  3.2s
+Test Summary:                                                | Pass  Total  Time
+direct sparse REML uses one canonical relationship precision |    4      4  0.4s
+Test Summary:                                             | Pass  Total  Time
+sparse REML optimizers reject unusable iteration controls |    8      8  0.0s
+Test Summary:                                           | Pass  Total  Time
+AI-REML rejects invalid numeric controls before fitting |    5      5  0.3s
+Test Summary:                                               | Pass  Total  Time
+legacy sparse validator and canonical computational buffers |   46     46  1.0s
+Test Summary:                            | Pass  Total  Time
+likelihood result specification identity |   64     64  3.0s
+Test Summary:                          | Pass  Total  Time
+likelihood input and result boundaries |  202    202  4.1s
+Test Summary:                        | Pass  Total  Time
+Phase 1 animal model spec validation |   16     16  0.2s
+Test Summary:                            | Pass  Total  Time
+Phase 1 dense variance component fitting |   37     37  1.0s
+Test Summary:                                              | Pass  Total  Time
+Phase 1 Henderson MME supplied-variance validation fixture |   42     42  1.3s
+Test Summary:                                           | Pass  Total  Time
+fit_ai_reml internal optimizer-localization diagnostics |   23     23  0.0s
+Test Summary:                    | Pass  Total  Time
+Likelihood uncertainty contracts |  192    192  2.6s
+Test Summary:                                | Pass  Total  Time
+Derived component step precedes rail returns |   22     22  0.3s
+Test Summary:                                               | Pass  Total  Time
+Independent legacy helper and computational buffer controls |   24     24  0.2s
+
+EXIT 0 WALL 36.55s

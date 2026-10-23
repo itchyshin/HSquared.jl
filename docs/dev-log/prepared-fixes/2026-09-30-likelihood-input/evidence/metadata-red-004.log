@@ -1,0 +1,44 @@
+ERROR: LoadError: Some tests did not pass: 200 passed, 2 failed, 0 errored, 0 broken.
+in expression starting at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:24
+starts controls and IDs: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:80
+  Expression: call()
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:80 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:57 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+starts controls and IDs: Test Failed at /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:80
+  Expression: call()
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:80 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:57 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-likelihood-input-fix-20260930/test/likelihood_input_guard_regression.jl:25
+Test Summary:                                             | Pass  Fail  Total   Time
+likelihood input and result boundaries                    |  200     2    202  11.4s
+  malformed model inputs reject before fitting            |   98           98   9.0s
+  supplied finite positive representable variance domain  |   36           36   0.2s
+  precision representability is specific to MME paths     |    4            4   0.0s
+  starts controls and IDs                                 |   29     2     31   1.8s
+  finite model can exceed arithmetic range                |    3            3   0.1s
+  finite fitting failures and model-method metadata       |    4            4   0.1s
+  supplied solve permits saturated full-rank fixed design |    3            3   0.1s
+  valid calculations and p0 remain supported              |   23           23   0.1s

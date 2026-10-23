@@ -1,0 +1,24 @@
+{
+  "Project.toml": {
+    "current_sha": "3a1ec277db9cbc6c3973c084a2ace297019d4f698c1f3d8fc91de6df3b7a802a",
+    "execution_sha": "6e6a7b1f19e730abeaab6ee1764c8dfeac43f38cdc7d2cb7255509bfbcd6d13c",
+    "toml_differences": [
+      {
+        "path": "/sources/HSquared/path",
+        "current": "/Users/szymek/Library/CloudStorage/OneDrive-UniwersytetJagiellon\u0301ski/Science/Julia/HSquared.jl/docs/..",
+        "execution": ".."
+      }
+    ]
+  },
+  "Manifest.toml": {
+    "current_sha": "0482264af6073d32f38782e97eb534918bd513c208123ac12e7a0615931d4d55",
+    "execution_sha": "41cf2c2792c216c5d2372d74fb59283cbaa40c7298b6fe9cfd15c2cf6693c7af",
+    "toml_differences": [
+      {
+        "path": "/deps/HSquared/0/path",
+        "current": "/Users/z3437171/.codex/worktrees/hsquared-fa-gllvm-foundations/HSquared.jl/docs/..",
+        "execution": "/private/tmp/hsq-final-integrated-checks-20260930/julia-doc-source/docs/.."
+      }
+    ]
+  }
+}

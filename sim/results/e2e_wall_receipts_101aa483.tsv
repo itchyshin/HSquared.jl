@@ -1,0 +1,8 @@
+# HSquared.jl e2e wall receipts  2026-09-23T07:10:55.739
+# git_sha=101aa483  julia=1.10.12  host=totoro
+# LBTConfig([ILP64] libopenblas64_.so)
+# JULIA_NUM_THREADS=1  OPENBLAS_NUM_THREADS=1
+# NOT CI / OPT-IN. No public performance claim. R twin: no parallel wall-receipt harness.
+cell	kind	pair	before_s	after_s	speedup	host	totoro	sha	note
+hsq-animal-fit-q10000	animal_REML	measured_now		0.034537		totoro	Y	101aa483	gene-drop halfsib post-#371; conv=true iters=7; q=10000 nnzA=46800 min=0.0335; June q8k hist=0.3340s different DGP
+hsq-animal-fit-q20000-large	large_pedigree	measured_now		0.047683		totoro	Y	101aa483	gene-drop halfsib large e2e; conv=true iters=4; nnzA=92000 min=0.0472

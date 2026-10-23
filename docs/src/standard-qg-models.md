@@ -1,11 +1,28 @@
 # Standard Quantitative-Genetic Models
 
+```@raw html
+```
+
+!!! warning "Covered at validation scale · opt-in · dense · REML-only"
+    These are **engine APIs**, not the default univariate formula. On the R twin
+    they are opt-in `target`s. The **common-environment** two-effect leg is
+    covered at validation scale. Repeatability and the independent
+    maternal-genetic two-effect leg remain experimental/partial. Direct–maternal
+    (correlated 2×2 G) is a **separate** covered-at-validation-scale target, not
+    this independent two-effect kernel.
+
 `HSquared.jl` covers the standard two-random-effect quantitative-genetic models
 (repeatability / permanent environment, common environment, maternal environment)
-on top of the same Henderson machinery as the animal model. These are **engine
-APIs** — experimental, engine-internal, and **not yet wired to the public R
-formula terms** (`permanent()` / `common_env()` still error as planned), with no
-external-comparator parity yet. The dense paths are validation-scale.
+on top of the same Henderson machinery as the animal model. The dense paths are
+validation-scale. They are **not** production sparse fitting.
+
+The R formula terms `permanent()`, `common_env()`, and `maternal_genetic()` are
+**not** planned-not-implemented: they fit through opt-in engine targets. Do not
+read the engine API names below as “the R parser still errors”.
+
+**Twin R article:** matching `hsquared()` calls and extractors are in
+[Fitting quantitative-genetic models](https://itchyshin.github.io/hsquared/articles/fitting-models.html)
+(repeatability, common environment, maternal, direct–maternal sections).
 
 ## Repeatability / permanent environment
 
@@ -13,6 +30,14 @@ external-comparator parity yet. The dense paths are validation-scale.
 additive genetic effect `a ~ N(0, σ²a·A)` and a permanent-environment effect
 `pe ~ N(0, σ²pe·I)` sharing the record→animal incidence `Z` (repeated records are
 needed to separate `a` from `pe`).
+
+Payload-v2 (`parse_payload_v2`) picks that route from the independent-block
+count (HSquared.jl #352). One pedigree block goes to `:animal`.
+Two independent blocks go to `:two_effect` (animal + permanent environment
+when the second block is iid and shares the animal incidence).
+Three or more independent blocks go to `:multi_effect`.
+Two effects are not rejected. `fit_repeatability_reml` is the dedicated
+`Z2 = Z1`, `A2 = I` special case of that two-effect kernel.
 
 ```@example qg
 using HSquared, LinearAlgebra
@@ -27,8 +52,10 @@ r = repeatability_mme(y, X, Z, Ainv, 1.0, 0.5, 2.0)
 ```
 
 `fit_repeatability_reml` estimates the three variance components by REML and
-returns the **repeatability coefficient** `t = (σ²a + σ²pe)/total` and the
-heritability `h² = σ²a/total`:
+returns the **repeatability coefficient**
+`t = (σ²a + σ²pe)/(σ²a + σ²pe + σ²e)` and the heritability
+`h² = σ²a/(σ²a + σ²pe + σ²e)`. Fixed-effect variance is outside both
+denominators:
 
 ```@example qg
 fit = fit_repeatability_reml(y, X, Z, Ainv)
@@ -59,7 +86,16 @@ ce = two_effect_mme(yc, Xc, Z1, Ainv4, Z2, Matrix(1.0I, 2, 2), 1.0, 0.5, 2.0)
 ```
 
 `fit_two_effect_reml` estimates the variances and the two ratios (`ratio1`,
-`ratio2` — e.g. `h²` and the common-environment `c²`):
+`ratio2` — e.g. `h²` and the common-environment `c²`).
+
+`converged = true` here means the Nelder-Mead simplex contracted. It does not
+mean the three variances are separately identified. The common-environment
+leg (`A2 = I`, groups assigned independently of the pedigree) is identified
+on the covered design. The animal + dam design is often not: when each dam
+has exactly one sire, A = 0.5 I + 0.5 D among phenotyped animals, so only
+`0.5 Va + Ve` and `0.5 Va + Vdam` are estimable. Different starts can then
+return heritabilities from 0 to about 0.5 at the same REML log-likelihood.
+Nothing in the returned `converged` flag names that ridge.
 
 ```@example qg
 cf = fit_two_effect_reml(yc, Xc, Z1, Ainv4, Z2, Matrix(1.0I, 2, 2))
@@ -69,21 +105,29 @@ cf = fit_two_effect_reml(yc, Xc, Z1, Ainv4, Z2, Matrix(1.0I, 2, 2))
 
 ## Validation boundary
 
-Covered now (self-consistent, comparator-free):
+Internal self-consistency (MME vs independent GLS, reductions to the
+one-effect animal model) is necessary and is tested. It is **not** the
+covered gate — that gate is known-truth recovery and/or an external
+same-estimand comparator.
 
-- `repeatability_mme` / `two_effect_mme` match an independent marginal-GLS BLUP
-  (~1e-9), and `repeatability_mme` is exactly the `two_effect_mme(Z2=Z1, A2=I)`
-  special case;
-- `fit_repeatability_reml` / `fit_two_effect_reml` maximize the dense two-effect
-  REML log-likelihood (which reduces to the animal-model REML when the second
-  variance → 0), the optimum beats a coarse grid, and `fit_repeatability_reml` is
-  the reduction of `fit_two_effect_reml`;
-- seeded one-off simulations recover the variance components (recorded in the
-  after-task reports, not committed — the suite is RNG-free).
+Covered at validation scale (engine + R opt-in, still experimental packaging):
 
-Still planned / coordinated:
+- common-environment two-effect (`fit_two_effect_reml` with `A2 = I`):
+  pre-declared recovery plus a `blupf90+` same-estimand comparator;
+- direct–maternal correlated 2×2 G is a **separate** target
+  (`fit_direct_maternal_reml`), not this independent two-effect kernel.
 
-- the public R `permanent()` / `common_env()` / maternal model-spec mapping;
-- correlated direct–maternal genetic effects (a 2×2 genetic covariance);
-- variance-ratio uncertainty intervals and a committed recovery harness;
-- external-comparator parity (ASReml / sommer / BLUPF90) — R lane.
+Experimental / partial:
+
+- repeatability (`fit_repeatability_reml`);
+- independent maternal-genetic two-effect (`A2` = pedigree).
+
+Still planned / not claimed here:
+
+- production sparse reliability;
+- interval coverage calibration;
+- unusual inheritance.
+
+Before reporting an opt-in estimate from R, read
+[Can I fit and report this?](https://itchyshin.github.io/hsquared/articles/current-limits.html)
+and the live engine table on [Validation status](validation-status.md).

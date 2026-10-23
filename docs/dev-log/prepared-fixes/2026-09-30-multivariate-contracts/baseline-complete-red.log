@@ -1,0 +1,1143 @@
+Multivariate finite construction: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:5
+  Expression: build(fill(1.0e308, 2, 1))
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:5 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:4 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+Multivariate finite construction: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:5
+  Expression: build(fill(1.0e308, 2, 1))
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:5 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:4 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+Multivariate finite-difference controls: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:18
+  Expression: HSquared._fd_hessian(f, [1.0, 2.0]; h = h)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:18 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:13 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+Multivariate finite-difference controls: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:19
+  Expression: visits[] == 0
+   Evaluated: 9 == 0
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:19 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:13 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+Multivariate finite-difference controls: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:20
+  Expression: HSquared._fd_jacobian(g, [1.0, 2.0]; h = h)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:20 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:13 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+Multivariate finite-difference controls: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:21
+  Expression: visits[] == 0
+   Evaluated: 14 == 0
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:21 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:13 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+Multivariate finite-difference controls: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:18
+  Expression: HSquared._fd_hessian(f, [1.0, 2.0]; h = h)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:18 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:13 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+Multivariate finite-difference controls: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:19
+  Expression: visits[] == 0
+   Evaluated: 9 == 0
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:19 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:13 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+Multivariate finite-difference controls: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:20
+  Expression: HSquared._fd_jacobian(g, [1.0, 2.0]; h = h)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:20 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:13 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+Multivariate finite-difference controls: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:21
+  Expression: visits[] == 0
+   Evaluated: 14 == 0
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:21 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:13 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+Multivariate finite-difference controls: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:18
+  Expression: HSquared._fd_hessian(f, [1.0, 2.0]; h = h)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:18 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:13 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+Multivariate finite-difference controls: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:19
+  Expression: visits[] == 0
+   Evaluated: 9 == 0
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:19 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:13 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+Multivariate finite-difference controls: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:20
+  Expression: HSquared._fd_jacobian(g, [1.0, 2.0]; h = h)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:20 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:13 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+Multivariate finite-difference controls: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:21
+  Expression: visits[] == 0
+   Evaluated: 14 == 0
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:21 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:13 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+Multivariate finite-difference controls: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:18
+  Expression: HSquared._fd_hessian(f, [1.0, 2.0]; h = h)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:18 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:13 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+Multivariate finite-difference controls: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:19
+  Expression: visits[] == 0
+   Evaluated: 9 == 0
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:19 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:13 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+Multivariate finite-difference controls: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:20
+  Expression: HSquared._fd_jacobian(g, [1.0, 2.0]; h = h)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:20 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:13 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+Multivariate finite-difference controls: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:21
+  Expression: visits[] == 0
+   Evaluated: 14 == 0
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:21 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:13 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+Multivariate finite-difference controls: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:18
+  Expression: HSquared._fd_hessian(f, [1.0, 2.0]; h = h)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:18 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:13 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+Multivariate finite-difference controls: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:19
+  Expression: visits[] == 0
+   Evaluated: 9 == 0
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:19 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:13 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+Multivariate finite-difference controls: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:20
+  Expression: HSquared._fd_jacobian(g, [1.0, 2.0]; h = h)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:20 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:13 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+Multivariate finite-difference controls: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:21
+  Expression: visits[] == 0
+   Evaluated: 14 == 0
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:21 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:13 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+Multivariate finite-difference controls: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:18
+  Expression: HSquared._fd_hessian(f, [1.0, 2.0]; h = h)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:18 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:13 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+Multivariate finite-difference controls: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:19
+  Expression: visits[] == 0
+   Evaluated: 9 == 0
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:19 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:13 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+Multivariate finite-difference controls: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:20
+  Expression: HSquared._fd_jacobian(g, [1.0, 2.0]; h = h)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:20 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:13 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+Multivariate finite-difference controls: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:21
+  Expression: visits[] == 0
+   Evaluated: 14 == 0
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:21 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:13 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+Multivariate finite-difference controls: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:18
+  Expression: HSquared._fd_hessian(f, [1.0, 2.0]; h = h)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:18 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:13 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+Multivariate finite-difference controls: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:19
+  Expression: visits[] == 0
+   Evaluated: 9 == 0
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:19 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:13 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+Multivariate finite-difference controls: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:20
+  Expression: HSquared._fd_jacobian(g, [1.0, 2.0]; h = h)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:20 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:13 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+Multivariate finite-difference controls: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:21
+  Expression: visits[] == 0
+   Evaluated: 14 == 0
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:21 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:13 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+Multivariate finite-difference controls: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:18
+  Expression: HSquared._fd_hessian(f, [1.0, 2.0]; h = h)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:18 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:13 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+Multivariate finite-difference controls: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:19
+  Expression: visits[] == 0
+   Evaluated: 9 == 0
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:19 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:13 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+Multivariate finite-difference controls: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:20
+  Expression: HSquared._fd_jacobian(g, [1.0, 2.0]; h = h)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:20 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:13 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+Multivariate finite-difference controls: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:21
+  Expression: visits[] == 0
+   Evaluated: 14 == 0
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:21 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:13 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+LRT input and tail limits: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:28
+  Expression: nested_lrt(ll, 0.0; df = 1)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:28 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:27 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+LRT input and tail limits: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:29
+  Expression: nested_lrt(0.0, ll; df = 1)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:29 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:27 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+LRT input and tail limits: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:28
+  Expression: nested_lrt(ll, 0.0; df = 1)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:28 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:27 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+LRT input and tail limits: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:29
+  Expression: nested_lrt(0.0, ll; df = 1)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:29 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:27 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+LRT input and tail limits: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:28
+  Expression: nested_lrt(ll, 0.0; df = 1)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:28 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:27 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+LRT input and tail limits: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:29
+  Expression: nested_lrt(0.0, ll; df = 1)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:29 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:27 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+LRT input and tail limits: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:28
+  Expression: nested_lrt(ll, 0.0; df = 1)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:28 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:27 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+LRT input and tail limits: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:29
+  Expression: nested_lrt(0.0, ll; df = 1)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:29 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:27 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+LRT input and tail limits: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:28
+  Expression: nested_lrt(ll, 0.0; df = 1)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:28 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:27 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+LRT input and tail limits: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:29
+  Expression: nested_lrt(0.0, ll; df = 1)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:29 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:27 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+LRT input and tail limits: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:31
+  Expression: HSquared._chisq_sf(Inf, 1) == 0.0
+   Evaluated: NaN == 0.0
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:31 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:27 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+LRT input and tail limits: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:33
+  Expression: HSquared._chisq_sf(NaN, 1)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:33 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:27 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+LRT input and tail limits: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:35
+  Expression: (nested_lrt(-1.0e308, 1.0e308; df = 1)).pvalue == 0.0
+   Evaluated: NaN == 0.0
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:35 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:27 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+LRT input and tail limits: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:36
+  Expression: (nested_lrt(-1.0e308, 1.0e308; df = 1, boundary_df = 1)).pvalue == 0.0
+   Evaluated: NaN == 0.0
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:36 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:27 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+LRT input and tail limits: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:37
+  Expression: (nested_lrt(-1.0e308, 1.0e308; df = 2, boundary_df = 2)).pvalue == 0.0
+   Evaluated: NaN == 0.0
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:37 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:27 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+Unavailable inference at unconverged points: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:44
+  Expression: multivariate_covariance_standard_errors(fake, nothing, nothing, nothing, nothing)
+    Expected: ArgumentError
+      Thrown: ErrorException
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:44 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:43 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+Unavailable inference at unconverged points: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:45
+  Expression: genetic_correlation_interval(fake, nothing, nothing, nothing, nothing)
+    Expected: ArgumentError
+      Thrown: ErrorException
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:45 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:43 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+Early multivariate labels and rank: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:50
+  Expression: multivariate_mme(Y, X, Z, Q, Q, Q; ids = ids, traits = traits)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:50 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:48 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+Early multivariate labels and rank: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:55
+  Expression: occursin(field, sprint(showerror, err))
+   Evaluated: occursin("ids", "ArgumentError: Ainv must not contain Inf or NaN")
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:55 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:48 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+Early multivariate labels and rank: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:55
+  Expression: occursin(field, sprint(showerror, err))
+   Evaluated: occursin("ids", "ArgumentError: Ainv must not contain Inf or NaN")
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:55 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:48 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+Early multivariate labels and rank: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:50
+  Expression: multivariate_mme(Y, X, Z, Q, Q, Q; ids = ids, traits = traits)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:50 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:48 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+Early multivariate labels and rank: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:55
+  Expression: occursin(field, sprint(showerror, err))
+   Evaluated: occursin("traits", "ArgumentError: Ainv must not contain Inf or NaN")
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:55 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:48 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+Early multivariate labels and rank: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:55
+  Expression: occursin(field, sprint(showerror, err))
+   Evaluated: occursin("traits", "ArgumentError: Ainv must not contain Inf or NaN")
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:55 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:48 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+Early multivariate labels and rank: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:50
+  Expression: multivariate_mme(Y, X, Z, Q, Q, Q; ids = ids, traits = traits)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:50 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:48 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+Early multivariate labels and rank: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:55
+  Expression: occursin(field, sprint(showerror, err))
+   Evaluated: occursin("ids", "ArgumentError: Ainv must not contain Inf or NaN")
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:55 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:48 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+Early multivariate labels and rank: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:55
+  Expression: occursin(field, sprint(showerror, err))
+   Evaluated: occursin("ids", "ArgumentError: Ainv must not contain Inf or NaN")
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:55 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:48 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+Early multivariate labels and rank: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:50
+  Expression: multivariate_mme(Y, X, Z, Q, Q, Q; ids = ids, traits = traits)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:50 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:48 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+Early multivariate labels and rank: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:55
+  Expression: occursin(field, sprint(showerror, err))
+   Evaluated: occursin("traits", "ArgumentError: Ainv must not contain Inf or NaN")
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:55 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:48 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+Early multivariate labels and rank: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:55
+  Expression: occursin(field, sprint(showerror, err))
+   Evaluated: occursin("traits", "ArgumentError: Ainv must not contain Inf or NaN")
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:55 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:48 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+Early multivariate labels and rank: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:50
+  Expression: multivariate_mme(Y, X, Z, Q, Q, Q; ids = ids, traits = traits)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:50 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:48 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+Early multivariate labels and rank: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:55
+  Expression: occursin(field, sprint(showerror, err))
+   Evaluated: occursin("ids", "ArgumentError: Ainv must not contain Inf or NaN")
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:55 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:48 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+Early multivariate labels and rank: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:55
+  Expression: occursin(field, sprint(showerror, err))
+   Evaluated: occursin("ids", "ArgumentError: Ainv must not contain Inf or NaN")
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:55 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:48 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+Early multivariate labels and rank: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:62
+  Expression: multivariate_mme(Y, hcat(X, X), Z, Q, Q, Q)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:62 [inlined]
+ [2] macro expansion
+   @ ERROR: LoadError: Some tests did not pass: 27 passed, 69 failed, 0 errored, 0 broken.
+in expression starting at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:2
+~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:48 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+Early multivariate labels and rank: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:64
+  Expression: fit_multivariate_reml(Y, Matrix{Float64}(I, 3, 3), Z, Q)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:64 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:48 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+Early multivariate labels and rank: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:65
+  Expression: fit_multivariate_repeatability_reml(Y, Matrix{Float64}(I, 3, 3), Z, Q)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:65 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:48 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+Test Summary:                                 | Pass  Fail  Total  Time
+Multivariate bounded contracts                |   27    69     96  9.2s
+  Multivariate finite construction            |    6     2      8  1.7s
+  Multivariate finite-difference controls     |    2    32     34  0.5s
+  LRT input and tail limits                   |    5    15     20  0.1s
+  Unavailable inference at unconverged points |          2      2  0.0s
+  Early multivariate labels and rank          |   14    18     32  6.9s

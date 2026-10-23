@@ -1,0 +1,5 @@
+THREADS 1 BLAS 1
+Test Summary:                             | Pass  Total  Time
+Independent likelihood ingress challenges |   97     97  9.3s
+
+EXIT 0 WALL 26.04s

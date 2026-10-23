@@ -1,0 +1,6 @@
+cell	host	route	N	fit_ok	fit_converged	se_ok	target	n_eval	n_cover	coverage	mcse	n_refuse	refusal_rate	claim_class
+interior	DRAC	sparse_auto	2000	2000	1931	1928	Va	1928	1765	0.915456	0.006336	72	0.036000	directional-conservative-bank
+interior	DRAC	sparse_auto	2000	2000	1931	1928	Vpe	1928	1883	0.976660	0.003439	72	0.036000	directional-conservative-bank
+interior	DRAC	sparse_auto	2000	2000	1931	1928	Ve	1928	1825	0.946577	0.005121	72	0.036000	directional-conservative-bank
+interior	DRAC	sparse_auto	2000	2000	1931	1928	h2	1928	1926	0.998963	0.000733	72	0.036000	directional-conservative-bank
+interior	DRAC	sparse_auto	2000	2000	1931	1928	t	1928	1841	0.954876	0.004727	72	0.036000	directional-conservative-bank

@@ -1,7 +1,34 @@
 # Get Started
 
-`HSquared.jl` currently exposes engine utilities, not a full model-fitting
-workflow.
+!!! warning "Experimental · engine utilities, not a formula API"
+    `HSquared.jl` is the computational twin of [hsquared](https://itchyshin.github.io/hsquared/).
+    Applied users type the R formula. These pages document the engine.
+    Not in Julia General — install with
+    `Pkg.add(url = "https://github.com/itchyshin/HSquared.jl")`;
+    do **not** `Pkg.add("HSquared")`
+    by name. `public_covered_count` is a claims-register label; read
+    [`validation_status()`](validation-status.md) rather than a screenshot.
+
+```@raw html
+<figure class="hs-figure-wide">
+<img src="./assets/animal-model-path.svg" alt="Flowchart of the engine-side univariate animal model: pedigree and phenotype become a validated spec, AI-REML returns variance components, heritability, and breeding values. Genomic and multivariate paths are not shown.">
+<figcaption>Univariate Gaussian REML (engine utilities). Genomic, QTL, and multivariate routes are separate pages — not this arrow.</figcaption>
+</figure>
+```
+
+`HSquared.jl` is the Julia engine twin of
+[hsquared](https://github.com/itchyshin/hsquared). R users who want a
+formula should start there. This page walks engine utilities and
+experimental low-level fitting — not a public formula API.
+
+## Route this first
+
+For an applied analysis, start in the
+[hsquared R package](https://itchyshin.github.io/hsquared/). Continue here
+only when you need an engine utility or want to inspect the Julia layer.
+Before a fit, use [Standard QG models](standard-qg-models.md) to choose a
+route and its scope. After a fit, use [Validation status](validation-status.md)
+before extracting or reporting a point estimate.
 
 ## Normalize A Pedigree
 
@@ -67,6 +94,16 @@ Z_from_slots = sparse_csc_matrix(
 
 Z_from_slots == Z
 ```
+
+```@raw html
+<figure class="hs-figure-wide">
+<img src="./assets/twin-bridge.svg" alt="Two-column diagram of the R to Julia twin bridge. Formula language stays in R; y, X, Z CSC, pedigree indices, and target metadata cross the bridge; solvers stay in Julia; result_payload returns variance components, heritability, and breeding values. Default engine equals fit for v0.1; other targets are opt-in experimental.">
+<figcaption>Bridge payload (center) vs lane-local syntax and solvers. Default <code>engine = "fit"</code> is v0.1 only; other models need explicit <code>target</code>. Twin R tour: <a href="https://itchyshin.github.io/hsquared/articles/fitting-models.html">Fitting models</a>.</figcaption>
+</figure>
+```
+
+The twin R article is
+[Fitting quantitative-genetic models](https://itchyshin.github.io/hsquared/articles/fitting-models.html).
 
 ## Evaluate The Gaussian Likelihood
 
@@ -170,8 +207,9 @@ EBV(mme).values
 
 This solves for fixed effects and animal-effect BLUPs/EBVs given variance
 components. It does not estimate those variance components. The same tiny
-validation path can expose supplied variance components, simple `h2`, dense
-PEV, and reliability for the supplied-variance MME result:
+validation path can expose supplied variance components, simple `h2`,
+PEV (sparse selected inverse by default for a sparse `Ainv`), and reliability for the
+supplied-variance MME result:
 
 ```@example quickstart
 variance_components(mme)
@@ -224,6 +262,13 @@ BLUP(fit).values
 heritability(fit)
 ```
 
+!!! warning "Syntax demonstration, not a heritability estimate"
+    This three-animal toy response is exactly explained by its fixed-effect
+    design. Both fitted variance components are therefore near zero, and the
+    displayed heritability is an unstable ratio of two near-zero numbers. It
+    carries no information about population heritability and must not be
+    interpreted or reported.
+
 ```@example quickstart
 prediction_error_variance(fit).values
 ```
@@ -267,9 +312,11 @@ For checking R formula parity before fitting, the R twin also exposes
 `model_spec()`. It validates `animal(1 | id, pedigree = ped)` and previews the
 bridge payload and Julia targets without executing Julia.
 
-## What Does Not Work Yet
+## Julia Entry Points and Remaining Gaps
 
-The high-level fitting functions are placeholders.
+The generic Julia `fit_animal_model` entry point remains a placeholder. The
+specialized Julia fitters, including `fit_ai_reml`, are implemented; the R
+package dispatches supported models to those fitters through its bridge.
 
 ```@example quickstart
 try
@@ -279,23 +326,41 @@ catch err
 end
 ```
 
-Sparse production optimization, AI-REML, production sparse reliability,
-production sparse prediction error variance, and relationship-object
-marshalling beyond sparse `Z` remain Phase 1 targets.
+Large-pedigree performance hardening, production-scale reliability and
+prediction-error variance, and relationship-object marshalling beyond sparse
+`Z` remain development targets.
 
-## R Syntax Parity Target
+## R Syntax
 
-The planned bridge target is that R users write the public `hsquared` syntax and
-select the Julia engine from R:
+R users write the public `hsquared` syntax. The standard supported route selects
+the Julia engine automatically; explicit experimental targets use
+`hs_control(engine = "julia")`:
 
 ```r
 hsquared(
   y ~ sex + age + animal(1 | id, pedigree = ped),
   data = dat,
   family = gaussian(),
-  engine = "julia"
+  control = hs_control(engine = "julia")
 )
 ```
 
-That is not executable yet. The current Julia utilities are the engine pieces
-needed underneath that bridge.
+This R call is executable when the R and Julia packages are installed and the
+local Julia project is configured. The Julia package supplies the engine pieces;
+the R package owns formula parsing and the public user interface.
+
+## Non-Gaussian marginal caveat
+
+The experimental Poisson and binomial animal-model route defaults to the
+Laplace marginal approximation. For binary data with one record per latent
+animal effect, a converged interior Laplace fit can still underestimate the
+additive latent variance. On the 874-record *Plodia* pupation full-sib dataset
+reported in issue #430, Laplace estimated `V_A = 0.872`, 42% below an
+exact-likelihood reference (`V_A = 1.500`); the package's variational fit gave
+`V_A = 1.502` but was substantially slower on that dataset. This is one
+dataset-specific bias measurement, not a universal correction factor.
+
+For consequential binary analyses, compare `marginal = :laplace` with
+`marginal = :variational` and report the chosen approximation. Their objective
+values are not directly comparable: the variational value is an evidence lower
+bound, while the Laplace value approximates the marginal log likelihood.

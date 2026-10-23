@@ -1,0 +1,46 @@
+Assertions: 67; passed: 22; failed: 45
+FAIL: traits missing
+FAIL: traits reversed
+FAIL: traits duplicate
+FAIL: traits short
+FAIL: traits extra
+FAIL: traits missing_value
+FAIL: traits empty
+FAIL: traits zero_length
+FAIL: breeding_ids missing
+FAIL: breeding_ids reversed
+FAIL: breeding_ids duplicate
+FAIL: breeding_ids short
+FAIL: breeding_ids extra
+FAIL: breeding_ids missing_value
+FAIL: breeding_ids empty
+FAIL: breeding_ids zero_length
+FAIL: pe_ids missing
+FAIL: pe_ids reversed
+FAIL: pe_ids duplicate
+FAIL: pe_ids short
+FAIL: pe_ids extra
+FAIL: pe_ids missing_value
+FAIL: pe_ids empty
+FAIL: pe_ids zero_length
+FAIL: breeding_traits missing
+FAIL: breeding_traits reversed
+FAIL: breeding_traits duplicate
+FAIL: breeding_traits short
+FAIL: breeding_traits extra
+FAIL: breeding_traits missing_value
+FAIL: breeding_traits empty
+FAIL: breeding_traits zero_length
+FAIL: pe_traits missing
+FAIL: pe_traits reversed
+FAIL: pe_traits duplicate
+FAIL: pe_traits short
+FAIL: pe_traits extra
+FAIL: pe_traits missing_value
+FAIL: pe_traits empty
+FAIL: pe_traits zero_length
+FAIL: original effect-trait conflict
+FAIL: original combined reversed labels
+FAIL: PE observed subset cannot replace pedigree IDs
+FAIL: duplicate request traits
+FAIL: duplicate request ids 

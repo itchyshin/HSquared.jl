@@ -1,0 +1,12 @@
+all_five_attempted = true
+exit_code = 0
+status = "diagnostic_complete"
+correctness_failure_count = 0
+full_denominator = 5
+correctness_failures = []
+fit_returns = 5
+finite_returns = 5
+seconds = 270.264579069
+A2_complete = false
+source_tree_after_sha256 = "d3c2de8d7f0a1a86918f15938264bbdc892a7303b5ddd488553ac923f073ad0a"
+interpretation = "Optimizer sensitivity and floor constraints are measured limitations, not a retrospective population pass bar; panel acceptance remains external"

@@ -1,0 +1,222 @@
+--- a/src/genetic_gllvm.jl
++++ b/src/genetic_gllvm.jl
+@@ -74,7 +74,10 @@
+ supplied-loadings method, with `communality = 1 − Ψ / diag(G)` (the per-trait
+ fraction of genetic variance from the common latent factors; `= 1` for low-rank).
+ For FA, this communality is conditional on the fitted `G`/`Ψ` decomposition;
+-equal `G` matrices can yield different communalities.
++equal `G` matrices can yield different communalities. Synthetic results must carry
++consistent factor-count/loading dimensions and finite nonnegative uniqueness with
++`Ψ <= diag(G)`. Loading values are checked when supplied, but descriptors are
++computed from `G` and `Ψ`, preserving the rotation-free output contract.
+ Rejects the rotation-free `:diagonal` / `:unstructured` structures, which have no
+ latent-factor interpretation.
+ """
+@@ -83,13 +86,40 @@
+     meta.structure in (:lowrank, :factor_analytic) || throw(ArgumentError(
+         "genetic_gllvm_descriptors(result) needs a :lowrank or :factor_analytic fit; got :$(meta.structure)"))
+     G = Matrix{Float64}(result.genetic_covariance)
++    correlation = genetic_correlation(G)  # validate covariance before descriptor arithmetic
++    T = size(G, 1)
++    K = meta.rank
++    (K isa Integer && !(K isa Bool) && 1 <= K <= T) || throw(ArgumentError(
++        "structured result rank must be an integer between 1 and the number of traits"))
++    L = result.genetic_loadings
++    if L !== nothing
++        L isa AbstractMatrix || throw(ArgumentError("structured result loadings must be a matrix"))
++        size(L) == (T, K) || throw(ArgumentError("structured result loadings must be T×K"))
++        _check_finite_matrix(L, "structured result loadings")
++    end
++    rawψ = result.genetic_uniqueness
++    ψ = if rawψ === nothing
++        meta.structure == :lowrank || throw(ArgumentError(
++            "factor-analytic result must contain uniqueness"))
++        nothing
++    else
++        rawψ isa Union{AbstractVector, Tuple} || throw(ArgumentError(
++            "structured result uniqueness must be a vector"))
++        v = Float64.(collect(rawψ))
++        length(v) == T || throw(ArgumentError("structured result uniqueness length must equal T"))
++        all(isfinite, v) && all(>=(0), v) || throw(ArgumentError(
++            "structured result uniqueness must be finite and nonnegative"))
++        meta.structure == :lowrank && !all(iszero, v) && throw(ArgumentError(
++            "lowrank result uniqueness must be nothing or zero"))
++        v
++    end
+     gv = diag(G)
+-    ψ = genetic_uniqueness(result)
+-    communality = ψ === nothing ? ones(length(gv)) : (gv .- ψ) ./ gv
+-    K = meta.rank
++    ψ === nothing || all(ψ .<= gv) || throw(ArgumentError(
++        "structured result uniqueness must not exceed genetic variances"))
++    communality = ψ === nothing ? ones(T) : (gv .- ψ) ./ gv
+     return (genetic_covariance = G,
+             genetic_variances = gv,
+-            genetic_correlation = genetic_correlation(G),
++            genetic_correlation = correlation,
+             communality = communality,
+             genetic_pca = genetic_pca(G),
+             g_max = g_max(G),
+@@ -142,6 +172,15 @@
+ 
+ # ── Non-Gaussian K-factor latent Laplace marginal (#50 slice 2, non-Gaussian) ──────
+ 
++# Varying trial counts are supported by the standalone scalar animal-model path.
++# Genetic GLLVM currently dispatches one scalar response family per trait.
++function _check_gllvm_record_family(family)
++    families = family isa AbstractVector ? family : (family,)
++    any(f -> f isa BinomialVectorResponse, families) && throw(ArgumentError(
++        "per-record binomial trials are not supported by genetic GLLVM; use standalone laplace_marginal_loglik or fit_laplace_reml for varying trials"))
++    return nothing
++end
++
+ """A converged GLLVM mode has non-positive observed joint Laplace curvature."""
+ abstract type GLLVMParameterEvaluationError <: Exception end
+ 
+@@ -215,12 +254,15 @@
+ loadings (NOT estimated by this kernel), balanced/fully-observed `Y` only; INTERNAL
+ (not exported, mirroring the single-factor kernel). The bounded R Poisson route
+ uses the fitted kernel below, not this supplied-loading function.
++Per-record varying-trial `BinomialVectorResponse` is rejected; use the standalone
++scalar animal-model path for varying trials.
+ """
+ function gllvm_laplace_marginal_loglik(Y::AbstractMatrix, Ainv::AbstractMatrix,
+                                        loadings::AbstractMatrix,
+                                        family::Union{ResponseFamily, AbstractVector};
+                                        X::AbstractMatrix = ones(size(Y, 1), 1),
+                                        tol::Real = 1e-10, maxiter::Integer = 100)
++    _check_gllvm_record_family(family)
+     Yd = Matrix{Float64}(Y)
+     Ai = Matrix{Float64}(Ainv)
+     Λ = Matrix{Float64}(loadings)
+@@ -593,6 +635,8 @@
+ cells, and the multivariate Gaussian FA gate covers one T=4,K=1 cell). The R
+ twin's bounded Poisson bridge does not extend this Julia fitter to other public
+ families, ranks, missing records, or response-scale summaries.
++Per-record varying-trial `BinomialVectorResponse` is rejected before optimization;
++use the standalone scalar animal-model path for varying trials.
+ """
+ function fit_gllvm_laplace_reml(Y::AbstractMatrix, Ainv::AbstractMatrix,
+                                 family::Union{ResponseFamily, AbstractVector}; rank::Integer,
+@@ -602,6 +646,7 @@
+                                 trait_names = nothing,
+                                 iterations::Integer = 1000,
+                                 tol::Real = 1e-10, maxiter::Integer = 200)
++    _check_gllvm_record_family(family)
+     q, T = size(Y)
+     trait_names = _validate_gllvm_trait_names(trait_names, T)
+     Ainv = _check_relationship_precision(Ainv, q)
+--- /dev/null
++++ b/test/gllvm_descriptor_record_regression.jl
+@@ -0,0 +1,111 @@
++using Test, LinearAlgebra, HSquared
++const H = HSquared
++
++# Successful guard visits stop the supplied-loading kernel before mode work.
++struct DescriptorRecordGuardPassed <: Exception end
++function H._check_flat_effect_integral(f::H.ResponseFamily,
++                                     y::AbstractVector{Float64}, X::AbstractMatrix{Float64})
++    invoke(H._check_flat_effect_integral, Tuple{H.ResponseFamily, Any, Any}, f, y, X)
++    throw(DescriptorRecordGuardPassed())
++end
++const probe_method = which(H._check_flat_effect_integral,
++    Tuple{H.ResponseFamily, AbstractVector{Float64}, AbstractMatrix{Float64}})
++function rejection_message(f)
++    try
++        f()
++    catch e
++        return e isa ArgumentError && occursin("per-record binomial", sprint(showerror, e))
++    end
++    return false
++end
++@testset "GLLVM descriptor and record guards" begin
++try
++@testset "GLLVM record family boundary" begin
++    Ai = Matrix{Float64}(I, 2, 2)
++    Y = reshape([0.0, 1.0], 2, 1)
++    X = zeros(2, 0)
++    bvr = H.BinomialVectorResponse([2, 3])
++    for family in (bvr, [bvr], H.ResponseFamily[bvr])
++        @test rejection_message(() -> H.gllvm_laplace_marginal_loglik(
++            Y, Ai, ones(1, 1), family; X=X, maxiter=0))
++    end
++    @test rejection_message(() -> H.gllvm_laplace_marginal_loglik(
++        hcat([1.0, 2.0], vec(Y)), Ai, ones(2, 1),
++        [H.GaussianResponse(1.0), bvr]; X=X, maxiter=0))
++    for family in (H.BinomialResponse(3), [H.BinomialResponse(3)], H.PoissonResponse())
++        @test_throws DescriptorRecordGuardPassed H.gllvm_laplace_marginal_loglik(
++            Y, Ai, ones(1, 1), family; X=X, maxiter=0)
++    end
++    @test_throws DescriptorRecordGuardPassed H.gllvm_laplace_marginal_loglik(
++        [1.0 2.0 1.0; 2.0 1.0 3.0], Ai, [1.0 0.2; 0.4 0.9; 0.3 0.5],
++        H.PoissonResponse(); X=X, maxiter=0)
++end
++finally
++    Base.delete_method(probe_method)
++end
++@test which(H._check_flat_effect_integral,
++    Tuple{H.ResponseFamily, Vector{Float64}, Matrix{Float64}}) ===
++    which(H._check_flat_effect_integral, Tuple{H.ResponseFamily, Any, Any})
++
++@testset "GLLVM synthetic descriptor metadata" begin
++    L = [1.0 0.2; 0.4 0.9; 0.3 0.5]
++    psi = [0.3, 0.4, 0.6]
++    G = L * L' + Diagonal(psi)
++    function result(; covariance=G, loadings=L, uniqueness=psi, rank=2, structure=:factor_analytic)
++        return (genetic_covariance=covariance, residual_covariance=Matrix{Float64}(I, 3, 3),
++            beta=zeros(1, 3), breeding_values=(ids=[1], traits=["a", "b", "c"], values=zeros(1, 3)),
++            genetic_structure=structure, genetic_rank=rank,
++            genetic_loadings=loadings, genetic_uniqueness=uniqueness)
++    end
++    for bad in ([0.2], [0.2, 0.3], [0.2, 0.3, 0.4, 0.5],
++                [NaN, 0.3, 0.4], [Inf, 0.3, 0.4], [-0.1, 0.3, 0.4],
++                diag(G) .+ 1.0)
++        @test_throws ArgumentError H.genetic_gllvm_descriptors(result(uniqueness=bad))
++    end
++    for bad in (0, -1, 1.5, 4, nothing, true)
++        @test_throws ArgumentError H.genetic_gllvm_descriptors(result(rank=bad))
++    end
++    for bad in (ones(2, 2), ones(3, 1), fill(NaN, 3, 2), fill(Inf, 3, 2))
++        @test_throws ArgumentError H.genetic_gllvm_descriptors(result(loadings=bad))
++    end
++    @test_throws ArgumentError H.genetic_gllvm_descriptors(result(uniqueness=nothing))
++    @test_throws ArgumentError H.genetic_gllvm_descriptors(result(structure=:lowrank))
++    fa = H.genetic_gllvm_descriptors(result())
++    @test fa.communality ≈ vec(sum(abs2, L; dims=2)) ./ diag(G)
++    @test fa.rank == 2
++    theta = 0.7
++    Q = [cos(theta) -sin(theta); sin(theta) cos(theta)]
++    rotated = H.genetic_gllvm_descriptors(result(loadings=L*Q))
++    @test rotated.genetic_covariance ≈ fa.genetic_covariance
++    @test rotated.communality ≈ fa.communality
++    pure = result(covariance=L*L', uniqueness=nothing, structure=:lowrank)
++    @test H.genetic_gllvm_descriptors(pure).communality == ones(3)
++    @test H.genetic_gllvm_descriptors(merge(pure, (genetic_uniqueness=zeros(3),))).communality == ones(3)
++    @test H.genetic_gllvm_descriptors(result(uniqueness=zeros(3))).communality == ones(3)
++    @test H.genetic_gllvm_descriptors(result(loadings=nothing)).communality ≈ fa.communality
++    @test H.genetic_gllvm_descriptors(result(uniqueness=diag(G))).communality == zeros(3)
++    @test_throws ArgumentError H.genetic_gllvm_descriptors(fill(NaN, 3, 2))
++    @test_throws ArgumentError H.genetic_gllvm_descriptors(L; uniqueness=[0.2, 0.3])
++    @test_throws ArgumentError H.genetic_gllvm_descriptors(L; uniqueness=zeros(3))
++end
++
++@testset "GLLVM fitter entry and retained descriptor controls" begin
++    Ai = Matrix{Float64}(I, 2, 2)
++    bvr = H.BinomialVectorResponse([2, 3])
++    for family in (bvr, [bvr], H.ResponseFamily[bvr])
++        @test rejection_message(() -> H.fit_gllvm_laplace_reml(
++            reshape([0.0, 1.0], 2, 1), Ai, family; rank=0))
++    end
++    @test rejection_message(() -> H.fit_gllvm_laplace_reml(
++        [1.0 0.0; 2.0 1.0], Ai, [H.GaussianResponse(1.0), bvr]; rank=0))
++    # Standalone varying-trial count validation and scalar record mapping stay available.
++    @test H._check_counts(bvr, [0.0, 1.0]) === nothing
++    @test H._fam_record(bvr, 2).n_trials == 3
++    L = [1.0 0.2; 0.4 0.9; 0.3 0.5]
++    pure = H.genetic_gllvm_descriptors(L)
++    @test pure.communality ≈ ones(3)
++    @test pure.rank == 2
++    @test H.genetic_gllvm_descriptors([L ones(3)]).rank == 3
++    @test H.genetic_gllvm_descriptors([L ones(3) ones(3)]).rank == 4
++end
++end

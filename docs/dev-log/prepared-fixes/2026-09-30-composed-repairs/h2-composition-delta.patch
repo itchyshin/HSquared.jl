@@ -1,0 +1,524 @@
+--- a/docs/design/19-h2-scale-contract.md
++++ b/docs/design/19-h2-scale-contract.md
+@@ -65,6 +65,10 @@
+ **Model.** Linear predictor `η = μ + a + f`, with breeding value `a ~ N(0, A·σ²a)`
+ (`V_A = σ²a`), fixed-effect contribution `f` (variance `V_fixed`), and a family/link that
+ maps `η` to the conditional mean `E[y|η] = g⁻¹(η)`.
++The descriptor assumes zero covariance between `a` and the population fixed-effect
++contribution `f`, with a Gaussian approximation for their sum. `V_A` is the caller's
++reference genetic variance. `predictor_variance` supplies `V_fixed`, not total predictor
++variance; total predictor variance is `V_A + V_fixed`.
+ 
+ ### 2.1 Latent (link) scale
+ The scale of `η` itself. Total latent variance adds the link's *implied latent residual*
+@@ -73,6 +77,10 @@
+ ```
+ h²_latent = V_A / (V_A + V_link + V_fixed)
+ ```
++
++The Gaussian identity descriptor uses variance conditional on fixed effects:
++`V_A/(V_A+σ²e)`. It requires `predictor_variance = 0`; nonzero values are rejected
++rather than silently ignored. The Gaussian total is `V_A+σ²e`.
+ 
+ `V_link` is a property of the family and link, not of the data: `π²/3` for logit (variance of
+ the standard logistic), `1` for probit (the classic Gaussian-liability scale), `π²/6` for
+@@ -80,7 +88,7 @@
+ Gaussian identity link. The **log link is family-dependent**: **`0` for Poisson** — no latent
+ residual, so its latent h² is **degenerate (`NaN`)** (`nongaussian_heritability`), the
+ exact reason the uniform payload refuses a single h² — but **`ψ₁(ν)` (trigamma of the shape) for
+-Gamma**, a genuine multiplicative log-scale residual (`Var[log Y] = ψ₁(ν)`), so the **Gamma
++Gamma**, a genuine multiplicative log-scale residual (`Var(log Y | η) = ψ₁(ν)`), so the **Gamma
+ latent h² is NON-degenerate** (§3.1). (Link variances verified against Nakagawa & Schielzeth 2017
+ via the NotebookLM source set: logit π²/3, probit 1, cloglog π²/6; the Gamma `ψ₁(ν)` verified
+ numerically — §3.1.)
+@@ -115,8 +123,9 @@
+ > variance, the engine's `var_dist`), and `1/[p(1−p)]` (NS delta latent term, **not used** by
+ > the engine). Verified against de Villemereuil 2016 + NS 2017 via the NotebookLM source set.
+ 
+-`Ψ² V_A ≤ Var(E[y|η])`, so `h²_observation ∈ (0,1)` — verified numerically in the suite, not
+-assumed. **Estimand per family:** PROPORTION for Bernoulli/Binomial, COUNT for Poisson. For
++`Ψ² V_A ≤ Var(E[y|η])`, so the theoretical population projection satisfies
++`h²_observation ∈ [0,1]` when observation variance is finite and positive, including
++zero at `V_A = 0`. Finite quadrature approximates these population moments. **Estimand per family:** PROPORTION for Bernoulli/Binomial, COUNT for Poisson. For
+ the Gaussian identity link both scales coincide.
+ 
+ > **Non-monotonicity warning.** `h²_observation` is **not** monotone in `σ²a` for some
+@@ -140,8 +149,10 @@
+ The observed-0/1 scale connects to it by the Dempster–Lerner transform
+ `h²_obs = h²_liab · z² / [p(1−p)]` (`z` = standard-normal ordinate at the threshold,
+ `p` = incidence) — useful as a closed-form cross-check. Because `z²/[p(1−p)] < 1` for all
+-incidences (maximum ≈ 0.637 at `p = 0.5`), the observed-0/1 heritability is **always smaller
+-than the liability heritability** — the classic Dempster–Lerner ordering (verified
++incidences (maximum ≈ 0.637 at `p = 0.5`), the observed-0/1 heritability is **no greater
++than the liability heritability**, with equality at zero genetic variance and strict
++inequality at positive genetic variance in the exact finite-moment model. This is
++the classic Dempster–Lerner ordering; finite quadrature approximates it (verified
+ empirically: e.g. `V_A = 1`, `μ = 0` → liability 0.500 vs observed 0.318).
+ 
+ ---
+@@ -153,14 +164,14 @@
+ 
+ | Family | Link | `V_link` | Latent h² | Observation/data scale | Liability scale | Estimand | h²-surface status |
+ |---|---|---|---|---|---|---|---|
+-| Gaussian | identity | `σ²e` | `V_A/(V_A+σ²e)` | = latent (coincide) | n/a | trait value | **covered** (v0.1) |
++| Gaussian | identity | `σ²e` | `V_A/(V_A+σ²e)` | = latent (coincide); requires `V_fixed=0` | n/a | trait value, conditional on fixed effects | **covered** (v0.1) |
+ | Poisson | log | `0` | **NaN** (degenerate) | log-normal–Poisson closed form: `V_A,obs=λ²V_A`, denom `λ²(e^{V_pred}−1)+λ` | n/a | count | partial |
+ | Bernoulli | logit | `π²/3` | `V_A/(V_A+π²/3+V_fixed)` | GH quadrature, `Ψ=E[p(1−p)]`, `var_dist=Ψ` | (logit liability) | proportion | partial — `information_limited` |
+ | Binomial | logit | `π²/3` | same | GH quadrature, `var_dist=Ψ/n_trials` | (logit liability) | proportion | partial |
+ | **Bernoulli-probit** | probit | `1` | = liability h² | Dempster–Lerner `z²/[p(1−p)]` | **`V_A/(V_A+1+V_fixed)`** | binary→liability | **owed** (follow-up) |
+ | **Beta-binomial** | logit + Beta | `π²/3` + overdispersion | needs derivation | needs derivation | (logit) | proportion | **owed** |
+ | **Neg-binomial (NB2)** | log | `0` + overdispersion | needs derivation (NS 2017 NB term) | NS 2017 log-normal form | n/a | count | **owed** |
+-| **Gamma / lognormal** | log | **`ψ₁(ν)` = trigamma(shape), EXACT** (= Var[log Y]; NOT the `ln(1+1/ν)` lognormal/CV approx) | `V_A/(V_A + ψ₁(ν) + V_fixed)` (non-degenerate, unlike Poisson) | **`V_A/[e^{V_pred}(1+1/ν)−1]`** (NS-2017 multiplicative, EXACT lognormal form; μ-independent; validated vs QGglmm custom Gamma to ~5e-11) | n/a | positive continuous | latent + data both DERIVED + validated; `partial` (§3.1) |
++| **Gamma / lognormal** | log | **`ψ₁(ν)` = trigamma(shape), EXACT** (= Var(log Y | η); NOT the `ln(1+1/ν)` lognormal/CV approx) | `V_A/(V_A + ψ₁(ν) + V_fixed)` (non-degenerate, unlike Poisson) | **`V_A/[e^{V_pred}(1+1/ν)−1]`** (NS-2017 multiplicative, EXACT lognormal form; μ-independent; validated vs QGglmm custom Gamma to ~5e-11) | n/a | positive continuous | latent + data both DERIVED + validated; `partial` (§3.1) |
+ | **Ordinal / categorical** | cumulative probit/logit | `1` (probit) / `π²/3` (logit) | per-threshold liability | category probabilities | **liability (primary)** | ordinal→liability | **owed** (T1, top) |
+ 
+ **Rules for the owed rows (so future slices don't drift):**
+@@ -180,18 +191,20 @@
+ 
+ The Gamma-log latent residual was tentatively "multiplicative (CV-based)" in the table above; this
+ resolves it to the **exact** value. On the log link the latent residual is `log Y − log μ =
+-log(Y/μ)`, whose variance for `Y ~ Gamma(shape ν, mean μ)` is a standard, mean-independent fact:
+-
+-```
+-V_link,Gamma = Var[log Y] = ψ₁(ν)      (trigamma of the shape)
++log(Y/μ)`, whose conditional variance for `Y | η ~ Gamma(shape ν, mean μ)`
++with `η` held fixed is a standard, mean-independent fact:
++
++```
++V_link,Gamma = Var(log Y | η) = ψ₁(ν)      (trigamma of the shape)
+ ```
+ 
+ so the Gamma **latent-scale** heritability is `h²_latent = V_A / (V_A + ψ₁(ν) + V_fixed)` —
+ **non-degenerate**, unlike the Poisson log link (`V_link = 0`), because the Gamma carries a genuine
+ multiplicative dispersion. Special case `ν = 1` (exponential): `ψ₁(1) = π²/6 ≈ 1.6449`.
+ 
+-**Numerically verified** (dependency-free, `3×10⁶` Marsaglia–Tsang draws per shape): the empirical
+-`Var[log Y]` matches `ψ₁(ν)` to 3–4 significant figures across `ν ∈ {0.5, 1, 2, 5}` (e.g. ν=0.5 →
++**Numerically verified** (dependency-free, `3×10⁶` Marsaglia–Tsang draws per shape,
++with `η` held fixed): the empirical
++`Var(log Y | η)` matches `ψ₁(ν)` to 3–4 significant figures across `ν ∈ {0.5, 1, 2, 5}` (e.g. ν=0.5 →
+ `4.938` vs `ψ₁ = 4.9348`; ν=2 → `0.645` vs `0.6449`), while the **`ln(1+1/ν)` lognormal/CV
+ approximation is materially wrong** for small `ν` (ν=0.5 → `1.099`, off by ~4.5×). So the exact
+ `ψ₁(ν)` is the correct `V_link`; the CV/lognormal form is only a large-`ν` asymptotic approximation
+@@ -217,9 +230,15 @@
+ - With **>1 fixed effect** the intercept is ambiguous, so `mu` (link-scale population mean)
+   is **required** and `predictor_variance` should be supplied
+   (`nongaussian_heritability`).
+-- Convention: `V_fixed` enters **both** the latent denominator and the observation-scale
++- Except for the conditional Gaussian descriptor, `V_fixed` enters **both** the latent denominator and the observation-scale
+   integration variance (it is genuine predictor spread), **unlike** `V_link` which enters
+   only the latent denominator. This is the asymmetry that makes the contract non-obvious.
++- Genetic and fixed-effect variances must be finite and nonnegative; the mean and
++  derived predictor variance must be finite. Zero genetic variance has zero
++  observation-scale additive projection.
++- A constant binomial trial vector uses the common scalar denominator. Genuinely
++  varying trials retain a visible unsupported observation-scale result (`NaN`);
++  no trial average or population weighting is inferred.
+ 
+ ---
+ 
+--- a/src/nongaussian.jl
++++ b/src/nongaussian.jl
+@@ -290,7 +290,7 @@
+ # Trigamma ψ₁(x) = d/dx ψ(x) — same dependency-free strategy as `_digamma`:
+ # recurrence ψ₁(x) = ψ₁(x+1) + 1/x² up to x ≥ 6, then the asymptotic series
+ # ψ₁(x) ≈ 1/x + 1/(2x²) + 1/(6x³) − 1/(30x⁵) + 1/(42x⁷). Used for the Gamma
+-# log-scale distribution-specific variance V_link = Var[log Y] = ψ₁(shape)
++# log-scale residual variance V_link = Var(log Y | η) = ψ₁(shape)
+ # (doc-19 §3.1). Accurate to ~3e-9 for x > 0 (ψ₁(1) = π²/6, ψ₁(2) = π²/6 − 1).
+ function _trigamma(x::Real)
+     z = Float64(x)
+@@ -1626,23 +1626,75 @@
+ #    Ψ = E[g⁻¹′(η)] the AVERAGE inverse-link derivative — under the model's
+ #    joint-Gaussian latent assumption, by Stein's lemma this is the variance of the
+ #    linear regression of the mean on the breeding value, so V_A,obs ≤ Var(mean) and
+-#    h²_obs ∈ (0,1) (verified numerically in the tests, not assumed). The expectation is
++#    the theoretical population projection satisfies h²_obs ∈ [0,1] when the
++#    observation variance is finite and positive, including zero at V_A = 0.
++#    Finite quadrature approximates these population moments. The expectation is
+ #    over the LINEAR-PREDICTOR distribution η ~ N(μ, V_A + V_fixed) — the π²/3 logit
+ #    residual is NOT added to this integration variance (it is an observation-process
+ #    term, not predictor spread; matching de Villemereuil's QGglmm `binom1.logit`).
+ #  • Estimand per family: PROPORTION for Bernoulli/Binomial, COUNT for Poisson.
+ # This is asymptotic/validation-scale; the exact decomposition awaits a same-estimand
+ # QGglmm/MCMCglmm comparator + a Fisher/Falconer review before any promotion.
++# Descriptor inputs also arrive through synthetic fits, independently of family constructors.
++function _h2_finite_real(value, label; nonnegative::Bool = false, positive::Bool = false)
++    value isa Real || throw(ArgumentError("$label must be a real number"))
++    isfinite(value) || throw(ArgumentError("$label must be finite"))
++    nonnegative && value < 0 && throw(ArgumentError("$label must be nonnegative"))
++    positive && value <= 0 && throw(ArgumentError("$label must be positive"))
++    converted = Float64(value)
++    isfinite(converted) || throw(ArgumentError("$label must be finite after Float64 conversion"))
++    nonnegative && converted < 0 && throw(ArgumentError("$label must be nonnegative after Float64 conversion"))
++    positive && converted <= 0 && throw(ArgumentError("$label must be positive after Float64 conversion"))
++    return converted
++end
++
++function _h2_finite_total(values...)
++    total = sum(values)
++    isfinite(total) || throw(ArgumentError("heritability total variance must be finite in Float64"))
++    return total
++end
++
++function _h2_trial_int(value)
++    value isa Real && isfinite(value) && isinteger(value) && value > 0 && value <= typemax(Int) ||
++        throw(ArgumentError("n_trials must contain positive integers representable as Int"))
++    return Int(value)
++end
++
++function _h2_trials(value)
++    if value isa AbstractVector
++        isempty(value) && throw(ArgumentError("n_trials must be nonempty"))
++        trials = _h2_trial_int.(value)
++        return all(==(first(trials)), trials) ? first(trials) : trials
++    end
++    return _h2_trial_int(value)
++end
++
++function _h2_cutpoints(value)
++    value === nothing && throw(ArgumentError("nongaussian_heritability for :ordered_probit needs cutpoints"))
++    points = collect(value)
++    isempty(points) && throw(ArgumentError("ordered-probit cutpoints must be nonempty"))
++    converted = [_h2_finite_real(point, "ordered-probit cutpoint") for point in points]
++    all(diff(converted) .> 0) || throw(ArgumentError("ordered-probit cutpoints must be strictly increasing after Float64 conversion"))
++    return converted
++end
++
+ function _nongaussian_h2_core(family::Symbol, V_A::Float64, mu::Float64, sigma_e2::Float64,
+                               n_trials::Int, V_fixed::Float64, converged::Bool;
+                               cutpoints = nothing, shape::Float64 = NaN)
++    _h2_finite_real(V_A, "sigma_a2"; nonnegative = true)
++    _h2_finite_real(V_fixed, "predictor_variance"; nonnegative = true)
++    _h2_finite_real(mu, "mu")
++    V_pred = _h2_finite_total(V_A, V_fixed)
+     if family === :gaussian
+-        h2 = V_A / (V_A + sigma_e2)
++        V_fixed == 0 || throw(ArgumentError("Gaussian heritability is conditional on fixed effects; predictor_variance must be zero"))
++        _h2_finite_real(sigma_e2, "sigma_e2"; positive = true)
++        total = _h2_finite_total(V_A, sigma_e2)
++        h2 = V_A / total
+         return (family = :gaussian, sigma_a2 = V_A, mu = mu,
+-                latent_total_variance = V_A + sigma_e2, h2_latent = h2, h2_observation = h2,
++                latent_total_variance = total, h2_latent = h2, h2_observation = h2,
+                 var_distribution = sigma_e2, var_link = sigma_e2, converged = converged,
+                 information_limited = false,
+-                caveat = "Gaussian identity link: latent and observation scales coincide.",
++                caveat = "Gaussian identity link: conditional on fixed effects; predictor_variance must be zero. Latent and observation scales coincide.",
+                 method = :gaussian_identity)
+     elseif family === :poisson
+         V_pred = V_A + V_fixed                       # linear-predictor variance
+@@ -1650,14 +1702,15 @@
+         V_A_obs = λ^2 * V_A                           # Ψ²·V_A (Stein)
+         V_P_obs = λ^2 * (exp(V_pred) - 1) + λ         # Var(exp η) + E[Poisson var]
+         return (family = :poisson, sigma_a2 = V_A, mu = mu, latent_total_variance = V_pred,
+-                h2_latent = NaN, h2_observation = V_A_obs / V_P_obs,
++                h2_latent = NaN, h2_observation = V_A == 0 ? 0.0 : V_A_obs / V_P_obs,
+                 var_distribution = λ, var_link = 0.0, converged = converged,
+                 information_limited = false,
+                 caveat = "Poisson log link: latent h² is degenerate (no latent residual) → NaN; observation/count scale via the log-normal–Poisson closed form (NS 2017).",
+                 method = :lognormal_poisson)
+     elseif family === :bernoulli || family === :binomial
+         V_pred = V_A + V_fixed
+-        latent_total = V_A + _VAR_LOGISTIC + V_fixed
++        _h2_trial_int(n_trials)
++        latent_total = _h2_finite_total(V_pred, _VAR_LOGISTIC)
+         p̄ = _gh_expect(_logistic, mu, V_pred)
+         Ψ = _gh_expect(η -> (p = _logistic(η); p * (1.0 - p)), mu, V_pred)
+         Ep2 = _gh_expect(η -> (p = _logistic(η); p * p), mu, V_pred)
+@@ -1666,7 +1719,7 @@
+         var_dist = Ψ / n_trials                       # proportion-scale sampling variance
+         info_lim = n_trials == 1
+         return (family = family, sigma_a2 = V_A, mu = mu, latent_total_variance = latent_total,
+-                h2_latent = V_A / latent_total, h2_observation = V_A_obs / (var_p + var_dist),
++                h2_latent = V_A / latent_total, h2_observation = V_A == 0 ? 0.0 : V_A_obs / (var_p + var_dist),
+                 var_distribution = var_dist, var_link = _VAR_LOGISTIC, converged = converged,
+                 information_limited = info_lim,
+                 caveat = info_lim ?
+@@ -1679,7 +1732,7 @@
+         # liability h² = V_A/(V_A + 1 + V_fixed) is the selection-relevant PRIMARY scale;
+         # it does NOT depend on μ or the cutpoints (those set the observed incidence, not
+         # the liability partition).
+-        latent_total = V_A + 1.0 + V_fixed
++        latent_total = _h2_finite_total(V_pred, 1.0)
+         V_pred = V_A + V_fixed
+         if family === :bernoulli_probit
+             # BINARY observed-0/1 scale: QGglmm probit integration over η ~ N(μ, V_A+V_fixed) —
+@@ -1687,10 +1740,10 @@
+             p̄ = _gh_expect(_norm_cdf, mu, V_pred)
+             Ψ = _gh_expect(_norm_pdf, mu, V_pred)
+             return (family = :bernoulli_probit, sigma_a2 = V_A, mu = mu, latent_total_variance = latent_total,
+-                    h2_latent = V_A / latent_total, h2_observation = Ψ^2 * V_A / (p̄ * (1.0 - p̄)),
++                    h2_latent = V_A / latent_total, h2_observation = V_A == 0 ? 0.0 : Ψ^2 * V_A / (p̄ * (1.0 - p̄)),
+                     var_distribution = p̄ * (1.0 - p̄), var_link = 1.0, converged = converged,
+                     information_limited = true,
+-                    caveat = "Probit binary threshold: h2_latent is the liability (selection-relevant) scale (V_link = 1, Dempster–Lerner 1950); h2_observation is the observed-0/1 scale via the QGglmm probit integration = the Dempster–Lerner transform z²/[p(1−p)] (verified equal), always < h2_latent. information_limited = true: this flag marks the tested design; available five-seed recovery does not establish a population bias direction or cause for σ²a. Both h² scales inherit uncertainty in σ²a. Plug-in point estimates (no calibrated interval).",
++                    caveat = "Probit binary threshold: h2_latent is the liability (selection-relevant) scale (V_link = 1, Dempster–Lerner 1950); h2_observation is the observed-0/1 scale via the QGglmm probit integration = the Dempster–Lerner transform z²/[p(1−p)] (verified equal). In the exact finite-moment model, h2_observation is no greater than h2_latent; equal at zero genetic variance. Finite quadrature approximates this ordering. information_limited = true: this flag marks the tested design; available five-seed recovery does not establish a population bias direction or cause for σ²a. Both h² scales inherit uncertainty in σ²a. Plug-in point estimates (no calibrated interval).",
+                     method = :probit_liability)
+         else
+             # ORDINAL (K>2) observed scale — PER-CATEGORY. For each category k the observed
+@@ -1702,14 +1755,14 @@
+             # (`comparator/qgglmm_ordinal_observed/`).
+             cutpoints === nothing &&
+                 throw(ArgumentError("nongaussian_heritability for :ordered_probit needs the cutpoints (from the fit's variance_components.cutpoints or the OrderedProbitResponse family object)"))
+-            θ = vcat(-Inf, Float64.(collect(cutpoints)), Inf)   # θ_0 .. θ_K
++            θ = vcat(-Inf, _h2_cutpoints(cutpoints), Inf)   # θ_0 .. θ_K
+             K = length(θ) - 1
+             h2_by_cat = Vector{Float64}(undef, K)
+             p_min = 1.0
+             for k in 1:K
+                 p_k = _gh_expect(η -> _norm_cdf(θ[k+1] - η) - _norm_cdf(θ[k] - η), mu, V_pred)
+                 Ψ_k = _gh_expect(η -> _norm_pdf(θ[k] - η) - _norm_pdf(θ[k+1] - η), mu, V_pred)
+-                h2_by_cat[k] = Ψ_k^2 * V_A / (p_k * (1.0 - p_k))
++                h2_by_cat[k] = V_A == 0 ? 0.0 : Ψ_k^2 * V_A / (p_k * (1.0 - p_k))
+                 p_min = min(p_min, p_k)
+             end
+             return (family = :ordered_probit, sigma_a2 = V_A, mu = mu, latent_total_variance = latent_total,
+@@ -1721,7 +1774,7 @@
+                     method = :probit_liability)
+         end
+     elseif family === :gamma
+-        # Gamma (log link). LATENT (log) scale: V_link = Var[log Y] = ψ₁(shape) (trigamma) — EXACT,
++        # Gamma (log link). LATENT (log) scale: V_link = Var(log Y | η) = ψ₁(shape) (trigamma), EXACT,
+         # mean-independent (doc-19 §3.1); NON-degenerate unlike Poisson (V_link = 0).
+         # OBSERVATION/DATA scale (the NS-2017 multiplicative form): over η ~ N(μ, V_A+V_fixed),
+         # μ = exp(η), Var(y|η) = μ²/ν; Ψ = E[dμ/dη] = E[μ]; V_A,obs = Ψ²·V_A;
+@@ -1729,19 +1782,19 @@
+         # h²_obs = V_A/[e^{V_pred}(1+1/ν) − 1] (μ CANCELS). VALIDATED against QGglmm's custom
+         # Gamma model (var.func = μ²/ν) to ~5e-11 (`comparator/qgglmm_gamma_observed/`).
+         isnan(shape) && throw(ArgumentError("nongaussian_heritability for :gamma needs the shape ν (from the fit's variance_components.shape or the GammaResponse family object)"))
+-        shape > 0 || throw(ArgumentError("the Gamma shape ν must be positive"))
++        _h2_finite_real(shape, "Gamma shape"; positive = true)
+         V_link = _trigamma(shape)
+-        latent_total = V_A + V_link + V_fixed
++        latent_total = _h2_finite_total(V_pred, V_link)
+         V_pred = V_A + V_fixed
+         Ψ = exp(mu + V_pred / 2)                            # E[dμ/dη] = E[exp η]
+         var_mu = (exp(V_pred) - 1.0) * exp(2.0 * mu + V_pred)   # Var(exp η) (lognormal)
+         e_var = exp(2.0 * mu + 2.0 * V_pred) / shape        # E[Var(y|η)] = E[μ²/ν]
+-        h2_obs = Ψ^2 * V_A / (var_mu + e_var)              # = V_A/[e^{V_pred}(1+1/ν) − 1]
++        h2_obs = V_A == 0 ? 0.0 : Ψ^2 * V_A / (var_mu + e_var)              # = V_A/[e^{V_pred}(1+1/ν) − 1]
+         return (family = :gamma, sigma_a2 = V_A, mu = mu, latent_total_variance = latent_total,
+                 h2_latent = V_A / latent_total, h2_observation = h2_obs,
+                 var_distribution = e_var, var_link = V_link, converged = converged,
+                 information_limited = false,
+-                caveat = "Gamma log link: latent (log) scale V_link = trigamma(shape) = Var[log Y] (EXACT, doc-19 §3.1); observation/data scale = the NS-2017 multiplicative form V_A/[e^{V_pred}(1+1/ν)−1], validated against QGglmm's custom Gamma model.",
++                caveat = "Gamma log link: latent (log) scale V_link = trigamma(shape) = Var(log Y | eta), the log-residual variance (EXACT, doc-19 §3.1); observation/data scale = the NS-2017 multiplicative form V_A/[e^{V_pred}(1+1/ν)−1], validated against QGglmm's custom Gamma model.",
+                 method = :gamma_trigamma_latent)
+     else
+         throw(ArgumentError("nongaussian_heritability supports :gaussian/:poisson/:bernoulli/:binomial (observation scale), :bernoulli_probit/:ordered_probit (liability scale), and :gamma (latent/log scale, V_link = trigamma(shape)); family :$family is follow-up (beta-binomial / negative-binomial overdispersion each need their own link-variance derivation)"))
+@@ -1776,12 +1829,16 @@
+ refuses a single h²). **Observation/data scale** uses the QGglmm decomposition
+ `V_A,obs = Ψ²·V_A` (`Ψ = E[g⁻¹′(η)]`, the average inverse-link derivative; by Stein's
+ lemma the exact variance of the regression of the mean on the breeding value, so
+-`h2_observation ∈ (0,1)`), integrating over the LINEAR-PREDICTOR distribution
++the theoretical population projection satisfies `h2_observation ∈ [0,1]` when
++observation variance is finite and positive, including zero at `V_A = 0`), integrating
++over the LINEAR-PREDICTOR distribution
+ `η ~ N(μ, V_A + V_fixed)` (the π²/3 logit residual is NOT added to the integration
+-variance) via the module's existing 20-node Gauss–Hermite for logit and the
++variance) via the module's existing 20-node Gauss–Hermite for logit, which approximates
++the population moments, and the
+ log-normal closed form for Poisson. Estimand: PROPORTION for Bernoulli/Binomial,
+-COUNT for Poisson; Gaussian reduces to `V_A/(V_A+σ²e)` on both scales. **Threshold
+-families** (`:bernoulli_probit`, `:ordered_probit`) report the **liability** scale: the
++COUNT for Poisson; Gaussian reduces to `V_A/(V_A+σ²e)` on both scales. Gaussian uses
++this conditional ratio on both scales and requires `predictor_variance = 0`; nonzero
++fixed-effect spread is rejected. **Threshold families** (`:bernoulli_probit`, `:ordered_probit`) report the **liability** scale: the
+ latent scale IS the liability with `V_link = 1` (Dempster–Lerner 1950), the
+ selection-relevant primary heritability `V_A/(V_A+1+V_fixed)` — returned in `h2_latent`
+ (independent of μ and the cutpoints). The BINARY `:bernoulli_probit` observed-0/1 scale IS
+@@ -1791,10 +1848,14 @@
+ 
+ `mu` (link-scale population mean) defaults to the fit's single intercept; with >1
+ fixed effect it is REQUIRED (and `predictor_variance`, the fixed-effect linear-
+-predictor variance, is the NS "variance explained by fixed effects" term). The
++predictor variance, is the NS "variance explained by fixed effects" term). This is
++additional fixed-predictor spread, not total predictor variance. `V_η = V_A + V_fixed`
++assumes zero covariance between genetic and fixed contributions and a normal
++predictor approximation. The
+ function REFUSES a non-converged fit; sets `information_limited = true` for the tested single-trial Bernoulli condition; available five-seed evidence does not establish a population bias direction or cause; and returns `h2_observation = NaN`
+-with a caveat for a per-record varying `n_trials` (a single data-scale h² is
+-ill-defined under varying denominators — not silently averaged).
++with a caveat for genuinely varying per-record `n_trials` (a single data-scale h²
++is ill-defined under varying denominators). Constant fit trial vectors use their
++common scalar trial count.
+ 
+ EXPERIMENTAL, dense/validation-scale; exact in its closed-form limbs and anchored to
+ an independent quadrature oracle in `test/runtests.jl`, but its estimates inherit uncertainty in latent
+@@ -1808,17 +1869,21 @@
+                                   predictor_variance::Real = 0.0)
+     fit.converged ||
+         throw(ArgumentError("nongaussian_heritability refuses a non-converged fit (converged = false)"))
+-    V_A = Float64(fit.variance_components.sigma_a2)
++    V_A = _h2_finite_real(fit.variance_components.sigma_a2, "sigma_a2"; nonnegative = true)
++    V_fixed = _h2_finite_real(predictor_variance, "predictor_variance"; nonnegative = true)
++    fit.family === :gaussian && predictor_variance != 0 &&
++        throw(ArgumentError("Gaussian heritability is conditional on fixed effects; predictor_variance must be zero"))
+     μ = if mu !== nothing
+-        Float64(mu)
++        _h2_finite_real(mu, "mu")
+     elseif length(fit.beta) == 1
+-        fit.beta[1]
++        _h2_finite_real(fit.beta[1], "mu")
+     else
+         throw(ArgumentError("mu (link-scale population mean) is required: the fit has $(length(fit.beta)) fixed effects, so the intercept is ambiguous — supply `mu` (and `predictor_variance` for the fixed-effect spread)"))
+     end
+-    nt = n_trials === nothing ? fit.n_trials : n_trials
++    V_pred = _h2_finite_total(V_A, V_fixed)
++    nt = fit.family === :binomial ? _h2_trials(n_trials === nothing ? fit.n_trials : n_trials) : 1
+     if fit.family === :binomial && nt isa AbstractVector
+-        lt = V_A + _VAR_LOGISTIC + Float64(predictor_variance)
++        lt = _h2_finite_total(V_pred, _VAR_LOGISTIC)
+         return (family = :binomial, sigma_a2 = V_A, mu = μ, latent_total_variance = lt,
+                 h2_latent = V_A / lt, h2_observation = NaN, var_distribution = NaN,
+                 var_link = _VAR_LOGISTIC, converged = fit.converged, information_limited = false,
+@@ -1827,14 +1892,14 @@
+     end
+     nt_int = if fit.family === :binomial
+         nt === nothing && throw(ArgumentError("family = :binomial needs n_trials (from the fit or the keyword)"))
+-        Int(nt)
++        nt
+     else
+         1
+     end
+-    σ²e = fit.family === :gaussian ? Float64(fit.variance_components.sigma_e2) : NaN
++    σ²e = fit.family === :gaussian ? _h2_finite_real(fit.variance_components.sigma_e2, "sigma_e2"; positive = true) : NaN
+     cp = fit.family === :ordered_probit ? fit.variance_components.cutpoints : nothing
+-    sh = fit.family === :gamma ? Float64(fit.variance_components.shape) : NaN
+-    return _nongaussian_h2_core(fit.family, V_A, μ, σ²e, nt_int, Float64(predictor_variance),
++    sh = fit.family === :gamma ? _h2_finite_real(fit.variance_components.shape, "Gamma shape"; positive = true) : NaN
++    return _nongaussian_h2_core(fit.family, V_A, μ, σ²e, nt_int, V_fixed,
+                                 fit.converged; cutpoints = cp, shape = sh)
+ end
+ 
+@@ -1842,7 +1907,12 @@
+                                   predictor_variance::Real = 0.0)
+     fam_sym, nt, σ²e = _h2_family_params(family)
+     cp = family isa OrderedProbitResponse ? family.thresholds : nothing
+-    sh = family isa GammaResponse ? Float64(family.shape) : NaN
+-    return _nongaussian_h2_core(fam_sym, Float64(sigma_a2), Float64(mu), σ²e, nt,
+-                                Float64(predictor_variance), true; cutpoints = cp, shape = sh)
+-end
++    sh = family isa GammaResponse ? _h2_finite_real(family.shape, "Gamma shape"; positive = true) : NaN
++    V_A = _h2_finite_real(sigma_a2, "sigma_a2"; nonnegative = true)
++    μ = _h2_finite_real(mu, "mu")
++    V_fixed = _h2_finite_real(predictor_variance, "predictor_variance"; nonnegative = true)
++    fam_sym === :gaussian && predictor_variance != 0 &&
++        throw(ArgumentError("Gaussian heritability is conditional on fixed effects; predictor_variance must be zero"))
++    return _nongaussian_h2_core(fam_sym, V_A, μ, σ²e, nt,
++                                V_fixed, true; cutpoints = cp, shape = sh)
++end
+--- /dev/null
++++ b/test/nongaussian_h2_descriptor_regression.jl
+@@ -0,0 +1,100 @@
++using Test, HSquared, LinearAlgebra
++const H = HSquared
++function fixture(family; va=1.0, ve=1.0, shape=2.0, cuts=[-1.0,1.0], nt=nothing, beta=[0.0], converged=true)
++    vc = family === :gaussian ? (sigma_a2=va,sigma_e2=ve) : family === :gamma ?
++        (sigma_a2=va,shape=shape) : family === :ordered_probit ?
++        (sigma_a2=va,cutpoints=cuts) : (sigma_a2=va,)
++    H.NonGaussianFit(vc,-1.0,beta,zeros(2),[1,2],converged,family,:laplace,nt,nothing,false,nothing)
++end
++@testset "H2 descriptor contract" begin
++    @testset "Gaussian conditional and ordinary controls" begin
++        h=H.nongaussian_heritability(1.0,0.0,H.GaussianResponse(1.0))
++        @test h.h2_latent == h.h2_observation == .5
++        @test h.latent_total_variance == 2.0
++        @test_throws ArgumentError H.nongaussian_heritability(1.0,0.0,H.GaussianResponse(1.0);predictor_variance=8.0)
++        @test_throws ArgumentError H.nongaussian_heritability(fixture(:gaussian);predictor_variance=8.0)
++        @test_throws ArgumentError H.nongaussian_heritability(1.0,0.0,H.GaussianResponse(1.0);predictor_variance=big"1e-400")
++        @test_throws ArgumentError H.nongaussian_heritability(fixture(:gaussian);predictor_variance=big"1e-400")
++        @test H.nongaussian_heritability(2.0,0.0,H.GaussianResponse(3.0)).h2_observation == .4
++        @test H.nongaussian_heritability(1.0,20.0,H.GaussianResponse(1.0)).h2_observation == .5
++    end
++    @testset "Original and converted domains" begin
++        bad=(-.5,big"-1e-400",NaN,Inf,-Inf,big"1e400")
++        for x in bad
++            @test_throws ArgumentError H.nongaussian_heritability(x,0.0,H.PoissonResponse())
++            @test_throws ArgumentError H.nongaussian_heritability(fixture(:poisson;va=x))
++            @test_throws ArgumentError H.nongaussian_heritability(1.0,0.0,H.PoissonResponse();predictor_variance=x)
++            @test_throws ArgumentError H.nongaussian_heritability(fixture(:poisson);predictor_variance=x)
++        end
++        for x in (NaN,Inf,-Inf,big"1e400")
++            @test_throws ArgumentError H.nongaussian_heritability(1.0,x,H.PoissonResponse())
++            @test_throws ArgumentError H.nongaussian_heritability(fixture(:poisson);mu=x)
++        end
++        @test_throws ArgumentError H.nongaussian_heritability(fixture(:poisson;beta=[Inf]))
++        @test_throws ArgumentError H.nongaussian_heritability(floatmax(Float64),0.0,H.PoissonResponse();predictor_variance=floatmax(Float64))
++        @test_throws ArgumentError H.nongaussian_heritability(fixture(:gaussian;va=floatmax(Float64),ve=floatmax(Float64)))
++        @test isfinite(H.nongaussian_heritability(floatmax(Float64),0.0,H.GaussianResponse(1.0)).h2_latent)
++        @test H.nongaussian_heritability(big"1e-400",0.0,H.GaussianResponse(1.0)).h2_observation == 0.0
++        for field in (0.0,-1.0,Inf,NaN,big"1e400",big"1e-400")
++            @test_throws ArgumentError H.nongaussian_heritability(fixture(:gaussian;ve=field))
++            @test_throws ArgumentError H.nongaussian_heritability(fixture(:gamma;shape=field))
++        end
++        for cuts in (Float64[],[NaN],[Inf],[1.0,1.0],[1.0,-1.0],[big"1e400"],[big"1.0",big"1.000000000000000000000000000000000000000000001"])
++            @test_throws ArgumentError H.nongaussian_heritability(fixture(:ordered_probit;cuts=cuts))
++        end
++    end
++    @testset "Common trial normalization and varying fence" begin
++        scalar=H.nongaussian_heritability(fixture(:binomial;nt=5))
++        vector=H.nongaussian_heritability(fixture(:binomial;nt=[5,5]))
++        @test scalar.h2_observation ≈ .5040211874317815 atol=1e-14
++        @test vector == scalar
++        @test H.nongaussian_heritability(fixture(:binomial;nt=[2,3]);n_trials=[5,5]) == scalar
++        @test H.nongaussian_heritability(fixture(:binomial;nt=[5,5]);n_trials=5.0) == scalar
++        @test H.nongaussian_heritability(fixture(:binomial;nt=[1,1])) == H.nongaussian_heritability(fixture(:binomial;nt=1))
++        @test H.nongaussian_heritability(fixture(:binomial;nt=[typemax(Int),typemax(Int)])) == H.nongaussian_heritability(fixture(:binomial;nt=typemax(Int)))
++        varying=H.nongaussian_heritability(fixture(:binomial;nt=[5,6]))
++        @test isfinite(varying.h2_latent) && isnan(varying.h2_observation)
++        @test occursin("varying",varying.caveat)
++        for nt in (Int[],[0,0],[-1,2],[1.5,2.0],[NaN],[Inf],[big"1e400"],0,-1,1.5,NaN,Inf,big"1e400",nothing)
++            @test_throws ArgumentError H.nongaussian_heritability(fixture(:binomial);n_trials=nt)
++        end
++        @test_throws ArgumentError H.nongaussian_heritability(fixture(:binomial;nt=[5,6],va=-1.0))
++        @test_throws ArgumentError H.nongaussian_heritability(fixture(:binomial;nt=[5,6]);predictor_variance=Inf)
++    end
++    @testset "Projection limits and formula preservation" begin
++        for fam in (H.GaussianResponse(1.0),H.PoissonResponse(),H.BernoulliResponse(),H.BernoulliProbitResponse(),H.GammaResponse(2.0))
++            @test H.nongaussian_heritability(0.0,0.0,fam).h2_observation == 0.0
++            @test H.nongaussian_heritability(0.0,1000.0,fam).h2_observation == 0.0
++        end
++        @test isnan(H.nongaussian_heritability(0.0,0.0,H.PoissonResponse()).h2_latent)
++        @test all(iszero,H.nongaussian_heritability(0.0,1000.0,H.OrderedProbitResponse([-1.0,1.0])).h2_observation_by_category)
++        for va in (.2,1.0), vf in (0.0,.5), mu in (0.0,1.2)
++            v=va+vf; lambda=exp(mu+v/2)
++            po=H.nongaussian_heritability(va,mu,H.PoissonResponse();predictor_variance=vf)
++            @test po.h2_observation ≈ va/(expm1(v)+1/lambda) rtol=1e-13
++            @test po.latent_total_variance == v
++            for shape in (1.0,2.0)
++                ga=H.nongaussian_heritability(va,mu,H.GammaResponse(shape);predictor_variance=vf)
++                @test ga.h2_observation ≈ va/(exp(v)*(1+1/shape)-1) rtol=1e-13
++                @test ga.h2_latent ≈ va/(v+H._trigamma(shape)) rtol=1e-13
++                @test ga.h2_observation ≈ H.nongaussian_heritability(va,4.2,H.GammaResponse(shape);predictor_variance=vf).h2_observation rtol=1e-13
++            end
++        end
++        # Independent 64-node oracle at one ordinary positive fixed-spread point.
++        k=64
++        eig=eigen(SymTridiagonal(zeros(k),[sqrt(j/2) for j in 1:k-1]))
++        weights=eig.vectors[1,:].^2
++        eta=.3 .+ sqrt(2*.8).*eig.values
++        probabilities=1 ./ (1 .+ exp.(-eta))
++        mean_p=sum(weights.*probabilities)
++        derivative=sum(weights.*probabilities.*(1 .- probabilities))
++        variance_p=sum(weights.*probabilities.^2)-mean_p^2
++        logit=H.nongaussian_heritability(.5,.3,H.BinomialResponse(5);predictor_variance=.3)
++        @test logit.h2_observation ≈ .5*derivative^2/(variance_p+derivative/5) rtol=1e-3
++        @test logit.h2_latent ≈ .5/(.8+pi^2/3) rtol=1e-14
++        @test_throws ArgumentError H.nongaussian_heritability(fixture(:poisson;converged=false))
++        @test_throws ArgumentError H.nongaussian_heritability(fixture(:poisson;beta=[0.0,1.0]))
++        @test_throws ArgumentError H.nongaussian_heritability(1.0,0.0,H.NegativeBinomialResponse(2.0))
++        @test_throws ArgumentError H._nongaussian_h2_core(:poisson,-1.0,0.0,NaN,1,0.0,true)
++    end
++end
+--- a/test/runtests.jl
++++ b/test/runtests.jl
+@@ -11233,3 +11233,7 @@
+     include(joinpath(@__DIR__, "nongaussian_finite_ingress_regression.jl"))
+ end
+ 
++
++module E1NonGaussianH2Descriptors
++    include(joinpath(@__DIR__, "nongaussian_h2_descriptor_regression.jl"))
++end

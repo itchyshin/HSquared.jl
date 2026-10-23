@@ -1,0 +1,12 @@
+{
+  "timestamp_utc": "2026-09-30T20:51:21.878390+00:00",
+  "head": "6271cfd58651e69cd27a64dcf02cb8960a29e260",
+  "source_tree_sha256": "b96cfde8d8f716908a44c7d4ddacda7008c40ef4263073def5f69ee017923fe8",
+  "multivariate_sha256": "f975657ef43d86045171a9265e5536370043a46fc72880a3e80ee87fcad699c2",
+  "runner_sha256": "f3e7a9aab3842f1f934a8ef1ebf8050d97bcc78feb85a38cb5b8a6199bff0eda",
+  "patch_sha256": "105dcd37e391d06efbf042bfac85de622a5087af0329e79c8ad462f8f3c73b43",
+  "independent_review_sha256": "d6b82defaea02c6a0594a3b68850687db1cda536f287aead766e1fb8d5531aee",
+  "independent_final_tests": 173,
+  "campaign_restarted": false,
+  "status": "Applied bounded independently reviewed patch; complete programme acceptance remains pending."
+}

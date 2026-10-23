@@ -1,0 +1,167 @@
+{
+  "changed_baseline_function_bodies": [
+    "fit_variance_components",
+    "fit_sparse_reml",
+    "_fit_ai_reml_diagnostics",
+    "henderson_mme"
+  ],
+  "all_other_extracted_whole_bodies_unchanged": true,
+  "number_of_unchanged_bodies": 124,
+  "computational_function_bodies_equal_after_removing_spec_selection": true,
+  "changed_spans": [
+    {
+      "operation": "insert",
+      "baseline": [
+        68,
+        67
+      ],
+      "proposed": [
+        68,
+        75
+      ]
+    },
+    {
+      "operation": "replace",
+      "baseline": [
+        105,
+        105
+      ],
+      "proposed": [
+        113,
+        115
+      ]
+    },
+    {
+      "operation": "insert",
+      "baseline": [
+        364,
+        363
+      ],
+      "proposed": [
+        374,
+        374
+      ]
+    },
+    {
+      "operation": "insert",
+      "baseline": [
+        365,
+        364
+      ],
+      "proposed": [
+        376,
+        376
+      ]
+    },
+    {
+      "operation": "replace",
+      "baseline": [
+        401,
+        401
+      ],
+      "proposed": [
+        413,
+        413
+      ]
+    },
+    {
+      "operation": "insert",
+      "baseline": [
+        439,
+        438
+      ],
+      "proposed": [
+        451,
+        451
+      ]
+    },
+    {
+      "operation": "insert",
+      "baseline": [
+        440,
+        439
+      ],
+      "proposed": [
+        453,
+        453
+      ]
+    },
+    {
+      "operation": "replace",
+      "baseline": [
+        481,
+        481
+      ],
+      "proposed": [
+        495,
+        495
+      ]
+    },
+    {
+      "operation": "insert",
+      "baseline": [
+        567,
+        566
+      ],
+      "proposed": [
+        581,
+        581
+      ]
+    },
+    {
+      "operation": "insert",
+      "baseline": [
+        568,
+        567
+      ],
+      "proposed": [
+        583,
+        583
+      ]
+    },
+    {
+      "operation": "replace",
+      "baseline": [
+        721,
+        721
+      ],
+      "proposed": [
+        737,
+        737
+      ]
+    },
+    {
+      "operation": "insert",
+      "baseline": [
+        1259,
+        1258
+      ],
+      "proposed": [
+        1275,
+        1275
+      ]
+    },
+    {
+      "operation": "insert",
+      "baseline": [
+        1260,
+        1259
+      ],
+      "proposed": [
+        1277,
+        1277
+      ]
+    },
+    {
+      "operation": "replace",
+      "baseline": [
+        1273,
+        1273
+      ],
+      "proposed": [
+        1291,
+        1291
+      ]
+    }
+  ]
+}

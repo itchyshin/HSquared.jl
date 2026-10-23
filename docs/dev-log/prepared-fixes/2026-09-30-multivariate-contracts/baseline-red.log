@@ -1,0 +1,28 @@
+ERROR: LoadError: Some tests did not pass: 6 passed, 2 failed, 0 errored, 0 broken.
+in expression starting at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:2
+Multivariate finite construction: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:4
+  Expression: build(fill(1.0e308, 2, 1))
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:4 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+Multivariate finite construction: Test Failed at /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:4
+  Expression: build(fill(1.0e308, 2, 1))
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:4 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] top-level scope
+   @ /private/tmp/hsq-multivariate-contracts-fix-20260930/test/multivariate_contract_regression.jl:3
+Test Summary:                    | Pass  Fail  Total  Time
+Multivariate finite construction |    6     2      8  1.7s

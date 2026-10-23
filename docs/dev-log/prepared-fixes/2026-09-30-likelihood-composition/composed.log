@@ -1,0 +1,12 @@
+Test Summary:                          | Pass  Total   Time
+likelihood input and result boundaries |  202    202  11.3s
+Test Summary:                    | Pass  Total  Time
+Likelihood uncertainty contracts |  192    192  2.8s
+Test Summary:                                | Pass  Total  Time
+Derived component step precedes rail returns |   22     22  0.3s
+Test Summary:                               | Pass  Total  Time
+likelihood profile PEV and scalar contracts |   71     71  0.3s
+Test Summary:                          | Pass  Total  Time
+independent supplied-variance controls |   23     23  0.7s
+Test Summary:                        | Pass  Total  Time
+bootstrap refit convergence contract |    4      4  0.0s

@@ -1,0 +1,4 @@
+MH01_REVISION2_REFUSES_ORIGINAL_NONZERO_UNDERFLOW
+MH02_REVISION2_REJECTS_UNDERFLOW original=1.0e-200
+Test Summary:                         | Pass  Total  Time
+Independent selected trace challenges |   28     28  0.4s

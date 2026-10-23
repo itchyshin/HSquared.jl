@@ -1,0 +1,12 @@
+# HSquared.jl e2e wall receipts  2026-09-23T06:22:38.807
+# git_sha=e05fcf0e  julia=1.10.0  host=w-kw3k3y6229.psych.ualberta.ca
+# LBTConfig([ILP64] libopenblas64_.dylib)
+# JULIA_NUM_THREADS=1  OPENBLAS_NUM_THREADS=1
+# NOT CI / OPT-IN. No public performance claim. R twin: no parallel wall-receipt harness.
+cell	kind	pair	before_s	after_s	speedup	host	totoro	sha	note
+hsq-animal-fit-q500	animal_REML	measured_now	0.023000	0.004912	4.682	w-kw3k3y6229.psych.ualberta.ca	N	e05fcf0e	after=gene-drop halfsib post-#371 median-of-3 conv=true iters=8 min=0.0021 q=500 nnzA=2340; before=2026-06-20 cpu_fit wall (DIFFERENT y=deterministic near-null — soft context only, not same-DGP)
+hsq-animal-fit-q2000	animal_REML	measured_now	0.084000	0.009821	8.553	w-kw3k3y6229.psych.ualberta.ca	N	e05fcf0e	after=gene-drop halfsib post-#371 median-of-3 conv=true iters=9 min=0.0095 q=2000 nnzA=9360; before=2026-06-20 cpu_fit wall (DIFFERENT y=deterministic near-null — soft context only, not same-DGP)
+hsq-pev-reliability-q500	post_fit_uncertainty	dense_vs_selinv	0.012500	0.000311	40.182	w-kw3k3y6229.psych.ualberta.ca	N	e05fcf0e	before=dense PEV banked 2026-06-20 cpu_fit 0.0125s (live dense skipped: OpenBLAS hang); after=selinv median-of-3; gene-drop fit conv=true
+hsq-multi-effect-K2-q500	multi_effect	dense_vs_sparse_me	2.552162	0.003635	702.188	w-kw3k3y6229.psych.ualberta.ca	N	e05fcf0e	before=dense NelderMead (1 timed rep); after=sparse AI-REML median-of-3; estimator confound disclosed
+hsq-animal-fit-q10000	animal_REML	measured_now		0.031218		w-kw3k3y6229.psych.ualberta.ca	N	e05fcf0e	gene-drop halfsib post-#371; conv=true iters=7; q=10000 nnzA=46800 min=0.0311; June q8k hist=0.3340s different DGP
+hsq-animal-fit-q20000-large	large_pedigree	measured_now		0.040177		w-kw3k3y6229.psych.ualberta.ca	N	e05fcf0e	gene-drop halfsib large e2e; conv=true iters=4; nnzA=92000 min=0.0395

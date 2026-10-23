@@ -1,0 +1,29 @@
+{
+  "candidate_head": "9c10f09c1bdc7f7ab19cb07c339d1dc83179f429",
+  "review_sha256": "535ef44974ba0d6e4b1bad3f0ee68e5c28aedd723ae7e3ec3d5f81a60486494b",
+  "source_frozen_sha256": {
+    "src/postfit.jl": "d065d525ccdca8c8d881432f3c312141929571d52629f38bf72cfc513bdbf71f",
+    "src/genomic.jl": "76c4053d00ed3f35db133089c5f0bfb979c1da70503a4697054bf9fa002d4b9f"
+  },
+  "prepared": {
+    "src/postfit.jl": "28486afa2c11adf38aeda6149d9b858f7968f751dbea34ef09174243d721adc3",
+    "src/genomic.jl": "0b68901b2a7f1e5cd72d5046f6ae46ec9c9ab70dfb7f927012f046cfe333e40e",
+    "test/runtests.jl": "051fdc873c692989cbc1e93bc5e55f9db895d457e2eabcf18d9cab520b76daf9",
+    "docs/src/genomics-qtl-gpu-hpc.md": "d499c33d4805abcbb2b55a0579b32ae26673b689502726590b960c32668a3a26"
+  },
+  "patch_sha256": "85cd8b1b2fe6a08714edfde46b5079f3b5321ac29473e5610ea8909c0340db8e",
+  "static_parse": "passed: Julia Meta.parseall on src/postfit.jl, src/genomic.jl, test/runtests.jl",
+  "runtime_test": "RED/GREEN PASSED: red baseline failed as expected at fitted convergence assertion; green identical isolated oracle script passed all checks. JULIA_DEPOT_PATH=/private/tmp/hsq-goal-julia-depot:/Users/z3437171/.julia, OPENBLAS_NUM_THREADS=1, JULIA_NUM_THREADS=1, --startup-file=no --compiled-modules=no; no fits/optimizer.",
+  "patch_check": "git apply --check passed against clean copies of the four pinned HEAD files; applying produced byte-identical prepared hashes",
+  "runtime_inputs": {
+    "Manifest.toml": "c5940f2be0347f7ff987468aed67f17070f556a0aa99e0e5ec5317898cfa0fad",
+    "check_marker_contract.jl": "aced423e1374171269f62132ece49bbe4eda752c02cfe08743a2088959cc7ba2",
+    "red_baseline_postfit_sha256": "28486afa2c11adf38aeda6149d9b858f7968f751dbea34ef09174243d721adc3",
+    "red_baseline_genomic_sha256": "0b68901b2a7f1e5cd72d5046f6ae46ec9c9ab70dfb7f927012f046cfe333e40e",
+    "logs": {
+      "red-baseline-result.txt": "c25a71329e8fd60dba9f107479cda0ef07683019244311865fe8e809c04bfa6c",
+      "first-attempt-user-depot-lock.txt": "43c00d61523cf3caba71cd963b0af1643811fc3a93d80cedd81ac0cef626ab46",
+      "second-attempt-scratch-depot.txt": "11d83515fde6feed64c8a35d741f89d2f1c333edad2185d4c2cf6d3b0bb1ea3a"
+    }
+  }
+}

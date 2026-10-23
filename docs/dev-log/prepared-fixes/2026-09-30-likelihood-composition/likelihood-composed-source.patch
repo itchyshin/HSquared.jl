@@ -1,0 +1,1239 @@
+--- a/src/likelihood.jl
++++ b/src/likelihood.jl
+@@ -1,4 +1,83 @@
+ const DEFAULT_MAX_DENSE_CELLS = 1_000_000
++
++# Likelihood ingress shares the sparse QR and precision contracts with the
++# iterative engine. Validation happens once before optimization, including p=0.
++function _likelihood_check_finite(name::AbstractString, value)
++    finite = value isa Number ? isfinite(value) :
++             all(isfinite, issparse(value) ? nonzeros(value) : value)
++    finite || throw(ArgumentError("likelihood numerical range: $name must be finite"))
++    return value
++end
++
++function _likelihood_positive(name::AbstractString, value::Real; precision::Bool = false)
++    (isfinite(value) && value > 0) ||
++        throw(ArgumentError("$name must be finite and positive"))
++    return precision ? _finite_positive_variance_float64(name, value) :
++                       _finite_positive_float64(name, value)
++end
++
++function _likelihood_design(y::AbstractVector, X::AbstractMatrix; method::Symbol = :REML)
++    method in (:ML, :REML) || throw(ArgumentError("method must be :ML or :REML"))
++    n = length(y)
++    n > 0 || throw(ArgumentError("at least one response record is required"))
++    size(X, 1) == n || throw(ArgumentError("X must have one row per response value"))
++    yv = _likelihood_check_finite("converted y", Float64.(y))
++    Xs = _likelihood_check_finite("converted X", sparse(Float64.(X)))
++    method == :REML && size(Xs, 2) >= n &&
++        throw(ArgumentError("REML requires fewer fixed-effect columns than observations"))
++    _require_full_fixed_effect_rank(Xs)
++    return yv, Xs
++end
++
++function _likelihood_random_inputs(Z::AbstractMatrix, Q::AbstractMatrix, n::Integer, i::Int)
++    size(Z, 1) == n || throw(ArgumentError("Z[$i] must have one row per record"))
++    size(Q, 1) == size(Q, 2) || throw(ArgumentError("Ainv[$i] must be square"))
++    size(Z, 2) == size(Q, 1) || throw(ArgumentError("Z[$i] columns must match Ainv[$i] dimensions"))
++    Zs = _likelihood_check_finite("converted Z[$i]", sparse(Float64.(Z)))
++    Qs, factor = _validate_matrix_free_precision(sparse(Float64.(Q)), i)
++    return Zs, Qs, factor
++end
++
++function _likelihood_effect_ids(ids, q::Integer, name::AbstractString)
++    values = ids === nothing ? collect(1:q) : collect(ids)
++    length(values) == q || throw(ArgumentError("$name length must match relationship dimensions"))
++    length(unique(values)) == q || throw(ArgumentError("$name must contain unique IDs"))
++    return values
++end
++
++function _likelihood_block_ids(ids, qs)
++    ids === nothing || length(ids) == length(qs) ||
++        throw(ArgumentError("ids must contain one ID vector per random effect"))
++    return [_likelihood_effect_ids(ids === nothing ? nothing : ids[i], qs[i], "ids[$i]")
++            for i in eachindex(qs)]
++end
++
++function _likelihood_validated_spec(spec::AnimalModelSpec; method = spec.method, supplied::Bool = false)
++    spec.family isa GaussianFamily || throw(ArgumentError("family must be GaussianFamily()"))
++    normalized_method = _coerce_method(method)
++    normalized_method in (:ML, :REML) || throw(ArgumentError("method must be :ML or :REML"))
++    yv, Xs = _likelihood_design(spec.y, spec.X; method = supplied ? :ML : normalized_method)
++    Zs, Q, factor = _likelihood_random_inputs(spec.Z, spec.Ainv, length(yv), 1)
++    ids = _likelihood_effect_ids(spec.ids, size(Q, 1), "ids")
++    rdiag = Q == sparse(Float64.(spec.Ainv)) ? spec.relationship_diag : nothing
++    validated = animal_model_spec(yv, Xs, Zs, Q; ids = ids, family = spec.family,
++                                  method = normalized_method, relationship_diag = rdiag)
++    return validated, factor
++end
++
++function _likelihood_result_finite(loglik, beta, effects...)
++    _likelihood_check_finite("log-likelihood", loglik)
++    _likelihood_check_finite("fixed effects", beta)
++    for effect in effects
++        _likelihood_check_finite("random effects", effect)
++    end
++    return nothing
++end
++
++# Only expected numerical range/factorization failures become rejected proposals.
++_likelihood_proposal_failure(err) = err isa PosDefException || err isa SingularException ||
++    err isa LinearAlgebra.LAPACKException || err isa LinearAlgebra.ZeroPivotException ||
++    (err isa ArgumentError && startswith(err.msg, "likelihood numerical range:"))
+ 
+ """
+     GaussianLikelihoodResult
+@@ -110,14 +189,13 @@
+     method = spec.method,
+     max_dense_cells::Integer = DEFAULT_MAX_DENSE_CELLS,
+ )
+-    sigma_a2 > 0 ||
+-        throw(ArgumentError("sigma_a2 must be positive"))
+-    sigma_e2 > 0 ||
+-        throw(ArgumentError("sigma_e2 must be positive"))
++    sigma_a2 = _likelihood_positive("sigma_a2", sigma_a2)
++    sigma_e2 = _likelihood_positive("sigma_e2", sigma_e2)
+ 
+     normalized_method = _coerce_method(method)
+     normalized_method in (:ML, :REML) ||
+         throw(ArgumentError("method must be :ML or :REML"))
++    spec, _ = _likelihood_validated_spec(spec; method = normalized_method)
+     _check_dense_validation_size(spec, max_dense_cells)
+ 
+     A = _dense_relationship_covariance(spec.Ainv)
+@@ -125,16 +203,9 @@
+ end
+ 
+ function _dense_relationship_covariance(Ainv_input::AbstractMatrix)
+-    Ainv = Matrix{Float64}(Ainv_input)
+-    all(isfinite, Ainv) || throw(ArgumentError("Ainv must contain only finite values"))
+-    issymmetric(Ainv) || throw(ArgumentError("Ainv must be symmetric"))
+-    try
+-        cholesky(Symmetric(Ainv); check = true)
+-    catch err
+-        (err isa PosDefException || err isa SingularException) || rethrow()
+-        throw(ArgumentError("Ainv must be positive definite"))
+-    end
+-    return inv(Symmetric(Ainv))
++    canonical, _ = _validate_matrix_free_precision(sparse(Float64.(Ainv_input)), 1)
++    A = inv(Symmetric(Matrix{Float64}(canonical)))
++    return _likelihood_check_finite("relationship covariance", A)
+ end
+ 
+ function _gaussian_loglik_with_covariance(
+@@ -144,8 +215,8 @@
+     A::AbstractMatrix,
+     normalized_method::Symbol,
+ )
+-    sigma_a2 > 0 || throw(ArgumentError("sigma_a2 must be positive"))
+-    sigma_e2 > 0 || throw(ArgumentError("sigma_e2 must be positive"))
++    sigma_a2 = _likelihood_positive("sigma_a2", sigma_a2)
++    sigma_e2 = _likelihood_positive("sigma_e2", sigma_e2)
+ 
+     y = Float64.(spec.y)
+     X = Matrix{Float64}(spec.X)
+@@ -157,6 +228,7 @@
+         throw(ArgumentError("REML requires fewer fixed-effect columns than observations"))
+ 
+     V = _dense_marginal_covariance(Z, A, sigma_a2, sigma_e2)
++    _likelihood_check_finite("marginal covariance", V)
+     cholV = cholesky(V; check = true)
+ 
+     Vinv_y = cholV \ y
+@@ -176,6 +248,7 @@
+         -0.5 * ((n - p) * log(2 * pi) + logdetV + logdetXtVinvX + quad)
+     end
+ 
++    _likelihood_result_finite(loglik, beta)
+     return GaussianLikelihoodResult(
+         loglik,
+         beta,
+@@ -197,8 +270,8 @@
+ does not estimate variance components and it only evaluates REML.
+ """
+ function sparse_reml_loglik(spec::AnimalModelSpec, sigma_a2::Real, sigma_e2::Real)
+-    sigma_a2 = _finite_positive_variance_float64("sigma_a2", sigma_a2)
+-    sigma_e2 = _finite_positive_variance_float64("sigma_e2", sigma_e2)
++    sigma_a2 = _likelihood_positive("sigma_a2", sigma_a2; precision = true)
++    sigma_e2 = _likelihood_positive("sigma_e2", sigma_e2; precision = true)
+ 
+     n = length(spec.y)
+     p = size(spec.X, 2)
+@@ -212,17 +285,7 @@
+ end
+ 
+ function _validated_sparse_relationship_spec(spec::AnimalModelSpec)
+-    Ainv = sparse(Float64.(spec.Ainv))
+-    canonical, factor = _validate_matrix_free_precision(Ainv, 1)
+-    canonical == Ainv && return spec, factor
+-    canonical_spec = animal_model_spec(
+-        spec.y, spec.X, spec.Z, canonical;
+-        ids = spec.ids,
+-        family = spec.family,
+-        method = spec.method,
+-        relationship_diag = nothing,
+-    )
+-    return canonical_spec, factor
++    return _likelihood_validated_spec(spec)
+ end
+ 
+ function _sparse_reml_loglik(
+@@ -257,6 +320,7 @@
+            dot(u, Ainv * u) / Float64(sigma_a2)
+     loglik = -0.5 * ((n - p) * log(2 * pi) + logdetR + logdetG + logdetC + quad)
+ 
++    _likelihood_result_finite(loglik, beta, u)
+     return GaussianLikelihoodResult(
+         loglik,
+         Vector{Float64}(solution[1:p]),
+@@ -292,23 +356,25 @@
+     max_dense_cells::Integer = DEFAULT_MAX_DENSE_CELLS,
+ )
+     sigma_a2_start, sigma_e2_start = _coerce_initial_variances(initial)
+-    sigma_a2_start > 0 ||
+-        throw(ArgumentError("initial sigma_a2 must be positive"))
+-    sigma_e2_start > 0 ||
+-        throw(ArgumentError("initial sigma_e2 must be positive"))
++    iterations >= 1 || throw(ArgumentError("iterations must be at least 1"))
+ 
+     normalized_method = _coerce_method(method)
+     normalized_method in (:ML, :REML) ||
+         throw(ArgumentError("method must be :ML or :REML"))
++    spec, _ = _likelihood_validated_spec(spec; method = normalized_method)
+     _check_dense_validation_size(spec, max_dense_cells)
+     A = _dense_relationship_covariance(spec.Ainv)
+-    objective(logtheta) = -_gaussian_loglik_with_covariance(
+-        spec,
+-        exp(logtheta[1]),
+-        exp(logtheta[2]),
+-        A,
+-        normalized_method,
+-    ).loglik
++    function objective(logtheta)
++        variances = _try_positive_exp(logtheta)
++        variances === nothing && return Inf
++        try
++            value = -_gaussian_loglik_with_covariance(spec, variances..., A, normalized_method).loglik
++            return isfinite(value) ? value : Inf
++        catch err
++            _likelihood_proposal_failure(err) || rethrow()
++            return Inf
++        end
++    end
+ 
+     result = optimize(
+         objective,
+@@ -317,7 +383,10 @@
+         Optim.Options(iterations = iterations),
+     )
+ 
+-    sigma_a2, sigma_e2 = exp.(Optim.minimizer(result))
++    isfinite(Optim.minimum(result)) || throw(ArgumentError("dense optimizer did not find a finite objective"))
++    variances = _try_positive_exp(Optim.minimizer(result))
++    variances === nothing && throw(ArgumentError("dense optimizer did not return finite positive variances"))
++    sigma_a2, sigma_e2 = variances
+     likelihood = _gaussian_loglik_with_covariance(
+         spec,
+         sigma_a2,
+@@ -349,6 +418,11 @@
+ [`sparse_reml_loglik`](@ref) as the objective. This is a Phase 1 validation
+ path toward sparse fitting. It is REML-only, not AI-REML, not the default
+ fitting path, and not a production sparse solver.
++
++`converged` is the optimizer stopping flag for a finite returned result. It does
++not certify score stationarity or a closed-boundary optimum. Exact zero
++components are unavailable in this positive log-variance parameterization;
++nonfinite proposals are rejected and nonfinite final results raise an error.
+ """
+ function fit_sparse_reml(
+     spec::AnimalModelSpec;
+@@ -369,18 +443,19 @@
+     function objective(logtheta)
+         sigma_a2 = exp(logtheta[1])
+         sigma_e2 = exp(logtheta[2])
+-        (isfinite(sigma_a2) && sigma_a2 > 0 && isfinite(sigma_e2) && sigma_e2 > 0) ||
++        _finite_positive_variance_update((sigma_a2,), sigma_e2) ||
+             return Inf
+         try
+-            return -_sparse_reml_loglik(
++            value = -_sparse_reml_loglik(
+                 spec,
+                 sigma_a2,
+                 sigma_e2,
+                 Ainv,
+                 logdet_Ainv,
+             ).loglik
++            return isfinite(value) ? value : Inf
+         catch err
+-            err isa PosDefException && return Inf
++            _likelihood_proposal_failure(err) && return Inf
+             rethrow()
+         end
+     end
+@@ -392,7 +467,12 @@
+         Optim.Options(iterations = iterations),
+     )
+ 
+-    sigma_a2, sigma_e2 = exp.(Optim.minimizer(result))
++    isfinite(Optim.minimum(result)) || throw(ArgumentError("sparse optimizer did not find a finite objective"))
++    variances = _try_positive_exp(Optim.minimizer(result))
++    variances === nothing && throw(ArgumentError("sparse optimizer did not return finite positive variances"))
++    sigma_a2, sigma_e2 = variances
++    _finite_positive_variance_update((sigma_a2,), sigma_e2) ||
++        throw(ArgumentError("sparse optimizer returned variances outside the finite precision range"))
+     likelihood = _sparse_reml_loglik(spec, sigma_a2, sigma_e2, Ainv, logdet_Ainv)
+     converged = Optim.converged(result)
+     status = converged ? "converged" : "not_converged"
+@@ -426,11 +506,12 @@
+ 
+ REML-only and experimental: it is validated to recover the same optimum as the
+ dense and sparse NelderMead optimizers, but is not yet checked against external
+-comparators or hardened for boundary/large-pedigree cases. The AI form is exact
+-for the *Gaussian* linear mixed model (the information matrix uses the data
+-directly, so it matches the observed information); it does NOT transfer to
+-Laplace-approximated / non-Gaussian models, where observed-information Newton is
+-required instead.
++comparators or hardened for boundary/large-pedigree cases. For a Gaussian linear
++mixed model whose covariance is linear in the variance components, average
++information is the arithmetic average of observed and expected REML information.
++Its working-variate quadratic need not equal the observed information. This
++Gaussian identity does not directly extend to Laplace-approximated non-Gaussian
++models.
+ 
+ An optional **EM-REML warm-start** (`em_warmup`, default `0`) runs that many
+ EM-REML iterations before the AI/Newton loop. The EM update is the closed form
+@@ -620,8 +701,9 @@
+         # at the current finite, positive σ with converged=false — the V1-REML boundary
+         # contract ("finite positive ... never NaN") — rather than throwing, which was an
+         # intermittent CI failure on degenerate single-step fixtures.
+-        if !(a_new > 0 && e_new > 0)
+-            termination_reason = "step_halving_exhausted"
++        if !_finite_positive_variance_update((a_new,), e_new)
++            termination_reason = (a_new <= 0 || e_new <= 0) ?
++                                 "step_halving_exhausted" : "nonrepresentable_variance_update"
+             break
+         end
+         # A small step can reflect damping or regularization, not stationarity.
+@@ -1172,14 +1254,14 @@
+ variance components.
+ """
+ function henderson_mme(spec::AnimalModelSpec, sigma_a2::Real, sigma_e2::Real)
+-    sigma_a2 > 0 ||
+-        throw(ArgumentError("sigma_a2 must be positive"))
+-    sigma_e2 > 0 ||
+-        throw(ArgumentError("sigma_e2 must be positive"))
++    sigma_a2 = _likelihood_positive("sigma_a2", sigma_a2; precision = true)
++    sigma_e2 = _likelihood_positive("sigma_e2", sigma_e2; precision = true)
++    spec, _ = _likelihood_validated_spec(spec; supplied = true)
+ 
+     lhs, rhs, _ = _sparse_mme_system(spec, sigma_a2, sigma_e2)
+ 
+     solution = lhs \ rhs
++    _likelihood_check_finite("MME solution", solution)
+     nfixed = size(spec.X, 2)
+     beta = Vector{Float64}(solution[1:nfixed])
+     animal_effects = BreedingValues(
+@@ -1256,9 +1338,9 @@
+     ids1 = nothing,
+     ids2 = nothing,
+ )
+-    sigma1 > 0 || throw(ArgumentError("sigma1 must be positive"))
+-    sigma2 > 0 || throw(ArgumentError("sigma2 must be positive"))
+-    sigma_e2 > 0 || throw(ArgumentError("sigma_e2 must be positive"))
++    sigma1 = _likelihood_positive("sigma1", sigma1; precision = true)
++    sigma2 = _likelihood_positive("sigma2", sigma2; precision = true)
++    sigma_e2 = _likelihood_positive("sigma_e2", sigma_e2; precision = true)
+     n = length(y)
+     size(X, 1) == n || throw(ArgumentError("X must have one row per record"))
+     size(Z1, 1) == n || throw(ArgumentError("Z1 must have one row per record"))
+@@ -1274,12 +1356,11 @@
+     length(e1ids) == n1 || throw(ArgumentError("ids1 length must match Ainv1 dimensions"))
+     length(e2ids) == n2 || throw(ArgumentError("ids2 length must match Ainv2 dimensions"))
+ 
+-    yv = Float64.(y)
+-    Xs = sparse(Float64.(X))
+-    Z1s = sparse(Float64.(Z1))
+-    Z2s = sparse(Float64.(Z2))
+-    A1 = sparse(Float64.(Ainv1))
+-    A2 = sparse(Float64.(Ainv2))
++    yv, Xs = _likelihood_design(y, X; method = :ML)
++    Z1s, A1, _ = _likelihood_random_inputs(Z1, Ainv1, n, 1)
++    Z2s, A2, _ = _likelihood_random_inputs(Z2, Ainv2, n, 2)
++    e1ids = _likelihood_effect_ids(e1ids, n1, "ids1")
++    e2ids = _likelihood_effect_ids(e2ids, n2, "ids2")
+     rp = inv(Float64(sigma_e2))
+     Zf = hcat(Z1s, Z2s)
+     Ginv = blockdiag(A1 .* inv(Float64(sigma1)), A2 .* inv(Float64(sigma2)))
+@@ -1291,7 +1372,10 @@
+         rp * (Zft * Xs) rp * (Zft * Zf) + Ginv
+     ]
+     rhs = vcat(rp * (Xt * yv), rp * (Zft * yv))
++    _likelihood_check_finite("MME coefficient matrix", lhs)
++    _likelihood_check_finite("MME right-hand side", rhs)
+     solution = lhs \ rhs
++    _likelihood_check_finite("MME solution", solution)
+     beta = Vector{Float64}(solution[1:nfixed])
+     u1 = Vector{Float64}(solution[(nfixed + 1):(nfixed + n1)])
+     u2 = Vector{Float64}(solution[(nfixed + n1 + 1):(nfixed + n1 + n2)])
+@@ -1446,6 +1530,7 @@
+         sigma2 .* (Z2 * A2 * transpose(Z2)) .+
+         sigma_e2 .* Matrix(1.0I, n, n),
+     )
++    _likelihood_check_finite("marginal covariance", V)
+     Vf = cholesky(V)
+     ViX = Vf \ Matrix(X)
+     XtViX = cholesky(Symmetric(transpose(X) * ViX))
+@@ -1455,6 +1540,7 @@
+     loglik = -0.5 * (logdet(Vf) + logdet(XtViX) + dot(r, Vir))
+     u1 = sigma1 .* (A1 * (transpose(Z1) * Vir))
+     u2 = sigma2 .* (A2 * (transpose(Z2) * Vir))
++    _likelihood_result_finite(loglik, beta, u1, u2)
+     return loglik, Vector{Float64}(beta), u1, u2
+ end
+ 
+@@ -1490,8 +1576,8 @@
+     ids1 = nothing,
+     ids2 = nothing,
+ )
+-    all(s -> isfinite(s) && s > 0, (initial.sigma1, initial.sigma2, initial.sigma_e2)) ||
+-        throw(ArgumentError("initial variance components must be finite and positive"))
++    starts = [_likelihood_positive("initial sigma1", initial.sigma1), _likelihood_positive("initial sigma2", initial.sigma2), _likelihood_positive("initial sigma_e2", initial.sigma_e2)]
++    iterations >= 1 || throw(ArgumentError("iterations must be at least 1"))
+     n = length(y)
+     size(X, 1) == n || throw(ArgumentError("X must have one row per record"))
+     size(Z1, 1) == n || throw(ArgumentError("Z1 must have one row per record"))
+@@ -1507,12 +1593,16 @@
+     length(e1ids) == n1 || throw(ArgumentError("ids1 length must match Ainv1 dimensions"))
+     length(e2ids) == n2 || throw(ArgumentError("ids2 length must match Ainv2 dimensions"))
+ 
+-    A1 = inv(Symmetric(Matrix{Float64}(Ainv1)))
+-    A2 = inv(Symmetric(Matrix{Float64}(Ainv2)))
+-    Xd = Matrix{Float64}(X)
+-    Z1d = Matrix{Float64}(Z1)
+-    Z2d = Matrix{Float64}(Z2)
+-    yv = Float64.(y)
++    yv, Xs = _likelihood_design(y, X)
++    Z1s, Q1, _ = _likelihood_random_inputs(Z1, Ainv1, n, 1)
++    Z2s, Q2, _ = _likelihood_random_inputs(Z2, Ainv2, n, 2)
++    A1 = _dense_relationship_covariance(Q1)
++    A2 = _dense_relationship_covariance(Q2)
++    Xd = Matrix{Float64}(Xs)
++    Z1d = Matrix{Float64}(Z1s)
++    Z2d = Matrix{Float64}(Z2s)
++    e1ids = _likelihood_effect_ids(e1ids, n1, "ids1")
++    e2ids = _likelihood_effect_ids(e2ids, n2, "ids2")
+     function objective(p)
+         variances = _try_positive_exp(p)
+         variances === nothing && return Inf
+@@ -1520,11 +1610,11 @@
+             value = -_two_effect_dense(yv, Xd, Z1d, A1, Z2d, A2, variances...)[1]
+             return isfinite(value) ? value : Inf
+         catch err
+-            err isa PosDefException && return Inf
++            _likelihood_proposal_failure(err) && return Inf
+             rethrow()
+         end
+     end
+-    p0 = log.([Float64(initial.sigma1), Float64(initial.sigma2), Float64(initial.sigma_e2)])
++    p0 = log.(starts)
+     result = optimize(objective, p0, NelderMead(), Optim.Options(iterations = iterations))
+     isfinite(Optim.minimum(result)) || throw(ArgumentError("two-effect optimizer did not find a finite objective"))
+     variances = _try_positive_exp(Optim.minimizer(result))
+@@ -1552,8 +1642,9 @@
+ # vector `[σ_1², …, σ_{d-1}², σ_e²]` (`d = 3` for the two-effect model, `d = K+1`
+ # for the K-effect model) and `keep_num` is the numerator component. Components
+ # whose variance is a negligible fraction of the total are BOUNDARY components:
+-# they are dropped from `info` (the interior information conditional on a boundary
+-# component being fixed at 0 is the corresponding sub-block), so a ratio built on
++# they are dropped from `info` while held fixed at their supplied values. The
++# reported ratio retains the full denominator; only its active coordinates vary.
++# At an exact zero component this is conditional information at zero, so a ratio built on
+ # a non-boundary numerator (e.g. `ratio1` when only σ2²→0) still gets a valid
+ # interval — this is what makes the σ2²=0 reduction match `heritability_interval`.
+ # A ratio whose OWN numerator or whose total-defining denominator is degenerate is
+@@ -1562,6 +1653,52 @@
+     (isfinite(boundary_tol) && boundary_tol >= 0) ||
+         throw(ArgumentError("boundary_tol must be finite and nonnegative"))
+     return boundary_tol
++end
++
++# Invalid user controls are errors, distinct from unavailable boundary information.
++function _validate_uncertainty_fd_step(fd_step::Real)
++    (isfinite(fd_step) && fd_step > 0) ||
++        throw(ArgumentError("fd_step must be finite and positive"))
++    step = Float64(fd_step)
++    (isfinite(step) && step > 0) ||
++        throw(ArgumentError("fd_step must remain finite and positive after Float64 conversion"))
++    return step
++end
++
++function _uncertainty_component_steps(theta::AbstractVector, fd_step::Real)
++    step = _validate_uncertainty_fd_step(fd_step)
++    h = step .* max.(abs.(theta), 1e-3)
++    all(x -> isfinite(x) && x > 0, h) ||
++        throw(ArgumentError("fd_step must produce finite positive component steps"))
++    return h
++end
++
++function _uncertainty_variance_vector(sigmas::AbstractVector, sigma_e2::Real, K::Integer)
++    length(sigmas) == K || throw(ArgumentError("sigmas length must match number of effects"))
++    all(s -> s isa Real && isfinite(s) && s > 0, sigmas) ||
++        throw(ArgumentError("all sigmas must be finite and positive"))
++    (isfinite(sigma_e2) && sigma_e2 > 0) ||
++        throw(ArgumentError("sigma_e2 must be finite and positive"))
++    ss = Float64.(collect(sigmas))
++    all(s -> isfinite(s) && s > 0, ss) ||
++        throw(ArgumentError("all sigmas must remain finite and positive after Float64 conversion"))
++    se = Float64(sigma_e2)
++    (isfinite(se) && se > 0) ||
++        throw(ArgumentError("sigma_e2 must remain finite and positive after Float64 conversion"))
++    theta = vcat(ss, se)
++    isfinite(sum(theta)) || throw(ArgumentError("total variance must be finite after Float64 conversion"))
++    return theta
++end
++
++function _validate_uncertainty_selection(which, K::Integer)
++    applicable(iterate, which) ||
++        throw(ArgumentError("which must be a nonempty collection of unique integer component indices"))
++    idx = collect(which)
++    isempty(idx) && throw(ArgumentError("which must select at least one component"))
++    all(i -> i isa Integer && !(i isa Bool) && 1 <= i <= K, idx) ||
++        throw(ArgumentError("which must contain integer component indices 1..$K; Boolean values are invalid"))
++    allunique(idx) || throw(ArgumentError("which must contain unique component indices"))
++    return Int.(idx)
+ end
+ 
+ function _ratio_delta_ci(info::AbstractMatrix, theta::AbstractVector,
+@@ -1589,9 +1726,9 @@
+                 lower_clamped = false, upper_clamped = false, boundary = true)
+     covar = inv(sub)
+     # delta-method gradient of ratio = θ[keep_num]/Σθ wrt the KEPT components only
+-    subtotal = sum(theta[k] for k in keep)   # == total (dropped comps are ≈ 0)
+-    g = [k == keep_num ? (subtotal - theta[keep_num]) / subtotal^2 :
+-                         -theta[keep_num] / subtotal^2 for k in keep]
++    # Inactive components stay in total and are held fixed at their supplied values.
++    g = [k == keep_num ? (total - theta[keep_num]) / total^2 :
++                         -theta[keep_num] / total^2 for k in keep]
+     se = sqrt(max(dot(g, covar * g), 0.0))
+     (0 < ratio < 1 && isfinite(se) && se > 0) ||
+         return (estimate = ratio, lower = NaN, upper = NaN, se = se,
+@@ -1631,8 +1768,11 @@
+ # That noise floor is a property of this estimand (see the `fd_step` caveat on
+ # `multi_effect_variance_component_covariance`), not of the loop.
+ function _reml_fd_information(f, theta::AbstractVector, fd_step::Real)
++    fd_step = _validate_uncertainty_fd_step(fd_step)
+     d = length(theta)
+-    h = fd_step .* max.(abs.(theta), 1e-3)
++    d >= 1 || throw(ArgumentError("variance vector must be nonempty"))
++    theta = _uncertainty_variance_vector(theta[1:end-1], theta[end], d - 1)
++    h = _uncertainty_component_steps(theta, fd_step)
+     H = zeros(d, d)
+     for i in 1:d, j in i:d
+         ei = zeros(d); ei[i] = h[i]
+@@ -1672,8 +1812,8 @@
+ `σ_i / total ≤ boundary_tol`) the ratio built on it is flagged `boundary = true`
+ with a `NaN` interval — never a spuriously tight CI. A ratio built on a
+ non-boundary numerator drops the degenerate component and uses the corresponding
+-information sub-block (the interior information conditional on the boundary
+-component being fixed at 0), so e.g. `ratio1` remains well-defined when only
++information sub-block conditional on that component held at its supplied value.
++The reported ratio and its gradient retain the full denominator, so e.g. `ratio1` remains well-defined when only
+ `σ2² → 0`; in that reduction it recovers [`heritability_interval`](@ref) on the
+ underlying animal model. `converged` is carried from the REML fit.
+ 
+@@ -1693,6 +1833,7 @@
+ )
+     0 < level < 1 || throw(ArgumentError("level must be in (0, 1)"))
+     boundary_tol = _validate_boundary_tol(boundary_tol)
++    fd_step = _validate_uncertainty_fd_step(fd_step)
+     which in (:both, :ratio1, :ratio2) ||
+         throw(ArgumentError("which must be :both, :ratio1, or :ratio2"))
+     fit = fit_two_effect_reml(y, X, Z1, Ainv1, Z2, Ainv2;
+@@ -1733,7 +1874,7 @@
+ record→level incidence, `Ainv_i` the `q_i×q_i` relationship precision — pass
+ `I` for a plain i.i.d. `(1|group)` effect), `sigmas[i]` the variance of effect
+ `i`, and `sigma_e2 > 0`. The stacked random precision is
+-`blockdiag(A_1/σ_1, …, A_K/σ_K)` over `[u_1; …; u_K]` and the random design is
++`blockdiag(Ainv_1/σ_1, …, Ainv_K/σ_K)` over `[u_1; …; u_K]` and the random design is
+ `hcat(Z_1, …, Z_K)`, exactly as the two-effect kernel. `ids` may be `nothing`
+ or a length-`K` vector of per-effect id vectors.
+ 
+@@ -1754,8 +1895,8 @@
+     K = length(effects)
+     K >= 1 || throw(ArgumentError("at least one random effect is required"))
+     length(sigmas) == K || throw(ArgumentError("sigmas length must match number of effects"))
+-    all(s -> s > 0, sigmas) || throw(ArgumentError("all sigmas must be positive"))
+-    sigma_e2 > 0 || throw(ArgumentError("sigma_e2 must be positive"))
++    sigmas = [_likelihood_positive("sigma[$i]", s; precision = true) for (i, s) in enumerate(sigmas)]
++    sigma_e2 = _likelihood_positive("sigma_e2", sigma_e2; precision = true)
+     n = length(y)
+     size(X, 1) == n || throw(ArgumentError("X must have one row per record"))
+     Zs = SparseMatrixCSC{Float64,Int}[]
+@@ -1767,8 +1908,9 @@
+         qi = size(Ainvi, 1)
+         size(Ainvi, 2) == qi || throw(ArgumentError("Ainv[$i] must be square"))
+         size(Zi, 2) == qi || throw(ArgumentError("Z[$i] columns must match Ainv[$i] dimensions"))
+-        push!(Zs, sparse(Float64.(Zi)))
+-        push!(Ainvs, sparse(Float64.(Ainvi)))
++        Zif, Qif, _ = _likelihood_random_inputs(Zi, Ainvi, n, i)
++        push!(Zs, Zif)
++        push!(Ainvs, Qif)
+         push!(qs, qi)
+     end
+     if ids === nothing
+@@ -1780,8 +1922,8 @@
+             length(eids[i]) == qs[i] || throw(ArgumentError("ids[$i] length must match Ainv[$i] dimensions"))
+         end
+     end
+-    yv = Float64.(y)
+-    Xs = sparse(Float64.(X))
++    yv, Xs = _likelihood_design(y, X; method = :ML)
++    eids = _likelihood_block_ids(eids, qs)
+     rp = inv(Float64(sigma_e2))
+     Zf = reduce(hcat, Zs)
+     Ginv = blockdiag((Ainvs[i] .* inv(Float64(sigmas[i])) for i in 1:K)...)
+@@ -1793,7 +1935,10 @@
+         rp * (Zft * Xs) rp * (Zft * Zf) + Ginv
+     ]
+     rhs = vcat(rp * (Xt * yv), rp * (Zft * yv))
++    _likelihood_check_finite("MME coefficient matrix", lhs)
++    _likelihood_check_finite("MME right-hand side", rhs)
+     solution = lhs \ rhs
++    _likelihood_check_finite("MME solution", solution)
+     beta = Vector{Float64}(solution[1:nfixed])
+     effects_out = Vector{NamedTuple{(:ids, :values)}}(undef, K)
+     off = nfixed
+@@ -1823,6 +1968,7 @@
+         Vacc = Vacc .+ sigmas[i] .* (Zi * Ai * transpose(Zi))
+     end
+     V = Symmetric(Vacc .+ sigma_e2 .* Matrix(1.0I, n, n))
++    _likelihood_check_finite("marginal covariance", V)
+     Vf = cholesky(V)
+     ViX = Vf \ Matrix(X)
+     XtViX = cholesky(Symmetric(transpose(X) * ViX))
+@@ -1831,6 +1977,7 @@
+     Vir = Vf \ r
+     loglik = -0.5 * (logdet(Vf) + logdet(XtViX) + dot(r, Vir))
+     us = [sigmas[i] .* (ZAs[i][2] * (transpose(ZAs[i][1]) * Vir)) for i in 1:K]
++    _likelihood_result_finite(loglik, beta, us...)
+     return loglik, Vector{Float64}(beta), us
+ end
+ 
+@@ -1862,9 +2009,9 @@
+ (≲4) and `n` (≲2000), NOT a production sparse estimator — that is the owed sparse
+ AI-REML `K`-component path. On small/uninformative data the optimum can sit on a
+ boundary (a variance → 0), reported via `converged` / `boundary`, never hidden.
+-Non-identifiability (e.g. two `A=I` effects on the same grouping) shows as a flat
+-ridge (`converged = false`); the engine reports it, it does not certify
+-identifiability.
++Non-identifiability (e.g. two `A=I` effects on the same grouping) can produce a
++flat ridge even when the optimizer reports `converged = true`. Optimizer
++convergence and boundary flags do not certify identifiability.
+ """
+ function fit_multi_effect_reml(
+     y::AbstractVector,
+@@ -1877,6 +2024,7 @@
+ )
+     K = length(effects)
+     K >= 1 || throw(ArgumentError("at least one random effect is required"))
++    iterations >= 1 || throw(ArgumentError("iterations must be at least 1"))
+     n = length(y)
+     size(X, 1) == n || throw(ArgumentError("X must have one row per record"))
+     n * n <= max_dense_cells ||
+@@ -1891,20 +2039,22 @@
+         qi = size(Ainvi, 1)
+         size(Ainvi, 2) == qi || throw(ArgumentError("Ainv[$i] must be square"))
+         size(Zi, 2) == qi || throw(ArgumentError("Z[$i] columns must match Ainv[$i] dimensions"))
+-        push!(As, inv(Symmetric(Matrix{Float64}(Ainvi))))
+-        push!(Zds, Matrix{Float64}(Zi))
++        Zif, Qif, _ = _likelihood_random_inputs(Zi, Ainvi, n, i)
++        push!(As, _dense_relationship_covariance(Qif))
++        push!(Zds, Matrix{Float64}(Zif))
+         push!(qs, qi)
+     end
++    eids = _likelihood_block_ids(ids, qs)
+     if initial === nothing
+         p0 = zeros(K + 1)
+     else
+         length(initial) == K + 1 ||
+             throw(ArgumentError("initial must have length K+1 = $(K + 1) (one per effect plus residual)"))
+         all(s -> isfinite(s) && s > 0, initial) || throw(ArgumentError("initial variance components must be finite and positive"))
+-        p0 = log.(Float64.(collect(initial)))
+-    end
+-    yv = Float64.(y)
+-    Xd = Matrix{Float64}(X)
++        p0 = log.([_likelihood_positive("initial variance component $i", s) for (i, s) in enumerate(initial)])
++    end
++    yv, Xs = _likelihood_design(y, X)
++    Xd = Matrix{Float64}(Xs)
+     ZAs = [(Zds[i], As[i]) for i in 1:K]
+     function objective(p)
+         variances = _try_positive_exp(p)
+@@ -1913,7 +2063,7 @@
+             val = -_multi_effect_dense(yv, Xd, ZAs, variances[1:K], variances[K + 1])[1]
+             return isfinite(val) ? val : Inf
+         catch err
+-            (err isa PosDefException || err isa SingularException) && return Inf
++            _likelihood_proposal_failure(err) && return Inf
+             rethrow()
+         end
+     end
+@@ -1926,7 +2076,6 @@
+     loglik, beta, us = _multi_effect_dense(yv, Xd, ZAs, sigmas, se2)
+     total = sum(sigmas) + se2
+     isfinite(total) && total > 0 || throw(ArgumentError("multi-effect optimizer returned a nonfinite total variance"))
+-    eids = ids === nothing ? [collect(1:qs[i]) for i in 1:K] : [collect(ids[i]) for i in 1:K]
+     effects_out = [(ids = eids[i], values = us[i]) for i in 1:K]
+     p = size(Xd, 2)
+     return merge((
+@@ -1973,8 +2122,10 @@
+ boundary (σ_i / total ≤ `boundary_tol`) is flagged `boundary = true` with a `NaN`
+ interval — never a spuriously tight CI. A ratio built on a non-boundary numerator
+ drops the degenerate component(s) and uses the corresponding information sub-block
+-(the interior information conditional on the boundary component fixed at 0), so a
+-well-identified component keeps a valid interval even when another collapses.
++conditional on those components held at their supplied values. The reported
++ratio and its gradient retain the full denominator. At exact zero this gives
++the corresponding zero-component reduction; the approximation is not a
++near-boundary coverage guarantee.
+ 
+ Reductions: at `K = 2` this matches [`two_effect_ratio_interval`](@ref) (same
+ finite-difference information, same estimand); at `K = 1` it matches
+@@ -1998,6 +2149,7 @@
+ )
+     0 < level < 1 || throw(ArgumentError("level must be in (0, 1)"))
+     boundary_tol = _validate_boundary_tol(boundary_tol)
++    fd_step = _validate_uncertainty_fd_step(fd_step)
+     K = length(effects)
+     K >= 1 || throw(ArgumentError("at least one random effect is required"))
+     if which isa Symbol
+@@ -2053,18 +2205,15 @@
+         throw(ArgumentError("unavailable must be :throw or :nothing"))
+     K = length(effects)
+     K >= 1 || throw(ArgumentError("at least one random effect is required"))
+-    length(sigmas) == K ||
+-        throw(ArgumentError("sigmas length must match number of effects"))
+-    all(s -> s > 0, sigmas) || throw(ArgumentError("all sigmas must be positive"))
+-    sigma_e2 > 0 || throw(ArgumentError("sigma_e2 must be positive"))
+-    theta = vcat(Float64.(collect(sigmas)), Float64(sigma_e2))
++    fd_step = _validate_uncertainty_fd_step(fd_step)
++    theta = _uncertainty_variance_vector(sigmas, sigma_e2, K)
+ 
+     # `_reml_fd_information` perturbs coordinate i by at most 2·h[i] (the i == j
+     # diagonal term). A component near the boundary would be pushed non-positive
+     # there, and `sparse_multi_reml_loglik` would throw "all sigmas must be
+     # positive" from inside the difference quotient — an opaque failure that
+     # looks like a bug rather than a boundary. Refuse up front instead.
+-    h = fd_step .* max.(abs.(theta), 1e-3)
++    h = _uncertainty_component_steps(theta, fd_step)
+     if !all(theta .- 2 .* h .> 0)
+         unavailable === :nothing && return nothing
+         throw(ArgumentError(
+@@ -2170,6 +2319,7 @@
+ 
+ function _sum_ratio_ci_from_cov(cov, theta::AbstractVector, idx, K::Integer,
+                                 level::Real, na)
++    idx = _validate_uncertainty_selection(idx, K)
+     total = sum(theta)
+     numer = sum(theta[i] for i in idx)
+     ratio = numer / total
+@@ -2210,7 +2360,10 @@
+ Returns a `NamedTuple` matching the single-ratio shape: `estimate`, `lower`,
+ `upper`, `se`, `lower_clamped`, `upper_clamped`, `boundary`. Returns `NaN`
+ endpoints with `boundary = true` rather than throwing when the ratio sits on a
+-rail or the information is not positive definite. Asymptotic; REML only.
++rail or the information is not positive definite. `which` must be a nonempty
++collection of unique integer component indices (Boolean values are invalid).
++Variances and `fd_step` must remain finite and positive after Float64 conversion;
++invalid inputs throw even when the ratio would lie on a rail. Asymptotic; REML only.
+ """
+ function multi_effect_sum_ratio_interval(
+     y::AbstractVector,
+@@ -2226,11 +2379,10 @@
+     0 < level < 1 || throw(ArgumentError("level must be in (0, 1)"))
+     boundary_tol = _validate_boundary_tol(boundary_tol)
+     K = length(effects)
+-    idx = collect(which)
+-    isempty(idx) && throw(ArgumentError("which must select at least one component"))
+-    all(i -> 1 <= i <= K, idx) ||
+-        throw(ArgumentError("which must index components 1..$K"))
+-    theta = vcat(Float64.(collect(sigmas)), Float64(sigma_e2))
++    idx = _validate_uncertainty_selection(which, K)
++    fd_step = _validate_uncertainty_fd_step(fd_step)
++    theta = _uncertainty_variance_vector(sigmas, sigma_e2, K)
++    _uncertainty_component_steps(theta, fd_step)
+     total = sum(theta)
+     numer = sum(theta[i] for i in idx)
+     ratio = numer / total
+@@ -2304,7 +2456,9 @@
+ the pre-workspace cost (see `_MultiREMLWorkspace`).
+ 
+ The returned values are identical to calling the three functions separately;
+-this only stops paying three times for one matrix.
++this only stops paying three times for one matrix. `which` has the same nonempty,
++unique integer selection contract as `multi_effect_sum_ratio_interval`. Invalid
++variances or finite-difference controls throw before information is computed.
+ 
+ Failure behaviour follows the individual functions. The covariance THROWS at a
+ flat or boundary optimum, so this throws too, once, rather than reporting three
+@@ -2330,14 +2484,13 @@
+     0 < level < 1 || throw(ArgumentError("level must be in (0, 1)"))
+     boundary_tol = _validate_boundary_tol(boundary_tol)
+     K = length(effects)
+-    idx = collect(which)
+-    all(i -> 1 <= i <= K, idx) ||
+-        throw(ArgumentError("which must index components 1..$K"))
++    idx = _validate_uncertainty_selection(which, K)
++    fd_step = _validate_uncertainty_fd_step(fd_step)
++    theta = _uncertainty_variance_vector(sigmas, sigma_e2, K)
+ 
+     cov = multi_effect_variance_component_covariance(
+         y, X, effects, sigmas, sigma_e2; fd_step = fd_step,
+     )
+-    theta = vcat(Float64.(collect(sigmas)), Float64(sigma_e2))
+     total = sum(theta)
+     ratio = sum(theta[i] for i in idx) / total
+     na = (estimate = ratio, lower = NaN, upper = NaN, se = NaN,
+@@ -2473,6 +2626,8 @@
+     @inbounds for i in eachindex(ws.Zty)
+         ws.rhs[nfixed + i] = rp * ws.Zty[i]
+     end
++    _likelihood_check_finite("MME coefficient matrix", ws.lhs)
++    _likelihood_check_finite("MME right-hand side", ws.rhs)
+     return ws.lhs, ws.rhs
+ end
+ 
+@@ -2505,11 +2660,7 @@
+     K >= 1 || throw(ArgumentError("at least one random effect is required"))
+     n = length(y)
+     size(X, 1) == n || throw(ArgumentError("X must have one row per record"))
+-    yv = Float64.(y)
+-    all(isfinite, yv) || throw(ArgumentError("y must be finite after conversion to Float64"))
+-    Xs = sparse(Float64.(X))
+-    all(isfinite, nonzeros(Xs)) ||
+-        throw(ArgumentError("X must be finite after conversion to Float64"))
++    yv, Xs = _likelihood_design(y, X)
+     nfixed = size(Xs, 2)
+     nfixed < n || throw(ArgumentError("REML requires fewer fixed-effect columns than observations"))
+ 
+@@ -2593,13 +2744,13 @@
+                              sigma_e2::Real)
+     K = length(ws.Ainvs)
+     length(sigmas) == K || throw(ArgumentError("sigmas length must match number of effects"))
+-    all(s -> s > 0, sigmas) || throw(ArgumentError("all sigmas must be positive"))
+-    sigma_e2 > 0 || throw(ArgumentError("sigma_e2 must be positive"))
+-    ss = Float64.(collect(sigmas))
+-    se2 = Float64(sigma_e2)
++    ss = [_likelihood_positive("sigma[$i]", s; precision = true) for (i, s) in enumerate(sigmas)]
++    se2 = _likelihood_positive("sigma_e2", sigma_e2; precision = true)
+     n = ws.n; nfixed = ws.nfixed
+ 
+     lhs, rhs = _assemble_lhs_rhs!(ws, ss, se2)
++    _likelihood_check_finite("MME coefficient matrix", lhs)
++    _likelihood_check_finite("MME right-hand side", rhs)
+     factor = _factorize!(ws)
+     solution = factor \ rhs
+ 
+@@ -2626,6 +2777,7 @@
+     end
+     quad += dot(residual, residual) / se2
+     loglik = -0.5 * ((n - nfixed) * log(2 * pi) + logdetR + logdetG + logdetC + quad)
++    _likelihood_result_finite(loglik, beta, us...)
+     return loglik, beta, us
+ end
+ 
+@@ -2662,8 +2814,8 @@
+     K = length(effects)
+     K >= 1 || throw(ArgumentError("at least one random effect is required"))
+     length(sigmas) == K || throw(ArgumentError("sigmas length must match number of effects"))
+-    all(s -> s > 0, sigmas) || throw(ArgumentError("all sigmas must be positive"))
+-    sigma_e2 > 0 || throw(ArgumentError("sigma_e2 must be positive"))
++    sigmas = [_likelihood_positive("sigma[$i]", value; precision = true) for (i, value) in enumerate(sigmas)]
++    sigma_e2 = _likelihood_positive("sigma_e2", sigma_e2; precision = true)
+     return _multi_reml_loglik!(_multi_reml_workspace(y, X, effects), sigmas, sigma_e2)
+ end
+ 
+@@ -2796,6 +2948,7 @@
+         end
+     end
+ 
++    eids = _likelihood_block_ids(eids, qs)
+     if initial === nothing
+         sigmas = ones(Float64, K)
+         sigma_e2 = 1.0
+@@ -3003,6 +3156,7 @@
+     Sigma_u = kron(G_dm, A)                  # 2q×2q, effect-outer
+     W = hcat(Zd, Zm)                         # n×2q
+     V = Symmetric(W * Sigma_u * transpose(W) .+ sigma_e2 .* Matrix(1.0I, n, n))
++    _likelihood_check_finite("marginal covariance", V)
+     Vf = cholesky(V)
+     ViX = Vf \ Matrix(X)
+     XtViX = cholesky(Symmetric(transpose(X) * ViX))
+@@ -3011,6 +3165,7 @@
+     Vir = Vf \ r
+     loglik = -0.5 * (logdet(Vf) + logdet(XtViX) + dot(r, Vir))
+     u = Sigma_u * (transpose(W) * Vir)
++    _likelihood_result_finite(loglik, beta, u)
+     return loglik, Vector{Float64}(beta), Vector{Float64}(u[1:q]), Vector{Float64}(u[(q + 1):(2q)])
+ end
+ 
+@@ -3059,6 +3214,9 @@
+     ids = nothing,
+     max_dense_cells::Integer = DEFAULT_MAX_DENSE_CELLS,
+ )
++    initial === nothing || hasproperty(initial, :G_dm) || hasproperty(initial, :sigma_e2) ||
++        throw(ArgumentError("initial must supply G_dm or sigma_e2"))
++    iterations >= 1 || throw(ArgumentError("iterations must be at least 1"))
+     n = length(y)
+     q = size(Ainv, 1)
+     size(X, 1) == n || throw(ArgumentError("X must have one row per record"))
+@@ -3070,28 +3228,33 @@
+     n * n <= max_dense_cells ||
+         throw(ArgumentError("dense direct–maternal REML would form an $(n)×$(n) covariance " *
+             "($(n * n) cells) exceeding max_dense_cells=$(max_dense_cells)"))
+-    A = inv(Symmetric(Matrix{Float64}(Ainv)))
+-    Xd = Matrix{Float64}(X)
+-    Zdd = Matrix{Float64}(Zd)
+-    Zmd = Matrix{Float64}(Zm)
+-    yv = Float64.(y)
++    yv, Xs = _likelihood_design(y, X)
++    Zds, Q, _ = _likelihood_random_inputs(Zd, Ainv, n, 1)
++    Zms, _, _ = _likelihood_random_inputs(Zm, Q, n, 2)
++    aids = _likelihood_effect_ids(ids, q, "ids")
++    A = _dense_relationship_covariance(Q)
++    Xd = Matrix{Float64}(Xs)
++    Zdd = Matrix{Float64}(Zds)
++    Zmd = Matrix{Float64}(Zms)
+     mu = sum(yv) / n
+     vp = n > 1 ? sum(abs2, yv .- mu) / (n - 1) : 1.0
+     vp > 0 || (vp = 1.0)
+     if initial !== nothing && hasproperty(initial, :G_dm)
+         G0 = Matrix(Float64.(Matrix(initial.G_dm)))
+         size(G0) == (2, 2) || throw(ArgumentError("initial.G_dm must be 2×2"))
+-        isposdef(Symmetric(G0)) || throw(ArgumentError("initial.G_dm must be positive definite"))
++        Gcanonical, _ = _validate_matrix_free_precision(sparse(G0), 1)
++        G0 = Matrix(Gcanonical)
+     else
+         G0 = Matrix(Diagonal(fill(0.33 * vp, 2)))
+     end
+     se0 = if initial !== nothing && hasproperty(initial, :sigma_e2)
+-        s = Float64(initial.sigma_e2)
+-        isfinite(s) && s > 0 || throw(ArgumentError("initial.sigma_e2 must be finite and positive"))
++        s = _likelihood_positive("initial.sigma_e2", initial.sigma_e2)
+         s
+     else
+         0.33 * vp
+     end
++    se0 = _likelihood_positive("initial residual variance", se0)
++    _likelihood_check_finite("initial genetic covariance", G0)
+     function negloglik(p)
+         G = _try_chol_params_to_cov(@view(p[1:3]), 2)
+         G === nothing && return Inf
+@@ -3101,7 +3264,7 @@
+             val = -_direct_maternal_dense(yv, Xd, Zdd, Zmd, A, G, se2)[1]
+             return isfinite(val) ? val : Inf
+         catch err
+-            (err isa PosDefException || err isa SingularException) && return Inf
++            _likelihood_proposal_failure(err) && return Inf
+             rethrow()
+         end
+     end
+@@ -3115,8 +3278,6 @@
+     se2 = exp(popt[4])
+     isfinite(se2) && se2 > 0 || throw(ArgumentError("direct-maternal optimizer did not return a finite positive residual variance"))
+     loglik, beta, ad, am = _direct_maternal_dense(yv, Xd, Zdd, Zmd, A, G_dm, se2)
+-    aids = ids === nothing ? collect(1:q) : collect(ids)
+-    length(aids) == q || throw(ArgumentError("ids length must match Ainv dimensions"))
+     r_am = G_dm[1, 2] / sqrt(G_dm[1, 1] * G_dm[2, 2])
+     return (
+         variance_components = (
+@@ -3316,8 +3477,8 @@
+     ids = nothing,
+     max_dense_cells::Integer = DEFAULT_MAX_DENSE_CELLS,
+ )
+-    all(s -> isfinite(s) && s > 0, (initial.sigma_a2, initial.sigma_pe2, initial.sigma_e2)) ||
+-        throw(ArgumentError("initial variance components must be finite and positive"))
++    starts = [_likelihood_positive("initial sigma_a2", initial.sigma_a2), _likelihood_positive("initial sigma_pe2", initial.sigma_pe2), _likelihood_positive("initial sigma_e2", initial.sigma_e2)]
++    iterations >= 1 || throw(ArgumentError("iterations must be at least 1"))
+     n = length(y)
+     size(X, 1) == n || throw(ArgumentError("X must have one row per record"))
+     size(Z, 1) == n || throw(ArgumentError("Z must have one row per record"))
+@@ -3329,10 +3490,12 @@
+         throw(ArgumentError("ids length must match Ainv dimensions"))
+     _check_dense_validation_size(n, na, max_dense_cells)
+ 
+-    A = inv(Symmetric(Matrix{Float64}(Ainv)))
+-    Xd = Matrix{Float64}(X)
+-    Zd = Matrix{Float64}(Z)
+-    yv = Float64.(y)
++    yv, Xs = _likelihood_design(y, X)
++    Zs, Q, _ = _likelihood_random_inputs(Z, Ainv, n, 1)
++    encoded_ids = _likelihood_effect_ids(encoded_ids, na, "ids")
++    A = _dense_relationship_covariance(Q)
++    Xd = Matrix{Float64}(Xs)
++    Zd = Matrix{Float64}(Zs)
+     function objective(p)
+         variances = _try_positive_exp(p)
+         variances === nothing && return Inf
+@@ -3340,11 +3503,11 @@
+             value = -_repeatability_dense(yv, Xd, Zd, A, variances...)[1]
+             return isfinite(value) ? value : Inf
+         catch err
+-            err isa PosDefException && return Inf
++            _likelihood_proposal_failure(err) && return Inf
+             rethrow()
+         end
+     end
+-    p0 = log.([Float64(initial.sigma_a2), Float64(initial.sigma_pe2), Float64(initial.sigma_e2)])
++    p0 = log.(starts)
+     result = optimize(objective, p0, NelderMead(), Optim.Options(iterations = iterations))
+     isfinite(Optim.minimum(result)) || throw(ArgumentError("repeatability optimizer did not find a finite objective"))
+     variances = _try_positive_exp(Optim.minimizer(result))
+@@ -3643,15 +3806,28 @@
+ 
+ Return simple narrow-sense heritability for the Phase 1 univariate Gaussian
+ animal model: `sigma_a2 / (sigma_a2 + sigma_e2)`.
++Components must be finite and nonnegative, with at least one positive. The
++ratio is scaled before summation to avoid overflow in the total variance.
+ """
+ function heritability(fit::AnimalModelFit)
+     vc = fit.variance_components
+-    return vc.sigma_a2 / (vc.sigma_a2 + vc.sigma_e2)
++    return _gaussian_variance_fraction(vc.sigma_a2, vc.sigma_e2)
+ end
+ 
+ function heritability(result::HendersonMMEResult)
+     vc = variance_components(result)
+-    return vc.sigma_a2 / (vc.sigma_a2 + vc.sigma_e2)
++    return _gaussian_variance_fraction(vc.sigma_a2, vc.sigma_e2)
++end
++
++# Scale before summing: finite components can have an unrepresentable total.
++function _gaussian_variance_fraction(sigma_a2::Real, sigma_e2::Real)
++    sa, se = Float64(sigma_a2), Float64(sigma_e2)
++    isfinite(sa) && sa >= 0 && isfinite(se) && se >= 0 ||
++        throw(ArgumentError("Gaussian variance components must be finite and nonnegative after Float64 conversion"))
++    scale = max(sa, se)
++    scale > 0 || throw(ArgumentError("at least one Gaussian variance component must be positive"))
++    a, e = sa / scale, se / scale
++    return a / (a + e)
+ end
+ 
+ """
+@@ -3715,31 +3891,50 @@
+ the sparse Takahashi selected inverse of `Ainv` (no dense `A` is formed);
+ `:dense` forms `inv(Ainv)` densely (validation oracle). Values are not clipped;
+ small examples can expose weakly informed animals directly.
++
++A supplied `pev` must contain finite nonnegative values and each model animal ID
++exactly once. Values and relationship diagonals are aligned by ID; the returned
++order follows `pev.ids`. Ratios are evaluated without requiring the intermediate
++product `sigma_a2 * A_ii` to fit in `Float64`; a nonfinite ratio is rejected.
+ """
+ function reliability(fit::AnimalModelFit; method::Symbol = :auto, pev = nothing)
+     pev_res = pev === nothing ? prediction_error_variance(fit; method = method) : pev
+-    animal_variance = fit.variance_components.sigma_a2 .* _relationship_diag(fit.spec, method)
+-
+-    all(>(0), animal_variance) ||
+-        throw(ArgumentError("animal-level additive variances must be positive"))
+-
+-    return (
+-        ids = pev_res.ids,
+-        values = Vector{Float64}(1 .- pev_res.values ./ animal_variance),
+-    )
++    return _reliability_from_pev(fit.spec, fit.variance_components.sigma_a2, pev_res, method)
+ end
+ 
+ function reliability(result::HendersonMMEResult; method::Symbol = :auto)
+     pev = prediction_error_variance(result; method = method)
+-    animal_variance = result.sigma_a2 .* _relationship_diag(result.spec, method)
+-
+-    all(>(0), animal_variance) ||
+-        throw(ArgumentError("animal-level additive variances must be positive"))
+-
+-    return (
+-        ids = pev.ids,
+-        values = Vector{Float64}(1 .- pev.values ./ animal_variance),
+-    )
++    return _reliability_from_pev(result.spec, result.sigma_a2, pev, method)
++end
++
++function _reliability_from_pev(spec::AnimalModelSpec, sigma_a2::Real, pev, method::Symbol)
++    ids, values = collect(pev.ids), Float64.(pev.values)
++    n = length(spec.ids)
++    length(ids) == length(values) == n ||
++        throw(ArgumentError("PEV ids and values must have one entry per model animal"))
++    all(v -> isfinite(v) && v >= 0, values) ||
++        throw(ArgumentError("PEV values must be finite and nonnegative after Float64 conversion"))
++    index = Dict(id => i for (i, id) in enumerate(spec.ids))
++    length(index) == n && length(Set(ids)) == n && all(id -> haskey(index, id), ids) ||
++        throw(ArgumentError("PEV ids must contain each unique model animal ID exactly once"))
++    sa = Float64(sigma_a2)
++    isfinite(sa) && sa > 0 ||
++        throw(ArgumentError("sigma_a2 must be finite and positive after Float64 conversion"))
++    diagonal = Float64.(_relationship_diag(spec, method))
++    length(diagonal) == n && all(d -> isfinite(d) && d > 0, diagonal) ||
++        throw(ArgumentError("relationship diagonal must be finite and positive for every animal"))
++    # p/(sa*d) = (mp/(ma*md))*2^(ep-ea-ed). Mantissa products are bounded,
++    # so neither an overflowing nor an underflowing denominator loses the ratio.
++    ma, ea = frexp(sa)
++    out = Vector{Float64}(undef, n)
++    for i in eachindex(values)
++        mp, ep = frexp(values[i])
++        md, ed = frexp(diagonal[index[ids[i]]])
++        ratio = values[i] == 0 ? 0.0 : ldexp(mp / (ma * md), ep - ea - ed)
++        isfinite(ratio) || throw(ArgumentError("PEV divided by animal-level additive variance must be finite"))
++        out[i] = 1 - ratio
++    end
++    return (ids = ids, values = out)
+ end
+ 
+ """
+@@ -3925,16 +4120,27 @@
+ # is the point-estimate side where `target(anchor) < 0`; `bound` is the search
+ # boundary. If `target(bound) <= 0` the interval reaches the search bound and the
+ # (clamped) bound is returned; otherwise bisect to the crossing.
++# A nonfinite evaluation or invalid anchor is an error, never a clamped endpoint.
+ function _profile_root(target, bound::Real, anchor::Real)
+-    target(bound) > 0 || return float(bound)
++    isfinite(bound) && isfinite(anchor) ||
++        throw(ArgumentError("profile bound and anchor must be finite"))
++    function evaluated_target(x)
++        value = target(x)
++        isfinite(value) || throw(ArgumentError("profile target must be finite at every evaluated point"))
++        return value
++    end
++    evaluated_target(anchor) < 0 ||
++        throw(ArgumentError("profile anchor must lie strictly inside the interval (target < 0)"))
++    evaluated_target(bound) > 0 || return float(bound)
+     a, b = float(anchor), float(bound)
+     for _ in 1:200
+-        m = 0.5 * (a + b)
+-        fm = target(m)
++        m = a / 2 + b / 2
++        fm = evaluated_target(m)
+         (abs(fm) < 1e-9 || abs(b - a) < 1e-13) && return m
++        (m == a || m == b) && return m
+         fm < 0 ? (a = m) : (b = m)
+     end
+-    return 0.5 * (a + b)
++    throw(ArgumentError("profile root did not resolve within the bisection budget"))
+ end
+ 
+ function _heritability_interval_profile(fit::AnimalModelFit; level::Real)
+@@ -3968,6 +4174,8 @@
+ `h²` range where `2·(ℓmax − ℓprofile(h²)) ≤ χ²₁,level`. Endpoints that reach the
+ `(0, 1)` search bounds are clamped. It returns
+ `(heritability, lower, upper, level, method)` (no `se`).
++Nonfinite profile targets or an invalid point-estimate anchor throw an
++`ArgumentError`; they are not reported as numeric endpoints.
+ 
+ Both are large-sample approximations: on small samples the REML surface is flat,
+ so the intervals are wide.
+@@ -4034,8 +4242,9 @@
+ only the spec's precision through `sparse_reml_loglik`. On a genomic spec `sigma_a2`
+ is the GENOMIC additive variance and the interval is CONDITIONAL on the supplied
+ `Ginv` (ridge + centering), so the implied `A_ii = diag(inv(Ginv)) ≠ 1` — not a
+-pedigree-scale `sigma_a2`. A non-PD `Ginv` degrades to a clamped endpoint (the
+-`PosDefException` is caught as `Inf`), never a silent number.
++pedigree-scale `sigma_a2`. If a failed profile evaluation, including a non-PD
++precision, yields a nonfinite likelihood-ratio target, the interval throws an
++`ArgumentError`; this is not a clamped confidence endpoint.
+ 
+ Experimental, asymptotic, REML only; no coverage calibration.
+ """
+@@ -4187,19 +4396,19 @@
+         throw(ArgumentError("initial must include sigma_a2"))
+     haskey(initial, :sigma_e2) ||
+         throw(ArgumentError("initial must include sigma_e2"))
+-    return Float64(initial.sigma_a2), Float64(initial.sigma_e2)
++    return _likelihood_positive("initial variance", initial.sigma_a2), _likelihood_positive("initial variance", initial.sigma_e2)
+ end
+ 
+ function _coerce_initial_variances(initial::Tuple)
+     length(initial) == 2 ||
+         throw(ArgumentError("initial must contain two variance components"))
+-    return Float64(initial[1]), Float64(initial[2])
++    return _likelihood_positive("initial variance", initial[1]), _likelihood_positive("initial variance", initial[2])
+ end
+ 
+ function _coerce_initial_variances(initial::AbstractVector)
+     length(initial) == 2 ||
+         throw(ArgumentError("initial must contain two variance components"))
+-    return Float64(initial[1]), Float64(initial[2])
++    return _likelihood_positive("initial variance", initial[1]), _likelihood_positive("initial variance", initial[2])
+ end
+ 
+ function _coerce_initial_variances(initial)
+@@ -4231,19 +4440,19 @@
+         throw(ArgumentError("variance_components must include sigma_a2"))
+     haskey(variance_components, :sigma_e2) ||
+         throw(ArgumentError("variance_components must include sigma_e2"))
+-    return Float64(variance_components.sigma_a2), Float64(variance_components.sigma_e2)
++    return _likelihood_positive("supplied variance", variance_components.sigma_a2; precision = true), _likelihood_positive("supplied variance", variance_components.sigma_e2; precision = true)
+ end
+ 
+ function _coerce_supplied_variance_components(variance_components::Tuple)
+     length(variance_components) == 2 ||
+         throw(ArgumentError("variance_components must contain two values"))
+-    return Float64(variance_components[1]), Float64(variance_components[2])
++    return _likelihood_positive("supplied variance", variance_components[1]; precision = true), _likelihood_positive("supplied variance", variance_components[2]; precision = true)
+ end
+ 
+ function _coerce_supplied_variance_components(variance_components::AbstractVector)
+     length(variance_components) == 2 ||
+         throw(ArgumentError("variance_components must contain two values"))
+-    return Float64(variance_components[1]), Float64(variance_components[2])
++    return _likelihood_positive("supplied variance", variance_components[1]; precision = true), _likelihood_positive("supplied variance", variance_components[2]; precision = true)
+ end
+ 
+ function _coerce_supplied_variance_components(variance_components)
+@@ -4275,6 +4484,8 @@
+         residual_precision * (Zt * y)
+     ]
+ 
++    _likelihood_check_finite("MME coefficient matrix", lhs)
++    _likelihood_check_finite("MME right-hand side", rhs)
+     return lhs, rhs, residual_precision * dot(y, y)
+ end
+ 
+@@ -4337,6 +4548,8 @@
+         residual_precision * cp.Zty
+     ]
+ 
++    _likelihood_check_finite("MME coefficient matrix", lhs)
++    _likelihood_check_finite("MME right-hand side", rhs)
+     return lhs, rhs, residual_precision * cp.yty
+ end
+ 
+@@ -4516,8 +4729,8 @@
+ 
+ function _bootstrap_usable_refit(fit)
+     fit.converged || return false
+-    sa = fit.variance_components.sigma_a2
+-    se = fit.variance_components.sigma_e2
++    sa = Float64(fit.variance_components.sigma_a2)
++    se = Float64(fit.variance_components.sigma_e2)
+     return isfinite(sa) && isfinite(se) && sa > 0 && se > 0
+ end
+ 
+@@ -4581,7 +4794,7 @@
+     beta = Float64.(fit.likelihood.beta)
+     s2a = fit.variance_components.sigma_a2
+     s2e = fit.variance_components.sigma_e2
+-    h2 = s2a / (s2a + s2e)
++    h2 = _gaussian_variance_fraction(s2a, s2e)
+     n = length(spec.y); q = size(Z, 2)
+     mu = X * beta
+     refit = estimator === :sparse_reml ? fit_sparse_reml : fit_ai_reml
+@@ -4595,7 +4808,8 @@
+             fb = refit(spec_b)
+             _bootstrap_usable_refit(fb) || continue
+             sab = fb.variance_components.sigma_a2; seb = fb.variance_components.sigma_e2
+-            push!(sa, sab); push!(se, seb); push!(hh, sab / (sab + seb))
++            hhb = _gaussian_variance_fraction(sab, seb)
++            push!(sa, sab); push!(se, seb); push!(hh, hhb)
+         catch
+             # PosDefException / non-converged refit → dropped, surfaced via n_converged
+         end

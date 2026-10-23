@@ -1,0 +1,6 @@
+cell	host	route	N	fit_ok	fit_converged	se_ok	target	n_eval	n_cover	coverage	mcse	n_refuse	refusal_rate	claim_class
+interior	Totoro	sparse_auto	500	500	489	489	Va	489	451	0.922290	0.012106	11	0.022000	directional-conservative-bank
+interior	Totoro	sparse_auto	500	500	489	489	Vpe	489	472	0.965235	0.008284	11	0.022000	directional-conservative-bank
+interior	Totoro	sparse_auto	500	500	489	489	Ve	489	460	0.940695	0.010681	11	0.022000	directional-conservative-bank
+interior	Totoro	sparse_auto	500	500	489	489	h2	489	488	0.997955	0.002043	11	0.022000	directional-conservative-bank
+interior	Totoro	sparse_auto	500	500	489	489	t	489	472	0.965235	0.008284	11	0.022000	directional-conservative-bank

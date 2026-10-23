@@ -1,0 +1,116 @@
+[
+  {
+    "old": "function _ratio_delta_ci(info::AbstractMatrix, theta::AbstractVector,",
+    "new": "# Invalid user controls are errors, distinct from unavailable boundary information.\nfunction _validate_uncertainty_fd_step(fd_step::Real)\n    (isfinite(fd_step) && fd_step > 0) ||\n        throw(ArgumentError(\"fd_step must be finite and positive\"))\n    step = Float64(fd_step)\n    (isfinite(step) && step > 0) ||\n        throw(ArgumentError(\"fd_step must remain finite and positive after Float64 conversion\"))\n    return step\nend\n\nfunction _uncertainty_variance_vector(sigmas::AbstractVector, sigma_e2::Real, K::Integer)\n    length(sigmas) == K || throw(ArgumentError(\"sigmas length must match number of effects\"))\n    all(s -> s isa Real && isfinite(s) && s > 0, sigmas) ||\n        throw(ArgumentError(\"all sigmas must be finite and positive\"))\n    (isfinite(sigma_e2) && sigma_e2 > 0) ||\n        throw(ArgumentError(\"sigma_e2 must be finite and positive\"))\n    ss = Float64.(collect(sigmas))\n    all(s -> isfinite(s) && s > 0, ss) ||\n        throw(ArgumentError(\"all sigmas must remain finite and positive after Float64 conversion\"))\n    se = Float64(sigma_e2)\n    (isfinite(se) && se > 0) ||\n        throw(ArgumentError(\"sigma_e2 must remain finite and positive after Float64 conversion\"))\n    theta = vcat(ss, se)\n    isfinite(sum(theta)) || throw(ArgumentError(\"total variance must be finite after Float64 conversion\"))\n    return theta\nend\n\nfunction _validate_uncertainty_selection(which, K::Integer)\n    applicable(iterate, which) ||\n        throw(ArgumentError(\"which must be a nonempty collection of unique integer component indices\"))\n    idx = collect(which)\n    isempty(idx) && throw(ArgumentError(\"which must select at least one component\"))\n    all(i -> i isa Integer && !(i isa Bool) && 1 <= i <= K, idx) ||\n        throw(ArgumentError(\"which must contain integer component indices 1..$K; Boolean values are invalid\"))\n    allunique(idx) || throw(ArgumentError(\"which must contain unique component indices\"))\n    return Int.(idx)\nend\n\nfunction _ratio_delta_ci(info::AbstractMatrix, theta::AbstractVector,",
+    "original_line": 1567,
+    "count": 1
+  },
+  {
+    "old": "# they are dropped from `info` (the interior information conditional on a boundary\n# component being fixed at 0 is the corresponding sub-block), so a ratio built on",
+    "new": "# they are dropped from `info` while held fixed at their supplied values. The\n# reported ratio retains the full denominator; only its active coordinates vary.\n# At an exact zero component this is conditional information at zero, so a ratio built on",
+    "original_line": 1555,
+    "count": 1
+  },
+  {
+    "old": "    subtotal = sum(theta[k] for k in keep)   # == total (dropped comps are ≈ 0)\n    g = [k == keep_num ? (subtotal - theta[keep_num]) / subtotal^2 :\n                         -theta[keep_num] / subtotal^2 for k in keep]",
+    "new": "    # Inactive components stay in total and are held fixed at their supplied values.\n    g = [k == keep_num ? (total - theta[keep_num]) / total^2 :\n                         -theta[keep_num] / total^2 for k in keep]",
+    "original_line": 1631,
+    "count": 1
+  },
+  {
+    "old": "function _reml_fd_information(f, theta::AbstractVector, fd_step::Real)\n    d = length(theta)\n    h = fd_step .* max.(abs.(theta), 1e-3)",
+    "new": "function _reml_fd_information(f, theta::AbstractVector, fd_step::Real)\n    fd_step = _validate_uncertainty_fd_step(fd_step)\n    d = length(theta)\n    d >= 1 || throw(ArgumentError(\"variance vector must be nonempty\"))\n    theta = _uncertainty_variance_vector(theta[1:end-1], theta[end], d - 1)\n    h = fd_step .* max.(abs.(theta), 1e-3)\n    all(x -> isfinite(x) && x > 0, h) ||\n        throw(ArgumentError(\"fd_step must produce finite positive component steps\"))",
+    "original_line": 1672,
+    "count": 1
+  },
+  {
+    "old": "    which in (:both, :ratio1, :ratio2) ||",
+    "new": "    fd_step = _validate_uncertainty_fd_step(fd_step)\n    which in (:both, :ratio1, :ratio2) ||",
+    "original_line": 1740,
+    "count": 1
+  },
+  {
+    "old": "    K = length(effects)\n    K >= 1 || throw(ArgumentError(\"at least one random effect is required\"))\n    if which isa Symbol",
+    "new": "    fd_step = _validate_uncertainty_fd_step(fd_step)\n    K = length(effects)\n    K >= 1 || throw(ArgumentError(\"at least one random effect is required\"))\n    if which isa Symbol",
+    "original_line": 2046,
+    "count": 1
+  },
+  {
+    "old": "    length(sigmas) == K ||\n        throw(ArgumentError(\"sigmas length must match number of effects\"))\n    all(s -> s > 0, sigmas) || throw(ArgumentError(\"all sigmas must be positive\"))\n    sigma_e2 > 0 || throw(ArgumentError(\"sigma_e2 must be positive\"))\n    theta = vcat(Float64.(collect(sigmas)), Float64(sigma_e2))\n\n    # `_reml_fd_information`",
+    "new": "    fd_step = _validate_uncertainty_fd_step(fd_step)\n    theta = _uncertainty_variance_vector(sigmas, sigma_e2, K)\n\n    # `_reml_fd_information`",
+    "original_line": 2102,
+    "count": 1
+  },
+  {
+    "old": "    h = fd_step .* max.(abs.(theta), 1e-3)\n    if !all(theta .- 2 .* h .> 0)",
+    "new": "    h = fd_step .* max.(abs.(theta), 1e-3)\n    all(x -> isfinite(x) && x > 0, h) ||\n        throw(ArgumentError(\"fd_step must produce finite positive component steps\"))\n    if !all(theta .- 2 .* h .> 0)",
+    "original_line": 2110,
+    "count": 1
+  },
+  {
+    "old": "                                level::Real, na)\n    total = sum(theta)",
+    "new": "                                level::Real, na)\n    idx = _validate_uncertainty_selection(idx, K)\n    total = sum(theta)",
+    "original_line": 2217,
+    "count": 1
+  },
+  {
+    "old": "    idx = collect(which)\n    isempty(idx) && throw(ArgumentError(\"which must select at least one component\"))\n    all(i -> 1 <= i <= K, idx) ||\n        throw(ArgumentError(\"which must index components 1..$K\"))\n    theta = vcat(Float64.(collect(sigmas)), Float64(sigma_e2))",
+    "new": "    idx = _validate_uncertainty_selection(which, K)\n    fd_step = _validate_uncertainty_fd_step(fd_step)\n    theta = _uncertainty_variance_vector(sigmas, sigma_e2, K)",
+    "original_line": 2275,
+    "count": 1
+  },
+  {
+    "old": "    idx = collect(which)\n    all(i -> 1 <= i <= K, idx) ||\n        throw(ArgumentError(\"which must index components 1..$K\"))\n\n    cov = multi_effect_variance_component_covariance(",
+    "new": "    idx = _validate_uncertainty_selection(which, K)\n    fd_step = _validate_uncertainty_fd_step(fd_step)\n    theta = _uncertainty_variance_vector(sigmas, sigma_e2, K)\n\n    cov = multi_effect_variance_component_covariance(",
+    "original_line": 2377,
+    "count": 1
+  },
+  {
+    "old": "        y, X, effects, sigmas, sigma_e2; fd_step = fd_step,\n    )\n    theta = vcat(Float64.(collect(sigmas)), Float64(sigma_e2))\n    total = sum(theta)",
+    "new": "        y, X, effects, sigmas, sigma_e2; fd_step = fd_step,\n    )\n    total = sum(theta)",
+    "original_line": 2382,
+    "count": 1
+  },
+  {
+    "old": "comparators or hardened for boundary/large-pedigree cases. The AI form is exact\nfor the *Gaussian* linear mixed model (the information matrix uses the data\ndirectly, so it matches the observed information); it does NOT transfer to\nLaplace-approximated / non-Gaussian models, where observed-information Newton is\nrequired instead.",
+    "new": "comparators or hardened for boundary/large-pedigree cases. For a Gaussian linear\nmixed model whose covariance is linear in the variance components, average\ninformation is the arithmetic average of observed and expected REML information.\nIts working-variate quadratic need not equal the observed information. This\nGaussian identity does not directly extend to Laplace-approximated non-Gaussian\nmodels.",
+    "original_line": 429,
+    "count": 1
+  },
+  {
+    "old": "`blockdiag(A_1/σ_1, …, A_K/σ_K)`",
+    "new": "`blockdiag(Ainv_1/σ_1, …, Ainv_K/σ_K)`",
+    "original_line": 1782,
+    "count": 1
+  },
+  {
+    "old": "Non-identifiability (e.g. two `A=I` effects on the same grouping) shows as a flat\nridge (`converged = false`); the engine reports it, it does not certify\nidentifiability.",
+    "new": "Non-identifiability (e.g. two `A=I` effects on the same grouping) can produce a\nflat ridge even when the optimizer reports `converged = true`. Optimizer\nconvergence and boundary flags do not certify identifiability.",
+    "original_line": 1911,
+    "count": 1
+  },
+  {
+    "old": "information sub-block (the interior information conditional on the boundary\ncomponent being fixed at 0), so e.g.",
+    "new": "information sub-block conditional on that component held at its supplied value.\nThe reported ratio and its gradient retain the full denominator, so e.g.",
+    "original_line": 1720,
+    "count": 1
+  },
+  {
+    "old": "(the interior information conditional on the boundary component fixed at 0), so a\nwell-identified component keeps a valid interval even when another collapses.",
+    "new": "conditional on those components held at their supplied values. The reported\nratio and its gradient retain the full denominator. At exact zero this gives\nthe corresponding zero-component reduction; the approximation is not a\nnear-boundary coverage guarantee.",
+    "original_line": 2022,
+    "count": 1
+  },
+  {
+    "old": "rail or the information is not positive definite. Asymptotic; REML only.",
+    "new": "rail or the information is not positive definite. `which` must be a nonempty\ncollection of unique integer component indices (Boolean values are invalid).\nVariances and `fd_step` must remain finite and positive after Float64 conversion;\ninvalid inputs throw even when the ratio would lie on a rail. Asymptotic; REML only.",
+    "original_line": 2262,
+    "count": 1
+  },
+  {
+    "old": "The returned values are identical to calling the three functions separately;\nthis only stops paying three times for one matrix.",
+    "new": "The returned values are identical to calling the three functions separately;\nthis only stops paying three times for one matrix. `which` has the same nonempty,\nunique integer selection contract as `multi_effect_sum_ratio_interval`. Invalid\nvariances or finite-difference controls throw before information is computed.",
+    "original_line": 2356,
+    "count": 1
+  }
+]

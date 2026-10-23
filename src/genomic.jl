@@ -1,3 +1,15 @@
+function _symmetrize_roundoff!(G::Matrix{Float64})
+    all(isfinite, G) ||
+        throw(ArgumentError("constructed genomic relationship or precision must be finite"))
+    n = size(G, 1)
+    @inbounds for j in 2:n, i in 1:(j - 1)
+        midpoint = G[i, j] / 2 + G[j, i] / 2
+        G[i, j] = midpoint
+        G[j, i] = midpoint
+    end
+    return G
+end
+
 """
     centered_markers(markers; allele_frequencies = nothing)
 
@@ -6,7 +18,8 @@ allele-frequency centering and VanRaden scaling as
 [`genomic_relationship_matrix`](@ref).
 
 Returns a `NamedTuple` `(W, p, k)`: `W = markers − 2p` is the centered marker
-matrix (each column sums to zero), `p` are the per-marker allele frequencies
+matrix (each column sums to zero when frequencies are estimated from these
+markers), `p` are the per-marker allele frequencies
 (estimated from the columns unless supplied), and `k = 2 Σ_j p_j(1 − p_j)` is the
 VanRaden scale, so that `genomic_relationship_matrix(markers) == W * Wᵀ / k`.
 Computing `W`, `p`, and `k` together guarantees they share one `p`, which the
@@ -68,6 +81,10 @@ which reduces exactly to the unweighted method-1 `G` when the weights are equal.
 it throws a `MethodError` asking you to load CUDA. The `:cpu` result is unchanged by
 the addition of this keyword.
 
+CPU cross-products are symmetrized at floating-point precision before return,
+so the constructed relationship is exactly symmetric for downstream validation.
+This leaves the covariance estimand unchanged.
+
 This is the Phase 2 genomic-relationship construction utility — it builds `G`
 only. Its regularized inverse is [`genomic_relationship_inverse`](@ref), and the
 experimental supplied-variance GBLUP / SNP-BLUP fitting that consume `G` / `Ginv`
@@ -97,20 +114,25 @@ function genomic_relationship_matrix(
             throw(ArgumentError("per-marker weights are supported with method = :vanraden1 only"))
         length(weights) == size(cm.W, 2) ||
             throw(ArgumentError("weights must have one entry per marker"))
-        all(>=(0), weights) || throw(ArgumentError("weights must be non-negative"))
         w = Float64.(weights)
+        all(isfinite, w) || throw(ArgumentError("weights must be finite"))
+        all(>=(0), w) || throw(ArgumentError("weights must be non-negative"))
         scale = sum(w .* 2 .* cm.p .* (1 .- cm.p))
-        scale > 0 || throw(ArgumentError("weighted genomic scaling is zero"))
-        return (cm.W * Diagonal(w) * transpose(cm.W)) ./ scale
+        isfinite(scale) && scale > 0 ||
+            throw(ArgumentError("weighted genomic scaling must be finite and positive"))
+        G = (cm.W * Diagonal(w) * transpose(cm.W)) ./ scale
+        return _symmetrize_roundoff!(G)
     end
     if method === :vanraden1
-        return (cm.W * transpose(cm.W)) ./ cm.k
+        G = (cm.W * transpose(cm.W)) ./ cm.k
+        return _symmetrize_roundoff!(G)
     elseif method === :vanraden2
         scale = 2 .* cm.p .* (1 .- cm.p)
         all(>(0), scale) ||
             throw(ArgumentError("method = :vanraden2 requires every marker polymorphic (0 < p < 1); a monomorphic marker cannot be standardized"))
         Zs = cm.W ./ transpose(sqrt.(scale))
-        return (Zs * transpose(Zs)) ./ size(cm.W, 2)
+        G = (Zs * transpose(Zs)) ./ size(cm.W, 2)
+        return _symmetrize_roundoff!(G)
     else
         throw(ArgumentError("method must be :vanraden1 or :vanraden2"))
     end
@@ -143,10 +165,189 @@ function genomic_relationship_inverse(G::AbstractMatrix; ridge::Real = 0.01, bac
     n = size(G, 1)
     size(G, 2) == n || throw(ArgumentError("G must be square"))
     ridge >= 0 || throw(ArgumentError("ridge must be non-negative"))
+    issymmetric(G) || throw(ArgumentError("G must be symmetric"))
     regularized = Symmetric(Matrix{Float64}(G) + ridge * I)
     isposdef(regularized) ||
         throw(ArgumentError("regularized G is not positive definite; increase ridge"))
     return inv(regularized)
+end
+
+# Canonical provenance encoding for the v0.7 genomic activation contract. These helpers are
+# intentionally internal: R receives the fingerprints and semantic metadata, but the byte format
+# remains owned by the Julia engine. Integers and Float64 bit patterns are written little-endian so
+# the digest is independent of host byte order.
+const _GENOMIC_PROVENANCE_DOMAIN = "HSquared-provenance-v1\0"
+
+function _provenance_write_u64(io::IO, value::Integer)
+    value >= 0 || throw(ArgumentError("canonical provenance integers must be non-negative"))
+    write(io, htol(UInt64(value)))
+    return io
+end
+
+
+function _provenance_write_string(io::IO, value::AbstractString)
+    bytes = codeunits(String(value))
+    _provenance_write_u64(io, length(bytes))
+    write(io, bytes)
+    return io
+end
+
+
+function _provenance_write_strings(io::IO, values::AbstractVector{<:AbstractString})
+    _provenance_write_u64(io, length(values))
+    for value in values
+        _provenance_write_string(io, value)
+    end
+    return io
+end
+
+
+function _provenance_write_float64(io::IO, value::Real)
+    x = Float64(value)
+    isfinite(x) || throw(ArgumentError("canonical provenance values must be finite"))
+    x == 0.0 && (x = 0.0) # canonicalize -0.0 to +0.0
+    _provenance_write_u64(io, reinterpret(UInt64, x))
+    return io
+end
+
+
+function _provenance_buffer(kind::AbstractString)
+    io = IOBuffer()
+    write(io, codeunits(_GENOMIC_PROVENANCE_DOMAIN))
+    write(io, codeunits(String(kind)))
+    write(io, UInt8(0))
+    return io
+end
+
+
+_provenance_digest(io::IOBuffer) = bytes2hex(SHA.sha256(take!(io)))
+
+
+function _canonical_genomic_ids(ids, n::Integer)
+    length(ids) == n || throw(ArgumentError("ids must have one entry per genomic row"))
+    all(x -> x !== missing && x !== nothing, ids) ||
+        throw(ArgumentError("genomic ids must be non-missing"))
+    values = string.(collect(ids))
+    all(!isempty, values) || throw(ArgumentError("genomic ids must be non-empty"))
+    length(unique(values)) == length(values) || throw(ArgumentError("genomic ids must be unique"))
+    return values
+end
+
+
+function _genomic_id_order_fingerprint(ids::AbstractVector{<:AbstractString})
+    io = _provenance_buffer("id_order")
+    _provenance_write_strings(io, ids)
+    return _provenance_digest(io)
+end
+
+
+function _genomic_marker_fingerprint(markers::AbstractMatrix, ids::AbstractVector{<:AbstractString},
+                                     marker_names)
+    n, m = size(markers)
+    io = _provenance_buffer("markers")
+    _provenance_write_u64(io, n)
+    _provenance_write_u64(io, m)
+    _provenance_write_strings(io, ids)
+    if marker_names === nothing
+        write(io, UInt8(0))
+        _provenance_write_u64(io, m)
+        for j in 1:m
+            _provenance_write_u64(io, j)
+        end
+    else
+        all(x -> x !== missing && x !== nothing, marker_names) ||
+            throw(ArgumentError("marker_names must be non-missing"))
+        names = string.(collect(marker_names))
+        length(names) == m || throw(ArgumentError("marker_names must have one entry per marker"))
+        all(!isempty, names) || throw(ArgumentError("marker_names must be non-empty"))
+        length(unique(names)) == m || throw(ArgumentError("marker_names must be unique"))
+        write(io, UInt8(1))
+        _provenance_write_strings(io, names)
+    end
+    for value in markers # Julia arrays iterate in column-major semantic order
+        _provenance_write_float64(io, value)
+    end
+    return _provenance_digest(io)
+end
+
+
+function _genomic_matrix_fingerprint(kind::AbstractString, matrix::AbstractMatrix,
+                                     ids::AbstractVector{<:AbstractString})
+    n, m = size(matrix)
+    n == m || throw(ArgumentError("$kind must be square"))
+    length(ids) == n || throw(ArgumentError("ids must match $kind dimensions"))
+    io = _provenance_buffer(kind)
+    _provenance_write_u64(io, n)
+    _provenance_write_u64(io, m)
+    _provenance_write_strings(io, ids) # row IDs
+    _provenance_write_strings(io, ids) # column IDs, framed separately by contract
+    for value in matrix
+        _provenance_write_float64(io, value)
+    end
+    return _provenance_digest(io)
+end
+
+
+"""
+    _genomic_precision_provenance(Q, ids)
+
+Internal provenance for a caller-supplied genomic precision. Construction method, allele-frequency
+source, ridge, scale denominator, and covariance-kernel fingerprint are deliberately unknown.
+"""
+function _genomic_precision_provenance(Q::AbstractMatrix, ids)
+    n = size(Q, 1)
+    size(Q, 2) == n || throw(ArgumentError("Q must be square"))
+    values = Matrix{Float64}(Q)
+    all(isfinite, values) || throw(ArgumentError("Q must contain only finite values"))
+    id_values = _canonical_genomic_ids(ids, n)
+    return (
+        relationship_source = "supplied_Ginv",
+        relationship_method = nothing,
+        allele_frequency_source = nothing,
+        ridge = nothing,
+        scale_denominator = nothing,
+        relationship_scale = "inverse_of_supplied_precision",
+        id_order_fingerprint = _genomic_id_order_fingerprint(id_values),
+        marker_content_fingerprint = nothing,
+        kernel_fingerprint = nothing,
+        precision_fingerprint = _genomic_matrix_fingerprint("Q_lambda", values, id_values),
+    )
+end
+
+
+"""
+    _genomic_activation_construction(markers, ids; marker_names = nothing, ridge = 0.01)
+
+Internal, bridge-facing construction for the frozen v0.7 genomic activation route. It uses sample
+allele frequencies, unweighted VanRaden method 1, and the supplied ridge, returning every symbolic
+intermediate plus engine-owned semantic provenance. This is not a new public Julia API.
+"""
+function _genomic_activation_construction(markers::AbstractMatrix, ids;
+                                          marker_names = nothing, ridge::Real = 0.01)
+    ridge_value = Float64(ridge)
+    isfinite(ridge_value) && ridge_value >= 0 ||
+        throw(ArgumentError("ridge must be non-negative and finite"))
+    M = Matrix{Float64}(markers)
+    n, _ = size(M)
+    id_values = _canonical_genomic_ids(ids, n)
+    cm = centered_markers(M)
+    G = genomic_relationship_matrix(M; allele_frequencies = cm.p, method = :vanraden1)
+    K = Matrix{Float64}(G) + ridge_value * I
+    Q = Matrix{Float64}(genomic_relationship_inverse(G; ridge = ridge_value))
+    provenance = (
+        relationship_source = "markers",
+        relationship_method = "vanraden1",
+        allele_frequency_source = "sample",
+        ridge = ridge_value,
+        scale_denominator = cm.k,
+        relationship_scale = "K_lambda",
+        id_order_fingerprint = _genomic_id_order_fingerprint(id_values),
+        marker_content_fingerprint = _genomic_marker_fingerprint(M, id_values, marker_names),
+        kernel_fingerprint = _genomic_matrix_fingerprint("K_lambda", K, id_values),
+        precision_fingerprint = _genomic_matrix_fingerprint("Q_lambda", Q, id_values),
+    )
+    return (p = cm.p, W = cm.W, k = cm.k, G = G, K = K, Q = Q,
+            provenance = provenance)
 end
 
 """
@@ -170,21 +371,30 @@ inverting `Gcc` (`ncore³`) + the diagonal `Mnn`, `O(ncore³ + nnoncore·ncore²
 result is returned dense at validation scale — a sparse/on-device representation is future work).
 
 EXPERIMENTAL, engine-internal, validation-scale, supplied-`G`; no core-selection algorithm (the
-caller supplies `core`), no R surface. Throws on a non-positive conditional variance (increase the
-core set or `ridge`).
+caller supplies `core`), no R surface. Throws when a conditional variance is non-finite or is not
+positive relative to its subtraction scale (increase the core set or `ridge`).
 """
 function apy_genomic_relationship_inverse(G::AbstractMatrix, core::AbstractVector{<:Integer};
                                           ridge::Real = 0.0)
     n = size(G, 1)
     size(G, 2) == n || throw(ArgumentError("G must be square"))
+    isfinite(ridge) || throw(ArgumentError("ridge must be finite"))
     ridge >= 0 || throw(ArgumentError("ridge must be non-negative"))
+    ridge_f = Float64(ridge)
+    isfinite(ridge_f) || throw(ArgumentError("ridge must remain finite after conversion to Float64"))
+    all(isfinite, G) || throw(ArgumentError("G must contain only finite values"))
+    issymmetric(G) || throw(ArgumentError("G must be symmetric"))
     core = sort(unique(Int.(core)))
     (isempty(core) || core[1] < 1 || core[end] > n) &&
         throw(ArgumentError("core must be a non-empty set of row indices in 1:$n"))
     noncore = setdiff(1:n, core)
     nc = length(core)
     Gd = Matrix{Float64}(G)
-    Gcc = Symmetric(Gd[core, core] + ridge * I)
+    all(isfinite, Gd) || throw(ArgumentError("G must remain finite after conversion to Float64"))
+    Gcc_values = Gd[core, core] + ridge_f * I
+    all(isfinite, Gcc_values) ||
+        throw(ArgumentError("APY regularized core block is not finite at this scale"))
+    Gcc = Symmetric(Gcc_values)
     Gcc_f = try
         cholesky(Gcc)
     catch err
@@ -198,17 +408,27 @@ function apy_genomic_relationship_inverse(G::AbstractMatrix, core::AbstractVecto
     if !isempty(noncore)
         Gcn = Gd[core, noncore]                              # nc × nn
         B = Gcc_inv * Gcn                                    # Gcc⁻¹Gcn
-        m = [Gd[noncore[j], noncore[j]] - dot(view(Gcn, :, j), view(B, :, j)) for j in eachindex(noncore)]
-        all(>(1e-12), m) ||
-            throw(ArgumentError("APY: non-positive conditional variance for a non-core animal; increase the core set or ridge"))
+        m = Vector{Float64}(undef, length(noncore))
+        m_scale = similar(m)
+        for j in eachindex(noncore)
+            diagonal = Gd[noncore[j], noncore[j]]
+            correction = dot(view(Gcn, :, j), view(B, :, j))
+            m[j] = diagonal - correction
+            m_scale[j] = max(abs(diagonal), abs(correction))
+        end
+        all(j -> isfinite(m[j]) && m[j] > 16eps(Float64) * m_scale[j], eachindex(m)) ||
+            throw(ArgumentError("APY: non-core conditional variance is non-finite or numerically non-positive; increase the core set or ridge"))
         Minv = 1.0 ./ m
+        all(isfinite, Minv) ||
+            throw(ArgumentError("APY: conditional-variance inverse is not finite at this scale"))
         Ginv[core, core] .+= B * (Diagonal(Minv) * transpose(B))
         cn = -(B .* transpose(Minv))                         # −Gcc⁻¹Gcn·Mnn⁻¹
         Ginv[core, noncore] .= cn
         Ginv[noncore, core] .= transpose(cn)
         Ginv[noncore, noncore] .= Diagonal(Minv)
     end
-    return Ginv
+    all(isfinite, Ginv) || throw(ArgumentError("APY precision is not finite at this scale"))
+    return _symmetrize_roundoff!(Ginv)
 end
 
 """
@@ -219,7 +439,9 @@ Construct dense leave-one-group-out genomic relationship precisions from marker
 dosages.
 
 `marker_groups` must provide one group label per marker column, for example a
-chromosome label. For each group, the helper drops that group's markers, builds a
+chromosome label. Labels must be present and non-empty before string conversion;
+the literal string `"missing"` is an ordinary supplied label. For each group,
+the helper drops that group's markers, builds a
 VanRaden genomic relationship matrix from the remaining markers using
 [`genomic_relationship_matrix`](@ref), and returns its regularized dense inverse
 from [`genomic_relationship_inverse`](@ref). The return value is a
@@ -240,7 +462,7 @@ function loco_relationship_precisions(
     n, m = size(M)
     (n >= 1 && m >= 1) || throw(ArgumentError("markers must be non-empty"))
 
-    groups = string.(collect(marker_groups))
+    groups = _checked_marker_labels(marker_groups, :marker_groups)
     length(groups) == m ||
         throw(ArgumentError("marker_groups must have one entry per marker"))
     all(!isempty, groups) ||
@@ -284,9 +506,10 @@ model with a genomic relationship inverse `Ginv` in place of the pedigree `Ainv`
 reusing the existing Henderson mixed-model-equation solve.
 
 `Ginv` is the (regularized) inverse of a genomic relationship matrix, e.g. from
-[`genomic_relationship_inverse`](@ref). A VanRaden `G` is rank-deficient
-(column-centering puts the all-ones vector in its null space, so `rank(G) ≤
-n − 1`), so it must be regularized before inversion — that is
+[`genomic_relationship_inverse`](@ref). With sample-estimated allele frequencies,
+a VanRaden `G` is rank-deficient (column-centering puts the all-ones vector in its
+null space, so `rank(G) ≤ n − 1`). Supplied frequencies do not imply that null
+vector. A singular `G` must be regularized before inversion; that is
 `genomic_relationship_inverse`'s job, not this function's. `sigma_a2` and
 `sigma_e2` are the supplied genomic and residual variances; GBLUP here does not
 estimate them.
@@ -316,7 +539,8 @@ end
 
 """
     fit_gblup_reml(y, X, Z, Ginv; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0),
-                   target = :ai_reml, ids = nothing)
+                   target = :ai_reml, iterations = nothing, ids = nothing,
+                   solver = :spectral)
 
 GBLUP with REML-estimated variance components: build the genomic animal-model
 spec (genomic precision `Ginv` in the `Ainv` slot) and estimate `(sigma_a2,
@@ -325,6 +549,21 @@ one-call convenience over `animal_model_spec(...; method = :REML)` +
 [`fit_animal_model`](@ref); `target = :ai_reml` (default) or `:sparse_reml`.
 Returns the [`AnimalModelFit`](@ref) (estimated `variance_components`, genomic
 `breeding_values`, `likelihood`, `converged`, …).
+
+`iterations` (hsquared#212), when supplied, forwards to whichever `target`
+optimizer is selected (`fit_ai_reml`'s own default is 100; `fit_sparse_reml`'s
+and `fit_variance_components`'s is 1000) via [`fit_animal_model`](@ref)'s
+`kwargs...` passthrough. Default `nothing` omits the keyword entirely, so the
+call is byte-identical to the pre-#212-fix behaviour (each target's own
+hardcoded default).
+
+`solver = :spectral` (default, hsquared issue 420) fits the single-genomic-effect model
+(`Z = I`, `target = :ai_reml`) by one eigen-decomposition of `Ginv` and a bounded 1-D
+Brent profile on `Vg / (Vg + Ve)`; `optimizer_status` is `"spectral_converged"` and
+`iterations` counts Brent iterations. It hands the fit to the dense AI-REML route
+whenever the model is not of that form, the spectrum is non-positive or non-finite, or
+the optimum sits on the `Vg` / `Ve` boundary. `solver = :dense_ai_reml` forces the dense
+route for validation. `target = :sparse_reml` is always dense, and the single-step wrappers pin `:dense_ai_reml`.
 
 Experimental, dense/validation-scale (the dense `Ginv` path gains no sparse
 selected-inversion advantage); no external comparator, no R model-spec.
@@ -336,10 +575,91 @@ function fit_gblup_reml(
     Ginv::AbstractMatrix;
     initial = (sigma_a2 = 1.0, sigma_e2 = 1.0),
     target::Symbol = :ai_reml,
+    iterations::Union{Nothing,Integer} = nothing,
     ids = nothing,
+    solver::Symbol = :spectral,
 )
+    solver in (:spectral, :dense_ai_reml) ||
+        throw(ArgumentError("solver must be :spectral or :dense_ai_reml"))
     spec = animal_model_spec(y, X, Z, Ginv; ids = ids, method = :REML)
-    return fit_animal_model(spec; target = target, initial = initial)
+    if solver == :spectral && target == :ai_reml
+        # `initial` is unused by the spectral profile; validate it as the dense route would.
+        sigma_a2, sigma_e2 = _coerce_initial_variances(initial)
+        _finite_positive_variance_float64("initial sigma_a2", sigma_a2)
+        _finite_positive_variance_float64("initial sigma_e2", sigma_e2)
+        fit = _fit_genomic_spectral_reml(spec)
+        fit === nothing || return fit
+    end
+    iterations === nothing && return fit_animal_model(spec; target = target, initial = initial)
+    return fit_animal_model(spec; target = target, initial = initial, iterations = iterations)
+end
+
+# Spectral REML for y = Xb + g + e, g ~ N(0, Vg K), K = Ginv^-1 (hsquared issue 420).
+# Q = Ginv = U L U' gives K = U L^-1 U'; the REML loglik then depends only on L, U'y and
+# U'X, so each evaluation is O(n p^2). Profile on r = Vg / (Vg + Ve) in [0, 1]
+# (delta = Ve / Vg = (1 - r) / r, bounded for Brent), then Vg = r T, Ve = (1 - r) T with
+# T the closed-form total variance and beta the GLS estimate.
+const _GENOMIC_EIGEN_CALLS = Ref(0)
+
+# Counted O(n^3) factorisation; `nothing` when the spectrum is not finite and positive.
+function _genomic_eigen(M::AbstractMatrix)
+    _GENOMIC_EIGEN_CALLS[] += 1
+    decomposition = try
+        eigen(Symmetric(Matrix{Float64}(M)))
+    catch
+        return nothing
+    end
+    all(isfinite, decomposition.values) && all(>(0), decomposition.values) || return nothing
+    return decomposition
+end
+
+const _GENOMIC_SPECTRAL_RATIO_EDGE = 1e-6
+
+# Returns an `AnimalModelFit`, or `nothing` whenever the dense AI-REML route must decide
+# (ineligible model, non-positive/non-finite spectrum, failed profile, or an optimum on
+# or next to the Vg / Ve boundary, so boundary behaviour is the dense route's).
+function _fit_genomic_spectral_reml(spec::AnimalModelSpec)
+    n = length(spec.y)
+    p = size(spec.X, 2)
+    spec.method == :REML && n > p || return nothing
+    size(spec.Z) == (n, n) && size(spec.Ainv) == (n, n) || return nothing
+    Z = spec.Z
+    (Z isa SparseMatrixCSC ? Z == sparse(1.0I, n, n) : Z == I(n)) || return nothing
+    y = try Vector{Float64}(spec.y) catch; return nothing end
+    X = try Matrix{Float64}(spec.X) catch; return nothing end
+    Q = try Matrix{Float64}(spec.Ainv) catch; return nothing end
+    all(isfinite, y) && all(isfinite, X) && all(isfinite, Q) || return nothing
+    isapprox(Q, transpose(Q); atol = 1e-12, rtol = 0) || return nothing
+    decomposition = _genomic_eigen(Q)
+    decomposition === nothing && return nothing
+    kernel_eigenvalues = 1 ./ decomposition.values
+    vectors_t = transpose(decomposition.vectors)
+    context = (eigenvalues = kernel_eigenvalues, y = vectors_t * y, X = vectors_t * X,
+               n = n, p = p)
+    value(r) = (part = _genomic_profile_reml(context, r); part === nothing ? Inf : -part.loglik)
+    grid = collect(0.0:0.05:1.0)
+    values = value.(grid)
+    best = argmin(values)
+    isfinite(values[best]) || return nothing
+    (best == 1 || best == length(grid)) && return nothing
+    lo, hi = grid[best - 1], grid[best + 1]
+    optimum = Optim.optimize(value, lo, hi, Optim.Brent(); rel_tol = 1e-12, abs_tol = 1e-12)
+    ratio = Optim.minimizer(optimum)
+    part = _genomic_profile_reml(context, ratio)
+    part === nothing && return nothing
+    _GENOMIC_SPECTRAL_RATIO_EDGE < ratio < 1 - _GENOMIC_SPECTRAL_RATIO_EDGE || return nothing
+    sigma_a2 = ratio * part.t_hat
+    sigma_e2 = (1 - ratio) * part.t_hat
+    all(isfinite, (sigma_a2, sigma_e2)) && sigma_a2 > 0 && sigma_e2 > 0 || return nothing
+    weights = 1 ./ (ratio .* kernel_eigenvalues .+ (1 - ratio))
+    beta = Symmetric(transpose(context.X) * (weights .* context.X)) \
+           (transpose(context.X) * (weights .* context.y))
+    all(isfinite, beta) || return nothing
+    likelihood = GaussianLikelihoodResult(part.loglik, Vector{Float64}(beta), sigma_a2,
+                                          sigma_e2, :REML, n, p)
+    return AnimalModelFit(spec, likelihood, (sigma_a2 = sigma_a2, sigma_e2 = sigma_e2),
+                          true, "spectral_converged", Optim.iterations(optimum),
+                          :variance_components, false, false, :estimated_spectral_reml)
 end
 
 """
@@ -357,11 +677,17 @@ independent), and the per-marker variance is `sigma_g2 / k` with
 p)` where `marker_effects = â`, `gebv = W·â` are the implied genomic breeding
 values, and `beta` are the fixed effects.
 
-`gebv` equals the GBLUP genomic breeding values for the same data and variances
-(the GBLUP↔SNP-BLUP equivalence). The random block is deliberately labelled
-`marker_effects` (not `breeding_values`/EBV), because on this spec the random
-effects are marker effects, not animal breeding values. Experimental,
-supplied-variance only (no variance-component estimation); unweighted VanRaden
+`gebv` equals the GBLUP genomic breeding values for the same data and variances,
+exactly for `G` itself (the GBLUP↔SNP-BLUP equivalence) — but through
+[`fit_gblup`](@ref)'s required `Ginv = inv(G + ridge·I)`, the package's only
+GBLUP route, the two differ by O(ridge): about 1–2 % of `sd(gebv)` at the
+package default `ridge = 0.01`, because the ridge changes the covariance kernel.
+See issue #333 for the measured per-cell gap; [Genomic models](genomic-models.md)
+explains why the ridge breaks the equivalence but does not carry the measurement.
+The random block is
+deliberately labelled `marker_effects` (not `breeding_values`/EBV), because on
+this spec the random effects are marker effects, not animal breeding values.
+Experimental, supplied-variance only (no variance-component estimation); unweighted VanRaden
 method-1 / single identity prior only.
 """
 function fit_snp_blup(
@@ -416,20 +742,38 @@ function fit_snp_blup_reml(
             loglik = fit.likelihood.loglik, converged = fit.converged)
 end
 
+function _resolve_scan_sigma_e2(sigma_e2, y_resid::AbstractVector, n::Int, p::Int)
+    if sigma_e2 === nothing
+        df = n - p
+        df > 0 ||
+            throw(ArgumentError("single-marker scan requires more observations than fixed effects"))
+        estimated = dot(y_resid, y_resid) / df
+        isfinite(estimated) && estimated > 0 ||
+            throw(ArgumentError("estimated residual variance must be finite and positive"))
+        return estimated, :estimated
+    end
+    sigma_e2_f = Float64(sigma_e2)
+    isfinite(sigma_e2_f) && sigma_e2_f > 0 ||
+        throw(ArgumentError("sigma_e2 must be finite and positive"))
+    return sigma_e2_f, :supplied
+end
+
 """
     single_marker_scan(y, X, markers; allele_frequencies = nothing,
-                       sigma_e2 = 1.0, marker_ids = nothing)
+                       sigma_e2 = nothing, marker_ids = nothing)
 
-Fixed-effect single-marker scan for biallelic marker dosages at a supplied
-residual variance.
+Fixed-effect single-marker scan for biallelic marker dosages.
 
 Each marker column is centered with [`centered_markers`](@ref), residualized
 against the fixed-effect design `X`, and tested one marker at a time in the
-Gaussian linear model `y = Xβ + marker * α + e`. The returned `NamedTuple`
-contains `marker_ids`, `effects`, `standard_errors`, `z_scores`, `chisq`,
+Gaussian linear model `y = Xβ + marker * α + e`. If `sigma_e2` is omitted, the
+residual variance is the OLS residual mean square of `y` on `X`. A supplied
+value must be finite and positive. The returned `NamedTuple` contains
+`marker_ids`, `effects`, `standard_errors`, `z_scores`, `chisq`,
 `p_values`, `bonferroni_p_values`, `bh_q_values`, `lod_scores`,
-`denominators`, `p`, and `k`. `p_values` are approximate two-sided
-Gaussian/Wald p-values implied by the supplied residual variance.
+`denominators`, `p`, `k`, `sigma_e2_used`, and
+`sigma_e2_source = :supplied | :estimated`. `p_values` are approximate
+two-sided Gaussian/Wald p-values implied by `sigma_e2_used`.
 `bonferroni_p_values` and `bh_q_values` are deterministic Bonferroni and
 Benjamini-Hochberg adjustments over the returned marker set. `lod_scores` are
 known-variance fixed-effect LOD-equivalent scores, computed as
@@ -446,7 +790,7 @@ function single_marker_scan(
     X::AbstractMatrix,
     markers::AbstractMatrix;
     allele_frequencies::Union{Nothing,AbstractVector} = nothing,
-    sigma_e2::Real = 1.0,
+    sigma_e2::Union{Nothing,Real} = nothing,
     marker_ids = nothing,
 )
     yv = Float64.(y)
@@ -457,7 +801,6 @@ function single_marker_scan(
     n > p || throw(ArgumentError("single-marker scan requires more observations than fixed effects"))
     all(isfinite, yv) || throw(ArgumentError("y must contain only finite values"))
     all(isfinite, Xmat) || throw(ArgumentError("X must contain only finite values"))
-    sigma_e2 > 0 || throw(ArgumentError("sigma_e2 must be positive"))
 
     cm = centered_markers(markers; allele_frequencies = allele_frequencies)
     size(cm.W, 1) == n ||
@@ -475,6 +818,7 @@ function single_marker_scan(
         throw(ArgumentError("X must have full column rank"))
     Xty = transpose(Xmat) * yv
     y_resid = yv - Xmat * (XtX \ Xty)
+    sigma_e2_f, sigma_e2_source = _resolve_scan_sigma_e2(sigma_e2, y_resid, n, p)
 
     effects = zeros(Float64, size(cm.W, 2))
     standard_errors = similar(effects)
@@ -490,7 +834,7 @@ function single_marker_scan(
         denom > sqrt(eps(Float64)) ||
             throw(ArgumentError("marker $(marker_names[j]) is collinear with X after centering"))
         alpha = dot(w_resid, y_resid) / denom
-        se = sqrt(Float64(sigma_e2) / denom)
+        se = sqrt(sigma_e2_f / denom)
         z = alpha / se
         denominators[j] = denom
         effects[j] = alpha
@@ -517,6 +861,8 @@ function single_marker_scan(
         denominators = denominators,
         p = cm.p,
         k = cm.k,
+        sigma_e2_used = sigma_e2_f,
+        sigma_e2_source = sigma_e2_source,
     )
 end
 
@@ -579,7 +925,8 @@ be used when testing markers in that group. The helper selects the matching
 precision for each marker, forms the dense validation-scale GLS covariance, and
 runs the same marker-by-marker Wald scan as [`mixed_model_marker_scan`](@ref).
 Callers can build the dictionary with [`loco_relationship_precisions`](@ref), or
-provide their own externally constructed matrices.
+provide their own externally constructed matrices. Group labels and relationship
+keys must be present and non-empty before string conversion.
 
 This helper only selects among supplied matrices; it does not choose public LOCO
 defaults, estimate variance components, calibrate p-values, run sparse
@@ -607,7 +954,7 @@ function loco_mixed_model_marker_scan(
         allele_frequencies = allele_frequencies,
         marker_ids = marker_ids,
     )
-    groups = string.(collect(marker_groups))
+    groups = _checked_marker_labels(marker_groups, :marker_groups)
     length(groups) == size(common.cm.W, 2) ||
         throw(ArgumentError("marker_groups must have one entry per marker"))
     all(!isempty, groups) ||
@@ -659,10 +1006,12 @@ function _mixed_marker_scan_common(
     all(isfinite, Zmat) || throw(ArgumentError("Z must contain only finite values"))
     rank(Xmat) == size(Xmat, 2) ||
         throw(ArgumentError("X must have full column rank"))
+    sigma_a2 < 0 &&
+        throw(ArgumentError("sigma_a2 must be nonnegative and finite"))
     sa2 = Float64(sigma_a2)
     se2 = Float64(sigma_e2)
-    isfinite(sa2) && sa2 > 0 ||
-        throw(ArgumentError("sigma_a2 must be positive and finite"))
+    isfinite(sa2) && sa2 >= 0 ||
+        throw(ArgumentError("sigma_a2 must be nonnegative and finite"))
     isfinite(se2) && se2 > 0 ||
         throw(ArgumentError("sigma_e2 must be positive and finite"))
 
@@ -695,6 +1044,7 @@ function _mixed_marker_scan_cache(
         throw(ArgumentError("Z columns must match Ainv dimensions"))
     all(isfinite, Ainvmat) || throw(ArgumentError("Ainv must contain only finite values"))
 
+    issymmetric(Ainvmat) || throw(ArgumentError("Ainv must be symmetric"))
     Ainv_sym = Symmetric(Ainvmat)
     isposdef(Ainv_sym) ||
         throw(ArgumentError("Ainv must be positive definite"))
@@ -819,7 +1169,7 @@ function marker_scan_result_payload(scan)
         payload = merge(payload, (marker_groups = _checked_scan_marker_groups(scan, m),))
     end
     if hasproperty(scan, :relationship_groups)
-        payload = merge(payload, (relationship_groups = string.(collect(getproperty(scan, :relationship_groups))),))
+        payload = merge(payload, (relationship_groups = _checked_marker_labels(getproperty(scan, :relationship_groups), :relationship_groups),))
     end
     return payload
 end
@@ -827,7 +1177,10 @@ end
 function _relationship_precision_lookup(relationship_precisions::AbstractDict)
     lookup = Dict{String,Any}()
     for (key, value) in relationship_precisions
-        lookup[string(key)] = value
+        canonical_key = only(_checked_marker_labels([key], :relationship_groups))
+        haskey(lookup, canonical_key) &&
+            throw(ArgumentError("relationship_precisions keys must remain unique after conversion to strings; duplicate key: $(canonical_key)"))
+        lookup[canonical_key] = value
     end
     isempty(lookup) ||
         return lookup
@@ -837,7 +1190,8 @@ end
 function _relationship_precision_lookup(relationship_precisions::NamedTuple)
     lookup = Dict{String,Any}()
     for key in keys(relationship_precisions)
-        lookup[string(key)] = getproperty(relationship_precisions, key)
+        canonical_key = only(_checked_marker_labels([key], :relationship_groups))
+        lookup[canonical_key] = getproperty(relationship_precisions, key)
     end
     isempty(lookup) ||
         return lookup
@@ -884,9 +1238,9 @@ function marker_manhattan_data(
     chromosome_values = if chromosomes === nothing
         fill("1", m)
     elseif chromosomes isa AbstractString || chromosomes isa Symbol
-        fill(string(chromosomes), m)
+        fill(only(_checked_marker_labels([chromosomes], :chromosomes)), m)
     else
-        string.(collect(chromosomes))
+        _checked_marker_labels(chromosomes, :chromosomes)
     end
     position_values = if positions === nothing
         Float64.(collect(1:m))
@@ -954,7 +1308,7 @@ end
 function _scan_marker_ids(scan)
     hasproperty(scan, :marker_ids) ||
         throw(ArgumentError("scan must have a marker_ids field"))
-    marker_ids = string.(collect(getproperty(scan, :marker_ids)))
+    marker_ids = _checked_marker_labels(getproperty(scan, :marker_ids), :marker_ids)
     !isempty(marker_ids) ||
         throw(ArgumentError("marker_ids must be non-empty"))
     return marker_ids
@@ -978,7 +1332,7 @@ function _marker_manhattan_data_from_vectors(
     isfinite(gap) && gap >= 0 ||
         throw(ArgumentError("chromosome_gap must be finite and non-negative"))
 
-    chromosome_labels = string.(collect(chromosome_values))
+    chromosome_labels = _checked_marker_labels(chromosome_values, :chromosomes)
     length(chromosome_labels) == m ||
         throw(ArgumentError("chromosomes must have one entry per marker"))
 
@@ -990,7 +1344,7 @@ function _marker_manhattan_data_from_vectors(
 
     chromosome_order_values = chromosome_order === nothing ?
         _unique_strings(chromosome_labels) :
-        string.(collect(chromosome_order))
+        _checked_marker_labels(chromosome_order, :chromosome_order)
     duplicates = _duplicate_string_ids(chromosome_order_values)
     isempty(duplicates) ||
         throw(ArgumentError("chromosome order cannot contain duplicate values: $(join(duplicates, ", "))"))
@@ -1137,7 +1491,7 @@ function _marker_region_data(
     table = _marker_scan_table(scan, chromosomes, positions; total_variance = total_variance)
     m = length(table.marker_ids)
 
-    chromosome_value = string(chromosome)
+    chromosome_value = only(_checked_marker_labels([chromosome], :chromosome))
     !isempty(chromosome_value) ||
         throw(ArgumentError("chromosome must be a non-empty value"))
     start_value = _checked_optional_region_bound(start, :start)
@@ -1324,9 +1678,12 @@ function marker_genomic_inflation(scan; expected_median::Real = _CHISQ1_MEDIAN)
         throw(ArgumentError("expected_median must be positive and finite"))
 
     median_chisq = _median_float(values)
+    lambda_gc = median_chisq / expected
+    isfinite(lambda_gc) ||
+        throw(ArgumentError("genomic inflation exceeds the finite Float64 range"))
     target = hasproperty(scan, :target) ? getproperty(scan, :target) : :direct_marker_scan
     return (
-        lambda_gc = median_chisq / expected,
+        lambda_gc = lambda_gc,
         median_chisq = median_chisq,
         expected_median = expected,
         n_markers = length(values),
@@ -1474,9 +1831,9 @@ function _marker_scan_table(scan, chromosomes, positions; total_variance)
     denominators = _checked_scan_float_field(scan, :denominators, m; positive = true)
     allele_frequencies = _checked_scan_allele_frequencies(scan, m)
     allele_variances = 2 .* allele_frequencies .* (1 .- allele_frequencies)
-    marker_variances = allele_variances .* effects .^ 2
+    marker_variances = _marker_variance_contributions(allele_variances, effects)
     total = _checked_marker_total_variance(total_variance)
-    proportions = total === nothing ? nothing : marker_variances ./ total
+    proportions = _marker_variance_proportions(marker_variances, total)
     target = hasproperty(scan, :target) ? getproperty(scan, :target) : :direct_marker_scan
 
     table = (
@@ -1659,7 +2016,7 @@ end
 
 function _checked_optional_label(value, field::Symbol)
     value === nothing && return nothing
-    label = strip(string(value))
+    label = strip(only(_checked_marker_labels([value], field)))
     !isempty(label) ||
         throw(ArgumentError("$(field) must be a non-empty value when supplied"))
     return label
@@ -1849,9 +2206,9 @@ function _marker_variance_explained(
     effects = _checked_scan_float_field(scan, :effects, m)
     allele_frequencies = _checked_scan_allele_frequencies(scan, m)
     allele_variances = 2 .* allele_frequencies .* (1 .- allele_frequencies)
-    marker_variances = allele_variances .* effects .^ 2
+    marker_variances = _marker_variance_contributions(allele_variances, effects)
     total = _checked_marker_total_variance(total_variance)
-    proportions = total === nothing ? nothing : marker_variances ./ total
+    proportions = _marker_variance_proportions(marker_variances, total)
     p_values = hasproperty(scan, :p_values) ?
         _checked_scan_p_value_field(scan, :p_values, m) :
         nothing
@@ -1903,6 +2260,35 @@ function _marker_variance_explained(
     )
 end
 
+# Scale the effect before squaring so a small allele variance can keep a large
+# finite effect contribution representable. Zero variance also remains zero.
+function _marker_variance_contributions(allele_variances, effects)
+    contributions = (sqrt.(allele_variances) .* effects) .^ 2
+    for i in eachindex(contributions)
+        if !isfinite(contributions[i]) || contributions[i] >= floatmax(Float64) / 2
+            # Near the upper boundary, rounded sqrt/scale arithmetic can either
+            # overflow a representable product or hide a true overflow. The
+            # upper half of the finite range conservatively contains both cases;
+            # ordinary values keep the fast path. Three converted Float64
+            # factors need at most 159 significand bits for their exact product.
+            contributions[i] = setprecision(BigFloat, 256) do
+                Float64(BigFloat(allele_variances[i]) * BigFloat(effects[i])^2)
+            end
+        end
+    end
+    all(isfinite, contributions) ||
+        throw(ArgumentError("marker variances exceed the finite Float64 range"))
+    return contributions
+end
+
+function _marker_variance_proportions(marker_variances, total)
+    total === nothing && return nothing
+    proportions = marker_variances ./ total
+    all(isfinite, proportions) ||
+        throw(ArgumentError("marker variance proportions exceed the finite Float64 range"))
+    return proportions
+end
+
 function _checked_scan_allele_frequencies(scan, n::Int)
     hasproperty(scan, :p) ||
         throw(ArgumentError("scan must have a p field"))
@@ -1945,8 +2331,21 @@ function _checked_real_scalar(value, field::Symbol)
     end
 end
 
+function _checked_marker_labels(values, field::Symbol)
+    (ismissing(values) || values === nothing) &&
+        throw(ArgumentError("$(field) cannot contain missing or empty labels"))
+    raw = collect(values)
+    all(value -> !ismissing(value) && value !== nothing &&
+        !(value isa AbstractString && isempty(strip(value))), raw) ||
+        throw(ArgumentError("$(field) cannot contain missing or empty labels"))
+    labels = string.(raw)
+    all(label -> !isempty(strip(label)), labels) ||
+        throw(ArgumentError("$(field) cannot contain missing or empty labels"))
+    return labels
+end
+
 function _checked_scan_marker_groups(scan, n::Int)
-    marker_groups = string.(collect(getproperty(scan, :marker_groups)))
+    marker_groups = _checked_marker_labels(getproperty(scan, :marker_groups), :marker_groups)
     length(marker_groups) == n ||
         throw(ArgumentError("marker_groups must have one entry per marker"))
     all(!isempty, marker_groups) ||
@@ -2118,7 +2517,7 @@ end
 function _checked_marker_summary_metadata(chromosomes, positions, n::Int)
     (chromosomes !== nothing && positions !== nothing) ||
         throw(ArgumentError("chromosomes and positions must be supplied together"))
-    chromosome_values = string.(collect(chromosomes))
+    chromosome_values = _checked_marker_labels(chromosomes, :chromosomes)
     length(chromosome_values) == n ||
         throw(ArgumentError("chromosomes must have one entry per marker"))
     all(!isempty, chromosome_values) ||
@@ -2135,8 +2534,15 @@ function _median_float(values::Vector{Float64})
     sorted_values = sort(values)
     n = length(sorted_values)
     middle = n ÷ 2
-    return isodd(n) ? sorted_values[middle + 1] :
-           (sorted_values[middle] + sorted_values[middle + 1]) / 2
+    isodd(n) && return sorted_values[middle + 1]
+    lower, upper = sorted_values[middle], sorted_values[middle + 1]
+    # Keep subnormal midpoint rounding when direct addition cannot overflow.
+    if abs(lower) <= floatmax(Float64) / 2 && abs(upper) <= floatmax(Float64) / 2
+        return (lower + upper) / 2
+    end
+    # Same-sign subtraction is bounded; opposite-sign half-sums avoid overflow.
+    return signbit(lower) == signbit(upper) ?
+        lower + (upper - lower) / 2 : lower / 2 + upper / 2
 end
 
 # Abramowitz-Stegun 7.1.26 approximation to Phi(z). Maximum absolute error is
@@ -2155,8 +2561,16 @@ function _standard_normal_cdf_approx(z::Real)
 end
 
 function _standard_normal_two_sided_pvalue(z::Real)
-    cdf = _standard_normal_cdf_approx(z)
-    return clamp(2 * min(cdf, 1 - cdf), 0.0, 1.0)
+    x = Float64(z)
+    isfinite(x) || throw(ArgumentError("z must be finite"))
+    # Preserve the established central approximation used by cross-language
+    # fixtures, taking the small tail directly to keep sign symmetry. At |z| ≥ 8
+    # its relative tail error matters, so use Z² ~ χ²₁ and the existing accurate
+    # upper-gamma tail instead of subtracting a CDF from one.
+    abs(x) < 8 && return clamp(2 * _standard_normal_cdf_approx(-abs(x)), 0.0, 1.0)
+    squared = x * x
+    isinf(squared) && return 0.0   # finite |z| this large has an underflowed tail
+    return clamp(_chisq_sf(squared, 1.0), 0.0, 1.0)
 end
 
 function _checked_p_values(p_values)
@@ -2199,8 +2613,8 @@ Christensen & Lund 2009):
     H⁻¹ = A⁻¹ + scatter(τ·Gʷ⁻¹ − ω·A₂₂⁻¹)  over the genotyped rows `g`,
 
 where `Ainv` is the pedigree inverse `A⁻¹`, `A` the dense pedigree relationship
-matrix, `A₂₂ = A[g, g]` the block among the genotyped animals (in sorted
-pedigree-row order), and `Gʷ = (1 − blend_weight)·G + blend_weight·A₂₂` the
+matrix, `A₂₂ = A[g, g]` the block among the genotyped animals (in the supplied
+`genotyped_rows` sequence), and `Gʷ = (1 − blend_weight)·G + blend_weight·A₂₂` the
 optionally blended/ridged genomic relationship among them.
 
 Critically, `A₂₂⁻¹` is the inverse of the *submatrix* `A[g, g]`, **not** the
@@ -2227,20 +2641,57 @@ function _single_step_Hinv(
     ng = length(g)
     all(r -> 1 <= r <= n, g) ||
         throw(ArgumentError("genotyped_rows must be valid row indices of Ainv"))
+    length(unique(g)) == ng ||
+        throw(ArgumentError("genotyped_rows must be unique"))
     size(G) == (ng, ng) ||
         throw(ArgumentError("G must be square of size length(genotyped_rows)"))
 
-    A22 = Matrix{Float64}(A[g, g])
+    tau_f, omega_f = Float64(tau), Float64(omega)
+    blend_f, ridge_f = Float64(blend_weight), Float64(ridge)
+    all(isfinite, (tau_f, omega_f, blend_f, ridge_f)) ||
+        throw(ArgumentError("tau, omega, blend_weight, and ridge must be finite"))
+    tau_f > 0 || throw(ArgumentError("tau must be positive"))
+    omega_f >= 0 || throw(ArgumentError("omega must be non-negative"))
+    0 <= blend_f <= 1 || throw(ArgumentError("blend_weight must be in [0, 1]"))
+    ridge_f >= 0 || throw(ArgumentError("ridge must be non-negative"))
+
+    Ainv_f = _single_step_symmetric_finite_matrix(Ainv, "Ainv")
+    A_f = _single_step_symmetric_finite_matrix(A, "A")
+    G_f = _single_step_symmetric_finite_matrix(G, "G")
+    isposdef(Symmetric(Ainv_f)) ||
+        throw(ArgumentError("Ainv must be positive definite"))
+    isposdef(Symmetric(A_f)) ||
+        throw(ArgumentError("A must be positive definite"))
+
+    A22 = A_f[g, g]
     A22inv = inv(Symmetric(A22))                     # inverse of the SUBMATRIX of A
-    Gblend = (1 - blend_weight) .* Matrix{Float64}(G) .+ blend_weight .* A22
-    Greg = Symmetric(Gblend + ridge * I)
+    Gblend = (1 - blend_f) .* G_f .+ blend_f .* A22
+    Greg = Symmetric(Gblend + ridge_f * I)
     isposdef(Greg) ||
         throw(ArgumentError("genotyped genomic block is not positive definite; increase ridge or blend_weight"))
     Gwinv = inv(Greg)
 
-    Hinv = Matrix{Float64}(Ainv)
-    Hinv[g, g] = Hinv[g, g] .+ (tau .* Gwinv .- omega .* A22inv)
+    Hinv = Ainv_f
+    Hinv[g, g] = Hinv[g, g] .+ (tau_f .* Gwinv .- omega_f .* A22inv)
+    all(isfinite, Hinv) && isposdef(Symmetric(Hinv)) ||
+        throw(ArgumentError("single-step precision must be finite and positive definite"))
     return Hinv
+end
+
+function _single_step_symmetric_finite_matrix(M::AbstractMatrix, name::AbstractString)
+    result = Matrix{Float64}(M)
+    all(isfinite, result) || throw(ArgumentError("$(name) must contain only finite values"))
+    n = size(result, 1)
+    for j in 2:n, i in 1:(j - 1)
+        upper, lower = result[i, j], result[j, i]
+        pair_scale = max(abs(upper), abs(lower))
+        abs(upper - lower) <= 1e-10 * pair_scale ||
+            throw(ArgumentError("$(name) must be symmetric"))
+        midpoint = upper / 2 + lower / 2
+        result[i, j] = midpoint
+        result[j, i] = midpoint
+    end
+    return result
 end
 
 """
@@ -2251,12 +2702,18 @@ Single-step genomic relationship inverse `H⁻¹` (Aguilar et al. 2010; Christen
 & Lund 2009): `H⁻¹ = A⁻¹ + scatter(τ·Gʷ⁻¹ − ω·A₂₂⁻¹)` over the genotyped rows,
 where `A₂₂ = A[g, g]` is the pedigree block among the genotyped animals (NOT
 `(A⁻¹)[g, g]`) and `Gʷ = (1 − blend_weight)·G + blend_weight·A₂₂` is the optionally
-blended/ridged genomic block. When `G = A₂₂`, `H⁻¹` reduces exactly to `A⁻¹`.
+blended/ridged genomic block. With default `tau = omega = 1` and `ridge = 0`, `G = A₂₂` makes `H⁻¹`
+reduce exactly to `A⁻¹`.
 
 `Ainv` is the pedigree inverse `A⁻¹`, `A` the dense pedigree relationship matrix,
-`G` the genomic relationship among the `genotyped_rows` (in sorted pedigree-row
-order). The result is the relationship PRECISION for the single-step animal model
+`G` the genomic relationship in the supplied `genotyped_rows` sequence
+(the indices refer to rows of `A` and `Ainv`). The result is the relationship PRECISION for the single-step animal model
 — pass it where [`fit_gblup`](@ref) takes `Ginv`, or use [`fit_single_step`](@ref).
+
+Inputs must be finite and symmetric; `A` and `Ainv` must be positive definite,
+and `genotyped_rows` must contain unique valid indices. Require `tau > 0`,
+`omega ≥ 0`, `blend_weight ∈ [0, 1]`, and `ridge ≥ 0`; the returned precision
+must also be positive definite.
 
 Experimental, dense/validation-scale. The `blend_weight`/`tau`/`omega`/`ridge`
 knobs are not comparator-validated (defaults `blend_weight = ridge = 0`,
@@ -2273,7 +2730,8 @@ single_step_inverse(Ainv::AbstractMatrix, A::AbstractMatrix, G::AbstractMatrix,
 Single-step GBLUP at supplied variance components: build the single-step
 relationship inverse `H⁻¹` ([`single_step_inverse`](@ref)) and solve the Gaussian
 animal model with `H⁻¹` as the relationship precision (via [`fit_gblup`](@ref)).
-When `G = A₂₂` it reproduces the pedigree animal model exactly. Experimental,
+With default `tau = omega = 1` and `ridge = 0`, `G = A₂₂` reproduces the
+pedigree animal model exactly. Experimental,
 dense/validation-scale; supplied-variance.
 """
 function fit_single_step(
@@ -2291,23 +2749,30 @@ end
 """
     fit_single_step_reml(y, X, Z, Ainv, A, G, genotyped_rows;
                          tau = 1.0, omega = 1.0, blend_weight = 0.0, ridge = 0.0,
-                         initial = (sigma_a2 = 1.0, sigma_e2 = 1.0), target = :ai_reml, ids = nothing)
+                         initial = (sigma_a2 = 1.0, sigma_e2 = 1.0), target = :ai_reml,
+                         iterations = nothing, ids = nothing)
 
 Single-step GBLUP with REML-estimated variance components: build `H⁻¹`
 ([`single_step_inverse`](@ref)) and estimate `(sigma_a2, sigma_e2)` by REML on the
-single-step spec (via [`fit_gblup_reml`](@ref)). When `G = A₂₂` it reproduces the
-pedigree-REML optimum. Experimental, dense/validation-scale.
+single-step spec (via [`fit_gblup_reml`](@ref)). With default `tau = omega = 1`
+and `ridge = 0`, `G = A₂₂` reproduces the pedigree-REML optimum. Experimental, dense/validation-scale.
+
+`iterations` (hsquared#212) forwards to [`fit_gblup_reml`](@ref) (and from there
+to the `target` optimizer). Default `nothing` is byte-identical to the
+pre-#212-fix call (this keyword did not previously exist).
 """
 function fit_single_step_reml(
     y::AbstractVector, X::AbstractMatrix, Z::AbstractMatrix,
     Ainv::AbstractMatrix, A::AbstractMatrix, G::AbstractMatrix,
     genotyped_rows::AbstractVector{<:Integer};
     tau::Real = 1.0, omega::Real = 1.0, blend_weight::Real = 0.0, ridge::Real = 0.0,
-    initial = (sigma_a2 = 1.0, sigma_e2 = 1.0), target::Symbol = :ai_reml, ids = nothing,
+    initial = (sigma_a2 = 1.0, sigma_e2 = 1.0), target::Symbol = :ai_reml,
+    iterations::Union{Nothing,Integer} = nothing, ids = nothing,
 )
     Hinv = _single_step_Hinv(Ainv, A, G, genotyped_rows;
                              tau = tau, omega = omega, blend_weight = blend_weight, ridge = ridge)
-    return fit_gblup_reml(y, X, Z, Hinv; initial = initial, target = target, ids = ids)
+    return fit_gblup_reml(y, X, Z, Hinv; initial = initial, target = target,
+                          iterations = iterations, ids = ids, solver = :dense_ai_reml)
 end
 
 """
@@ -2325,6 +2790,10 @@ H^Γ⁻¹ = (A^Γ)⁻¹ + scatter(τ·G_w⁻¹ - ω·(A^Γ₂₂)⁻¹)
 over `genotyped_rows`. `group_of` is aligned to `pedigree.ids`; `Gamma` is
 supplied and not estimated. At `Gamma = 0` this reduces to
 [`single_step_inverse`](@ref) with the classical pedigree relationship.
+
+For the raw-array overload, `group_of` and `genotyped_rows` use the original
+`ids` row order. The wrapper maps them to the normalized pedigree order;
+`G` stays in the same order as the supplied `genotyped_rows` vector.
 
 Experimental and dense/validation-scale. The `blend_weight`/`tau`/`omega`/`ridge`
 knobs inherit the ordinary single-step caveat: defaults are not
@@ -2345,11 +2814,23 @@ function metafounder_single_step_inverse(
                              blend_weight = blend_weight, ridge = ridge)
 end
 
-metafounder_single_step_inverse(
+function metafounder_single_step_inverse(
     ids, sire, dam, group_of, Gamma::AbstractMatrix, G::AbstractMatrix,
-    genotyped_rows::AbstractVector{<:Integer}; kwargs...,
-) = metafounder_single_step_inverse(
-    normalize_pedigree(ids, sire, dam), group_of, Gamma, G, genotyped_rows; kwargs...)
+    genotyped_rows::AbstractVector{<:Integer};
+    missing_values = DEFAULT_UNKNOWN_PARENT_VALUES, allow_selfing::Bool = false,
+    kwargs...,
+)
+    pedigree, groups = _normalize_metafounder_pedigree(
+        ids, sire, dam, group_of; missing_values = missing_values,
+        allow_selfing = allow_selfing)
+    input_rows = collect(genotyped_rows)
+    n = length(pedigree)
+    all(i -> 1 <= i <= n, input_rows) ||
+        throw(ArgumentError("genotyped_rows must index rows in the input pedigree"))
+    normalized_rows = invperm(pedigree.original_order)[input_rows]
+    return metafounder_single_step_inverse(
+        pedigree, groups, Gamma, G, normalized_rows; kwargs...)
+end
 
 """
     fit_metafounder_single_step(y, X, Z, pedigree, group_of, Gamma, G, genotyped_rows,
@@ -2375,12 +2856,17 @@ function fit_metafounder_single_step(
 end
 
 """
-    fit_metafounder_single_step_reml(y, X, Z, pedigree, group_of, Gamma, G, genotyped_rows; ...)
+    fit_metafounder_single_step_reml(y, X, Z, pedigree, group_of, Gamma, G, genotyped_rows;
+                                     iterations = nothing, ...)
 
 REML-estimated variance components for the dense validation-scale
 `H^Γ⁻¹` relationship precision. The metafounder covariance `Gamma` is supplied,
 not estimated. External comparator parity and R-facing formula syntax remain
 separate gates.
+
+`iterations` (hsquared#212) forwards to [`fit_gblup_reml`](@ref). Default
+`nothing` is byte-identical to the pre-#212-fix call (this keyword did not
+previously exist).
 """
 function fit_metafounder_single_step_reml(
     y::AbstractVector, X::AbstractMatrix, Z::AbstractMatrix,
@@ -2389,13 +2875,14 @@ function fit_metafounder_single_step_reml(
     tau::Real = 1.0, omega::Real = 1.0, blend_weight::Real = 0.0, ridge::Real = 0.0,
     max_relationship_cache::Integer = 10_000,
     initial = (sigma_a2 = 1.0, sigma_e2 = 1.0), target::Symbol = :ai_reml,
-    ids = pedigree.ids,
+    iterations::Union{Nothing,Integer} = nothing, ids = pedigree.ids,
 )
     Hγinv = metafounder_single_step_inverse(pedigree, group_of, Gamma, G, genotyped_rows;
                                             tau = tau, omega = omega,
                                             blend_weight = blend_weight, ridge = ridge,
                                             max_relationship_cache = max_relationship_cache)
-    return fit_gblup_reml(y, X, Z, Hγinv; initial = initial, target = target, ids = ids)
+    return fit_gblup_reml(y, X, Z, Hγinv; initial = initial, target = target,
+                          iterations = iterations, ids = ids, solver = :dense_ai_reml)
 end
 
 # ---------------------------------------------------------------------------
@@ -2450,12 +2937,21 @@ function _empirical_upper_quantile(values::AbstractVector{<:Real}, prob::Real)
     return v[lo] + frac * (v[lo + 1] - v[lo])
 end
 
+function _checked_genome_wide_alpha(alpha::Real)
+    value = Float64(alpha)
+    isfinite(value) && 0 < value < 1 ||
+        throw(ArgumentError("alpha must remain finite and in (0, 1) after Float64 conversion"))
+    return value
+end
+
 """
     genome_wide_threshold_from_null(null_max_statistics; alpha = 0.05, statistic = :chisq)
 
 Turn a SUPPLIED empirical null distribution of per-scan maximum statistics into a
 genome-wide significance threshold at level `alpha`: the `(1 - alpha)` empirical
 quantile of `null_max_statistics`. Returns `(threshold, alpha, statistic, n_null)`.
+`alpha` must remain in `(0, 1)` after conversion to Float64; null statistics
+are converted to finite Float64 values.
 
 The null distribution is the set of per-permutation (or per-null-simulation)
 maxima (the internal `_scan_max_statistic` extracts the max chi-square / max
@@ -2481,15 +2977,17 @@ realistic-design calibration — the #48 gate) and has no external comparator ye
 """
 function genome_wide_threshold_from_null(null_max_statistics::AbstractVector{<:Real};
                                          alpha::Real = 0.05, statistic::Symbol = :chisq)
-    0 < alpha < 1 || throw(ArgumentError("alpha must be in (0, 1)"))
+    alpha_value = _checked_genome_wide_alpha(alpha)
     statistic in (:chisq, :neglog10p) ||
         throw(ArgumentError("statistic must be :chisq or :neglog10p"))
     isempty(null_max_statistics) &&
         throw(ArgumentError("null_max_statistics must be non-empty"))
     nulls = Float64.(collect(null_max_statistics))
+    all(isfinite, nulls) ||
+        throw(ArgumentError("null_max_statistics must contain only finite values"))
     return (
-        threshold = _empirical_upper_quantile(nulls, 1 - alpha),
-        alpha = Float64(alpha),
+        threshold = _empirical_upper_quantile(nulls, 1 - alpha_value),
+        alpha = alpha_value,
         statistic = statistic,
         n_null = length(nulls),
     )
@@ -2500,7 +2998,9 @@ end
 
 Empirical genome-wide p-value for an `observed` per-scan maximum statistic against
 a SUPPLIED null distribution of maxima: `(1 + #{null ≥ observed}) / (n_null + 1)`
-(the standard add-one permutation p-value, so it is never 0). The same null
+(the standard add-one permutation p-value, so it is never 0). Null values are
+converted to finite Float64 values; comparisons retain the original Real
+`observed`, including values outside the Float64 range. The same null
 distribution feeds [`genome_wide_threshold_from_null`](@ref). EXPERIMENTAL,
 validation-scale; not a production genome-wide-significance claim.
 """
@@ -2511,30 +3011,37 @@ function genome_wide_pvalue(observed::Real, null_max_statistics::AbstractVector{
     nulls = Float64.(collect(null_max_statistics))
     all(isfinite, nulls) ||
         throw(ArgumentError("null_max_statistics must be finite"))
-    return (1 + count(>=(Float64(observed)), nulls)) / (length(nulls) + 1)
+    # Compare the original Real against the actual finite Float64 null values.
+    # Converting observed first can erase a tiny nonzero sign or overflow.
+    return (1 + count(value -> value >= observed, nulls)) / (length(nulls) + 1)
 end
 
 """
     genome_wide_marker_scan(y, X, markers; n_permutations = 1000, alpha = 0.05,
-                            sigma_e2 = 1.0, allele_frequencies = nothing,
+                            sigma_e2 = nothing, allele_frequencies = nothing,
                             marker_ids = nothing, rng = Random.default_rng())
 
-Genome-wide-CALIBRATED fixed-effect single-marker scan. Runs [`single_marker_scan`](@ref),
+Fixed-effect single-marker scan with a per-dataset residual-permutation null.
+Runs [`single_marker_scan`](@ref),
 then builds a PER-DATASET residual-permutation null of the per-scan MAXIMUM chi-square
 (permute the residuals of `y` on `X`, re-scan `n_permutations` times) and returns the
-exact/conservative add-one genome-wide p-value ([`genome_wide_pvalue`](@ref)) for the
+add-one empirical genome-wide p-value ([`genome_wide_pvalue`](@ref)) for the
 observed maximum AND for each marker, plus the `(1 - alpha)` permutation threshold.
+`sigma_e2` follows [`single_marker_scan`](@ref): omitted means the OLS residual
+mean square of `y` on `X`. The returned fields include `sigma_e2_used` and
+`sigma_e2_source`. Permutation scans reuse that same residual variance.
 
-This is the EXACT per-dataset permutation test (Phipson–Smyth add-one): the null is rebuilt
-for THIS `y`, NOT reused across datasets. Its family-wise type-I control is validated at
-validation scale (`sim/phase5_qtl_addone_gate.jl` + `…_design_sweep.jl`) AND production scale
-(`sim/phase5_qtl_rebuild_production_gate.jl`, type-I at α). The fixed-null-REUSE shortcut is
-mildly anti-conservative (a documented simulation caveat); this per-dataset rule is the
-calibrated path.
+The null is rebuilt for each dataset. Exact/conservative permutation interpretation
+requires exchangeability under the permitted permutations. The evidenced calibration
+scope is intercept-only `X` with exchangeable Gaussian residuals: validation-scale
+`sim/phase5_qtl_addone_gate.jl` and `…_design_sweep.jl`, plus the larger intercept-only
+`sim/phase5_qtl_rebuild_production_gate.jl`. The fixed-null reuse shortcut has a
+documented anti-conservative calibration result.
 
-SCOPE: fixed-effect `X` only (intercept or supplied covariates) — the validated calibration.
-The relatedness-corrected MIXED-model genome-wide null (permuting under `V = σ²a ZAZ' + σ²e I`)
-is a DIFFERENT, not-yet-validated calibration and is NOT this function.
+Supplied-covariate `X` is accepted as an experimental residual-permutation utility.
+General regression residuals need not be exchangeable; add-one counting alone does
+not establish exactness or family-wise type-I control for that design. Relatedness-
+corrected mixed-model genome-wide calibration remains separately unvalidated.
 
 Returns the [`single_marker_scan`](@ref) fields plus `genome_wide_p_values` (per marker),
 `genome_wide_threshold`, `genome_wide_p_min` (the top marker's genome-wide p), `n_permutations`,
@@ -2546,14 +3053,13 @@ function genome_wide_marker_scan(
     markers::AbstractMatrix;
     n_permutations::Integer = 1000,
     alpha::Real = 0.05,
-    sigma_e2::Real = 1.0,
+    sigma_e2::Union{Nothing,Real} = nothing,
     allele_frequencies::Union{Nothing,AbstractVector} = nothing,
     marker_ids = nothing,
     rng::AbstractRNG = Random.default_rng(),
 )
     n_permutations > 0 || throw(ArgumentError("n_permutations must be positive"))
-    0 < alpha < 1 || throw(ArgumentError("alpha must be in (0, 1)"))
-    sigma_e2 > 0 || throw(ArgumentError("sigma_e2 must be positive"))
+    alpha_value = _checked_genome_wide_alpha(alpha)
 
     scan = single_marker_scan(y, X, markers; sigma_e2 = sigma_e2,
                               allele_frequencies = allele_frequencies,
@@ -2569,13 +3075,13 @@ function genome_wide_marker_scan(
     null_max = Vector{Float64}(undef, n_permutations)
     for i in 1:n_permutations
         yp = fitted .+ resid[randperm(rng, n)]
-        sc = single_marker_scan(yp, Xmat, markers; sigma_e2 = sigma_e2,
+        sc = single_marker_scan(yp, Xmat, markers; sigma_e2 = scan.sigma_e2_used,
                                 allele_frequencies = allele_frequencies,
                                 marker_ids = marker_ids)
         null_max[i] = _scan_max_statistic(sc; statistic = :chisq)
     end
 
-    thr = genome_wide_threshold_from_null(null_max; alpha = alpha, statistic = :chisq)
+    thr = genome_wide_threshold_from_null(null_max; alpha = alpha_value, statistic = :chisq)
     genome_wide_p_values = [genome_wide_pvalue(c, null_max) for c in scan.chisq]
     obs_max = maximum(scan.chisq)
     genome_wide_p_min = genome_wide_pvalue(obs_max, null_max)
@@ -2593,15 +3099,17 @@ function genome_wide_marker_scan(
         denominators = scan.denominators,
         p = scan.p,
         k = scan.k,
+        sigma_e2_used = scan.sigma_e2_used,
+        sigma_e2_source = scan.sigma_e2_source,
         genome_wide_p_values = genome_wide_p_values,
         genome_wide_threshold = thr.threshold,
         genome_wide_p_min = genome_wide_p_min,
         n_permutations = Int(n_permutations),
-        alpha = Float64(alpha),
+        alpha = alpha_value,
         null_max = null_max,
         calibration = (
             method = :permutation_addone,
-            alpha = Float64(alpha),
+            alpha = alpha_value,
             n_permutations = Int(n_permutations),
             threshold = thr.threshold,
             statistic = :chisq,

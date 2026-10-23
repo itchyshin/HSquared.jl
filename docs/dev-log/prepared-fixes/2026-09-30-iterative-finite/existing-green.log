@@ -1,0 +1,15 @@
+Julia=1.10.0 JuliaThreads=1 BLASThreads=1
+Test Summary:              | Pass  Total   Time
+Wave 1 numerical contracts |  167    167  14.3s
+Test Summary:                                                  | Pass  Total  Time
+constructed genomic relationships are symmetric and invertible |   16     16  0.0s
+Test Summary:                                    | Pass  Total  Time
+APY finite inputs and conditional variance scale |    8      8  0.6s
+Test Summary:                                   | Pass  Total  Time
+APY partial-core block formula and Schur cutoff |    5      5  0.1s
+Test Summary:                                                  | Pass  Total  Time
+dense Gaussian routes reject indefinite relationship precision |    4      4  0.0s
+Test Summary:                                                | Pass  Total  Time
+dense Gaussian routes validate relationship precision inputs |    4      4  0.0s
+Test Summary:                                                       | Pass  Total  Time
+V1-MATFREE-REML in-CI pins (fitter path exists; not a covered flip) |   22     22  2.3s

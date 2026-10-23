@@ -1,0 +1,3 @@
+syntax PASS /private/tmp/hsq-reviewed-repairs-composed-20260930/composed/src/nongaussian.jl
+syntax PASS /private/tmp/hsq-reviewed-repairs-composed-20260930/composed/test/nongaussian_h2_descriptor_regression.jl
+syntax PASS /private/tmp/hsq-reviewed-repairs-composed-20260930/composed/test/runtests.jl

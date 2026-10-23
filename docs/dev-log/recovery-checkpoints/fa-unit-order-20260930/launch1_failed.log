@@ -1,0 +1,19 @@
+fatal: ambiguous argument 'HEAD': unknown revision or path not in the working tree.
+Use '--' to separate paths from revisions, like this:
+'git <command> [<revision>...] -- [<file>...]'
+ERROR: LoadError: failed process: Process(`git -C /home/snakagaw/hsq_work/hsquared-fa-current-candidate-20260930 rev-parse HEAD`, ProcessExited(128)) [128]
+
+Stacktrace:
+ [1] pipeline_error
+   @ Base ./process.jl:565 [inlined]
+ [2] read(cmd::Cmd)
+   @ Base ./process.jl:449
+ [3] read(cmd::Cmd)
+   @ Base ./process.jl:458 [inlined]
+ [4] readchomp
+   @ ./io.jl:974 [inlined]
+ [5] run_diagnostic(config::@NamedTuple{repo::String, output::String, source_hash::String, fixture_path::String})
+   @ Main ~/hsq_work/hsquared-fa-current-candidate-20260930/unit_order_harness/fa_ordinary_unit_order_check.jl:268
+ [6] top-level scope
+   @ ~/hsq_work/hsquared-fa-current-candidate-20260930/unit_order_harness/fa_ordinary_unit_order_check.jl:396
+in expression starting at /home/snakagaw/hsq_work/hsquared-fa-current-candidate-20260930/unit_order_harness/fa_ordinary_unit_order_check.jl:391

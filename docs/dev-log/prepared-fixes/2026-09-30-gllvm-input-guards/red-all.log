@@ -1,0 +1,409 @@
+ERROR: LoadError: Some tests did not pass: 25 passed, 25 failed, 0 errored, 0 broken.
+in expression starting at /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:9
+GLLVM rejects invalid mode controls: Test Failed at /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:12
+  Expression: H.gllvm_laplace_marginal_loglik(Y, Ai, L, family; X = X, tol = tolerance, maxiter = 0)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:12 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:11 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:10
+GLLVM rejects invalid mode controls: Test Failed at /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:14
+  Expression: H.fit_gllvm_laplace_reml(Y, Ai, family; rank = 1, initial = L, X = X, tol = tolerance, maxiter = 0, iterations = 0)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:14 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:11 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:10
+GLLVM rejects invalid mode controls: Test Failed at /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:12
+  Expression: H.gllvm_laplace_marginal_loglik(Y, Ai, L, family; X = X, tol = tolerance, maxiter = 0)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:12 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:11 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:10
+GLLVM rejects invalid mode controls: Test Failed at /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:14
+  Expression: H.fit_gllvm_laplace_reml(Y, Ai, family; rank = 1, initial = L, X = X, tol = tolerance, maxiter = 0, iterations = 0)
+    Expected: ArgumentError
+      Thrown: HSquared.GLLVMInvalidParameterEvaluationError
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:14 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:11 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:10
+GLLVM rejects invalid mode controls: Test Failed at /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:12
+  Expression: H.gllvm_laplace_marginal_loglik(Y, Ai, L, family; X = X, tol = tolerance, maxiter = 0)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:12 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:11 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:10
+GLLVM rejects invalid mode controls: Test Failed at /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:14
+  Expression: H.fit_gllvm_laplace_reml(Y, Ai, family; rank = 1, initial = L, X = X, tol = tolerance, maxiter = 0, iterations = 0)
+    Expected: ArgumentError
+      Thrown: HSquared.GLLVMInvalidParameterEvaluationError
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:14 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:11 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:10
+GLLVM rejects invalid mode controls: Test Failed at /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:12
+  Expression: H.gllvm_laplace_marginal_loglik(Y, Ai, L, family; X = X, tol = tolerance, maxiter = 0)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:12 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:11 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:10
+GLLVM rejects invalid mode controls: Test Failed at /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:14
+  Expression: H.fit_gllvm_laplace_reml(Y, Ai, family; rank = 1, initial = L, X = X, tol = tolerance, maxiter = 0, iterations = 0)
+    Expected: ArgumentError
+      Thrown: HSquared.GLLVMInvalidParameterEvaluationError
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:14 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:11 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:10
+GLLVM rejects invalid mode controls: Test Failed at /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:12
+  Expression: H.gllvm_laplace_marginal_loglik(Y, Ai, L, family; X = X, tol = tolerance, maxiter = 0)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:12 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:11 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:10
+GLLVM rejects invalid mode controls: Test Failed at /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:14
+  Expression: H.fit_gllvm_laplace_reml(Y, Ai, family; rank = 1, initial = L, X = X, tol = tolerance, maxiter = 0, iterations = 0)
+    Expected: ArgumentError
+      Thrown: HSquared.GLLVMInvalidParameterEvaluationError
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:14 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:11 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:10
+GLLVM rejects invalid mode controls: Test Failed at /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:18
+  Expression: H.gllvm_laplace_marginal_loglik(Y, Ai, L, family; maxiter = -1)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:18 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:11 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:10
+GLLVM rejects invalid mode controls: Test Failed at /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:19
+  Expression: H.fit_gllvm_laplace_reml(Y, Ai, family; rank = 1, maxiter = -1, iterations = 0)
+    Expected: ArgumentError
+      Thrown: HSquared.GLLVMInvalidParameterEvaluationError
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:19 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:11 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:10
+GLLVM classifies invalid data and families before numerical evaluation: Test Failed at /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:37
+  Expression: H.gllvm_laplace_marginal_loglik(response, Ai, L, response_family; X = design, maxiter = 0)
+    Expected: ArgumentError
+      Thrown: HSquared.GLLVMInvalidParameterEvaluationError
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:37 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:28 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:10
+GLLVM classifies invalid data and families before numerical evaluation: Test Failed at /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:39
+  Expression: H.fit_gllvm_laplace_reml(response, Ai, response_family; rank = 1, initial = L, X = design, maxiter = 0, iterations = 0)
+    Expected: ArgumentError
+      Thrown: HSquared.GLLVMInvalidParameterEvaluationError
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:39 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:28 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:10
+GLLVM classifies invalid data and families before numerical evaluation: Test Failed at /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:37
+  Expression: H.gllvm_laplace_marginal_loglik(response, Ai, L, response_family; X = design, maxiter = 0)
+    Expected: ArgumentError
+      Thrown: HSquared.GLLVMInvalidParameterEvaluationError
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:37 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:28 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:10
+GLLVM classifies invalid data and families before numerical evaluation: Test Failed at /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:39
+  Expression: H.fit_gllvm_laplace_reml(response, Ai, response_family; rank = 1, initial = L, X = design, maxiter = 0, iterations = 0)
+    Expected: ArgumentError
+      Thrown: HSquared.GLLVMInvalidParameterEvaluationError
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:39 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:28 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:10
+GLLVM classifies invalid data and families before numerical evaluation: Test Failed at /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:37
+  Expression: H.gllvm_laplace_marginal_loglik(response, Ai, L, response_family; X = design, maxiter = 0)
+    Expected: ArgumentError
+      Thrown: HSquared.GLLVMInvalidParameterEvaluationError
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:37 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:28 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:10
+GLLVM classifies invalid data and families before numerical evaluation: Test Failed at /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:39
+  Expression: H.fit_gllvm_laplace_reml(response, Ai, response_family; rank = 1, initial = L, X = design, maxiter = 0, iterations = 0)
+    Expected: ArgumentError
+      Thrown: HSquared.GLLVMInvalidParameterEvaluationError
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:39 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:28 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:10
+GLLVM classifies invalid data and families before numerical evaluation: Test Failed at /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:37
+  Expression: H.gllvm_laplace_marginal_loglik(response, Ai, L, response_family; X = design, maxiter = 0)
+    Expected: ArgumentError
+      Thrown: MethodError
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:37 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:28 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:10
+GLLVM classifies invalid data and families before numerical evaluation: Test Failed at /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:39
+  Expression: H.fit_gllvm_laplace_reml(response, Ai, response_family; rank = 1, initial = L, X = design, maxiter = 0, iterations = 0)
+    Expected: ArgumentError
+      Thrown: MethodError
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:39 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:28 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:10
+GLLVM classifies invalid data and families before numerical evaluation: Test Failed at /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:37
+  Expression: H.gllvm_laplace_marginal_loglik(response, Ai, L, response_family; X = design, maxiter = 0)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:37 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:28 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:10
+GLLVM classifies invalid data and families before numerical evaluation: Test Failed at /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:39
+  Expression: H.fit_gllvm_laplace_reml(response, Ai, response_family; rank = 1, initial = L, X = design, maxiter = 0, iterations = 0)
+    Expected: ArgumentError
+      Thrown: HSquared.GLLVMInvalidParameterEvaluationError
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:39 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:28 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:10
+GLLVM classifies invalid data and families before numerical evaluation: Test Failed at /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:44
+  Expression: H.fit_gllvm_laplace_reml(Y, Ai, family; rank = 1, initial = initial, iterations = 0)
+    Expected: ArgumentError
+      Thrown: HSquared.GLLVMInvalidParameterEvaluationError
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:44 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:28 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:10
+GLLVM classifies invalid data and families before numerical evaluation: Test Failed at /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:44
+  Expression: H.fit_gllvm_laplace_reml(Y, Ai, family; rank = 1, initial = initial, iterations = 0)
+    Expected: ArgumentError
+      Thrown: HSquared.GLLVMInvalidParameterEvaluationError
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:44 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:28 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:10
+GLLVM classifies invalid data and families before numerical evaluation: Test Failed at /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:48
+  Expression: H.fit_gllvm_laplace_reml(Y, Ai, family; rank = 1, structure = :factor_analytic, initial = L, initial_uniqueness = uniqueness, iterations = 0)
+    Expected: ArgumentError
+      Thrown: HSquared.GLLVMInvalidParameterEvaluationError
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:48 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:28 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-gllvm-input-fix-20260930/test/gllvm_input_guard_regression.jl:10
+Test Summary:                                                            | Pass  Fail  Total  Time
+GLLVM input guard regressions                                            |   25    25     50  1.2s
+  GLLVM rejects invalid mode controls                                    |    4    12     16  0.6s
+  GLLVM classifies invalid data and families before numerical evaluation |    5    13     18  0.0s
+  GLLVM valid Gaussian and per-trait inputs retain their values          |    5            5  0.5s
+  genetic GLLVM Gaussian one-step mode convergence                       |    5            5  0.0s
+  genetic GLLVM Gaussian reduction with multi-column fixed effects       |    6            6  0.1s

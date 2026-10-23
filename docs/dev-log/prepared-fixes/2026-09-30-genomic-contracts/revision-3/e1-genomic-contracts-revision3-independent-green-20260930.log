@@ -1,0 +1,8 @@
+Test Summary:                   | Pass  Total   Time
+Complete G2-G6 scratch controls |  112    112  24.4s
+Test Summary:                                     | Pass  Total  Time
+Representable public marker contribution boundary |    6      6  0.0s
+(p = 0.25, e = 2.1894858665067565e154, weight = 0.375, fast = 1.7976931348623155e308, reference = Inf)
+(p = 0.08, e = 3.4946515178772264e154, weight = 0.1472, fast = 1.7976931348623155e308, reference = Inf)
+Test Summary:                                          | Pass  Total  Time
+Exact overflow rejection despite finite fast candidate |    6      6  0.1s

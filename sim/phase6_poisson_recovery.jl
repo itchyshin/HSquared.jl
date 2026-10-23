@@ -10,8 +10,8 @@ Opt-in known-truth recovery harness for the fitted Poisson animal model
 Deliberately outside `test/` so the suite stays RNG-free. It simulates a half-sib
 pedigree, draws breeding values `u ~ N(0, A·σ²a)` and counts
 `yᵢ ~ Poisson(exp(μ + uₐ))` (Knuth sampler), fits the Laplace-REML estimator, and
-checks recovery of `σ²a` (Laplace VC estimation of count data is known to be
-somewhat downward-biased at small scale, so the threshold is loose) plus the
+checks recovery of `σ²a` on five predeclared seeds; this sample does not establish
+a population bias direction or cause. The threshold is a feasibility screen. It also checks
 latent-effect recovery (correlation of the posterior mode with the true `u`).
 
 Run from the repository root:

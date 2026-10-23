@@ -1,0 +1,17 @@
+{
+  "receipt_sha256": "465bb083cbe5a777158ed52aee195473e0441b394da65e94425f066f1e6cc6d8",
+  "archive_sha256": "e54b2a07a3e07487b79cd1538b27fc57d3463562a82d423f323f02c3fb739298",
+  "files": {
+    "claim-composition-proof.json": "b005e7790e8db6d3a2b659be2120a12f2f0eba376e5573feabdc1951e45d5ad0",
+    "oracle-R.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "oracle-R.stdout": "3506b10c48daf99394fec2d41ae98913aba60b52c28d525f843f8b7aa0df6afb",
+    "oracle-docs.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "oracle-docs.stdout": "682048b1485fb9aec6f407076daa7018c88552abc65fd1c2805cffb4eb26978b",
+    "oracle-julia.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "oracle-julia.stdout": "1f61a0593a8132c8ef2996886a2e16c178947da39c4e2899bba3c4a78c1333d3",
+    "oracle-results.json": "931c38e88c446ec2b31cb2700e3bd787b70dbb19ee83f36ca17a34bb566013ac",
+    "proof-pins.json": "f03a4e03721cf137f658aa82f23678e218fc1b886e1c51a4ebc12a1630c509db",
+    "retained-and-fresh-evidence-pins.json": "c5c477bcda811946ad2165f4d42a1ba7a77cd9c708701157047b01beb58aa97a",
+    "static-composition.json": "5f55cf4745191ecab8dfd86445ffde7b32a1a2f660f7c481afc43535f9d0f08f"
+  }
+}

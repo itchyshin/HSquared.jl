@@ -1,0 +1,12 @@
+name = "HSquaredSelinvBench"
+
+[deps]
+HSquared = "a0667dea-0f38-44e8-9150-4fda00624eac"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+SelectedInversion = "043bf095-3f01-458a-9f1c-8cf4448fe908"
+SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
+
+[compat]
+SelectedInversion = "=0.2.1"

@@ -1,3 +1,5 @@
+Read first: /Users/z3437171/shinichi-brain/AGENTS.md
+
 # HSquared.jl Agent Instructions
 
 `HSquared.jl` is the Julia computational twin of the R package `hsquared`.
@@ -14,87 +16,7 @@ engine reality.
 > Authoritative elsewhere, and always more current than this: phase state → `ROADMAP.md` · what is
 > actually fitted → `docs/design/capability-status.md` · history → `docs/dev-log/phase-snapshot-archive.md`.
 
-- **As of 2026-07-08 (plotting-layer AlgebraOfGraphics migration — RECOVERED + FIXED + VERIFIED
-  LIVE + ROSE-AUDITED, on a branch awaiting merge; Claude solo (Opus), R-lane session on maintainer
-  instruction; rows **55** / covered **13** / `public_covered_count` **5** UNCHANGED).** Five plotting files had sat
-  uncommitted for two days (mtime 07-06) as an unfinished mid-conversion of `HSquaredMakieExt` to
-  AlgebraOfGraphics (`:variance_components` + `:breeding_values`); AoG had never existed on any ref.
-  **Five defect classes fixed** (three found by reading, two — (4) and (5) — only by rendering the PNG
-  and looking at it)**:** (1) every marker drawn TWICE — the manual `scatter!` was restoring
-  z-order after the whiskers overpainted, so AoG now owns the single marker layer and whiskers go behind
-  via `translate!`; (2) `_axes_by_panel` pattern-matched `Label`s out of `fig.content` and index-zipped
-  them to axes (two undocumented internals) — replaced with AoG's supported `FigureGrid.grid` accessor +
-  a shape guard; (3) the full term list was forced onto EVERY facet's yticks — now per-facet; (4) *found
-  only by rendering the PNG and looking at it* — title/subtitle drawn once PER FACET, `ylabel` leaking
-  the mapped variable `"rank"`, x/y scales LINKED across facets (h² on `[0,1]` crushed against a `0–40`
-  variance scale), and the `[0,1] boundary` annotation clipped at the data limit; (5) *found only by
-  rendering the PNG, and it had PASSED an object assertion* — the `[0,1] boundary` flag was anchored at
-  `hi` for EVERY crossing, so a `lo <= 0` interval flagged the one end it respects, with the headroom
-  bump on the wrong side; the flag is now anchored at the crossed end (both ends when both cross) and the
-  driver asserts anchor position, row, and alignment rather than merely counting the annotation.
-  **VERIFIED:** compat
-  pin resolves (`AlgebraOfGraphics 0.13.0` + `Makie 0.24.13` + `CairoMakie 0.15.13`, Julia 1.10.0), the
-  extension precompiles, **9/9 kinds draw a `Makie.Figure`** (explicit + inferred); on the *forest payload
-  specifically*: `Scatter=1` per axis, `NaN` whisker draws nothing, whisker/zero-line `z=-1.0`, boundary
-  `Text` on the h² axis ONLY (control payload draws none); both AoG figures rasterize, `Pkg.test()` GREEN
-  dependency-free. **One machine, one version set** (Julia 1.10.0, macOS/arm64) — not a cross-version or
-  cross-platform claim. The facet-order assumption HOLDS on AoG 0.13.0. Re-runnable, **mutation-tested**
-  driver: `docs/dev-log/scripts/2026-07-08-plotting-aog-livedraw.jl` (it rasterizes BEFORE asserting, so
-  the PNGs exist on a failing run). The driver also runs as the **opt-in `plotting` CI job** — off by
-  default; dispatch CI with `run_plotting = true` — which uploads the figures as an artifact.
-  **Standing trap:** the default-CI stub test
-  asserts `isempty(methods(hsquared_figure))` with Makie/AoG out of that environment, so it passes
-  *precisely when the extension fails to load* — a green `Pkg.test()` is NEVER evidence about the
-  drawing layer. Also:
-  **`julia` is not on `PATH` in a Claude Code shell** (`~/.juliaup/bin`) — do not conclude the toolchain
-  is absent. Branch `feat/2026-07-08-plotting-aog`, pushed, **PR #264 open, NOT merged**; `main`
-  untouched. **Two** real `rose-systems-auditor` audits, both PROMOTE-WITH-CHANGES, all changes applied:
-  the first on the branch (false 2026-06-22 AoG evidence pointer in `test/runtests.jl`, unreproducible
-  evidence, under-covering SUPERSEDED banner); the second on the defect-5 delta (a dangling "(see below)"
-  evidence pointer, a defect count left inconsistent across four surfaces, three absolutes falsified by
-  the new opt-in CI job, and an `if: always()` artifact upload defeated by rasterizing *after* asserting).
-  Coordination board NOT updated (Julia-lane slice run from an R-lane session) — do that on merge.
-  **SIX GATES THAT COULD NOT FAIL** were found closing this slice, each by the reflex the previous
-  one taught: (1) the CI stub test above; (2) `shinichi-brain/tools/check-after-task.R` defined a
-  main and never called it, so the documented CLI exited 0 for ANY input — including nonexistent
-  files — for its entire life, while `protocols/after-task.md` cited it as *the* DoD gate; (3) the
-  sibling sweep found `rose-pattern-scan.R` with the identical defect (both R honesty gates dead;
-  every shell/Python tool fine); (4) `handoff_gate.sh` audited only the checked-out branch;
-  (5) **restoring (3)'s missing `main()` did NOT restore the gate** — a later negative control showed
-  `rose-pattern-scan.R <nonexistent-root>` still exiting 0, because `list.files()` globs a missing
-  directory into zero files with no error and no warning, so a typo'd path "passed"; (6) this repo's
-  own live-draw driver asserted `nplots(ax, Text) == 1` — it *counted* the `[0,1]` flag and never
-  asked where it sat, which is exactly how defect (5) of the plotting layer survived a Rose audit.
-  (2) fixed + pushed (`shinichi-brain` @ `3468312`, guarded by `sys.nframe() == 0L` — NOT
-  `!interactive()`, which is FALSE under `Rscript -e 'source(...)'` too and would break the
-  workaround); (4) fixed independently by a parallel session (`1f1df6f`); (3)+(5) genuinely fixed at
-  `shinichi-brain` @ `d85299f` (root guard) and `@bbc1c34` (locale-independent matching), lesson banked
-  at `@58a2936`; (6) fixed here — the driver now asserts anchor position, row, and alignment.
-  **Before trusting a green, make it go red on purpose — including the gate you just repaired.**
-  Nothing promoted. Evidence: `docs/dev-log/check-log.d/2026-07-08-plotting-aog.md`.
-  START HERE: `docs/dev-log/handover/2026-07-08-claude-handover.md`.
-
-- **As of 2026-07-03 (doc-25 V7 GPU stream COMPLETE + V8 stream COMPLETE — ALL numbered slices done;
-  Claude solo (Opus), autonomous; `/goal` "finish everything left in doc-25"; rows **55** / covered
-  **13** / `public_covered_count` **5** UNCHANGED throughout).** The doc-25 numbered map is CLEARED.
-  This continuation delivered + MERGED, each pre-declared + Rose-audited: **V8.5** APY genomic inverse
-  (#253), **V8.4** external blupf90 comparator for the matrix-free fit — estimand leg (#254), and the
-  ENTIRE **v0.7 GPU stream**: **V7.1** G-B Float32 (#255, tamia H100 — Float64 gate 7.3e-15, Float32
-  GEBV ~1e-6, speedup MODEST ~1.2×, TF32 not engaged), **V7.2** G-7.2 cross-device (#256, Narval A100 —
-  agreement PORTABLE ~1e-15, Float64 gate 3.0e-15; GBLUP bench 5.9×→46.7×), **V7.4** G-D backend
-  dispatcher (#257, opt-in `backend=:cuda` on the two construction ops; `:cpu` byte-identical), **V7.3**
-  G-C large-panel benchmark (#258, tamia H100 — handles n=20k×m=300k on one H100, 29% of 80GB; Float32
-  modest, transfer-bound), and **V7.5** G-E close-out (this slice — `status_cache` pointer refreshed,
-  stream consolidated). HONEST GPU summary: numerically exact + architecture-portable + handles realistic
-  panels, but Float32 only a minor win + no R-public surface → `V2-GRM-GPU` stays `partial`, NO covered
-  move. **doc-25 FULLY CLOSED** — both owed hardening legs now DISCHARGED (each Rose-audited + merged):
-  **V8.4 at-scale** (blupf90 vs exact-sparse vs matrix-free at q=4060, PR #260 — exact==blupf90 4.7e-6,
-  matrix-free ≤1%; the exact-infeasible regime q≫50k has NO external oracle by construction) and
-  **coverage-calibrated intervals** (DRAC fir job 46853279 — empirical coverage of the shipped
-  `:delta`/`:profile` h²/σ²a intervals: CONSERVATIVE over-coverage at small n, converging to nominal,
-  `:profile` > `:delta`; a characterization, no covered flip). `public_covered_count` **5** held across
-  the ENTIRE arc. START HERE: `docs/dev-log/after-task/2026-07-03-interval-coverage.md`.
-
+- **As of 2026-10-01 (bounded FA/GLLVM twin programme closed; auto-rank design next).** Julia PR #401 landed at `829e86ce`; closeout PR #402 merged at `570f49ba`, closing V3 with the exact hosted receipts in `docs/dev-log/after-task/2026-10-01-bounded-twin-final-closeout.md`. Gaussian FA T4/K1 and Poisson-log genetic GLLVM T3/K2 remain experimental; `public_covered_count` remains 7. No GPU, new submission, registry action, release tag, or capability promotion. Next: a separate automatic FA rank design/coordination arc, beginning with read-only GLLVM.jl and gllvmTMB contract refresh; HSquared implementation and validation remain queued. START HERE: `docs/dev-log/handover/2026-10-01-codex-handover.md`.
 ## Core Scope
 
 - Sparse pedigree, genomic, and custom relationship precision matrices.
@@ -231,3 +153,45 @@ A slice is done only when the relevant items are present:
 - clean local checks;
 - clean CI if pushed;
 - `bash tools/preamble_cap.sh` green (this file is re-read every session; it is capped).
+
+<!-- graft:start -->
+## Graft — repo context graph
+
+This repo is indexed in `graft/`: small linked markdown nodes that explain each
+system and carry exact file:line spans, kept in sync with the code through git.
+
+For ANY task here — understanding how something works, finding where code lives,
+or scoping a change — get context from the graph before grepping or opening
+source files. Re-ask freely (it's cheap) and reuse literal identifiers you
+already have (symbol, error string, file name) as the query. New to this repo?
+Run `graft map` first — a token-budgeted orientation (dir clusters, hubs,
+hotspots), no LLM, no key.
+
+- Run `graft ask "<your question>" --source` → ranked nodes with the relevant
+  code spans inlined (each hit's ≤8-line crux by default; `--full` for whole
+  definitions when the crux isn't enough). Match the tool to the task shape:
+  for understanding or editing, the top node IS the answer — cite its
+  `covers:` file:line spans and edit straight from `--source`. For
+  exhaustive tasks ("every occurrence / every caller of this pattern"), ranked
+  results are top-N, not complete — run `graft grep "<literal>"` instead
+  (exhaustive over indexed files, grouped by enclosing symbol), falling back
+  to raw `grep -rn` only for unindexed files.
+- `graft skeleton <file>` → every definition's signature + span, ~10× cheaper
+  than reading the file; use it to skim an API surface.
+- `graft callers <symbol>` gives precomputed, exact edges — who calls this.
+  Add `--direction out` for what it calls, or `--depth N` to walk
+  transitively for the full blast radius. For structural questions, skip
+  ranking and use this directly.
+- Or browse: `graft/INDEX.md` lists every node; follow the links.
+- Monorepos and folders of multiple repos rank fairly across sub-projects —
+  hits carry `[scope/]` labels naming which one they're from. Narrow with
+  `graft ask "<task>" --in <scope>/` once you know where you're working.
+
+If a returned span is truncated ("+N more lines"), open the file at that exact
+range before finalizing. Only open source files when a node genuinely lacks a
+needed detail, and then at the exact file:line the node points to — never
+re-read whole files.
+
+After big code changes, refresh the graph with `graft build` (deterministic,
+no API key, $0).
+<!-- graft:end -->

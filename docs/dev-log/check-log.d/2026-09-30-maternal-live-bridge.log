@@ -1,0 +1,34 @@
+ℹ Testing hsquared
+hsquared is an experimental 0.9.0 release (not production; CRAN availability is tracked separately). Default fitting needs Julia + HSquared.jl; preview with hs_control(engine = "validate").
+What you may report is listed on Can I fit and report this? -- not in validation_status(). Intervals are not coverage-calibrated.
+See https://itchyshin.github.io/hsquared/articles/current-limits.html
+✔ | F W  S  OK | Context
+
+⠏ |          0 | direct-maternal                                                
+⠴ |          6 | direct-maternal                                                
+⠏ |         20 | direct-maternal                                                
+⠏ |         40 | direct-maternal                                                
+⠙ |         52 | direct-maternal                                                
+⠹ |         63 | direct-maternal                                                  Activating project at `~/.codex/worktrees/hsquared-fa-gllvm-foundations/HSquared.jl`
+
+⠧ |         68 | direct-maternal                                                6×6 Matrix{Float64}:
+  3.0   2.0  -1.0  -1.0  -1.0  -1.0
+  2.0   3.0  -1.0  -1.0  -1.0  -1.0
+ -1.0  -1.0   2.0   0.0   0.0   0.0
+ -1.0  -1.0   0.0   2.0   0.0   0.0
+ -1.0  -1.0   0.0   0.0   2.0   0.0
+ -1.0  -1.0   0.0   0.0   0.0   2.0
+  
+
+⠇ |         89 | direct-maternal                                                
+✔ |         90 | direct-maternal [18.3s]
+
+══ Results ═════════════════════════════════════════════════════════════════════
+Duration: 18.3 s
+
+[ FAIL 0 | WARN 0 | SKIP 0 | PASS 90 ]
+
+🎸 Your tests rock 🎸
+Julia exit.
+
+elapsed_seconds 20.18 exit_code 0

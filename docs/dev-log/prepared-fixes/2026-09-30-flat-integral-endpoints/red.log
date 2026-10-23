@@ -1,0 +1,273 @@
+ERROR: LoadError: Some tests did not pass: 20 passed, 15 failed, 0 errored, 0 broken.
+in expression starting at /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:25
+actual helper guards: Test Failed at /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:38
+  Expression: actual_guard(family, y, X)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:38 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:37 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:26
+actual helper guards: Test Failed at /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:39
+  Expression: actual_guard(family, y, 2.0 .* X)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:39 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:37 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:26
+actual helper guards: Test Failed at /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:38
+  Expression: actual_guard(family, y, X)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:38 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:37 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:26
+actual helper guards: Test Failed at /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:39
+  Expression: actual_guard(family, y, 2.0 .* X)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:39 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:37 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:26
+actual helper guards: Test Failed at /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:38
+  Expression: actual_guard(family, y, X)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:38 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:37 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:26
+actual helper guards: Test Failed at /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:39
+  Expression: actual_guard(family, y, 2.0 .* X)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:39 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:37 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:26
+scalar and GLLVM guard paths reject before mode work: Test Failed at /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:53
+  Expression: endpoint_probe((()->begin
+            #= /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:53 =#
+            H.laplace_marginal_loglik(y, X, Z, Z, 1.0, family; maxiter = 1)
+        end))
+    Expected: ArgumentError
+      Thrown: FlatIntegralGuardPassed
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:53 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:52 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:26
+scalar and GLLVM guard paths reject before mode work: Test Failed at /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:55
+  Expression: endpoint_probe((()->begin
+            #= /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:55 =#
+            H.gllvm_laplace_marginal_loglik(reshape(y, n, 1), Z, L, family; X = X, maxiter = 0)
+        end))
+    Expected: ArgumentError
+      Thrown: FlatIntegralGuardPassed
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:55 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:52 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:26
+scalar and GLLVM guard paths reject before mode work: Test Failed at /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:57
+  Expression: endpoint_probe((()->begin
+            #= /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:57 =#
+            H.gllvm_laplace_marginal_loglik(hcat([1.0, 2.0], y), Z, ones(2, 1), [H.GaussianResponse(1.0), family]; X = X, maxiter = 0)
+        end); expected_visits = 2)
+    Expected: ArgumentError
+      Thrown: FlatIntegralGuardPassed
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:57 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:52 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:26
+scalar and GLLVM guard paths reject before mode work: Test Failed at /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:53
+  Expression: endpoint_probe((()->begin
+            #= /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:53 =#
+            H.laplace_marginal_loglik(y, X, Z, Z, 1.0, family; maxiter = 1)
+        end))
+    Expected: ArgumentError
+      Thrown: FlatIntegralGuardPassed
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:53 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:52 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:26
+scalar and GLLVM guard paths reject before mode work: Test Failed at /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:55
+  Expression: endpoint_probe((()->begin
+            #= /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:55 =#
+            H.gllvm_laplace_marginal_loglik(reshape(y, n, 1), Z, L, family; X = X, maxiter = 0)
+        end))
+    Expected: ArgumentError
+      Thrown: FlatIntegralGuardPassed
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:55 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:52 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:26
+scalar and GLLVM guard paths reject before mode work: Test Failed at /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:57
+  Expression: endpoint_probe((()->begin
+            #= /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:57 =#
+            H.gllvm_laplace_marginal_loglik(hcat([1.0, 2.0], y), Z, ones(2, 1), [H.GaussianResponse(1.0), family]; X = X, maxiter = 0)
+        end); expected_visits = 2)
+    Expected: ArgumentError
+      Thrown: FlatIntegralGuardPassed
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:57 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:52 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:26
+scalar and GLLVM guard paths reject before mode work: Test Failed at /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:53
+  Expression: endpoint_probe((()->begin
+            #= /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:53 =#
+            H.laplace_marginal_loglik(y, X, Z, Z, 1.0, family; maxiter = 1)
+        end))
+    Expected: ArgumentError
+      Thrown: FlatIntegralGuardPassed
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:53 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:52 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:26
+scalar and GLLVM guard paths reject before mode work: Test Failed at /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:55
+  Expression: endpoint_probe((()->begin
+            #= /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:55 =#
+            H.gllvm_laplace_marginal_loglik(reshape(y, n, 1), Z, L, family; X = X, maxiter = 0)
+        end))
+    Expected: ArgumentError
+      Thrown: FlatIntegralGuardPassed
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:55 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:52 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:26
+scalar and GLLVM guard paths reject before mode work: Test Failed at /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:57
+  Expression: endpoint_probe((()->begin
+            #= /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:57 =#
+            H.gllvm_laplace_marginal_loglik(hcat([1.0, 2.0], y), Z, ones(2, 1), [H.GaussianResponse(1.0), family]; X = X, maxiter = 0)
+        end); expected_visits = 2)
+    Expected: ArgumentError
+      Thrown: FlatIntegralGuardPassed
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:57 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:52 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-flat-integral-endpoints-fix-20260930/test/flat_integral_endpoint_regression.jl:26
+Test Summary:                                          | Pass  Fail  Total  Time
+flat integral omitted family endpoints                 |   20    15     35  3.6s
+  actual helper guards                                 |    8     6     14  1.5s
+  scalar and GLLVM guard paths reject before mode work |   12     9     21  2.1s

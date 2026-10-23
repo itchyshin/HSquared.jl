@@ -104,7 +104,7 @@ First slice; both tracks depend on it. Deliverables, all committed to the repo:
 | Slice | Backlog | What | Cluster | DoD target |
 |---|---|---|---|---|
 | **F0** | — | **Measure-first.** Extend `sim/cpu_fit_benchmark.jl` to q=10⁴/3×10⁴/10⁵; time + peak-RSS for Ainv build, MME assembly+factorization, `fit_ai_reml`, PCG solve, selinv. **Find the bottleneck**; confirm two facts: is inbreeding O(n) or O(q²)? is CHOLMOD already AMD-ordering the MME? | Fir big-mem | checkpoint doc; no capability claim |
-| **F1** | B3 | **Meuwissen–Luo O(n) inbreeding** in the production Ainv path (only if F0 shows it isn't already O(n)). | Fir | new/updated row; tiny + scaling test |
+| **F1** | B3 | **Meuwissen–Luo ancestry-heap traversal** in the production Ainv path; report measured scaling and avoid a general complexity claim unless derived and supported. | Fir | new/updated row; tiny + scaling test |
 | **F2** | B4 | **Fill-reducing ordering** for the MME factorization — verify/expose/tune CHOLMOD AMD; add METIS for very large q (the fill-in scaling lever). | Fir | benchmark shows reduced fill |
 | **F3** | B5 | **AI-REML convergence hardening** — step control, restarts, PD guards; robust default. | Fir | hardening tests; boundary cases |
 | **F4** | B1 | **Promote to the production path** — hardened AI-REML is the default `fit_animal_model` path with production diagnostics; flip V1-REML off "experimental". | — | V1-REML production row; status flip |

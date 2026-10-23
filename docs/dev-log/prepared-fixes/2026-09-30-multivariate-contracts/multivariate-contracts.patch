@@ -1,0 +1,376 @@
+--- a/src/multivariate.jl
++++ b/src/multivariate.jl
+@@ -284,6 +284,38 @@
+     )
+ end
+ 
++function _mv_labels(labels, n::Integer, name::AbstractString)
++    values = labels === nothing ? collect(1:n) : collect(labels)
++    length(values) == n || throw(ArgumentError("$name length must match its model dimension"))
++    any(v -> ismissing(v) || isnothing(v), values) && throw(ArgumentError("$name must not contain missing labels"))
++    normalized = strip.(string.(values))
++    all(!isempty, normalized) || throw(ArgumentError("$name must not contain empty labels"))
++    length(unique(normalized)) == n || throw(ArgumentError("$name must be unique after string normalization"))
++    return values
++end
++
++function _mv_fd_step(h::Real)
++    isfinite(h) && h > 0 || throw(ArgumentError("finite-difference step must be finite and positive"))
++    hf = Float64(h)
++    isfinite(hf) && hf > 0 && isfinite(hf * hf) && hf * hf > 0 ||
++        throw(ArgumentError("finite-difference step and its square must be representable as finite positive Float64 values"))
++    return hf
++end
++
++function _mv_fd_points(x, h)
++    xf = Float64.(collect(x))
++    all(isfinite, xf) || throw(ArgumentError("finite-difference coordinates must be finite Float64 values"))
++    all(v -> isfinite(v + h) && isfinite(v - h) && v + h != v && v - h != v, xf) ||
++        throw(ArgumentError("finite-difference perturbations must be finite and distinct from their coordinates"))
++    return xf
++end
++
++function _mv_require_converged(fit)
++    hasproperty(fit, :converged) && fit.converged === true ||
++        throw(ArgumentError("multivariate uncertainty requires a fit with converged = true"))
++    return nothing
++end
++
+ function _check_finite_matrix(M, name)
+     Mf = Float64.(Matrix(M))
+     all(isfinite, Mf) || throw(ArgumentError("$name must not contain Inf or NaN"))
+@@ -347,6 +379,7 @@
+     size(L, 1) >= 1 || throw(ArgumentError("loadings must have at least one trait row"))
+     size(L, 2) >= 1 || throw(ArgumentError("loadings must have at least one factor column"))
+     C = L * transpose(L)
++    all(isfinite, C) || throw(ArgumentError("reconstructed low-rank covariance must be finite"))
+     all(>(0), diag(C)) || throw(ArgumentError("each trait must have positive low-rank genetic variance"))
+     return C
+ end
+@@ -368,7 +401,9 @@
+         throw(ArgumentError("uniqueness length must match the number of loading rows"))
+     all(isfinite, ψ) || throw(ArgumentError("uniqueness must not contain Inf or NaN"))
+     all(>(0), ψ) || throw(ArgumentError("uniqueness values must be positive"))
+-    return L * transpose(L) + Diagonal(ψ)
++    C = L * transpose(L) + Diagonal(ψ)
++    all(isfinite, C) || throw(ArgumentError("reconstructed factor-analytic covariance must be finite"))
++    return C
+ end
+ 
+ # Heywood interior bound for fitted FA uniqueness (0.8 S3).
+@@ -515,8 +550,8 @@
+ MME solve that does **not** estimate `G0` / `R0` (covariance-matrix estimation is
+ a separate REML slice), the multi-trait analogue of [`henderson_mme`](@ref). It
+ assumes a fixed-effect / incidence design shared across traits; per-trait designs
+-are not covered. Experimental, dense/validation-scale, engine-internal — there is
+-no R-facing multivariate model-spec yet.
++are not covered. Experimental, dense/validation-scale, supplied-covariance Julia
++helper. R's multivariate fitting routes are documented separately.
+ 
+ Returns a `NamedTuple`:
+ 
+@@ -545,12 +580,10 @@
+     q = size(Ainv, 1)
+     size(Ainv, 2) == q || throw(ArgumentError("Ainv must be square"))
+     size(Z, 2) == q || throw(ArgumentError("Z columns must match Ainv dimensions"))
++    aids = _mv_labels(ids, q, "ids")
++    tlabels = _mv_labels(traits, t, "traits")
+     G0s = _check_covariance(G0, "G0", t)
+     R0s = _check_covariance(R0, "R0", t)
+-    aids = ids === nothing ? collect(1:q) : collect(ids)
+-    length(aids) == q || throw(ArgumentError("ids length must match Ainv dimensions"))
+-    tlabels = traits === nothing ? collect(1:t) : collect(traits)
+-    length(tlabels) == t || throw(ArgumentError("traits length must match Y columns"))
+ 
+     p = size(X, 2)
+     # observed-record mask (handles unbalanced / missing-trait records).
+@@ -593,6 +626,8 @@
+         Rinv = blockdiag(blocks...)
+     end
+ 
++    (size(Xfull, 2) == 0 || LinearAlgebra.rank(Matrix(Xfull)) == size(Xfull, 2)) ||
++        throw(ArgumentError("fixed-effect design must have full column rank over observed records"))
+     Xt = transpose(Xfull)
+     Zt = transpose(Zfull)
+     XtRi = Xt * Rinv
+@@ -808,7 +843,8 @@
+ 
+ # Full REML log-likelihood at supplied `G0`, `R0`, INCLUDING the `(N − p')·log(2π)`
+ # constant (`p' = ncol(Xfull)`), so it is on the same scale as `gaussian_loglik`
+-# and `sparse_reml_loglik` and is safe to compare across the package (LRT/AIC).
++# and `sparse_reml_loglik` and agrees with other full-constant Gaussian objectives on matched models.
++# REML comparisons still require compatible data and fixed-effect spaces.
+ function _mv_reml_loglik_core(yvec, Xfull, Zfull, A, indiv, N, G0, R0)
+     Vf = _mv_build_Vchol(Zfull, A, indiv, N, G0, R0)
+     ViX = Vf \ Xfull
+@@ -936,8 +972,9 @@
+ validated by deterministic self-consistency checks (the `t = 1` reduction
+ recovers the univariate REML estimate; the multivariate REML log-likelihood is on
+ the same full-constant scale as the univariate one; the optimum beats a coarse
+-grid). Known-truth covariance recovery for `t ≥ 2` is exercised only by one-off
+-simulations (the test suite is RNG-free); same-estimand external-comparator
++grid). Seeded fixtures and separately documented recovery campaigns concern
++specific trait/rank/design cells. They establish no broad recovery or inference
++calibration. For the unstructured multi-trait comparison, same-estimand external
+ parity is discharged on ONE deterministic fixture (point-estimate) by `sommer`
+ 4.4.5 and `blupf90+` 2.60, with no ASReml or JWAS leg — treat multi-trait
+ variance estimates as experimental. There is no published textbook anchor for
+@@ -958,7 +995,8 @@
+     `genetic_uniqueness` — structure metadata (`nothing` where not applicable);
+   - `loglik` — the full REML log-likelihood at the estimate, including the
+     `(N − p')·log(2π)` constant, so it is on the same scale as
+-    [`gaussian_loglik`](@ref) / [`sparse_reml_loglik`](@ref) (safe for LRT/AIC);
++    [`gaussian_loglik`](@ref) / [`sparse_reml_loglik`](@ref); comparisons still
++    require matched data and compatible fixed-effect spaces;
+   - `converged`, `iterations`, `traits`;
+   - `fa_start_diagnostics` — for FA fits, per-start objective, termination,
+     iteration count, objective range, covariance disagreement, whether a
+@@ -989,10 +1027,14 @@
+     q = size(Ainv, 1)
+     size(Ainv, 2) == q || throw(ArgumentError("Ainv must be square"))
+     size(Z, 2) == q || throw(ArgumentError("Z columns must match Ainv dimensions"))
++    aids = _mv_labels(ids, q, "ids")
++    tlabels = _mv_labels(traits, t, "traits")
+ 
+     p = size(X, 2)
+     A = inv(Symmetric(_check_relationship_precision(Ainv, q)))
+     yvec, Xfull, Zfull, indiv, N = _mv_observed(Y, X, Z, n, t, q, p)
++    iterations > 0 || throw(ArgumentError("iterations must be positive"))
++    N > size(Xfull, 2) || throw(ArgumentError("REML requires positive residual degrees of freedom"))
+     (size(Xfull, 2) == 0 || LinearAlgebra.rank(Xfull) == size(Xfull, 2)) ||
+         throw(ArgumentError("fixed-effect design must have full column rank over observed records"))
+ 
+@@ -1127,10 +1169,6 @@
+ 
+     # EBVs via the GLS form (robust to a singular G0 at a boundary optimum).
+     beta, ebv = _mv_gls_blup(yvec, Xfull, Zfull, A, indiv, N, G0hat, R0hat, t, p, q)
+-    aids = ids === nothing ? collect(1:q) : collect(ids)
+-    length(aids) == q || throw(ArgumentError("ids length must match Ainv dimensions"))
+-    tlabels = traits === nothing ? collect(1:t) : collect(traits)
+-    length(tlabels) == t || throw(ArgumentError("traits length must match Y columns"))
+     hsq = [G0hat[k, k] / (G0hat[k, k] + R0hat[k, k]) for k in 1:t]
+ 
+     return (
+@@ -1222,9 +1260,10 @@
+ components; `P0 = 0` recovers the [`fit_multivariate_reml`](@ref) log-likelihood.
+ Experimental, dense/validation-scale, REML-only. No covered flip.
+ 
+-The R twin still fences `cbind()` + `permanent()` until it lifts the spec
+-gate. Call this fitter directly, or through payload-v2 dispatch
+-`:multivariate_repeatability` (`Y` + pedigree + iid PE blocks).
++The R twin has a dedicated experimental matrix route for `cbind()` plus
++`permanent()`. The generic scalar reader does not transport matrix effects.
++Direct Julia calls and payload-v2 dispatch `:multivariate_repeatability`
++use `Y` plus pedigree and iid permanent-environment blocks.
+ """
+ function fit_multivariate_repeatability_reml(
+     Y::AbstractMatrix,
+@@ -1244,10 +1283,16 @@
+     q = size(Ainv, 1)
+     size(Ainv, 2) == q || throw(ArgumentError("Ainv must be square"))
+     size(Z, 2) == q || throw(ArgumentError("Z columns must match Ainv dimensions"))
++    aids = _mv_labels(ids, q, "ids")
++    tlabels = _mv_labels(traits, t, "traits")
+ 
+     p = size(X, 2)
+     A = inv(Symmetric(_check_relationship_precision(Ainv, q)))
+     yvec, Xfull, Zfull, indiv, N = _mv_observed(Y, X, Z, n, t, q, p)
++    iterations > 0 || throw(ArgumentError("iterations must be positive"))
++    N > size(Xfull, 2) || throw(ArgumentError("REML requires positive residual degrees of freedom"))
++    (size(Xfull, 2) == 0 || LinearAlgebra.rank(Xfull) == size(Xfull, 2)) ||
++        throw(ArgumentError("fixed-effect design must have full column rank over observed records"))
+     ncov = t * (t + 1) ÷ 2
+ 
+     function negloglik(params)
+@@ -1309,10 +1354,6 @@
+     R0hat = Matrix(Symmetric(R0raw))
+ 
+     beta, ebv, pe = _mv_pe_gls_blup(yvec, Xfull, Zfull, A, indiv, N, G0hat, P0hat, R0hat, t, p, q)
+-    aids = ids === nothing ? collect(1:q) : collect(ids)
+-    length(aids) == q || throw(ArgumentError("ids length must match Ainv dimensions"))
+-    tlabels = traits === nothing ? collect(1:t) : collect(traits)
+-    length(tlabels) == t || throw(ArgumentError("traits length must match Y columns"))
+     denom = [G0hat[k, k] + P0hat[k, k] + R0hat[k, k] for k in 1:t]
+     hsq = [G0hat[k, k] / denom[k] for k in 1:t]
+     rpt = [(G0hat[k, k] + P0hat[k, k]) / denom[k] for k in 1:t]
+@@ -1467,8 +1508,10 @@
+ 
+ # Upper-tail (survival) of the chi-square distribution: P(χ²_k > x).
+ function _chisq_sf(x::Real, k::Real)
+-    k > 0 || throw(ArgumentError("degrees of freedom must be positive"))
++    isfinite(k) && k > 0 || throw(ArgumentError("degrees of freedom must be finite and positive"))
++    isnan(x) && throw(ArgumentError("chi-square statistic must not be NaN"))
+     x <= 0 && return 1.0
++    x == Inf && return 0.0
+     a = k / 2
+     z = x / 2
+     return z < a + 1 ? 1.0 - _reg_gamma_p_series(a, z) : _reg_gamma_q_cf(a, z)
+@@ -1485,10 +1528,17 @@
+ - `boundary_df = 0` (interior null): plain `χ²_df` tail, valid under regular
+   local identification and ordinary likelihood asymptotics.
+ - `boundary_df = 1` (one parameter on its boundary, e.g. a variance fixed at 0):
+-  the 50:50 chi-bar-squared mixture `½·χ²_df + ½·χ²_{df−1}` (Self & Liang 1987;
+-  Stram & Lee 1994) — anti-conservative relative to the naive `χ²_df`.
+-- `boundary_df ≥ 2`: no closed-form chi-bar weights, so the naive `χ²_df` p-value
+-  is returned and flagged conservative (`mixture = :chisq_conservative`).
++  under the regular single variance-component boundary conditions, the
++  50:50 chi-bar-squared mixture `½·χ²_df + ½·χ²_{df−1}` (Self & Liang 1987;
++  Stram & Lee 1994). The naive `χ²_df` tail is larger than this mixture tail.
++  A boundary count alone does not establish these regularity conditions.
++- `boundary_df ≥ 2`: weights are not computed. The naive `χ²_df` tail is
++  returned with the legacy token `mixture = :chisq_conservative`. This token
++  does not certify the reference law or conservativity for arbitrary models;
++  those require an appropriate regular cone limit and its component degrees.
++
++Log-likelihoods must be finite before and after Float64 conversion. A positive
++overflow of the likelihood-difference statistic has the chi-square tail limit zero.
+ 
+ Returns `(statistic, df, boundary_df, pvalue, boundary, mixture, note)`. Asymptotic
+ theory only — the single-boundary mixture is textbook, not recovery-calibrated.
+@@ -1499,7 +1549,12 @@
+         throw(ArgumentError("`full` must have more parameters than `constrained` (df = $df)"))
+     0 <= boundary_df <= df ||
+         throw(ArgumentError("boundary_df must be in 0:df (got boundary_df = $boundary_df, df = $df)"))
+-    statistic = 2 * (Float64(loglik_full) - Float64(loglik_constrained))
++    isfinite(loglik_constrained) && isfinite(loglik_full) ||
++        throw(ArgumentError("log-likelihoods must be finite"))
++    lc = Float64(loglik_constrained)
++    lf = Float64(loglik_full)
++    isfinite(lc) && isfinite(lf) || throw(ArgumentError("log-likelihoods must be finite after Float64 conversion"))
++    statistic = 2 * (lf - lc)
+     s = max(statistic, 0.0)
+     # χ² tail with the df = 0 edge as a point mass at 0 (tail 0 for s>0, 1 for s==0)
+     chisq_tail(x, k) = k == 0 ? (x > 0 ? 0.0 : 1.0) : _chisq_sf(x, k)
+@@ -1520,7 +1575,7 @@
+     elseif boundary_df == 1
+         "$label: one boundary parameter; 50:50 chi-bar-squared mixture (Self & Liang 1987; Stram & Lee 1994)"
+     else
+-        "$label: $boundary_df-parameter boundary null has no closed-form chi-bar weights; reported χ²_$df p-value is conservative"
++        "$label: boundary weights are not computed; reported χ²_$df is a naive tail (legacy :chisq_conservative token), with validity conditional on the model boundary law"
+     end
+     return (statistic = statistic, df = df, boundary_df = boundary_df, pvalue = pvalue,
+             boundary = boundary_df > 0, mixture = mixture, note = note)
+@@ -1528,6 +1583,8 @@
+ 
+ # Central finite-difference Hessian of a scalar function.
+ function _fd_hessian(f, x::AbstractVector; h::Real = 1e-4)
++    h = _mv_fd_step(h)
++    x = _mv_fd_points(x, h)
+     n = length(x)
+     H = zeros(n, n)
+     f0 = f(x)
+@@ -1549,6 +1606,8 @@
+ 
+ # Central finite-difference Jacobian of a vector-valued function.
+ function _fd_jacobian(g, x::AbstractVector; h::Real = 1e-4)
++    h = _mv_fd_step(h)
++    x = _mv_fd_points(x, h)
+     n = length(x)
+     g0 = g(x)
+     m = length(g0)
+@@ -1594,6 +1653,7 @@
+ (correlation-SE diagonals are `0`), the length-`t` `heritability` SE vector, and
+ the raw `information` matrix.
+ 
++Requires `converged = true` and a finite positive representable difference step.
+ Experimental, asymptotic, dense/validation-scale, REML-only. SEs are
+ finite-difference approximations and are wide/unreliable at small `n`; not
+ coverage-calibrated. Throws if the observed information is not finite
+@@ -1605,6 +1665,8 @@
+ parameterization and validation.
+ """
+ function multivariate_covariance_standard_errors(fit, Y, X, Z, Ainv; fd_step::Real = 1e-4)
++    _mv_require_converged(fit)
++    fd_step = _mv_fd_step(fd_step)
+     hasproperty(fit, :permanent_covariance) &&
+         throw(ArgumentError("covariance standard errors for repeatability fits require a permanent-environment-aware information matrix"))
+     getproperty(fit, :genetic_structure) == :unstructured ||
+@@ -1691,6 +1753,8 @@
+ function genetic_correlation_interval(fit, Y, X, Z, Ainv; level::Real = 0.95,
+                                       method::Symbol = :delta, pairs = nothing,
+                                       fd_step::Real = 1e-4)
++    _mv_require_converged(fit)
++    fd_step = _mv_fd_step(fd_step)
+     0 < level < 1 || throw(ArgumentError("level must be in (0, 1)"))
+     getproperty(fit, :genetic_structure) == :unstructured || throw(ArgumentError(
+         "genetic_correlation_interval requires an :unstructured fit: structured-fit covariance intervals need a separately validated SE path"))
+@@ -1701,6 +1765,7 @@
+     se = try
+         multivariate_covariance_standard_errors(fit, Y, X, Z, Ainv; fd_step = fd_step)
+     catch err
++        err isa ArgumentError || rethrow()
+         throw(ArgumentError("genetic_correlation_interval(:delta) needs the delta-method SEs, which are unavailable here ($(err isa ArgumentError ? err.msg : sprint(showerror, err))) — e.g. a flat/boundary optimum with r_g → ±1; no interval is reported (no fabricated whisker)"))
+     end
+     seRG = se.genetic_correlation
+--- /dev/null
++++ b/test/multivariate_contract_regression.jl
+@@ -0,0 +1,69 @@
++using Test, HSquared, LinearAlgebra
++@testset "Multivariate bounded contracts" begin
++@testset "Multivariate finite construction" begin
++    for build in (L->lowrank_covariance(L),L->factor_analytic_covariance(L,ones(2)))
++        @test_throws ArgumentError build(fill(1e308,2,1))
++        @test_throws ArgumentError build(fill(NaN,2,1))
++        @test all(isfinite,build([1.;2.;;]))
++    end
++    @test_throws ArgumentError factor_analytic_covariance(fill(1e154,2,1),fill(1e308,2))
++    @test lowrank_covariance([1.;2.;;]) ≈ [1. 2.;2. 4.]
++    @test factor_analytic_covariance([1.;2.;;],[.2,.3]) ≈ [1.2 2.;2. 4.3]
++end
++@testset "Multivariate finite-difference controls" begin
++    bad=(0.,-1e-4,NaN,Inf,big"1e-1000",big"1e1000",1e-200,1e200)
++    for h in bad
++        visits=Ref(0)
++        f=x->(visits[]+=1; -sum(abs2,x)/2)
++        g=x->(visits[]+=1;[x[1]^2,x[1]+2x[2]])
++        @test_throws ArgumentError HSquared._fd_hessian(f,[1.,2.];h=h)
++        @test visits[]==0
++        @test_throws ArgumentError HSquared._fd_jacobian(g,[1.,2.];h=h)
++        @test visits[]==0
++    end
++    @test HSquared._fd_hessian(x->-sum(abs2,x)/2,[1.,2.]) ≈ -Matrix{Float64}(I,2,2) atol=1e-7
++    @test HSquared._fd_jacobian(x->[x[1]^2,x[1]+2x[2]],[1.,2.]) ≈ [2. 0.;1. 2.] atol=1e-9
++end
++@testset "LRT input and tail limits" begin
++    for ll in (NaN,Inf,-Inf,big"1e1000",-big"1e1000")
++        @test_throws ArgumentError nested_lrt(ll,0.;df=1)
++        @test_throws ArgumentError nested_lrt(0.,ll;df=1)
++    end
++    @test HSquared._chisq_sf(Inf,1)==0.
++    @test HSquared._chisq_sf(-Inf,1)==1.
++    @test_throws ArgumentError HSquared._chisq_sf(NaN,1)
++    @test HSquared._chisq_sf(4.,2) ≈ exp(-2.) atol=1e-13
++    @test nested_lrt(-1e308,1e308;df=1).pvalue==0.
++    @test nested_lrt(-1e308,1e308;df=1,boundary_df=1).pvalue==0.
++    @test nested_lrt(-1e308,1e308;df=2,boundary_df=2).pvalue==0.
++    @test nested_lrt(0.,-1e308;df=1).pvalue==1.
++    @test nested_lrt(-100.,-97.;df=2).pvalue ≈ exp(-3.) atol=1e-13
++    @test nested_lrt(0.,2.;df=1,boundary_df=1).pvalue ≈ .5nested_lrt(0.,2.;df=1).pvalue
++end
++@testset "Unavailable inference at unconverged points" begin
++    fake=(genetic_structure=:unstructured,converged=false)
++    @test_throws ArgumentError multivariate_covariance_standard_errors(fake,nothing,nothing,nothing,nothing)
++    @test_throws ArgumentError genetic_correlation_interval(fake,nothing,nothing,nothing,nothing)
++end
++@testset "Early multivariate labels and rank" begin
++    Y=[1. 2.;3. 4.;2. 5.]; X=ones(3,1); Z=[1. 0.;0. 1.;1. 0.]; Q=Matrix{Float64}(I,2,2)
++    for (ids,traits,field) in ((["a","a"],["x","y"],"ids"),(["a","b"],["x","x"],"traits"),([missing,"b"],["x","y"],"ids"),(["a","b"],[" ","y"],"traits"),([1,"1"],["x","y"],"ids"),([nothing,"b"],["x","y"],"ids"),(["a"," a "],["x","y"],"ids"))
++        @test_throws ArgumentError multivariate_mme(Y,X,Z,Q,Q,Q;ids=ids,traits=traits)
++        # Invalid data sentinel establishes that label validation precedes numerical work.
++        for fitfun in (fit_multivariate_reml,fit_multivariate_repeatability_reml)
++            err=try fitfun(Y,X,Z,fill(NaN,2,2);ids=ids,traits=traits);nothing catch e;e end
++            @test err isa ArgumentError
++            @test occursin(field,sprint(showerror,err))
++        end
++    end
++    r=multivariate_mme(Y,X,Z,Q,Q,Q;ids=["a","b"],traits=["x","y"])
++    @test r.breeding_values.ids==["a","b"]
++    @test r.traits==["x","y"]
++    @test r.beta ≈ [15/7 26/7] atol=1e-12
++    @test_throws ArgumentError multivariate_mme(Y,hcat(X,X),Z,Q,Q,Q)
++    @test_throws ArgumentError fit_multivariate_repeatability_reml(Y,hcat(X,X),Z,Q)
++    @test_throws ArgumentError fit_multivariate_reml(Y,Matrix{Float64}(I,3,3),Z,Q)
++    @test_throws ArgumentError fit_multivariate_repeatability_reml(Y,Matrix{Float64}(I,3,3),Z,Q)
++end
++
++end

@@ -1,0 +1,407 @@
+ERROR: LoadError: Some tests did not pass: 17 passed, 24 failed, 0 errored, 0 broken.
+in expression starting at /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:3
+standardization endpoints and caller bounds: Test Failed at /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:6
+  Expression: standardize_covariate([0.0, 1.0]; lower = lower, upper = upper)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:6 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:5 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:4
+standardization endpoints and caller bounds: Test Failed at /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:6
+  Expression: standardize_covariate([0.0, 1.0]; lower = lower, upper = upper)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:6 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:5 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:4
+standardization endpoints and caller bounds: Test Failed at /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:6
+  Expression: standardize_covariate([0.0, 1.0]; lower = lower, upper = upper)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:6 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:5 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:4
+standardization endpoints and caller bounds: Test Failed at /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:13
+  Expression: all(isfinite, result)
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:13 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:5 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:4
+standardization endpoints and caller bounds: Test Failed at /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:14
+  Expression: result ≈ [-1.0, 0.0, 1.0]
+   Evaluated: [-1.0, 0.0, Inf] ≈ [-1.0, 0.0, 1.0]
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:14 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:5 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:4
+standardization endpoints and caller bounds: Test Failed at /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:13
+  Expression: all(isfinite, result)
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:13 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:5 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:4
+standardization endpoints and caller bounds: Test Failed at /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:14
+  Expression: result ≈ [-1.0, 0.0, 1.0]
+   Evaluated: [-1.0, NaN, NaN] ≈ [-1.0, 0.0, 1.0]
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:14 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:5 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:4
+standardization endpoints and caller bounds: Test Failed at /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:13
+  Expression: all(isfinite, result)
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:13 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:5 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:4
+standardization endpoints and caller bounds: Test Failed at /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:14
+  Expression: result ≈ [-1.0, 0.0, 1.0]
+   Evaluated: [-1.0, NaN, NaN] ≈ [-1.0, 0.0, 1.0]
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:14 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:5 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:4
+standardization endpoints and caller bounds: Test Failed at /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:16
+  Expression: standardize_covariate([1.0e308]; lower = -1.0e308, upper = -9.0e307) ≈ [39.0]
+   Evaluated: [Inf] ≈ [39.0]
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:16 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:5 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:4
+standardization endpoints and caller bounds: Test Failed at /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:20
+  Expression: standardize_covariate([0.0, floatmax(Float64)]; lower = 0.0, upper = 1.0)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:20 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:5 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:4
+heritability uses the normalized Legendre variance: Test Failed at /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:30
+  Expression: (rr_heritability(Kbig, 1.2e308, ts)).values ≈ [0.4, 0.4]
+   Evaluated: [0.0, 0.0] ≈ [0.4, 0.4]
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:30 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:24 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:4
+heritability uses the normalized Legendre variance: Test Failed at /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:31
+  Expression: (rr_heritability(Kbig, [1.2e308, 8.0e307], ts)).values ≈ [0.4, 0.5]
+   Evaluated: [0.0, 0.5] ≈ [0.4, 0.5]
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:31 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:24 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:4
+heritability uses the normalized Legendre variance: Test Failed at /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:32
+  Expression: (rr_heritability(Kbig, 1.2e308, ts)).values ≈ (rr_heritability(K, 1.2, ts)).values
+   Evaluated: [0.0, 0.0] ≈ [0.4000000000000001, 0.4000000000000001]
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:32 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:24 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:4
+heritability uses the normalized Legendre variance: Test Failed at /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:35
+  Expression: (rr_genetic_variance_plot_data(Kbig, ts; residual = 1.2e308)).heritability ≈ [0.4, 0.4]
+   Evaluated: [0.0, 0.0] ≈ [0.4, 0.4]
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:35 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:24 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:4
+heritability uses the normalized Legendre variance: Test Failed at /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:37
+  Expression: rr_heritability(Matrix(Diagonal([1.0e308, 1.0e308])), 1.0e308, [1.0])
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:37 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:24 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:4
+eigenvalue shares preserve finite scale invariance: Test Failed at /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:45
+  Expression: out.variance_explained ≈ expected
+   Evaluated: [0.0, 0.0] ≈ [0.5, 0.5]
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:45 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:41 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:4
+eigenvalue shares preserve finite scale invariance: Test Failed at /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:46
+  Expression: sum(out.variance_explained) ≈ 1.0
+   Evaluated: 0.0 ≈ 1.0
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:46 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:41 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:4
+eigenvalue shares preserve finite scale invariance: Test Failed at /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:48
+  Expression: out.variance_explained ≈ (rr_eigenfunctions(K / 1.0e308, ts)).variance_explained
+   Evaluated: [0.0, 0.0] ≈ [0.5, 0.5]
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:48 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:41 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:4
+eigenvalue shares preserve finite scale invariance: Test Failed at /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:49
+  Expression: (rr_eigenfunctions_plot_data(K, ts)).variance_explained ≈ expected
+   Evaluated: [0.0, 0.0] ≈ [0.5, 0.5]
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:49 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:41 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:4
+eigenvalue shares preserve finite scale invariance: Test Failed at /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:45
+  Expression: out.variance_explained ≈ expected
+   Evaluated: [0.0, 0.0] ≈ [0.6, 0.4]
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:45 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:41 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:4
+eigenvalue shares preserve finite scale invariance: Test Failed at /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:46
+  Expression: sum(out.variance_explained) ≈ 1.0
+   Evaluated: 0.0 ≈ 1.0
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:46 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:41 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:4
+eigenvalue shares preserve finite scale invariance: Test Failed at /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:48
+  Expression: out.variance_explained ≈ (rr_eigenfunctions(K / 1.0e308, ts)).variance_explained
+   Evaluated: [0.0, 0.0] ≈ [0.6, 0.39999999999999997]
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:48 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:41 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:4
+eigenvalue shares preserve finite scale invariance: Test Failed at /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:49
+  Expression: (rr_eigenfunctions_plot_data(K, ts)).variance_explained ≈ expected
+   Evaluated: [0.0, 0.0] ≈ [0.6, 0.4]
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:49 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:41 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-rr-descriptor-fix-20260930/test/rr_descriptor_scale_regression.jl:4
+Test Summary:                                        | Pass  Fail  Total  Time
+RR descriptor finite scaling                         |   17    24     41  0.8s
+  standardization endpoints and caller bounds        |    8    11     19  0.8s
+  heritability uses the normalized Legendre variance |    4     5      9  0.0s
+  eigenvalue shares preserve finite scale invariance |    5     8     13  0.0s

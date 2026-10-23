@@ -1,0 +1,278 @@
+schema_version = 1
+updated = "2026-09-01"
+lane = "HSquared.jl"
+r_index_mirror = "hsquared/docs/design/real-data-validation-manifest.toml"
+claim_boundary = "Three-tier validation ladder index with explicit claim boundaries per arc. Does not promote any capability to covered, does not claim field-empirical validation, and does not add external comparator evidence."
+
+[tier_summary]
+tier_1 = "Unit fixtures: CI-fast algebra, twin parity, simulated recovery, test-of-test negatives. Not empirical validation."
+tier_2 = "Published anchors: Mrode supplied-variance BLUP canon and gryphon teaching-data REML band. Not field empirical data."
+tier_3 = "Opt-in large comparator legs on generated fixtures and documented protocols. Not broad multi-package parity at scale."
+tier_4 = "Field empirical data: NOT STARTED. Placeholder only — do not conflate with gryphon, Mrode supplied-variance examples, or comparator CSV packets."
+
+[darwin_review]
+status = "pending"
+signed_date = ""
+reviewer = ""
+notes = "Biology sign-off required before any Tier 2 arc may support a covered flip or user-facing real-data language."
+
+[[darwin_review.questions]]
+id = "gryphon_headline_quantity"
+text = "Is birth-weight h² the right headline quantity for the gryphon anchor?"
+arc_ids = ["gryphon_bwt_reml"]
+
+[[darwin_review.questions]]
+id = "gryphon_citation"
+text = "Is Wilson et al. 2010 the canonical citation for the pinned digits (σ²ₐ=3.3954, σ²ₑ=3.8286, h²=0.470)?"
+arc_ids = ["gryphon_bwt_reml"]
+
+[[darwin_review.questions]]
+id = "gryphon_supplied_a"
+text = "Does supplied-A (vs pedigree-built A) remain acceptable for a published REML recovery label in user-facing docs?"
+arc_ids = ["gryphon_bwt_reml"]
+
+[[darwin_review.questions]]
+id = "mv_correlation_estimand"
+text = "For multivariate arcs, is the correlation/covariance the biologically meaningful recovered quantity?"
+arc_ids = ["mrode_ex_5_1_multitrait_blup", "sommer_multitrait_phase4"]
+
+[[darwin_review.checklist]]
+item = "Tier 2 quantity choices signed for gryphon and Mrode BLUP anchors"
+status = "pending"
+
+[[darwin_review.checklist]]
+item = "Teaching-simulated gryphon data never labelled field empirical"
+status = "pending"
+
+[[darwin_review.checklist]]
+item = "Tier 4 field dataset deferred or owner-supplied with license boundary"
+status = "pending"
+
+# --- Tier 1: unit fixtures ---
+
+[[arc]]
+id = "tiny_3animal_ainv"
+tier = 1
+data_origin = "synthetic"
+estimator_mode = "supplied-variance"
+quantities = ["Ainv"]
+tolerance = "1e-10 elementwise"
+claim_boundary = "Tiny Henderson pedigree only; not production sparse pedigree."
+r_surface = "tests/testthat/test-relmat-precision.R"
+julia_surface = "test/runtests.jl pedigree_inverse"
+ci_policy = "in-CI"
+darwin_review = "pending"
+
+[[arc]]
+id = "mrode9_ainv_comparator"
+tier = 1
+data_origin = "published-textbook"
+estimator_mode = "supplied-variance"
+quantities = ["Ainv"]
+tolerance = "1e-10 vs nadiv"
+claim_boundary = "Pedigree-inverse agreement only; not fitted outputs."
+r_surface = "tests/testthat/test-validation-fixtures.R"
+julia_surface = "test/runtests.jl V1-AINV-MRODE9"
+ci_policy = "skip-guarded"
+darwin_review = "pending"
+
+[[arc]]
+id = "mrode_style_supplied_variance"
+tier = 1
+data_origin = "teaching-simulated"
+estimator_mode = "supplied-variance"
+quantities = ["EBV", "beta", "h2", "logLik"]
+tolerance = "1e-6 to 1e-10 by quantity"
+claim_boundary = "Supplied σ² only; not REML/ML variance-component estimation."
+r_surface = "tests/testthat/test-validation-fixtures.R, test-pedigree-mme-anchor.R"
+julia_surface = "test/runtests.jl Phase 1 Mrode-style supplied-variance validation fixture"
+ci_policy = "in-CI"
+darwin_review = "pending"
+
+[[arc]]
+id = "animal_model_fitted_target"
+tier = 1
+data_origin = "generated-comparator"
+estimator_mode = "estimated-VC"
+quantities = ["sigma_a2", "sigma_e2", "h2", "EBV", "beta"]
+tolerance = "self-consistency"
+claim_boundary = "Engine-fits-own-target; not external comparator."
+r_surface = "tests/testthat/fixtures/animal_model_fitted_target/"
+julia_surface = "test/fixtures/animal_model_fitted_target/"
+ci_policy = "in-CI"
+darwin_review = "pending"
+
+[[arc]]
+id = "phase4_multitrait_parity"
+tier = 1
+data_origin = "generated-comparator"
+estimator_mode = "estimated-VC"
+quantities = ["G0", "R0", "h2", "EBV"]
+tolerance = "self-consistency"
+claim_boundary = "Internal REML target; external legs are Tier 3."
+r_surface = "tests/testthat/fixtures/phase4_multitrait_parity/"
+julia_surface = "test/fixtures/phase4_multitrait_parity/"
+ci_policy = "in-CI"
+darwin_review = "pending"
+
+[[arc]]
+id = "dgp_univariate_recovery"
+tier = 1
+data_origin = "synthetic"
+estimator_mode = "estimated-VC"
+quantities = ["sigma_a2", "sigma_e2", "h2"]
+tolerance = "0.06 h2 backstop; bias ± 2·MCSE"
+claim_boundary = "Simulated known truth; grid-limited; not interval-calibrated."
+r_surface = "data-raw/dgp-recovery-study.R"
+julia_surface = "test/runtests.jl V1-AI-REML gate"
+ci_policy = "skip-guarded"
+darwin_review = "pending"
+
+[[arc]]
+id = "neg_gryphon_reml_band"
+tier = 1
+data_origin = "synthetic"
+estimator_mode = "estimated-VC"
+quantities = ["h2", "VC"]
+tolerance = "0.02 band fence"
+claim_boundary = "Test-of-test negative; proves Tier 2 gryphon band is live."
+r_surface = "tests/testthat/test-negative-control.R"
+julia_surface = ""
+ci_policy = "in-CI"
+darwin_review = "pending"
+
+# --- Tier 2: published anchors ---
+
+[[arc]]
+id = "mrode_ex_3_1_animal_blup"
+tier = 2
+data_origin = "published-textbook"
+estimator_mode = "supplied-variance"
+quantities = ["EBV", "sex_contrast"]
+tolerance = "1e-6"
+claim_boundary = "Not VC estimation; BLUP/MME only with supplied σ²ₐ=20, σ²ₑ=40."
+r_surface = "tests/testthat/test-mrode-published-anchor.R"
+julia_surface = "test/runtests.jl Example 3.1 anchor"
+ci_policy = "in-CI"
+darwin_review = "pending"
+
+[[arc]]
+id = "mrode_ex_3_2_sire_blup"
+tier = 2
+data_origin = "published-textbook"
+estimator_mode = "supplied-variance"
+quantities = ["sire_solutions", "sex_means"]
+tolerance = "1e-6"
+claim_boundary = "Sire model not a parsed hsquared() path; supplied sire variance only."
+r_surface = "tests/testthat/test-mrode-sire-anchor.R"
+julia_surface = ""
+ci_policy = "in-CI"
+darwin_review = "pending"
+
+[[arc]]
+id = "mrode_ex_5_1_multitrait_blup"
+tier = 2
+data_origin = "published-textbook"
+estimator_mode = "supplied-variance"
+quantities = ["beta", "animal_BLUP", "G0", "R0"]
+tolerance = "5e-5"
+claim_boundary = "Not multivariate REML estimation; supplied G₀ and R₀ only."
+r_surface = "tests/testthat/test-mrode-multivariate-anchor.R"
+julia_surface = ""
+ci_policy = "in-CI"
+darwin_review = "pending"
+
+[[arc]]
+id = "gryphon_bwt_reml"
+tier = 2
+data_origin = "teaching-simulated"
+estimator_mode = "estimated-VC"
+quantities = ["sigma_a2", "sigma_e2", "h2"]
+tolerance = "0.02 absolute band (signed-off)"
+claim_boundary = "Not field empirical data; uses supplied A_gryphon; maintainer digit confirmation open."
+r_surface = "tests/testthat/test-validation-fixtures.R"
+julia_surface = "test/runtests.jl V1-MRODE-FIT evidence chain"
+ci_policy = "skip-guarded"
+darwin_review = "pending"
+
+# --- Tier 3: opt-in large comparator ---
+
+[[arc]]
+id = "sommer_univariate_gryphon"
+tier = 3
+data_origin = "teaching-simulated"
+estimator_mode = "estimated-VC"
+quantities = ["sigma_a2", "sigma_e2", "h2"]
+tolerance = "0.02 band"
+claim_boundary = "One package, one anchor; not multi-trait; not field empirical."
+r_surface = "tests/testthat/test-validation-fixtures.R"
+julia_surface = "comparator/"
+ci_policy = "skip-guarded"
+darwin_review = "pending"
+
+[[arc]]
+id = "sommer_multitrait_phase4"
+tier = 3
+data_origin = "generated-comparator"
+estimator_mode = "estimated-VC"
+quantities = ["G0", "R0", "h2", "EBV"]
+tolerance = "1e-4 policy band"
+claim_boundary = "One of three REML legs on one fixture; second independent comparator open."
+r_surface = "data-raw/multivariate-comparator-study.R"
+julia_surface = "comparator/"
+ci_policy = "in-CI"
+darwin_review = "pending"
+
+[[arc]]
+id = "blupf90_multitrait_phase4"
+tier = 3
+data_origin = "generated-comparator"
+estimator_mode = "estimated-VC"
+quantities = ["G0", "R0", "beta", "EBV"]
+tolerance = "point estimate on one fixture"
+claim_boundary = "Opt-in executed 2026-06-29; not broad recovery."
+r_surface = ""
+julia_surface = "comparator/"
+ci_policy = "opt-in"
+darwin_review = "pending"
+
+[[arc]]
+id = "pedigreemm_replicated"
+tier = 3
+data_origin = "generated-comparator"
+estimator_mode = "estimated-VC"
+quantities = ["logLik", "h2"]
+tolerance = "0.1 h2 flat-surface band"
+claim_boundary = "One-sided floor; not ASReml parity."
+r_surface = "tests/testthat/test-validation-fixtures.R"
+julia_surface = ""
+ci_policy = "skip-guarded"
+darwin_review = "pending"
+
+[[arc]]
+id = "s5_matfree_tail_recovery"
+tier = 3
+data_origin = "synthetic"
+estimator_mode = "estimated-VC"
+quantities = ["sigma_a2", "sigma_e2", "h2"]
+tolerance = "FROZEN predeclaration; owner threshold sign-off required"
+claim_boundary = "FROZEN NOT RUN; q=25,000; requires maintainer compute-go."
+r_surface = ""
+julia_surface = "sim/f6_matfree_recovery.jl"
+ci_policy = "opt-in"
+darwin_review = "pending"
+
+# --- Tier 4: field empirical (placeholder) ---
+
+[[arc]]
+id = "field_empirical_placeholder"
+tier = 4
+data_origin = "field-empirical"
+estimator_mode = "estimated-VC"
+quantities = []
+tolerance = "NOT DECLARED"
+claim_boundary = "NOT STARTED. Requires owner dataset, license boundary, content hashes, Darwin-approved estimand, and pre-declared tolerance before any row is added."
+r_surface = ""
+julia_surface = ""
+ci_policy = "opt-in"
+darwin_review = "blocked"

@@ -1,0 +1,149 @@
+ERROR: LoadError: Some tests did not pass: 7 passed, 12 failed, 0 errored, 0 broken.
+in expression starting at /private/tmp/hsq-selinv-trace-finite-fix-20260930/test/selinv_trace_finite_regression.jl:2
+in expression starting at /private/tmp/hsq-selinv-trace-finite-fix-20260930/run.jl:6
+Selected-inverse trace finite contracts: Test Failed at /private/tmp/hsq-selinv-trace-finite-fix-20260930/test/selinv_trace_finite_regression.jl:6
+  Expression: HSquared.selinv_trace_against(f, q, 0)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-selinv-trace-finite-fix-20260930/test/selinv_trace_finite_regression.jl:6 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] top-level scope
+   @ /private/tmp/hsq-selinv-trace-finite-fix-20260930/test/selinv_trace_finite_regression.jl:3
+Selected-inverse trace finite contracts: Test Failed at /private/tmp/hsq-selinv-trace-finite-fix-20260930/test/selinv_trace_finite_regression.jl:7
+  Expression: HSquared.selinv_block_traces(f, [q], [0])
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-selinv-trace-finite-fix-20260930/test/selinv_trace_finite_regression.jl:7 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] top-level scope
+   @ /private/tmp/hsq-selinv-trace-finite-fix-20260930/test/selinv_trace_finite_regression.jl:3
+Selected-inverse trace finite contracts: Test Failed at /private/tmp/hsq-selinv-trace-finite-fix-20260930/test/selinv_trace_finite_regression.jl:6
+  Expression: HSquared.selinv_trace_against(f, q, 0)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-selinv-trace-finite-fix-20260930/test/selinv_trace_finite_regression.jl:6 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] top-level scope
+   @ /private/tmp/hsq-selinv-trace-finite-fix-20260930/test/selinv_trace_finite_regression.jl:3
+Selected-inverse trace finite contracts: Test Failed at /private/tmp/hsq-selinv-trace-finite-fix-20260930/test/selinv_trace_finite_regression.jl:7
+  Expression: HSquared.selinv_block_traces(f, [q], [0])
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-selinv-trace-finite-fix-20260930/test/selinv_trace_finite_regression.jl:7 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] top-level scope
+   @ /private/tmp/hsq-selinv-trace-finite-fix-20260930/test/selinv_trace_finite_regression.jl:3
+Selected-inverse trace finite contracts: Test Failed at /private/tmp/hsq-selinv-trace-finite-fix-20260930/test/selinv_trace_finite_regression.jl:6
+  Expression: HSquared.selinv_trace_against(f, q, 0)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-selinv-trace-finite-fix-20260930/test/selinv_trace_finite_regression.jl:6 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] top-level scope
+   @ /private/tmp/hsq-selinv-trace-finite-fix-20260930/test/selinv_trace_finite_regression.jl:3
+Selected-inverse trace finite contracts: Test Failed at /private/tmp/hsq-selinv-trace-finite-fix-20260930/test/selinv_trace_finite_regression.jl:7
+  Expression: HSquared.selinv_block_traces(f, [q], [0])
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-selinv-trace-finite-fix-20260930/test/selinv_trace_finite_regression.jl:7 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] top-level scope
+   @ /private/tmp/hsq-selinv-trace-finite-fix-20260930/test/selinv_trace_finite_regression.jl:3
+Selected-inverse trace finite contracts: Test Failed at /private/tmp/hsq-selinv-trace-finite-fix-20260930/test/selinv_trace_finite_regression.jl:10
+  Expression: HSquared.selinv_trace_against(f, huge, 0)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-selinv-trace-finite-fix-20260930/test/selinv_trace_finite_regression.jl:10 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] top-level scope
+   @ /private/tmp/hsq-selinv-trace-finite-fix-20260930/test/selinv_trace_finite_regression.jl:3
+Selected-inverse trace finite contracts: Test Failed at /private/tmp/hsq-selinv-trace-finite-fix-20260930/test/selinv_trace_finite_regression.jl:11
+  Expression: HSquared.selinv_block_traces(f, [huge], [0])
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-selinv-trace-finite-fix-20260930/test/selinv_trace_finite_regression.jl:11 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] top-level scope
+   @ /private/tmp/hsq-selinv-trace-finite-fix-20260930/test/selinv_trace_finite_regression.jl:3
+Selected-inverse trace finite contracts: Test Failed at /private/tmp/hsq-selinv-trace-finite-fix-20260930/test/selinv_trace_finite_regression.jl:14
+  Expression: HSquared.selinv_trace_against(tiny, largeq, 0)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-selinv-trace-finite-fix-20260930/test/selinv_trace_finite_regression.jl:14 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] top-level scope
+   @ /private/tmp/hsq-selinv-trace-finite-fix-20260930/test/selinv_trace_finite_regression.jl:3
+Selected-inverse trace finite contracts: Test Failed at /private/tmp/hsq-selinv-trace-finite-fix-20260930/test/selinv_trace_finite_regression.jl:15
+  Expression: HSquared.selinv_block_traces(tiny, [largeq], [0])
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-selinv-trace-finite-fix-20260930/test/selinv_trace_finite_regression.jl:15 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] top-level scope
+   @ /private/tmp/hsq-selinv-trace-finite-fix-20260930/test/selinv_trace_finite_regression.jl:3
+Selected-inverse trace finite contracts: Test Failed at /private/tmp/hsq-selinv-trace-finite-fix-20260930/test/selinv_trace_finite_regression.jl:18
+  Expression: HSquared.selinv_trace_against(double, overflow, 0)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-selinv-trace-finite-fix-20260930/test/selinv_trace_finite_regression.jl:18 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] top-level scope
+   @ /private/tmp/hsq-selinv-trace-finite-fix-20260930/test/selinv_trace_finite_regression.jl:3
+Selected-inverse trace finite contracts: Test Failed at /private/tmp/hsq-selinv-trace-finite-fix-20260930/test/selinv_trace_finite_regression.jl:19
+  Expression: HSquared.selinv_block_traces(double, [overflow], [0])
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-selinv-trace-finite-fix-20260930/test/selinv_trace_finite_regression.jl:19 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] top-level scope
+   @ /private/tmp/hsq-selinv-trace-finite-fix-20260930/test/selinv_trace_finite_regression.jl:3
+Test Summary:                           | Pass  Fail  Total  Time
+Selected-inverse trace finite contracts |    7    12     19  0.7s

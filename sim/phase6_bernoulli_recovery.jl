@@ -16,13 +16,10 @@ Honest split of what the method does (predeclared):
 
   * GATED — latent/EBV recovery. The posterior-mode breeding values track the
     true `u` well (correlation), and the variance estimate does NOT collapse to a
-    search boundary. These are the reliable signals.
-  * REPORTED, NOT GATED — the variance-component point estimate `σ̂²a`. Single-
-    trial binary data carries little variance information and the Laplace
-    approximation is known to bias the binary variance component DOWNWARD; the
-    estimate is noisy across seeds. We report `σ̂²a` and its relative error for
-    transparency, but do not gate on it (cf. the Phase-3 `h²` split). Calibrating
-    `σ̂²a` would need many binomial trials per record and/or a bias correction.
+    search boundary. These are the signals tested by this gate.
+  * REPORTED, NOT GATED — the variance-component point estimate `σ̂²a`. The five-seed variance estimates are reported without a bias-direction or cause
+    claim. We report `σ̂²a` and its relative error for transparency, but do not
+    gate on it (cf. the Phase-3 `h²` split). Their calibration remains open.
 
 Run from the repository root:
 
@@ -87,7 +84,7 @@ function main()
             r.pass ? "PASS" : "FAIL", r.seed, r.q, r.converged, r.sigma_a2, SIGMA_A2, r.rel, r.cor, r.prevalence)
     end
     npass = count(r -> r.pass, results)
-    @printf("SUMMARY bernoulli-recovery seeds=%d passed=%d (gate: cor≥%.1f, interior σ̂²a)  min_cor=%.3f  σ̂²a∈[%.3f,%.3f] (downward-biased, reported)\n",
+    @printf("SUMMARY bernoulli-recovery seeds=%d passed=%d (gate: cor≥%.1f, interior σ̂²a)  min_cor=%.3f  σ̂²a∈[%.3f,%.3f] (direction not established, reported only)\n",
         length(results), npass, COR_FLOOR,
         minimum(r.cor for r in results),
         minimum(r.sigma_a2 for r in results), maximum(r.sigma_a2 for r in results))

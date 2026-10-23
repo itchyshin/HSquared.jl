@@ -1,0 +1,1133 @@
+Gaussian conditional and ordinary controls: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:14
+  Expression: H.nongaussian_heritability(1.0, 0.0, H.GaussianResponse(1.0); predictor_variance = 8.0)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:14 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:11 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Gaussian conditional and ordinary controls: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:15
+  Expression: H.nongaussian_heritability(fixture(:gaussian); predictor_variance = 8.0)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:15 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:11 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Original and converted domains: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:22
+  Expression: H.nongaussian_heritability(x, 0.0, H.PoissonResponse())
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:22 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:20 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Original and converted domains: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:23
+  Expression: H.nongaussian_heritability(fixture(:poisson; va = x))
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:23 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:20 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Original and converted domains: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:24
+  Expression: H.nongaussian_heritability(1.0, 0.0, H.PoissonResponse(); predictor_variance = x)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:24 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:20 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Original and converted domains: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:25
+  Expression: H.nongaussian_heritability(fixture(:poisson); predictor_variance = x)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:25 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:20 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Original and converted domains: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:22
+  Expression: H.nongaussian_heritability(x, 0.0, H.PoissonResponse())
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:22 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:20 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Original and converted domains: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:23
+  Expression: H.nongaussian_heritability(fixture(:poisson; va = x))
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:23 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:20 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Original and converted domains: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:24
+  Expression: H.nongaussian_heritability(1.0, 0.0, H.PoissonResponse(); predictor_variance = x)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:24 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:20 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Original and converted domains: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:25
+  Expression: H.nongaussian_heritability(fixture(:poisson); predictor_variance = x)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:25 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:20 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Original and converted domains: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:22
+  Expression: H.nongaussian_heritability(x, 0.0, H.PoissonResponse())
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:22 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:20 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Original and converted domains: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:23
+  Expression: H.nongaussian_heritability(fixture(:poisson; va = x))
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:23 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:20 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Original and converted domains: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:24
+  Expression: H.nongaussian_heritability(1.0, 0.0, H.PoissonResponse(); predictor_variance = x)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:24 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:20 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Original and converted domains: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:25
+  Expression: H.nongaussian_heritability(fixture(:poisson); predictor_variance = x)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:25 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:20 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Original and converted domains: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:22
+  Expression: H.nongaussian_heritability(x, 0.0, H.PoissonResponse())
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:22 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:20 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Original and converted domains: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:23
+  Expression: H.nongaussian_heritability(fixture(:poisson; va = x))
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:23 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:20 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Original and converted domains: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:24
+  Expression: H.nongaussian_heritability(1.0, 0.0, H.PoissonResponse(); predictor_variance = x)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:24 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:20 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Original and converted domains: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:25
+  Expression: H.nongaussian_heritability(fixture(:poisson); predictor_variance = x)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:25 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:20 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Original and converted domains: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:22
+  Expression: H.nongaussian_heritability(x, 0.0, H.PoissonResponse())
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:22 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:20 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Original and converted domains: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:23
+  Expression: H.nongaussian_heritability(fixture(:poisson; va = x))
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:23 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:20 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Original and converted domains: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:24
+  Expression: H.nongaussian_heritability(1.0, 0.0, H.PoissonResponse(); predictor_variance = x)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:24 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:20 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Original and converted domains: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:25
+  Expression: H.nongaussian_heritability(fixture(:poisson); predictor_variance = x)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:25 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:20 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Original and converted domains: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:28
+  Expression: H.nongaussian_heritability(1.0, x, H.PoissonResponse())
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:28 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:20 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Original and converted domains: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:29
+  Expression: H.nongaussian_heritability(fixture(:poisson); mu = x)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:29 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:20 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Original and converted domains: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:28
+  Expression: H.nongaussian_heritability(1.0, x, H.PoissonResponse())
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:28 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:20 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Original and converted domains: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:29
+  Expression: H.nongaussian_heritability(fixture(:poisson); mu = x)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:29 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:20 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Original and converted domains: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:28
+  Expression: H.nongaussian_heritability(1.0, x, H.PoissonResponse())
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:28 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:20 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Original and converted domains: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:29
+  Expression: H.nongaussian_heritability(fixture(:poisson); mu = x)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:29 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:20 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Original and converted domains: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:28
+  Expression: H.nongaussian_heritability(1.0, x, H.PoissonResponse())
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:28 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:20 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Original and converted domains: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:29
+  Expression: H.nongaussian_heritability(fixture(:poisson); mu = x)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:29 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:20 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Original and converted domains: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:31
+  Expression: H.nongaussian_heritability(fixture(:poisson; beta = [Inf]))
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:31 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:20 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Original and converted domains: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:32
+  Expression: H.nongaussian_heritability(floatmax(Float64), 0.0, H.PoissonResponse(); predictor_variance = floatmax(Float64))
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:32 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:20 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Original and converted domains: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:33
+  Expression: H.nongaussian_heritability(fixture(:gaussian; va = floatmax(Float64), ve = floatmax(Float64)))
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:33 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:20 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Original and converted domains: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:37
+  Expression: H.nongaussian_heritability(fixture(:gaussian; ve = field))
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:37 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:20 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Original and converted domains: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:37
+  Expression: H.nongaussian_heritability(fixture(:gaussian; ve = field))
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:37 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:20 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Original and converted domains: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:37
+  Expression: H.nongaussian_heritability(fixture(:gaussian; ve = field))
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:37 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:20 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Original and converted domains: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:38
+  Expression: H.nongaussian_heritability(fixture(:gamma; shape = field))
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:38 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:20 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Original and converted domains: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:37
+  Expression: H.nongaussian_heritability(fixture(:gaussian; ve = field))
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:37 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:20 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Original and converted domains: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:37
+  Expression: H.nongaussian_heritability(fixture(:gaussian; ve = field))
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:37 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:20 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Original and converted domains: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:38
+  Expression: H.nongaussian_heritability(fixture(:gamma; shape = field))
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:38 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:20 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Original and converted domains: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:37
+  Expression: H.nongaussian_heritability(fixture(:gaussian; ve = field))
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:37 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:20 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Original and converted domains: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:41
+  Expression: H.nongaussian_heritability(fixture(:ordered_probit; cuts = cuts))
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:41 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:20 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Original and converted domains: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:41
+  Expression: H.nongaussian_heritability(fixture(:ordered_probit; cuts = cuts))
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:41 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:20 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Original and converted domains: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:41
+  Expression: H.nongaussian_heritability(fixture(:ordered_probit; cuts = cuts))
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:41 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:20 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Original and converted domains: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:41
+  Expression: H.nongaussian_heritability(fixture(:ordered_probit; cuts = cuts))
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:41 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:20 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Original and converted domains: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:41
+  Expression: H.nongaussian_heritability(fixture(:ordered_probit; cuts = cuts))
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:41 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:20 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Original and converted domains: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:41
+  Expression: H.nongaussian_heritability(fixture(:ordered_probit; cuts = cuts))
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:41 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:20 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Original and converted domains: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:41
+  Expression: H.nongaussian_heritability(fixture(:ordered_probit; cuts = cuts))
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:41 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:20 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Common trial normalization and varying fence: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:48
+  Expression: vector == scalar
+   Evaluated: (family = :binomial, sigma_a2 = 1.0, mu = 0.0, latent_total_variance = 4.289868133696453, h2_latent = 0.23310739837085143, h2_observation = NaN, var_distribution = NaN, var_link = 3.289868133696453, converged = true, information_limited = false, caveat = "Per-record varying n_trials: a single observation-scale h² is ill-defined under varying denominators → NaN (not silently averaged).", method = :logit_quadrature) == (family = :binomial, sigma_a2 = 1.0, mu = 0.0, latent_total_variance = 4.289868133696453, h2_latent = 0.23310739837085143, h2_observation = 0.5040211874317815, var_distribution = 0.04132419260275616, var_link = 3.289868133696453, converged = true, information_limited = false, caveat = "Binomial logit: observation scale on the PROPORTION estimand via Gauss–Hermite quadrature.", method = :logit_quadrature)
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:48 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:45 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Common trial normalization and varying fence: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:49
+  Expression: H.nongaussian_heritability(fixture(:binomial; nt = [2, 3]); n_trials = [5, 5]) == scalar
+   Evaluated: (family = :binomial, sigma_a2 = 1.0, mu = 0.0, latent_total_variance = 4.289868133696453, h2_latent = 0.23310739837085143, h2_observation = NaN, var_distribution = NaN, var_link = 3.289868133696453, converged = true, information_limited = false, caveat = "Per-record varying n_trials: a single observation-scale h² is ill-defined under varying denominators → NaN (not silently averaged).", method = :logit_quadrature) == (family = :binomial, sigma_a2 = 1.0, mu = 0.0, latent_total_variance = 4.289868133696453, h2_latent = 0.23310739837085143, h2_observation = 0.5040211874317815, var_distribution = 0.04132419260275616, var_link = 3.289868133696453, converged = true, information_limited = false, caveat = "Binomial logit: observation scale on the PROPORTION estimand via Gauss–Hermite quadrature.", method = :logit_quadrature)
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:49 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:45 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Common trial normalization and varying fence: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:51
+  Expression: H.nongaussian_heritability(fixture(:binomial; nt = [1, 1])) == H.nongaussian_heritability(fixture(:binomial; nt = 1))
+   Evaluated: (family = :binomial, sigma_a2 = 1.0, mu = 0.0, latent_total_variance = 4.289868133696453, h2_latent = 0.23310739837085143, h2_observation = NaN, var_distribution = NaN, var_link = 3.289868133696453, converged = true, information_limited = false, caveat = "Per-record varying n_trials: a single observation-scale h² is ill-defined under varying denominators → NaN (not silently averaged).", method = :logit_quadrature) == (family = :binomial, sigma_a2 = 1.0, mu = 0.0, latent_total_variance = 4.289868133696453, h2_latent = 0.23310739837085143, h2_observation = 0.1707688894269687, var_distribution = 0.2066209630137808, var_link = 3.289868133696453, converged = true, information_limited = true, caveat = "Single-trial Bernoulli: flagged information_limited; available five-seed results do not establish bias direction or cause, so report this scale with the limitation.", method = :logit_quadrature)
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:51 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:45 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Common trial normalization and varying fence: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:56
+  Expression: H.nongaussian_heritability(fixture(:binomial); n_trials = nt)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:56 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:45 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Common trial normalization and varying fence: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:56
+  Expression: H.nongaussian_heritability(fixture(:binomial); n_trials = nt)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:56 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:45 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Common trial normalization and varying fence: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:56
+  Expression: H.nongaussian_heritability(fixture(:binomial); n_trials = nt)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:56 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:45 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Common trial normalization and varying fence: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:56
+  Expression: H.nongaussian_heritability(fixture(:binomial); n_trials = nt)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:56 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:45 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Common trial normalization and varying fence: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:56
+  Expression: H.nongaussian_heritability(fixture(:binomial); n_trials = nt)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:56 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:45 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Common trial normalization and varying fence: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:56
+  Expression: H.nongaussian_heritability(fixture(:binomial); n_trials = nt)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:56 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:45 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Common trial normalization and varying fence: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:56
+  Expression: H.nongaussian_heritability(fixture(:binomial); n_trials = nt)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:56 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:45 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Common trial normalization and varying fence: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:56
+  Expression: H.nongaussian_heritability(fixture(:binomial); n_trials = nt)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:56 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:45 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Common trial normalization and varying fence: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:56
+  Expression: H.nongaussian_heritability(fixture(:binomial); n_trials = nt)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:56 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:45 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Common trial normalization and varying fence: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:56
+  Expression: H.nongaussian_heritability(fixture(:binomial); n_trials = nt)
+    Expected: ArgumentError
+      Thrown: InexactError
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:56 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:45 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Common trial normalization and varying fence: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:56
+  Expression: H.nongaussian_heritability(fixture(:binomial); n_trials = nt)
+    Expected: ArgumentError
+      Thrown: InexactError
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:56 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:45 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Common trial normalization and varying fence: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:56
+  Expression: H.nongaussian_heritability(fixture(:binomial); n_trials = nt)
+    Expected: ArgumentError
+      Thrown: InexactError
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:56 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:45 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Common trial normalization and varying fence: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:56
+  Expression: H.nongaussian_heritability(fixture(:binomial); n_trials = nt)
+    Expected: ArgumentError
+      Thrown: InexactError
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:56 [inlined]
+ [2] macro expansion
+   @ ERROR: LoadError: Some tests did not pass: 91 passed, 70 failed, 0 errored, 0 broken.
+in expression starting at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:9
+~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:45 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Common trial normalization and varying fence: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:58
+  Expression: H.nongaussian_heritability(fixture(:binomial; nt = [5, 6], va = -1.0))
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:58 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:45 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Common trial normalization and varying fence: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:59
+  Expression: H.nongaussian_heritability(fixture(:binomial; nt = [5, 6]); predictor_variance = Inf)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:59 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:45 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Projection limits and formula preservation: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:64
+  Expression: (H.nongaussian_heritability(0.0, 1000.0, fam)).h2_observation == 0.0
+   Evaluated: NaN == 0.0
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:64 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:62 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Projection limits and formula preservation: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:64
+  Expression: (H.nongaussian_heritability(0.0, 1000.0, fam)).h2_observation == 0.0
+   Evaluated: NaN == 0.0
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:64 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:62 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Projection limits and formula preservation: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:67
+  Expression: all(iszero, (H.nongaussian_heritability(0.0, 1000.0, H.OrderedProbitResponse([-1.0, 1.0]))).h2_observation_by_category)
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:67 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:62 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Projection limits and formula preservation: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:83
+  Expression: H._nongaussian_h2_core(:poisson, -1.0, 0.0, NaN, 1, 0.0, true)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:83 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:62 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Test Summary:                                  | Pass  Fail  Total  Time
+H2 descriptor contract                         |   91    70    161  0.9s
+  Gaussian conditional and ordinary controls   |    4     2      6  0.5s
+  Original and converted domains               |    6    46     52  0.2s
+  Common trial normalization and varying fence |    5    18     23  0.1s
+  Projection limits and formula preservation   |   76     4     80  0.0s

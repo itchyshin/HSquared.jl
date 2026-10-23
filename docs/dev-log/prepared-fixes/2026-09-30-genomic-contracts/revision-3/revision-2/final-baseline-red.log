@@ -1,0 +1,840 @@
+labels keep literal missing distinct from absent values: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:20
+  Expression: loco_relationship_precisions(M, bad)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:20 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:14 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:4
+labels keep literal missing distinct from absent values: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:21
+  Expression: loco_mixed_model_marker_scan(y, X, Z, precisions, bad, M, 1.0, 1.0)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:21 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:14 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:4
+labels keep literal missing distinct from absent values: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:22
+  Expression: marker_scan_table(merge(scan, (marker_groups = bad,)))
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:22 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:14 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:4
+labels keep literal missing distinct from absent values: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:23
+  Expression: HSquared._marker_scan_table(scan, bad, [1.0, 2.0, 3.0]; total_variance = nothing)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:23 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:14 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:4
+labels keep literal missing distinct from absent values: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:24
+  Expression: marker_manhattan_data(scan; chromosomes = bad, positions = [1.0, 2.0, 3.0])
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:24 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:14 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:4
+labels keep literal missing distinct from absent values: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:25
+  Expression: marker_scan_result_payload(merge(scan, (relationship_groups = bad,)))
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:25 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:14 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:4
+labels keep literal missing distinct from absent values: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:26
+  Expression: HSquared._relationship_precision_lookup(Dict(absent => Z))
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:26 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:14 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:4
+labels keep literal missing distinct from absent values: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:24
+  Expression: marker_manhattan_data(scan; chromosomes = bad, positions = [1.0, 2.0, 3.0])
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:24 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:14 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:4
+labels keep literal missing distinct from absent values: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:25
+  Expression: marker_scan_result_payload(merge(scan, (relationship_groups = bad,)))
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:25 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:14 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:4
+labels keep literal missing distinct from absent values: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:26
+  Expression: HSquared._relationship_precision_lookup(Dict(absent => Z))
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:26 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:14 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:4
+labels keep literal missing distinct from absent values: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:20
+  Expression: loco_relationship_precisions(M, bad)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:20 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:14 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:4
+labels keep literal missing distinct from absent values: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:22
+  Expression: marker_scan_table(merge(scan, (marker_groups = bad,)))
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:22 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:14 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:4
+labels keep literal missing distinct from absent values: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:23
+  Expression: HSquared._marker_scan_table(scan, bad, [1.0, 2.0, 3.0]; total_variance = nothing)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:23 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:14 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:4
+labels keep literal missing distinct from absent values: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:24
+  Expression: marker_manhattan_data(scan; chromosomes = bad, positions = [1.0, 2.0, 3.0])
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:24 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:14 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:4
+labels keep literal missing distinct from absent values: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:25
+  Expression: marker_scan_result_payload(merge(scan, (relationship_groups = bad,)))
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:25 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:14 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:4
+labels keep literal missing distinct from absent values: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:26
+  Expression: HSquared._relationship_precision_lookup(Dict(absent => Z))
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:26 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:14 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:4
+labels keep literal missing distinct from absent values: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:20
+  Expression: loco_relationship_precisions(M, bad)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:20 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:14 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:4
+labels keep literal missing distinct from absent values: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:22
+  Expression: marker_scan_table(merge(scan, (marker_groups = bad,)))
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:22 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:14 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:4
+labels keep literal missing distinct from absent values: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:23
+  Expression: HSquared._marker_scan_table(scan, bad, [1.0, 2.0, 3.0]; total_variance = nothing)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:23 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:14 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:4
+labels keep literal missing distinct from absent values: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:24
+  Expression: marker_manhattan_data(scan; chromosomes = bad, positions = [1.0, 2.0, 3.0])
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:24 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:14 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:4
+labels keep literal missing distinct from absent values: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:25
+  Expression: marker_scan_result_payload(merge(scan, (relationship_groups = bad,)))
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:25 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:14 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:4
+labels keep literal missing distinct from absent values: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:26
+  Expression: HSquared._relationship_precision_lookup(Dict(absent => Z))
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:26 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:14 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:4
+labels keep literal missing distinct from absent values: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:29
+  Expression: marker_manhattan_data(scan; chromosomes = "   ")
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:29 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:14 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:4
+labels keep literal missing distinct from absent values: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:30
+  Expression: marker_region_data(scan; chromosomes = good_groups, positions = [1.0, 2.0, 3.0], chromosome = missing)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:30 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:14 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:4
+labels keep literal missing distinct from absent values: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:31
+  Expression: gwas_table(scan; trait = missing)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:31 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:14 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:4
+labels keep literal missing distinct from absent values: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:32
+  Expression: eqtl_table(scan; feature = missing)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:32 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:14 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:4
+weighted representable variance and even median: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:41
+  Expression: ≈(v.marker_variances[1], reference, rtol = 8 * eps(Float64))
+   Evaluated: Inf ≈ 2.0e200 (rtol=1.7763568394002505e-15)
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:41 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:37 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:4
+weighted representable variance and even median: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:42
+  Expression: ≈(v.proportion_variance_explained[1], reference / 2, rtol = 8 * eps(Float64))
+   Evaluated: Inf ≈ 1.0e200 (rtol=1.7763568394002505e-15)
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:42 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:37 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:4
+weighted representable variance and even median: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:45
+  Expression: ≈(table.marker_variances[1], reference, rtol = 8 * eps(Float64))
+   Evaluated: Inf ≈ 2.0e200 (rtol=1.7763568394002505e-15)
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:45 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:37 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:4
+weighted representable variance and even median: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:46
+  Expression: table.marker_variances[2:3] == [0.0, 0.0]
+   Evaluated: [NaN, NaN] == [0.0, 0.0]
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:46 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:37 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:4
+weighted representable variance and even median: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:47
+  Expression: all(isfinite, table.proportion_variance_explained)
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:47 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:37 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:4
+weighted representable variance and even median: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:49
+  Expression: marker_variance_explained((marker_ids = ["m"], effects = [1.0e200], p = [0.5]))
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:49 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:37 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:4
+weighted representable variance and even median: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:50
+  Expression: marker_scan_table(merge(scan, (effects = fill(1.0e200, 3),)))
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:50 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:37 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:4
+weighted representable variance and even median: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:51
+  Expression: marker_variance_explained((marker_ids = ["m"], effects = [1.0], p = [0.5]); total_variance = 1.0e-310)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:51 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:37 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:4
+ERROR: LoadError: Some tests did not pass: 46 passed, 54 failed, 0 errored, 0 broken.
+in expression starting at /private/tmp/hsq-genomic-contracts-fix-20260930/run_contracts.jl:3
+weighted representable variance and even median: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:52
+  Expression: marker_scan_table(scan; total_variance = 1.0e-310)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:52 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:37 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:4
+weighted representable variance and even median: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:53
+  Expression: HSquared._median_float([1.0e308, 1.0e308]) == 1.0e308
+   Evaluated: Inf == 1.0e308
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:53 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:37 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:4
+weighted representable variance and even median: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:57
+  Expression: (marker_genomic_inflation((chisq = [1.0e308, 1.0e308],); expected_median = 2.0)).lambda_gc == 5.0e307
+   Evaluated: Inf == 5.0e307
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:57 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:37 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:4
+weighted representable variance and even median: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:58
+  Expression: marker_genomic_inflation((chisq = [1.0e308, 1.0e308],); expected_median = 0.1)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:58 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:37 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:4
+probability endpoints and original Real exceedance counts: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:63
+  Expression: genome_wide_pvalue(big"1e-1000", nulls) == 1 / 3
+   Evaluated: 1.0 == 0.3333333333333333
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:63 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:62 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:4
+probability endpoints and original Real exceedance counts: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:71
+  Expression: genome_wide_threshold_from_null([1.0, 2.0]; alpha = big"1e-1000")
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:71 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:62 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:4
+probability endpoints and original Real exceedance counts: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:72
+  Expression: genome_wide_threshold_from_null([1.0, 2.0]; alpha = BigFloat(1) - big"1e-50")
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:72 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:62 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:4
+probability endpoints and original Real exceedance counts: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:73
+  Expression: genome_wide_marker_scan(y, X, M; n_permutations = 1, alpha = big"1e-1000", rng = MersenneTwister(221))
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:73 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:62 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:4
+probability endpoints and original Real exceedance counts: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:74
+  Expression: genome_wide_marker_scan(y, X, M; n_permutations = 1, alpha = BigFloat(1) - big"1e-50", rng = MersenneTwister(222))
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:74 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:62 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_summary_contracts.jl:4
+finite median extremes and label metadata neighbours: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_doc_bindings.jl:12
+  Expression: HSquared._median_float([-1.0e308, -1.0e308]) == -1.0e308
+   Evaluated: -Inf == -1.0e308
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_doc_bindings.jl:12 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_doc_bindings.jl:11
+finite median extremes and label metadata neighbours: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_doc_bindings.jl:17
+  Expression: marker_manhattan_data(s; chromosomes = missing)
+    Expected: ArgumentError
+      Thrown: MethodError
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_doc_bindings.jl:17 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_doc_bindings.jl:11
+finite median extremes and label metadata neighbours: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_doc_bindings.jl:18
+  Expression: marker_qq_data((marker_ids = [missing], p_values = [0.5]))
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_doc_bindings.jl:18 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_doc_bindings.jl:11
+representable weighted contributions near Float64 maximum: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_variance_boundary.jl:15
+  Expression: summary_value isa Float64 && summary_value == reference
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_variance_boundary.jl:15 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_variance_boundary.jl:4
+representable weighted contributions near Float64 maximum: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_variance_boundary.jl:24
+  Expression: table_value isa Float64 && table_value == reference
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_variance_boundary.jl:24 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_variance_boundary.jl:4
+representable weighted contributions near Float64 maximum: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_variance_boundary.jl:26
+  Expression: marker_variance_explained(overflow)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_variance_boundary.jl:26 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_variance_boundary.jl:4
+representable weighted contributions near Float64 maximum: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_variance_boundary.jl:27
+  Expression: marker_scan_table(overflow)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_variance_boundary.jl:27 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_variance_boundary.jl:4
+representable weighted contributions near Float64 maximum: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_variance_boundary.jl:15
+  Expression: summary_value isa Float64 && summary_value == reference
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_variance_boundary.jl:15 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_variance_boundary.jl:4
+representable weighted contributions near Float64 maximum: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_variance_boundary.jl:24
+  Expression: table_value isa Float64 && table_value == reference
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_variance_boundary.jl:24 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_variance_boundary.jl:4
+representable weighted contributions near Float64 maximum: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_variance_boundary.jl:26
+  Expression: marker_variance_explained(overflow)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_variance_boundary.jl:26 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_variance_boundary.jl:4
+representable weighted contributions near Float64 maximum: Test Failed at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_variance_boundary.jl:27
+  Expression: marker_scan_table(overflow)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_variance_boundary.jl:27 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] top-level scope
+   @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_variance_boundary.jl:4
+Test Summary:                                                 | Pass  Fail  Total   Time
+Complete G2-G6 scratch controls                               |   46    54    100  23.9s
+  G2-G6 genomic input and summary contracts                   |   33    43     76   2.8s
+    labels keep literal missing distinct from absent values   |   11    26     37   2.1s
+    weighted representable variance and even median           |    5    12     17   0.2s
+    probability endpoints and original Real exceedance counts |   11     5     16   0.0s
+    unchanged supplied-frequency and single-step semantics    |    6            6   0.5s
+  public genomic documentation remains attached               |    4            4   0.0s
+  finite median extremes and label metadata neighbours        |    5     3      8   0.3s
+  representable weighted contributions near Float64 maximum   |    4     8     12   0.2s

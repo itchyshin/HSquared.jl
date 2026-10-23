@@ -4,20 +4,65 @@ Documentation: [HSquared.jl engine docs](https://itchyshin.github.io/HSquared.jl
 R twin: [hsquared pkgdown site](https://itchyshin.github.io/hsquared/) |
 [hsquared repository](https://github.com/itchyshin/hsquared)
 
-`HSquared.jl` is the Julia engine underneath the R package `hsquared`.
+> [!WARNING]
+> **Experimental 0.9.0 release — not production.** Version number tracks covered
+> capability, not maturity. Not in the Julia General registry. An earlier
+> attempt
+> ([General PR #166969](https://github.com/JuliaRegistries/General/pull/166969),
+> v0.5.0) was closed. Install from GitHub with the command in
+> [Install](#install) — do **not** use
+> `Pkg.add("HSquared")` by name. `public_covered_count` is **7** (R-public; G10 multivariate + explicit 0.7 genomic GREML route).
 
-The long-term goal is open, sparse, inheritance-aware quantitative genetics:
-sparse animal models, pedigree and genomic relationship structures, REML/ML
-estimation, breeding values, G matrices, factor-analytic genetic covariance,
-and high-dimensional GLLVM-style extensions.
+I used language-model tools (Claude, Codex, and Cursor) on substantial
+parts of this engine: source, tests, and docs. I review the code I
+ship, and I am responsible for it. Tests and Documenter run in CI.
+This 0.9.0 release is experimental. It is not a production engine and
+it is not version 1.0. HSquared is not in the Julia General registry
+yet; until a later registration actually merges, install from the
+GitHub URL in [Install](#install) only.
 
-The intended users are breeders, plant and livestock geneticists, evolutionary
-geneticists, genomic prediction users, and applied analysts who need R syntax
-with a Julia engine underneath. Comparator packages such as ASReml,
-BLUPF90, DMU, WOMBAT, sommer, MCMCglmm, JWAS, AGHmatrix, and nadiv are
-benchmarks to learn from and test against, not claims of current superiority.
+`HSquared.jl` is the Julia engine twin of the R package `hsquared`.
+This is not the package you type a formula into.
+
+R users: start at [hsquared](https://github.com/itchyshin/hsquared)
+(`y ~ sex + age + animal(1 | id, pedigree = ped)`), or the
+[hsquared pkgdown site](https://itchyshin.github.io/hsquared/).
+That is the applied-user interface. This repository is the engine.
+
+## Install
+
+Needs Julia 1.10 or newer (`Project.toml` compat). Not in Julia General.
+
+```julia
+using Pkg
+Pkg.add(url = "https://github.com/itchyshin/HSquared.jl")
+```
+
+Do **not** run `Pkg.add("HSquared")` by name.
+
+For the R package `hsquared`, clone this repository instead of `Pkg.add`
+and run `Pkg.instantiate()` in the clone. Point `HSQUARED_JULIA_PROJECT`
+at that clone (hsquared#261).
+
+This engine already has experimental validation-scale fitting: pedigree
+checks, sparse `Ainv`, low-level REML and Henderson MME solves, and
+extractors for heritability, EBVs, and PEV. Those are engine utilities,
+not a public formula API and not a production sparse pipeline.
+
+`hsquared()` here still throws. Lower-level `fit_animal_model` and
+`fit_ai_reml` exist as experimental engine paths, not the applied
+default. Read `validation_status()` before treating any path as production.
 
 ## Current Status
+
+**Experimental 0.9.0 release.** Version number only. Not in Julia General. An
+earlier attempt
+([General PR #166969](https://github.com/JuliaRegistries/General/pull/166969),
+v0.5.0) was closed. Use the GitHub `Pkg.add` command in
+[Install](#install) only; do **not** use
+`Pkg.add("HSquared")` by name. Not production-ready.
+`public_covered_count` is **7** (R-public; G10 multivariate + explicit 0.7 genomic GREML route).
+Language-model tools were used on this package; I review the code I ship.
 
 This repository has moved beyond the scaffold. It has experimental
 validation-scale engine utilities for univariate animal models, REML/AI-REML
@@ -46,8 +91,9 @@ Implemented now:
   `imprinting()`, `dominance()`, `epistasis()`, `relmat()`, and
   `HSquared.precision()`; these names error honestly and do not construct
   model specs yet;
-- `formula_status()` grammar diagnostics that mirror the R twin's parsed,
-  reserved, and planned formula-status table;
+- `formula_status()` Julia-local engine-term diagnostics. The R package owns
+  public formula parsing and has a broader status table; bounded FA and
+  genetic GLLVM expert-control fits are documented as separate routes;
 - `validation_status()` diagnostics for the validation evidence ladder,
   including covered, external, partial, and planned rows;
 - pedigree validation, ID recoding, unknown-parent handling, and topological
@@ -143,14 +189,41 @@ Planned, but not implemented yet:
 - relationship-object marshalling beyond sparse `Z`, production engine
   controls, and validated high-level public formula fitting;
 - production sparse EBVs/BLUPs, reliability, and prediction error variance;
-- R-facing multivariate model-spec syntax and external comparator parity;
+- R↔engine element-wise multivariate parity in CI, plus ASReml/JWAS
+  multivariate comparator legs (the twin's `cbind()` model-spec routes by
+  default at a `partial` claim, and the `sommer`/`blupf90+` legs have landed);
 - public R-facing genomic model-spec fitting, production genomic prediction,
   APY/sparse genomic scaling, formula-driven mixed-model marker scans, public
   LOCO workflows, interval-mapping or mixed-model LOD workflows,
-  genome-wide multiple-testing calibration, expression-wide eQTL scans,
-  QTL/eQTL intervals, and
+  genome-wide multiple-testing calibration for the relatedness-corrected
+  mixed-model/LOCO null, broader-LD and covariate-adjusted calibration, and
+  power/coverage characterization (the *fixed-effect* permutation threshold is
+  implemented and covered-scoped — see the correction below), expression-wide
+  eQTL scans, QTL/eQTL intervals, and
   non-standard inheritance models;
 - GLLVM-style high-dimensional animal models.
+
+**One correction to the two lists above, because they drifted toward
+understatement.** Genome-wide multiple-testing calibration is not wholly
+planned. `genome_wide_marker_scan`, `genome_wide_pvalue`, and
+`genome_wide_threshold_from_null` are exported, and `V5-MARKER-THRESHOLD` is
+`covered` in `validation_status()` — but in a narrow, scoped, opt-in sense that
+the bare word "covered" does not carry. What is covered is genome-wide
+significance for a **fixed-effect single-marker scan** under the exact
+per-dataset add-one permutation rule, with the null rebuilt from the analysed
+phenotype on every call, and **type-I control only**, on the validated designs
+(n ∈ 300–2000, m ∈ 100–10000, the tested LD architecture): measured mean type-I
+error 0.0542 / 0.0504 at α = 0.05, with an executed PLINK 1.9 max(T) comparator
+leg. What is *not* covered — and is what the planned list above should have said
+— is the relatedness-corrected mixed-model/LOCO genome-wide null, power and
+coverage, broader-LD or covariate-adjusted (Freedman–Lane) calibration, the
+fixed-null-reuse shortcut (which failed its own gate and is banked as a negative
+result), and the map-annotated formula-level `marker_scan()` / `qtl_scan()` API.
+None of this is the public default: the public covered count is **7**
+(R-public; G10 multivariate; a claims-register ledger total, not a callable
+function), and this genome-wide marker surface does not move that count. Read
+the `V5-MARKER-THRESHOLD` row in `validation_status()` before quoting any
+number from it.
 
 ## Julia Surface
 
@@ -167,8 +240,13 @@ ped = normalize_pedigree(
 Ainv = pedigree_inverse(ped)
 ```
 
-This is an engine utility only. It is not yet connected to a fitted animal
-model.
+`pedigree_inverse` is the sparse relationship-precision construction on its own.
+It is no longer unconnected: this `Ainv` is what an `animal_model_spec` is
+built from, and so what the covered AI-REML fitter (`fit_ai_reml`) and the
+sparse MME path consume. What it is not is a *public* fitting entry point —
+the generic Julia `hsquared()` entry point remains a placeholder that throws,
+while supported user-facing fits run through the R package and its Julia bridge
+(see below).
 
 The first Julia data container mirrors the R `hs_data()` input contract:
 
@@ -311,7 +389,9 @@ This solves Henderson's mixed-model equations for fixed effects and animal
 effects. It does not estimate variance components. Validation-scale
 `variance_components(mme)`, `heritability(mme)`,
 `prediction_error_variance(mme)`, `reliability(mme)`, and `accuracy(mme)`
-methods report supplied variances and dense-MME-inverse outputs for tiny
+methods report supplied variances and MME-inverse-diagonal outputs (sparse
+selected inverse by default for a sparse `Ainv`, the dense path for a dense genomic
+`Ginv`, `method = :dense` as the oracle) for tiny
 fixtures only. `accuracy()` is derived from reliability and errors instead of
 clipping when reliability is outside `[0, 1]`.
 
@@ -380,6 +460,13 @@ other calls remain placeholders.
 
 The R package may describe planned syntax, but executable examples should not
 claim fitting support until this Julia engine implements and validates it.
+
+## Authors
+
+Shinichi Nakagawa ([ORCID 0000-0002-7765-5182](https://orcid.org/0000-0002-7765-5182),
+itchyshin@gmail.com), Yefeng Yang
+([ORCID 0000-0002-8610-4016](https://orcid.org/0000-0002-8610-4016)), Szymon Drobniak
+([ORCID 0000-0001-8101-6247](https://orcid.org/0000-0001-8101-6247)).
 
 ## Development
 

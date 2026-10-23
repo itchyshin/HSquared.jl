@@ -1,0 +1,16 @@
+{
+  "captured_at_utc": "2026-09-30T18:37:02.456025+00:00",
+  "root": "/home/snakagaw/hsq_work/hsquared-fa-current-candidate-20260930",
+  "source_tree_sha256": "d3c2de8d7f0a1a86918f15938264bbdc892a7303b5ddd488553ac923f073ad0a",
+  "driver_sha256": "2161449e2e320a6d56bf5b71b1927e18b3d3b4dd60704d30bae5aaafbf057e9b",
+  "pid": 676046,
+  "ps_exit": 1,
+  "ps_stdout": "",
+  "files": {
+    "primary.log": "cfc1836b92698b897af4ba998d8fd4e19b16e2db525bbf3bb9331ac72082d167",
+    "primary.pid": "1d6d3ad44da17e71c16cbb753c4e636979e3f92ce24f0748b787232f5849996e",
+    "primary.tsv": "048483ae6620c6791a83841a1b56cb85ac2ce6bf17e678b93865a4bcef8700f8",
+    "summary.json": "4de842f8d538638393b7a65014fd2fd1616b5b73324399e4d34d2006dc2ae97e"
+  },
+  "note": "Remote ps PID lookup returned no process after completed WROTE marker. This is not the unavailable original shell wait exit code."
+}

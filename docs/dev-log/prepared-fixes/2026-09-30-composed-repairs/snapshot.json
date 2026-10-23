@@ -1,0 +1,14 @@
+{
+  "base_head": "3d6d7ffc961b65fa5a44ce277a7d1168ba69b6fe",
+  "live_root": "/Users/z3437171/.codex/worktrees/hsquared-fa-gllvm-foundations/HSquared.jl",
+  "src_tree": "d3c2de8d7f0a1a86918f15938264bbdc892a7303b5ddd488553ac923f073ad0a",
+  "runtests_sha256": "b2d77c7f0937f5fcf0ed8ec32913c816b2c942f27c83825c8424107a5bc58b24",
+  "weak_direction_test_sha256": "158ae089596b4c2bcf9e1fd889e0777771776d11c417359a9aba350fe6b82b5c",
+  "driver_sha256": "2161449e2e320a6d56bf5b71b1927e18b3d3b4dd60704d30bae5aaafbf057e9b",
+  "excluded_generated_docs_dirs": [
+    "build",
+    ".cache",
+    ".venv",
+    "__pycache__"
+  ]
+}

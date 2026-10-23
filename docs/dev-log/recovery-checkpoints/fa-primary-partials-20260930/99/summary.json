@@ -1,0 +1,204 @@
+{
+  "campaign_complete": false,
+  "class_counts": {
+    "G_error": 13,
+    "R_error": 6,
+    "below_truth_objective": 0,
+    "exception": 0,
+    "nonconverged": 21,
+    "nonfinite": 0,
+    "other_failure": 0,
+    "recovered": 59,
+    "uniqueness_floor": 0
+  },
+  "converged": 78,
+  "convergence_counts": {
+    "converged": 78,
+    "exception": 0,
+    "nonconverged_ok": 21
+  },
+  "diagnostic_flags": {
+    "better_nonconverged_start": {
+      "all": {
+        "false": 98,
+        "missing": 0,
+        "true": 1
+      },
+      "recovered": {
+        "false": 58,
+        "missing": 0,
+        "true": 1
+      }
+    },
+    "near_uniqueness_floor": {
+      "all": {
+        "false": 91,
+        "missing": 0,
+        "true": 8
+      },
+      "recovered": {
+        "false": 55,
+        "missing": 0,
+        "true": 4
+      }
+    }
+  },
+  "driver_sha256": "2161449e2e320a6d56bf5b71b1927e18b3d3b4dd60704d30bae5aaafbf057e9b",
+  "finite_error_summaries": {
+    "all": {
+      "dlog": {
+        "max": 20.9677600794,
+        "mean": 9.255368276435858,
+        "median": 8.80896748622,
+        "min": 3.78170272258,
+        "n": 99
+      },
+      "min_psi": {
+        "max": 0.468380862819,
+        "mean": 0.1586767518089924,
+        "median": 0.152528489173,
+        "min": 0.0001,
+        "n": 99
+      },
+      "rel_G": {
+        "max": 0.732365987642,
+        "mean": 0.3427919758800606,
+        "median": 0.329102677154,
+        "min": 0.116810365511,
+        "n": 99
+      },
+      "rel_R": {
+        "max": 0.354796896715,
+        "mean": 0.19282198087627272,
+        "median": 0.192866533628,
+        "min": 0.0688689889613,
+        "n": 99
+      },
+      "seconds": {
+        "max": 137.891582966,
+        "mean": 72.87257026422222,
+        "median": 72.0857641697,
+        "min": 32.3480770588,
+        "n": 99
+      }
+    },
+    "recovered": {
+      "dlog": {
+        "max": 14.9465378516,
+        "mean": 7.979990837811017,
+        "median": 7.14782444304,
+        "min": 3.78170272258,
+        "n": 59
+      },
+      "min_psi": {
+        "max": 0.468380862819,
+        "mean": 0.19701312888604866,
+        "median": 0.207672160794,
+        "min": 0.0001,
+        "n": 59
+      },
+      "rel_G": {
+        "max": 0.444888811135,
+        "mean": 0.3103206532426441,
+        "median": 0.312337303705,
+        "min": 0.116810365511,
+        "n": 59
+      },
+      "rel_R": {
+        "max": 0.247592716497,
+        "mean": 0.1814300591885373,
+        "median": 0.183238206626,
+        "min": 0.0911596433897,
+        "n": 59
+      },
+      "seconds": {
+        "max": 119.848228931,
+        "mean": 62.1290341959,
+        "median": 54.9997990131,
+        "min": 32.3480770588,
+        "n": 59
+      }
+    }
+  },
+  "limitations": [
+    "Full matrix finiteness, covariance errors, log likelihoods and start objectives cannot be independently recomputed from scalar TSV fields.",
+    "NA conflates nonfinite scalar values: relative errors can be +Inf or NaN, dlog can be either infinity or NaN. These values have distinct Julia comparisons; compatible outcomes are reported, not reconstructed.",
+    "12-significant-digit threshold boundary values admit plausible rounding; listed ambiguous rows are not proof of an exact threshold violation.",
+    "Finite-error summaries condition on available scalars; every exception and nonconvergence stays in the recovery denominator.",
+    "Diagnostic thresholds are not a campaign-level pass cutoff, covered-status decision or release criterion.",
+    "The log marker's basename is checked because copied TSVs can differ from the remote absolute path."
+  ],
+  "mcse": 0.049317744869599826,
+  "missing_scalar_metric_rows": [],
+  "n": 99,
+  "overlapping_criterion_failures": {
+    "dlog": {
+      "definite": 0,
+      "missing": 0,
+      "possible": 0
+    },
+    "min_psi": {
+      "definite": 0,
+      "missing": 0,
+      "possible": 1
+    },
+    "nonconverged": 21,
+    "rel_G": {
+      "definite": 17,
+      "missing": 0,
+      "possible": 17
+    },
+    "rel_R": {
+      "definite": 11,
+      "missing": 0,
+      "possible": 11
+    }
+  },
+  "per_start": {
+    "balanced": {
+      "attempted": 99,
+      "converged": 74,
+      "iterations": {
+        "max": 5000,
+        "mean": 3489.2020202020203,
+        "median": 3535,
+        "min": 1484,
+        "n": 99
+      },
+      "selected": 47,
+      "valid": 99
+    },
+    "default": {
+      "attempted": 99,
+      "converged": 73,
+      "iterations": {
+        "max": 5000,
+        "mean": 3054.878787878788,
+        "median": 2598,
+        "min": 1421,
+        "n": 99
+      },
+      "selected": 52,
+      "valid": 99
+    }
+  },
+  "rate": 0.5959595959595959,
+  "recovered": 59,
+  "scalar_projection_ambiguities": [],
+  "source_tree_sha256": "d3c2de8d7f0a1a86918f15938264bbdc892a7303b5ddd488553ac923f073ad0a",
+  "status": "partial",
+  "threshold_ambiguities": [
+    {
+      "fields": [
+        "min_psi"
+      ],
+      "seed": 20261231
+    }
+  ],
+  "total_start_iterations": 647864,
+  "tsv_sha256": "874e5cbebb0c641bdee437004edb2d8d610e805527fa429cb4627d6b294a67c3",
+  "wilson95": [
+    0.49746896182579103,
+    0.6872814318177571
+  ]
+}

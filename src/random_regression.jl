@@ -1,5 +1,6 @@
-# Random regression / reaction norms (Phase 3, #54). All SUPPLIED-covariance,
-# EXPERIMENTAL, validation-scale — `K_g` and `σ²e` are SUPPLIED, never estimated.
+# Random regression / reaction norms (Phase 3, #54). Mixed status: the descriptors
+# and supplied-covariance MME are experimental validation-scale routes; the k=2
+# dense REML estimator has its own covered validation cell. See capability status.
 #
 # Slice 1 (DESCRIPTORS). Given a SUPPLIED k×k genetic covariance matrix `K_g` among
 # an animal's random-regression coefficients over a normalized-Legendre basis on a
@@ -27,8 +28,8 @@
 # Rotation-invariant and DESCRIPTIVE — still supplied-covariance, no estimation.
 #
 # DEFERRED to later slices: PEV of curve-valued EBVs, heterogeneous residual +
-# permanent-environment term, the R-facing model-spec / bridge payload, and any
-# WOMBAT/ASReml/JWAS comparator. Basis
+# permanent-environment term, broader R routes beyond its existing opt-in k=2
+# `rr()` surface and a general R model-spec, and any WOMBAT/ASReml/JWAS comparator. Basis
 # convention is FIXED to normalized Legendre on standardized t ∈ [-1, 1]
 # (Kirkpatrick/Meyer/Schaeffer); `K_g` values are not comparable across normalization
 # conventions.
@@ -68,12 +69,32 @@ end
 
 Affinely map a raw covariate vector `a` (e.g. age/time) onto `t ∈ [-1, 1]` by
 `t = 2(a - lower)/(upper - lower) - 1` (so `lower → -1`, `upper → +1`, midpoint
-`→ 0`). Returns a `Vector{Float64}`. Throws if `lower == upper`.
+`→ 0`). Returns a `Vector{Float64}`. Bounds and covariates must be finite;
+bounds must be distinct after conversion to Float64. Throws if the standardized
+values cannot be represented as finite Float64 values.
 """
 function standardize_covariate(a::AbstractVector; lower::Real = minimum(a), upper::Real = maximum(a))
     all(isfinite, a) || throw(ArgumentError("covariate must contain only finite values"))
-    upper > lower || throw(ArgumentError("upper ($upper) must exceed lower ($lower)"))
-    return Float64.(2 .* (a .- lower) ./ (upper - lower) .- 1)
+    isfinite(lower) && isfinite(upper) || throw(ArgumentError("covariate bounds must be finite"))
+    av = Float64.(a)
+    lo, hi = Float64(lower), Float64(upper)
+    all(isfinite, av) && isfinite(lo) && isfinite(hi) || throw(ArgumentError(
+        "covariate and bounds must be representable as finite Float64 values"))
+    hi > lo || throw(ArgumentError("upper ($upper) must exceed lower ($lower) in Float64"))
+    width = hi - lo
+    values = if isfinite(width)
+        map(av) do x
+            offset = x - lo
+            # Split an overflowing offset for an extrapolated finite covariate.
+            fraction = isfinite(offset) ? offset / width : x / width - lo / width
+            2 * fraction - 1
+        end
+    else
+        # Halving endpoints makes their difference representable without changing the map.
+        2 .* ((av ./ 2 .- lo / 2) ./ (hi / 2 - lo / 2)) .- 1
+    end
+    all(isfinite, values) || throw(ArgumentError("standardized covariate must be finite"))
+    return values
 end
 
 # m×k design Φ whose row i is φ(ts[i]); ts already standardized to [-1, 1].
@@ -142,9 +163,10 @@ end
 
 Heritability trajectory `h²(t_i) = v_g(t_i) / (v_g(t_i) + σ²_e(t_i))` for a supplied
 coefficient genetic covariance `K_g` and supplied residual variance `residual` —
-either a positive scalar (homoscedastic) or a length-`m` positive vector
+either a finite positive scalar (homoscedastic) or a length-`m` finite positive vector
 (heteroscedastic across the covariate). `K_g` and `σ²_e` are SUPPLIED, not estimated.
-Returns `(covariate = ts, values)`.
+Returns `(covariate = ts, values)`. The genetic variance trajectory must be
+representable as finite Float64 values; an overflowing trajectory is rejected.
 
 The supplied `residual` is treated as the TOTAL non-additive-genetic phenotypic
 variance at each covariate point. In the canonical repeated-records random-regression
@@ -158,8 +180,14 @@ function rr_heritability(K_g::AbstractMatrix, residual, ts::AbstractVector)
     σe2 = residual isa Real ? fill(Float64(residual), m) : Float64.(collect(residual))
     length(σe2) == m ||
         throw(ArgumentError("residual must be a scalar or a length-$(m) vector"))
-    all(>(0), σe2) || throw(ArgumentError("residual variance(s) must be positive"))
-    return (covariate = vg.covariate, values = vg.values ./ (vg.values .+ σe2))
+    all(isfinite, σe2) && all(>(0), σe2) ||
+        throw(ArgumentError("residual variance(s) must be finite and positive"))
+    all(isfinite, vg.values) || throw(ArgumentError("genetic variance trajectory must be finite"))
+    # Normalize each pair before summing so a finite variance ratio cannot overflow.
+    scale = max.(vg.values, σe2)
+    genetic_scaled = vg.values ./ scale
+    values = genetic_scaled ./ (genetic_scaled .+ σe2 ./ scale)
+    return (covariate = vg.covariate, values = values)
 end
 
 """
@@ -195,8 +223,13 @@ function rr_eigenfunctions(K_g::AbstractMatrix, ts::AbstractVector)
     k = length(pca.values)
     Φ = _rr_design(ts, k)
     Ψ = Φ * pca.vectors
-    total = sum(pca.values)
-    prop = total > 0 ? pca.values ./ total : zeros(k)
+    scale = maximum(pca.values)
+    prop = if scale > 0
+        scaled_values = pca.values ./ scale
+        scaled_values ./ sum(scaled_values)
+    else
+        zeros(k)
+    end
     return (covariate = collect(Float64, ts),
             eigenvalues = pca.values,
             eigen_coefficients = pca.vectors,
@@ -300,7 +333,7 @@ where `Phi` (`n × k`) holds the per-record basis rows `φ(s_r)ᵀ` (see
 [`legendre_design`](@ref)), `Z` (`n × q`) is the record→animal incidence, `Ainv`
 (`q × q`) the relationship precision, `K_g` (`k × k`, positive definite) the
 supplied genetic covariance among the `k` random-regression coefficients, and
-`sigma_e2 > 0`. The genetic precision block is `Ainv ⊗ inv(K_g)` (animal-outer,
+finite `sigma_e2 > 0`. The genetic precision block is `Ainv ⊗ inv(K_g)` (animal-outer,
 coefficient-fastest ordering, matching the random design `W = face-splitting(Z, Phi)`).
 
 Returns `(beta, random_coefficients = (ids, values), variance_components =
@@ -323,20 +356,25 @@ function random_regression_mme(y::AbstractVector, X::AbstractMatrix, Phi::Abstra
     size(Z, 1) == n || throw(ArgumentError("Z must have one row per record (n = $n)"))
     size(Z, 2) == q || throw(ArgumentError("Z columns must match Ainv dimension (q = $q)"))
     size(Ainv, 2) == q || throw(ArgumentError("Ainv must be square (q × q)"))
+    aids = ids === nothing ? collect(1:q) : collect(ids)
+    length(aids) == q || throw(ArgumentError("ids length must match Ainv dimension (q = $q)"))
     size(K_g, 1) == k && size(K_g, 2) == k ||
         throw(ArgumentError("K_g must be $k×$k (k = number of basis columns in Phi)"))
-    sigma_e2 > 0 || throw(ArgumentError("sigma_e2 must be positive"))
-    Ksym = Symmetric(Matrix{Float64}(K_g))
-    isposdef(Ksym) || throw(ArgumentError("K_g must be positive definite"))
+    sigma_e2 = Float64(sigma_e2)
+    isfinite(sigma_e2) && sigma_e2 > 0 ||
+        throw(ArgumentError("sigma_e2 must be finite and positive"))
+    Ksym = Symmetric(_check_positive_definite_matrix(K_g, "K_g", k))
     yv = Float64.(y)
     Xm = Matrix{Float64}(X)
     all(isfinite, yv) || throw(ArgumentError("y must contain only finite values"))
     all(isfinite, Xm) || throw(ArgumentError("X must contain only finite values"))
     all(isfinite, Float64.(Matrix(Phi))) || throw(ArgumentError("Phi must be finite"))
-    all(isfinite, Float64.(Matrix(Ainv))) || throw(ArgumentError("Ainv must be finite"))
+    Zm = Matrix{Float64}(Z)
+    all(isfinite, Zm) || throw(ArgumentError("Z must contain only finite values"))
+    Ai = _check_relationship_precision(Ainv, q)
 
-    W = _rr_random_design(Matrix{Float64}(Phi), Matrix{Float64}(Z))
-    Ginv = kron(sparse(Float64.(Matrix(Ainv))), sparse(inv(Ksym)))   # q·k × q·k precision
+    W = _rr_random_design(Matrix{Float64}(Phi), Zm)
+    Ginv = kron(sparse(Ai), sparse(inv(Ksym)))   # q·k × q·k precision
     p = size(Xm, 2)
     # MME scaled by sigma_e2 (residual precision I/sigma_e2):
     #   [X'X  X'W;  W'X  W'W + sigma_e2·(Ainv⊗K_g⁻¹)] [β; a] = [X'y; W'y]
@@ -348,7 +386,6 @@ function random_regression_mme(y::AbstractVector, X::AbstractMatrix, Phi::Abstra
     beta = Vector{Float64}(solution[1:p])
     avec = Vector{Float64}(solution[(p + 1):(p + q * k)])
     coeffs = permutedims(reshape(avec, k, q))                         # q × k (animal × coefficient)
-    aids = ids === nothing ? collect(1:q) : collect(ids)
     return (
         beta = beta,
         random_coefficients = (ids = aids, values = coeffs),
@@ -413,7 +450,7 @@ log-likelihood is maximized by Nelder–Mead over a log-Cholesky parameterizatio
 of `K_g` and `log σ²e` (so `K_g` stays positive definite and `σ²e` positive). At
 the optimum the coefficient BLUPs and `β` come from the marginal GLS BLUP form.
 
-`initial` may supply `K_g` and/or `sigma_e2`; omitted fields use
+`initial` may supply `K_g` and/or finite positive `sigma_e2`; omitted fields use
 phenotypic-scale defaults. Returns a `NamedTuple`:
 
   - `variance_components = (K_g, sigma_e2)` — estimated `k×k` covariance + residual;
@@ -432,9 +469,9 @@ optimum (`K_g[1,1] = 2σ²a`, equal `σ²e`, equal log-likelihood); the reported
 log-likelihood matches an independent marginal oracle and beats off-optimum
 points; the BLUPs reproduce [`random_regression_mme`](@ref) at the estimate.
 Known-truth `K_g` recovery and any WOMBAT/ASReml/JWAS comparator are not yet
-exercised. An R surface (`rr(covariate, order)`) exists but is experimental/opt-in,
-not covered (the R lane parses `rr()`, builds the bridge payload, and returns a
-curve-valued h²; engine-covered ≠ R-public-covered). The covered aim + reporting
+exercised. The R twin has a covered opt-in k=2 `rr(covariate, order)` surface,
+separate from the Julia engine row and not the default route; broader R orders
+and model structures remain open. The covered aim + reporting
 convention lock (`k = 2`, basis, `K_g` reporting, `h²`-curve, frozen `(x|g)`,
 `k ≥ 3`) is `docs/design/22-rr-convention-lock.md`. As a dense GLS path, `V`'s
 conditioning degrades as `O(1/σ²e)` toward the residual boundary, so a
@@ -453,40 +490,45 @@ function fit_random_regression_reml(y::AbstractVector, X::AbstractMatrix, Phi::A
     size(Z, 1) == n || throw(ArgumentError("Z must have one row per record (n = $n)"))
     size(Z, 2) == q || throw(ArgumentError("Z columns must match Ainv dimension (q = $q)"))
     size(Ainv, 2) == q || throw(ArgumentError("Ainv must be square (q × q)"))
+    aids = ids === nothing ? collect(1:q) : collect(ids)
+    length(aids) == q || throw(ArgumentError("ids length must match Ainv dimension (q = $q)"))
     p < n || throw(ArgumentError("REML requires fewer fixed-effect columns than records"))
     yv = Float64.(y)
     Xm = Matrix{Float64}(X)
     all(isfinite, yv) || throw(ArgumentError("y must contain only finite values"))
     all(isfinite, Xm) || throw(ArgumentError("X must contain only finite values"))
     all(isfinite, Float64.(Matrix(Phi))) || throw(ArgumentError("Phi must be finite"))
-    all(isfinite, Float64.(Matrix(Ainv))) || throw(ArgumentError("Ainv must be finite"))
-
-    W = _rr_random_design(Matrix{Float64}(Phi), Matrix{Float64}(Z))
-    A = inv(Symmetric(Matrix{Float64}(Matrix(Ainv))))
+    Zm = Matrix{Float64}(Z)
+    all(isfinite, Zm) || throw(ArgumentError("Z must contain only finite values"))
+    Ai = _check_relationship_precision(Ainv, q)
 
     mu = sum(yv) / n
     vp = n > 1 ? sum(abs2, yv .- mu) / (n - 1) : 1.0
     vp > 0 || (vp = 1.0)
 
     if initial !== nothing && hasproperty(initial, :K_g)
-        K_g_start = Matrix(Float64.(Matrix(initial.K_g)))
-        size(K_g_start) == (k, k) || throw(ArgumentError("initial.K_g must be $k×$k"))
-        isposdef(Symmetric(K_g_start)) || throw(ArgumentError("initial.K_g must be positive definite"))
+        K_g_start = _check_positive_definite_matrix(initial.K_g, "initial.K_g", k)
     else
         K_g_start = Matrix(Diagonal(fill(0.5 * vp, k)))
     end
     sigma_e2_start = if initial !== nothing && hasproperty(initial, :sigma_e2)
         s = Float64(initial.sigma_e2)
-        s > 0 || throw(ArgumentError("initial.sigma_e2 must be positive"))
+        isfinite(s) && s > 0 ||
+            throw(ArgumentError("initial.sigma_e2 must be finite and positive"))
         s
     else
         0.5 * vp
     end
 
+    W = _rr_random_design(Matrix{Float64}(Phi), Zm)
+    A = inv(Symmetric(Ai))
+
     nkg = k * (k + 1) ÷ 2
     function negloglik(params)
-        K_g = _chol_params_to_cov(@view(params[1:nkg]), k)
+        K_g = _try_chol_params_to_cov(@view(params[1:nkg]), k)
+        K_g === nothing && return Inf
         sigma_e2 = exp(params[nkg + 1])
+        isfinite(sigma_e2) && sigma_e2 > 0 || return Inf
         try
             # cholesky(Symmetric(V)) does not throw on a non-finite V (logdet → Inf
             # without error), so screen the objective: any non-finite value maps to
@@ -502,12 +544,14 @@ function fit_random_regression_reml(y::AbstractVector, X::AbstractMatrix, Phi::A
     params0 = vcat(_cov_to_chol_params(K_g_start, k), log(sigma_e2_start))
     result = optimize(negloglik, params0, NelderMead(), Optim.Options(iterations = iterations))
     phat = Optim.minimizer(result)
-    K_ghat = Matrix(Symmetric(_chol_params_to_cov(phat[1:nkg], k)))
+    isfinite(Optim.minimum(result)) || throw(ArgumentError("random-regression optimizer did not find a finite objective"))
+    K_graw = _try_chol_params_to_cov(phat[1:nkg], k)
+    K_graw === nothing && throw(ArgumentError("random-regression optimizer did not return a finite positive-definite genetic covariance"))
+    K_ghat = Matrix(Symmetric(K_graw))
     sigma_e2hat = exp(phat[nkg + 1])
+    isfinite(sigma_e2hat) && sigma_e2hat > 0 || throw(ArgumentError("random-regression optimizer did not return a finite positive residual variance"))
 
     beta, coeffs = _rr_gls_blup(yv, Xm, W, A, K_ghat, sigma_e2hat, n, q, k)
-    aids = ids === nothing ? collect(1:q) : collect(ids)
-    length(aids) == q || throw(ArgumentError("ids length must match Ainv dimension (q = $q)"))
     return (
         variance_components = (K_g = K_ghat, sigma_e2 = sigma_e2hat),
         beta = beta,

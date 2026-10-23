@@ -1,0 +1,9 @@
+# ordinary-start FA recovery; mode=development; timestamp=2026-09-29T03:54:07.812
+# source_tree_sha256=75b3a76d324476bf01aca3a8fc34c5ab951f6d209fdeac37a2d61448bf430f3c; driver_sha256=2161449e2e320a6d56bf5b71b1927e18b3d3b4dd60704d30bae5aaafbf057e9b; host=totoro
+# julia=1.10.12; threads=4; BLAS_threads=1
+# seeds=20261406:20261406; attempts=1; iterations=5000
+# DGP: 60 pedigree animals (6 sires,12 dams,42 offspring), 3 records each, T=4,K=1, complete; slack=4
+# no initial supplied; criteria: conv, finite, relG<=0.45, relR<=0.25, minPsi>=0.0001, dlog>=-1.0e-6, slack>0
+# thresholds reused from frozen S2 as conservative diagnostics; not a validated ordinary-start accuracy bar
+seed	mode	fit_status	converged	recovered	class	rel_G	rel_R	dlog	min_psi	iterations	strategy	starts_attempted	selected_start	objective_range	uniqueness_floor_distance	near_uniqueness_floor	g_relative_disagreement	r_relative_disagreement	better_nonconverged_start	per_start	seconds	error
+20261406	development	ok	true	true	recovered	0.376770762035	0.209365782797	8.32515362951	0.147636161093	2606	default_and_balanced	2	balanced	3.27418092638e-09	0.147536161093	false	1.21703744619e-05	7.44184559203e-06	false	default:true:true:2810;balanced:true:true:2606	49.6087391376	

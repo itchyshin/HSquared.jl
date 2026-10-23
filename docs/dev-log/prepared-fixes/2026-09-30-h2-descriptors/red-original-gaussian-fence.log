@@ -1,0 +1,40 @@
+ERROR: LoadError: Some tests did not pass: 166 passed, 2 failed, 0 errored, 0 broken.
+in expression starting at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:9
+Gaussian conditional and ordinary controls: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:16
+  Expression: H.nongaussian_heritability(1.0, 0.0, H.GaussianResponse(1.0); predictor_variance = big"1e-400")
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:16 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:11 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Gaussian conditional and ordinary controls: Test Failed at /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:17
+  Expression: H.nongaussian_heritability(fixture(:gaussian); predictor_variance = big"1e-400")
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:17 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:11 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/test/nongaussian_h2_descriptor_regression.jl:10
+Test Summary:                                  | Pass  Fail  Total  Time
+H2 descriptor contract                         |  166     2    168  0.9s
+  Gaussian conditional and ordinary controls   |    6     2      8  0.5s
+  Original and converted domains               |   56           56  0.2s
+  Common trial normalization and varying fence |   24           24  0.1s
+  Projection limits and formula preservation   |   80           80  0.0s

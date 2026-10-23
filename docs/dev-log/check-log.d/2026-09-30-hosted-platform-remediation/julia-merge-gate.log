@@ -1,0 +1,10 @@
+#401: polling until every check has COMPLETED (every 45s) ...
+--- settled checks ---
+COMPLETED	FAILURE	Julia 1.10 - ubuntu-latest
+COMPLETED	SUCCESS	docs
+COMPLETED	FAILURE	Julia 1.10 - windows-latest
+COMPLETED	FAILURE	Julia 1 - ubuntu-latest
+COMPLETED	FAILURE	Julia 1 - windows-latest
+COMPLETED	SKIPPED	Live-draw plotting check (opt-in)
+-	SUCCESS	documenter/deploy
+NOT MERGED: #401 has 4 check(s) that settled non-green (listed above)

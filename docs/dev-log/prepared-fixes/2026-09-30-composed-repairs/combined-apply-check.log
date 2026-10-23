@@ -1,0 +1,3 @@
+Original dirty snapshot: git apply --check PASS
+Current live candidate: git apply --check PASS; no application
+Replay: all 21 changed files reproduce composed hashes

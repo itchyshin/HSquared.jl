@@ -1,11 +1,33 @@
 # Multivariate (Multi-Trait) Models
 
-`HSquared.jl` has a first **multivariate (multi-trait) animal model** engine
-slice: `multivariate_mme` solves the balanced multi-trait model at **supplied**
-genetic and residual covariance matrices. It is an **engine API** —
-experimental, engine-internal, and **not yet wired to the public R formula** —
-and it does **not** estimate the covariance matrices (that is a separate
-REML/EM slice). The dense path is validation-scale.
+```@raw html
+```
+
+!!! warning "Experimental · validation-scale · dense · REML-only"
+    The experimental label is retained. The R twin exposes `cbind()` as a
+    public surface — covered-vs-partial is the R limits page, not this engine
+    article. Intervals are not coverage-calibrated. Not ASReml-style production
+    multi-trait software.
+
+```@raw html
+<figure class="hs-figure">
+<img src="./assets/g0-rg-teaching.svg" alt="Teaching panel of an illustrative two-trait genetic covariance matrix G0 beside its genetic-correlation triangle r_g. Mass and length show a positive correlation; values are illustrative. Experimental opt-in multivariate; rotation-invariant; loadings not shown; point display only.">
+<figcaption>G0 is trait-scale genetic covariance; r_g is the standardized triangle. Illustrative numbers. Rotation-invariant — loadings not shown. Twin R article: Reading G matrices.</figcaption>
+</figure>
+```
+
+`HSquared.jl` has a **multivariate (multi-trait) animal model** engine
+slice. `multivariate_mme` solves the balanced multi-trait model at **supplied**
+genetic and residual covariance matrices. `fit_multivariate_reml` estimates
+those covariances. These are **engine APIs**. The R twin's `cbind()` formula
+is a separate public surface with its own status row — do not read this page
+as “not wired to R”.
+
+**Twin R articles:**
+[Multivariate models](https://itchyshin.github.io/hsquared/articles/multivariate.html)
+(`cbind()` workflow) and
+[Reading G matrices](https://itchyshin.github.io/hsquared/articles/g-matrix-interpretation.html)
+(G₀ / r_g interpretation).
 
 ## The balanced multi-trait animal model
 
@@ -99,18 +121,13 @@ Julia-side convenience wrappers over the existing result metadata:
 `heritability` for REML results. They do not widen `result_payload()` or change
 the R bridge contract.
 
-!!! warning "Experimental estimator"
-    Multivariate REML is **experimental**. Its correctness is checked by
-    deterministic self-consistency (the `t = 1` fit recovers the univariate REML
-    estimate; the REML log-likelihood matches the univariate package scale; the
-    optimum beats a coarse grid) plus an opt-in seeded recovery harness outside
-    CI. The recovery harness is not multi-seed calibrated and there is **no
-    external-comparator parity (sommer / ASReml / JWAS) yet**. The multivariate
-    engine has had an adversarial review; confirmed robustness findings were
-    fixed and regression-tested.
-    Treat multi-trait variance estimates as provisional. On small fixtures the
-    optimum can sit on a boundary (a genetic correlation of ±1, or a zero
-    variance).
+!!! warning "Experimental estimator · not coverage-calibrated"
+    Multivariate REML is experimental and dense. Engine evidence includes
+    fixture self-consistency plus same-estimand `sommer` and `blupf90+` legs
+    recorded on the `V4-MV-REML` row — that is **not** ASReml-style production
+    software, not interval calibration, and not a k≥3 or diagonal-G claim.
+    On small fixtures the optimum can sit on a boundary (a genetic correlation
+    of ±1, or a zero variance).
 
 ## Structured genetic covariance
 
@@ -134,7 +151,11 @@ The direct matrix builders are `diagonal_covariance`, `lowrank_covariance`, and
 ```
 
 The same structures can constrain the genetic covariance in the dense REML
-estimator while leaving the residual covariance unstructured:
+estimator while leaving the residual covariance unstructured. The existing
+two-trait, one-factor example below is saturated: its fitted `Ψ` is only one
+optimizer-selected decomposition of `G` and must not be interpreted as an
+identified estimate. The bounded four-trait R route has its own local-
+identification and fitted-information limits; see the FA design note.
 
 ```@example mv
 fad = fit_multivariate_reml(
@@ -146,9 +167,20 @@ fad = fit_multivariate_reml(
 (G0 = round.(fad.genetic_covariance; digits = 3),
  structure = genetic_structure(fad),
  loadings = round.(genetic_loadings(fad); digits = 3),
- uniqueness = round.(genetic_uniqueness(fad); digits = 3),
+ uniqueness_decomposition_diagnostic_only = round.(genetic_uniqueness(fad); digits = 3),
  converged = fad.converged)
 ```
+
+The loadings and uniqueness above expose the fitted decomposition for engine
+diagnostics; they do not make the decomposition identified. `genetic_rank` is
+the requested factor count, traits follow the input `Y` column order, and
+`mean_evolvability` depends on the trait coordinates and units. Directional
+metrics and genetic PCA axes are also coordinate- and unit-dependent: they use
+Euclidean unit directions or eigenvectors in the supplied trait scale. The
+rotation invariance here means invariance to orthogonal latent-factor rotations
+that preserve G; it does not imply invariance to rescaling traits. Choose and
+report a scientifically meaningful common scale before comparing directions
+across traits. The per-trait heritability uses `Gᵢᵢ/(Gᵢᵢ + Rᵢᵢ)` on the relationship matrix reference scale.
 
 The structured metadata accessors copy existing Julia result fields. They do not
 change `result_payload()` or the R bridge contract.
@@ -179,9 +211,11 @@ seed lists with per-case summaries. Both use loose, version-robust thresholds.
 The shared calibration protocol in
 `docs/dev-log/decisions/2026-06-14-multivariate-recovery-calibration-protocol.md`
 defines the seed-count, run-plan, and reporting gate required before any broad
-multi-seed calibration claim. It was executed on the predeclared seed sets and
+multi-seed calibration claim. Phase 4B calibration (2026-06-14; did not pass)
+was executed on the predeclared seed sets and
 did not pass: unstructured passed 6/10, factor-analytic passed 8/10, and
-low-rank passed 9/10, with all fits converged. The raw logs and summary live in
+low-rank passed 9/10, with all fits converged. That Phase 4B 8/10 is **not**
+the later S4 covered gate (`docs/dev-log/recovery-checkpoints/2026-09-03-v08-s4-fa-d4-k1.md`). The raw logs and summary live in
 `docs/dev-log/recovery-checkpoints/`.
 The deterministic helper `sim/summarize_recovery_calibration.jl` can regenerate
 the Markdown case summary, failure-mode table, and failed-seed list from those
@@ -196,11 +230,36 @@ The structured path returns
 sign-canonicalized loading columns: within each factor, the largest-absolute
 loading is non-negative. This removes arbitrary sign flips from metadata but
 does not identify rotations or make loading columns uniquely interpretable. The
-current policy is recorded in
+optimizer still searches the full raw loading vector. It does not drop the
+`K(K-1)/2` rotational degrees of freedom of `Λ` for `rank = K >= 2`.
+`_mv_nparams` subtracts those directions for likelihood-ratio reporting only.
+`converged` is still a Nelder-Mead simplex-spread test on the unreduced
+parameter vector. The current policy is recorded in
 `docs/dev-log/decisions/2026-06-14-loading-rotation-identifiability.md`.
 A passing or revised calibration protocol, covariance standard errors,
 external-comparator parity, and R-facing multivariate / covariance-structure
 syntax are still missing.
+
+## Multivariate repeatability (animal + permanent environment)
+
+`fit_multivariate_repeatability_reml` is the experimental dense REML path
+for repeated-measures multivariate data with additive genetics **and** an
+iid permanent-environment term (hsquared #237):
+
+```math
+V = Z_{\mathrm{full}}(A \otimes G_0)Z_{\mathrm{full}}^\top
+  + Z_{\mathrm{full}}(I \otimes P_0)Z_{\mathrm{full}}^\top
+  + R.
+```
+
+`A \neq I` separates `G_0` from `P_0`; repeated records separate `P_0`
+from `R_0`. Animal-only multivariate REML absorbs `V_{PE}` into `G_0`.
+Per-trait heritability uses the PE denominator
+`h^2_k = G_{0,kk}/(G_{0,kk}+P_{0,kk}+R_{0,kk})`. This is engine-internal
+and **experimental**. No covered flip. The R twin still fences
+`cbind()` + `permanent()` until it lifts the spec gate. The bridge
+payload is `multivariate_repeatability_result_payload`
+(`target = "multivariate_repeatability_reml"`, `status = "experimental"`).
 
 ## Validation boundary
 

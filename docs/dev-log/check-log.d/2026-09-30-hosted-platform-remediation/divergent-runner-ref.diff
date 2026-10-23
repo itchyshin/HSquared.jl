@@ -1,0 +1,686 @@
+diff --git a/test/runtests.jl b/test/runtests.jl
+index f2a6d653..2e67783b 100644
+--- a/test/runtests.jl
++++ b/test/runtests.jl
+@@ -3,13 +3,10 @@ using LinearAlgebra
+ using SparseArrays
+ using Test
+ using TOML
+-using Statistics  # means used by post-fit contract fixtures
+ using Random  # seeded fixtures only (e.g. the repeatability-interval test); deterministic/reproducible
+ using JSON3   # P0.5 payload-v2 cross-lane parity testset
+ 
+ include(joinpath(@__DIR__, "..", "comparator", "prepare_blupf90_multitrait.jl"))
+-include("test_selinv_trace_contracts.jl")
+-include("test_pedigree_inbred_known_parent.jl")
+ 
+ # dense NRM helper lives in src now: HSquared._numerator_relationship (src/pedigree.jl)
+ 
+@@ -82,9 +79,6 @@ include("test_aqua.jl")
+ 
+ @testset "HSquared Phase 0 scaffold" begin
+     control = HSControl()
+-    placeholder_message = sprint(showerror, Phase0NotImplementedError("unwired target"))
+-    @test occursin("not implemented on this route", placeholder_message)
+-    @test !occursin("Model fitting is planned but not implemented", placeholder_message)
+ 
+     @test control.backend isa AutoBackend
+     @test control.accelerator == :auto
+@@ -168,23 +162,17 @@ include("test_aqua.jl")
+ 
+     grammar = formula_status()
+     @test grammar isa FormulaStatus
+-    # Julia exposes an engine-local diagnostic, not the broader R formula
+-    # inventory. Equal columns do not imply equal rows or parser behavior.
+     @test length(grammar) == 20
+     @test [row.term for row in grammar][1] == "animal(1 | id, pedigree = ped)"
+     @test grammar[end].term == "animal(trait | id, pedigree = ped, cov = fa(K = 2))"
+-    @test [row.syntax_status for row in grammar][1] == "engine bridge"
+-    @test [row.fitting_status for row in grammar][1] == "experimental Julia engine route only"
+-    @test all(row.fitting_status == "not available" for row in grammar if row.syntax_status in ("reserved", "planned"))
++    @test [row.syntax_status for row in grammar][1] == "parsed"
++    @test [row.fitting_status for row in grammar][1] == "experimental tiny bridge only"
++    @test all(row.fitting_status == "not available" for row in grammar if row.syntax_status != "parsed")
+     @test "permanent(1 | id)" in [row.term for row in grammar]
+     @test "precision(1 | id, Q = Q)" in [row.term for row in grammar]
+     @test "genomic(1 | id, Ginv = Ginv)" in [row.term for row in grammar]
+     @test any(row.syntax_status == "planned" for row in grammar)
+-    @test Set(row.syntax_status for row in grammar) == Set(["engine bridge", "reserved", "planned"])
+-    @test occursin("R owns and parses", grammar[1].current_behavior)
+-    @test occursin("R cov = fa() formula syntax remains reserved", grammar[end].current_behavior)
+-    @test occursin("expert-control route", grammar[end].current_behavior)
+-    @test !any(occursin("GLLVM", row.term) for row in grammar)
++    @test Set(row.syntax_status for row in grammar) == Set(["parsed", "reserved", "planned"])
+ 
+     validation = validation_status()
+     @test validation isa ValidationStatus
+@@ -220,8 +208,8 @@ include("test_aqua.jl")
+     @test "V6-GGLLVM-MARGINAL" in [row.id for row in validation]
+     @test "V6-GGLLVM-LAPLACE" in [row.id for row in validation]
+     gllvm_row = only(row for row in validation if row.id == "V6-GGLLVM-LAPLACE")
+-    @test occursin("fixed-and-genetic-effect integrated Laplace", gllvm_row.evidence)
+-    @test occursin("not ordinary non-Gaussian ML or REML", gllvm_row.claim_boundary)
++    @test occursin("Laplace marginal likelihood", gllvm_row.evidence)
++    @test occursin("not REML", gllvm_row.claim_boundary)
+     @test occursin("Gaussian reduction", gllvm_row.claim_boundary)
+     @test "V5-MARKER-THRESHOLD" in [row.id for row in validation]
+     @test "V3-RR-REML" in [row.id for row in validation]
+@@ -256,15 +244,10 @@ include("test_aqua.jl")
+     )
+     @test all(
+         occursin(
+-            "not conventional profiled-fixed-effect Laplace-ML, REML, or AI-REML",
++            "not REML or AI-REML",
+             only(row for row in validation if row.id == id).claim_boundary,
+         ) for id in legacy_v6_ids
+     )
+-    @test all(
+-        occursin("exact REML applies to its Gaussian reduction", only(row for row in validation if row.id == id).claim_boundary) &&
+-        occursin("joint observed-curvature Hessian", only(row for row in validation if row.id == id).claim_boundary)
+-        for id in legacy_v6_ids
+-    )
+     # H2: beta-binomial overdispersed-logit family row.
+     betabin_row = only(row for row in validation if row.id == "V6-BETABINOMIAL")
+     @test betabin_row.status == "partial"
+@@ -367,8 +350,7 @@ include("test_aqua.jl")
+     @test !occursin("default-routed and covered", grammar_page)
+     @test !occursin("R-public default route", bridge_page)
+     gllvm_source_normalized = replace(gllvm_source, "\r\n" => "\n")
+-    @test occursin("fixed-and-genetic-effect integrated objective", gllvm_source_normalized)
+-    @test occursin("not ordinary non-Gaussian ML", gllvm_source_normalized)
++    @test occursin("fitted\nmarginal-likelihood optimum", gllvm_source_normalized)
+     @test !occursin("structured non-Gaussian REML recovery", gllvm_source)
+     @test !occursin("at the REML optimum", gllvm_source)
+ 
+@@ -385,7 +367,7 @@ include("test_aqua.jl")
+     @test occursin("not R-public", capability_page)
+     @test occursin("V4-FA", debt_page)
+     @test occursin("V2-SSHINV", debt_page)
+-    @test occursin("bounded R FA expert-control route is experimental/partial", debt_page)
++    @test occursin("R FA planned", debt_page)
+     @test occursin("R `single_step()` stays opt-in partial", debt_page)
+     @test !occursin("Fitted non-Gaussian (Laplace/VA REML)", capability_page)
+     @test !occursin("Fitted non-Gaussian (Laplace/VA REML)", debt_page)
+@@ -467,7 +449,7 @@ include("test_aqua.jl")
+     @test occursin("failure-mode triage", fa_row.evidence)
+     @test occursin("R-only failure", fa_row.evidence)
+     @test occursin("structured-metadata accessors", fa_row.claim_boundary)
+-    @test occursin("R-facing `cov=fa` syntax", fa_row.claim_boundary)
++    @test occursin("no R-facing", fa_row.claim_boundary)
+     @test occursin("not rotation-identified", fa_row.claim_boundary)
+     # design-55: textbook no-anchor is on evidence (claim_boundary left
+     # unchanged so the generated docs/src page stays in sync under the g5 lease)
+@@ -483,7 +465,7 @@ include("test_aqua.jl")
+     # #47 closeout: the boundary-aware LRT applies to structured fits; structured
+     # SEs stay honestly absent (rotation-nonidentified loadings)
+     @test occursin("covariance_structure_lrt", fa_row.evidence)
+-    @test occursin("rotation-nonidentified", fa_row.missing)
++    @test occursin("rotation-nonidentified", fa_row.evidence)
+     @test !occursin("covariance SEs or LRTs", fa_row.missing)
+     @test occursin("standard errors for the rotation-nonidentified structured loadings", fa_row.missing)
+     # #42 scoped: the diagonal/unstructured bridge payload row
+@@ -569,13 +551,7 @@ include("test_aqua.jl")
+     @test occursin("coverage calibration", threshold_row.missing)
+     @test occursin("STANDING DEBT", threshold_row.missing)        # covered does not retire owed work
+     @test occursin("SCOPED", threshold_row.claim_boundary)        # scoped covered claim
+-    @test occursin("per-dataset add-one permutation rule", threshold_row.claim_boundary)
+-    @test occursin("FIXED-EFFECT/intercept-only single-marker scan", threshold_row.claim_boundary)
+-    @test occursin("type-I-CONTROL", threshold_row.claim_boundary)
+-    @test occursin("broader-LD/covariate-adjusted calibration", threshold_row.claim_boundary)
+-    @test occursin("NOT the public default", threshold_row.claim_boundary)
+-    @test occursin("R-public covered count stays 7", threshold_row.claim_boundary)
+-    @test !occursin("FITTING = 1", threshold_row.claim_boundary)
++    @test occursin("FITTING = 1", threshold_row.claim_boundary)   # public default unchanged
+     marker_recovery_script = normpath(joinpath(@__DIR__, "..", "sim", "phase5_marker_scan_recovery.jl"))
+     @test isfile(marker_recovery_script)
+     marker_recovery_source = read(marker_recovery_script, String)
+@@ -628,9 +604,9 @@ include("test_aqua.jl")
+         end
+ 
+         @test err isa ArgumentError
+-        @test occursin("`$(name)()` is a reserved formula term", sprint(showerror, err))
+-        @test occursin("formula-term route is not implemented", sprint(showerror, err))
+-        @test !occursin("no genomic prediction", sprint(showerror, err))
++        @test occursin("`$(name)()` is planned, not implemented.", sprint(showerror, err))
++        @test occursin("no standard quantitative-genetic extension", sprint(showerror, err))
++        @test occursin("genomic prediction", sprint(showerror, err))
+     end
+ 
+     @test_throws Phase0NotImplementedError hsquared(nothing)
+@@ -1197,9 +1173,9 @@ end
+     yp = [3.0, 5.0, 8.0, 4.0, 6.0, 2.0, 5.0, 7.0]
+     yb = [1.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0]
+     ym = [7.0, 2.0, 6.0, 8.0, 3.0, 1.0, 7.0, 9.0]
+-    @test_throws ArgumentError HSquared.laplace_reml_interval(yp, X, Z, Ainv; family = :poisson)
+-    @test_throws ArgumentError HSquared.laplace_reml_interval(yb, X, Z, Ainv; family = :bernoulli)
+     cis = (
++        HSquared.laplace_reml_interval(yp, X, Z, Ainv; family = :poisson),
++        HSquared.laplace_reml_interval(yb, X, Z, Ainv; family = :bernoulli),
+         HSquared.laplace_reml_interval(ym, X, Z, Ainv; family = :binomial, n_trials = 10),
+         HSquared.laplace_reml_interval(yb, X, Z, Ainv; family = :bernoulli_probit),
+     )
+@@ -1444,26 +1420,13 @@ end
+     @test_throws ArgumentError normalize_pedigree(["a"], ["a"], ["0"])
+     @test_throws ArgumentError normalize_pedigree(["a", "b"], ["b", "a"], ["0", "0"])
+     @test_throws ArgumentError normalize_pedigree(["a", "b"], ["0", "a"], ["0", "a"])
+-    # A maximally deep, reverse-listed chain exercises the recursion depth in
+-    # topological sorting. The existing large-pedigree fixture is broad but shallow.
+-    chain_n = 12_000
+-    chain_ids = collect(chain_n:-1:1)
+-    chain_sire = [id == 1 ? 0 : id - 1 for id in chain_ids]
+-    deep_chain = normalize_pedigree(chain_ids, chain_sire, zeros(Int, chain_n))
+-    @test deep_chain.ids == collect(1:chain_n)
+-    @test deep_chain.original_order == collect(chain_n:-1:1)
+-    @test all(parent == 0 || parent < child for (child, parent) in pairs(deep_chain.sire))
+-    deep_chain_Ainv = pedigree_inverse(deep_chain)
+-    @test size(deep_chain_Ainv) == (chain_n, chain_n)
+-    @test all(isfinite, nonzeros(deep_chain_Ainv))
+-
+-    # F1: inbreeding uses the Meuwissen-Luo ancestry traversal without forming a
+-    # dense relationship matrix; max_relationship_cache does not bound this route.
++    # F1: inbreeding now uses Meuwissen-Luo (O(n)); max_relationship_cache no longer
++    # bounds it (it previously threw). The kwarg is ignored and the result is unchanged.
+     @test inbreeding_coefficients(ped; max_relationship_cache = 2) ≈
+           [HSquared._numerator_relationship(ped)[i, i] - 1.0 for i in 1:length(ped)]
+ end
+ 
+-@testset "F1 Meuwissen-Luo inbreeding avoids dense relationship storage" begin
++@testset "F1 Meuwissen-Luo inbreeding (O(n), no dense cap)" begin
+     oracleF(p) = (A = HSquared._numerator_relationship(p); [A[i, i] - 1.0 for i in 1:length(p)])
+     # deterministic well-mixed mating (multiplicative hash) so two parents share
+     # ancestry -> GENUINE bounded inbreeding (no RNG; q=2000 -> ~1870/2000 inbred,
+@@ -1713,9 +1676,12 @@ end
+           mendelian_sampling_variances(normalize_pedigree(["s", "d", "o"], ["0", "0", "s"], ["0", "0", "d"]))
+ end
+ 
+-@testset "Phase 1 finite deep-inbreeding case (V1-DENSE-COND)" begin
+-    # This seven-animal selfing chain checks one finite conditioning level. It
+-    # does not establish accuracy for all conditioning levels or sparse paths.
++@testset "Phase 1 deep-inbreeding dense-inverse conditioning (V1-DENSE-COND)" begin
++    # A selfing chain drives inbreeding to F_k = 1 − (1/2)^k, which makes the
++    # relationship matrix increasingly ill-conditioned. This pins the documented
++    # V1-DENSE-COND caveat: `pedigree_inverse` is a DIRECT Henderson construction,
++    # so it stays exact regardless of conditioning — the caveat is about the
++    # downstream dense-`inv(Ainv)` estimators, not the sparse Ainv itself.
+     ids = ["g0", "g1", "g2", "g3", "g4", "g5", "g6"]
+     sire = ["0", "g0", "g1", "g2", "g3", "g4", "g5"]
+     dam = ["0", "g0", "g1", "g2", "g3", "g4", "g5"]
+@@ -1730,7 +1696,7 @@ end
+     Ainv = Matrix(pedigree_inverse(ped))
+     # conditioning genuinely grows with inbreeding (documents the caveat)
+     @test cond(A) > 1.0e3
+-    # The direct construction agrees with the dense oracle at this finite case.
++    # the DIRECT Henderson inverse is exact despite the conditioning
+     @test maximum(abs.(Ainv * A - I)) < 1e-9
+     @test maximum(abs.(Ainv .- inv(A))) < 1e-6
+ 
+@@ -2151,23 +2117,13 @@ end
+     @test [row.value for row in data_status(genotype_status_data).genotype_status] ==
+           ["2", "2", "2", "2", "0", "0", "1", "table"]
+ 
+-    custom_id_marker_status = data_status(
+-        HSData(
+-            (id = ["a", "b"], y = [1.0, 2.0]);
+-            genotypes = (sample = ["a", "b"], m1 = [0, 1]),
+-            genotype_id = :sample,
+-        ),
+-    ).marker_status
+-    @test [row.value for row in custom_id_marker_status] ==
+-          ["0", "1", "0", "not_available", "not_available", "not_available", "not_checked_no_marker_map"]
+-
+     duplicate_genotypes = Dict(
+         :id => ["a", "b"],
+         :m1 => [0, 1],
+         "m1" => [2, 3],
+     )
+     @test [row.value for row in data_status(HSData((id = ["a", "b"], y = [1.0, 2.0]); genotypes = duplicate_genotypes)).genotype_status] ==
+-          ["2", "2", "2", "2", "0", "1", "0", "table"]
++          ["not_available", "2", "2", "2", "0", "1", "0", "table"]
+ 
+     matrix_expression_status = data_status(
+         HSData(
+@@ -4271,11 +4227,12 @@ end
+         sparse(1.0I, 8, 8), tie_Q; ids = tie_ids, method = :REML)
+     tie_provenance = HSquared._genomic_precision_provenance(tie_Q, tie_ids)
+     tie_result = HSquared._fit_ai_reml_genomic_boundary(tie_spec;
+-        provenance = tie_provenance, iterations = 1)
++        provenance = tie_provenance)
+     @test tie_result.boundary.status == "boundary_unresolved"
+     @test tie_result.boundary.reason == "endpoint_pair_tie"
+     @test tie_result.fit !== nothing && !tie_result.fit.converged
+     @test tie_result.fit.optimizer_status == "boundary_unresolved"
++    @test tie_result.ai_diagnostics.termination_reason == "score_tolerance"
+ 
+     endpoint_interior_tie = HSquared._genomic_boundary_classify_candidates(
+         10.0, 10.0, 9.0, true, -0.1, -0.1, 120)
+@@ -4298,8 +4255,6 @@ end
+     @test big_result.boundary.reason == "dense_limit"
+ end
+ 
+-include("wave4_genomic_boundary_near_endpoint.jl")
+-
+ @testset "fit_ai_reml graceful σ²→0 boundary (no throw on degenerate spec)" begin
+     # A degenerate spec (constant y → no genetic signal → the REML optimum sits at the
+     # σ²a→0 boundary) drives AI-REML toward σ²→0, where the finite Newton step grows large
+@@ -5611,61 +5566,6 @@ end
+     # the fixed-effect screen ignores Z/Ainv: same y/X/σ²e ⇒ identical regardless of Z
+     @test single_marker_scan(fitP, markers; marker_ids = mids) ==
+           single_marker_scan(fit, markers; marker_ids = mids)
+-
+-    # Fitted convenience routes fail closed before delegating when convergence
+-    # was not reported, even though their six-argument fixture constructor is valid.
+-    unresolved = AnimalModelFit(spec, lik, (sigma_a2 = 1.2, sigma_e2 = 0.8), false, "supplied", 0)
+-    for scan in (mixed_model_marker_scan, single_marker_scan)
+-        err = try
+-            scan(unresolved, markers)
+-            nothing
+-        catch e
+-            e
+-        end
+-        @test err isa ArgumentError
+-        @test occursin("fit must have converged", sprint(showerror, err))
+-    end
+-
+-    # At sigma_a2 = 0 the mixed GLS covariance is sigma_e2*I. Compare its
+-    # coefficients and Wald errors to an independent residualized OLS calculation.
+-    sigma_e2_zero_additive = 0.8
+-    W = markers .- mean(markers; dims = 1)
+-    XtX = transpose(X) * X
+-    y_resid = y - X * (XtX \ (transpose(X) * y))
+-    oracle_effects = Float64[]
+-    oracle_ses = Float64[]
+-    oracle_denominators = Float64[]
+-    for j in axes(W, 2)
+-        w = W[:, j]
+-        w_resid = w - X * (XtX \ (transpose(X) * w))
+-        d = dot(w_resid, w_resid)
+-        push!(oracle_denominators, d)
+-        push!(oracle_effects, dot(w_resid, y_resid) / d)
+-        push!(oracle_ses, sqrt(sigma_e2_zero_additive / d))
+-    end
+-    zero_mixed = mixed_model_marker_scan(y, X, Z, Ainv, markers, 0.0, sigma_e2_zero_additive)
+-    zero_loco = loco_mixed_model_marker_scan(
+-        y, X, Z, Dict("chr1" => Matrix{Float64}(I, length(y), length(y))),
+-        fill("chr1", size(markers, 2)), markers, 0.0, sigma_e2_zero_additive,
+-    )
+-    for scan in (zero_mixed, zero_loco)
+-        @test scan.effects ≈ oracle_effects rtol = 1e-12 atol = 1e-12
+-        @test scan.standard_errors ≈ oracle_ses rtol = 1e-12 atol = 1e-12
+-        @test scan.z_scores ≈ oracle_effects ./ oracle_ses rtol = 1e-12 atol = 1e-12
+-        @test scan.denominators .* sigma_e2_zero_additive ≈ oracle_denominators rtol = 1e-12 atol = 1e-12
+-    end
+-    @test zero_mixed.variance_components == (sigma_a2 = 0.0, sigma_e2 = sigma_e2_zero_additive)
+-    @test_throws ArgumentError mixed_model_marker_scan(y, X, Z, Ainv, markers, -eps(), 1.0)
+-    @test_throws ArgumentError mixed_model_marker_scan(y, X, Z, Ainv, markers, NaN, 1.0)
+-    @test_throws ArgumentError mixed_model_marker_scan(y, X, Z, Ainv, markers, Inf, 1.0)
+-    negative_tiny = -BigFloat(10)^(-1000)
+-    @test negative_tiny < 0
+-    @test iszero(Float64(negative_tiny)) && signbit(Float64(negative_tiny))
+-    @test_throws ArgumentError mixed_model_marker_scan(y, X, Z, Ainv, markers, negative_tiny, 1.0)
+-    @test_throws ArgumentError loco_mixed_model_marker_scan(
+-        y, X, Z, Dict("chr1" => Matrix{Float64}(I, length(y), length(y))),
+-        fill("chr1", size(markers, 2)), markers, negative_tiny, 1.0,
+-    )
+ end
+ 
+ @testset "Phase 5 marker-scan parity fixture (#45)" begin
+@@ -8555,74 +8455,6 @@ end
+     @test any(q -> "gryphon_bwt_reml" in q["arc_ids"], review["questions"])
+ end
+ 
+-@testset "FA t=4 K=1 local rank, uniqueness, and variance units" begin
+-    # Differential of vech(λλ' + diag(ψ)) with respect to (λ, ψ).
+-    function fa_jacobian(λ)
+-        J = zeros(10, 8)
+-        row = 0
+-        for i in 1:4, j in i:4
+-            row += 1
+-            J[row, i] += λ[j]
+-            J[row, j] += λ[i]
+-            if i == j
+-                J[row, 4 + i] = 1.0
+-            end
+-        end
+-        return J
+-    end
+-
+-    λ = [0.9, 0.55, -0.35, 0.4]
+-    ψ = [0.35, 0.45, 0.55, 0.5]
+-    G = factor_analytic_covariance(reshape(λ, 4, 1), ψ)
+-    @test ledermann_slack(4, 1) == 4
+-    @test rank(fa_jacobian(λ)) == 8
+-    @test factor_analytic_covariance(reshape(-λ, 4, 1), ψ) ≈ G
+-    trait_order = [3, 1, 4, 2]
+-    @test factor_analytic_covariance(reshape(λ[trait_order], 4, 1), ψ[trait_order]) ≈
+-          G[trait_order, trait_order]
+-    # Three nonzero off-diagonal products recover each loading square,
+-    # hence ψ_i = G_ii - λ_i², up to the single global loading sign.
+-    pairs = ((2, 3), (1, 3), (1, 2), (1, 2))
+-    ψ_recovered = [G[i, i] - G[i, j] * G[i, k] / G[j, k]
+-                   for (i, (j, k)) in enumerate(pairs)]
+-    @test ψ_recovered ≈ ψ
+-
+-    # Positive Ledermann slack alone does not identify ψ: with only two
+-    # nonzero loadings, their product is fixed while their squares can move.
+-    λ_sparse = [1.0, 1.0, 0.0, 0.0]
+-    ψ_sparse = ones(4)
+-    c = 1.1
+-    λ_alternative = [c, inv(c), 0.0, 0.0]
+-    ψ_alternative = [2 - c^2, 2 - inv(c)^2, 1.0, 1.0]
+-    @test minimum(ψ_alternative) > FA_UNIQUENESS_FLOOR
+-    @test rank(fa_jacobian(λ_sparse)) == 7
+-    @test ψ_alternative != ψ_sparse
+-    @test factor_analytic_covariance(reshape(λ_sparse, 4, 1), ψ_sparse) ≈
+-          factor_analytic_covariance(reshape(λ_alternative, 4, 1), ψ_alternative)
+-    # The LRT still computes a nominal tail for this singular FA point; its
+-    # note must not certify regularity from the rotation-adjusted df alone.
+-    G_sparse = factor_analytic_covariance(reshape(λ_sparse, 4, 1), ψ_sparse)
+-    fa_null = (genetic_covariance = G_sparse, genetic_structure = :factor_analytic,
+-               genetic_rank = 1, loglik = -100.0, converged = true)
+-    unrestricted = (genetic_covariance = G_sparse, genetic_structure = :unstructured,
+-                    genetic_rank = nothing, loglik = -95.0, converged = true)
+-    lrt = covariance_structure_lrt(fa_null, unrestricted)
+-    @test lrt.df == 2
+-    @test lrt.reference == :chisq
+-    @test occursin("nominal", lrt.note)
+-    @test !occursin("exact", lrt.note)
+-
+-    # ψ is a variance: multiplying trait values by c multiplies λ by c and
+-    # ψ by c². The frozen 1e-4 fitter floor stays absolute, so its admissible
+-    # start region changes near the floor even though the covariance scales.
+-    near_floor = fill(2 * FA_UNIQUENESS_FLOOR, 4)
+-    scale = 0.5
+-    @test factor_analytic_covariance(reshape(scale .* λ, 4, 1), scale^2 .* near_floor) ≈
+-          scale^2 .* factor_analytic_covariance(reshape(λ, 4, 1), near_floor)
+-    @test all(isfinite, HSquared._fa_uniqueness_to_unconstrained(near_floor))
+-    @test_throws ArgumentError HSquared._fa_uniqueness_to_unconstrained(scale^2 .* near_floor)
+-end
+-
+ @testset "Phase 4B structured genetic covariance (diag/lowrank/fa)" begin
+     @test diagonal_covariance([1.0, 2.0, 3.0]) == Matrix(Diagonal([1.0, 2.0, 3.0]))
+     Λ = reshape([1.0, -2.0], 2, 1)
+@@ -8762,10 +8594,6 @@ end
+         @test sp.genetic_structure == sname
+         @test sp.genetic_rank == 1
+         @test sp.rotation_invariant && sp.loadings_excluded
+-        @test sp.traits == collect(sfit.traits)
+-        @test sp.genetic_uniqueness == sfit.genetic_uniqueness
+-        @test sp.genetic_uniqueness_identification ==
+-              (sname == "factor_analytic" ? :not_assessed_by_fit : nothing)
+         @test !(:genetic_loadings in keys(sp))              # hard contract: no raw loadings
+         @test sp.genetic_covariance ≈ Matrix(sfit.genetic_covariance) atol = 1e-10
+         @test sp.genetic_variances ≈ diag(sfit.genetic_covariance)
+@@ -8958,16 +8786,11 @@ end
+     @test fg.converged
+     @test fg.marginal_loglik ≈ sr.likelihood.loglik rtol = 1e-6
+ 
+-    # Poisson fit + the exported profile interval. Repeated records give this
+-    # fixture an interior variance estimate, so the point-fit boundary guard
+-    # does not prevent endpoint checks.
+-    groups = repeat(1:8, inner = 8)
+-    Zp = sparse(1:length(groups), groups, ones(length(groups)), length(groups), 8)
+-    yp = Float64.(repeat([1, 1, 1, 2, 2, 15, 16, 17], inner = 8))
+-    Xp = ones(length(yp), 1)
+-    fp = fit_laplace_reml(yp, Xp, Zp, Ainv; family = :poisson, initial = (sigma_a2 = 1.0,))
++    # Poisson fit + the exported profile interval
++    yp = [3.0, 5.0, 8.0, 4.0, 6.0, 2.0, 5.0, 7.0]
++    fp = fit_laplace_reml(yp, X, Z, Ainv; family = :poisson, initial = (sigma_a2 = 1.0,))
+     @test fp.family === :poisson && fp.converged
+-    ci = laplace_reml_interval(yp, Xp, Zp, Ainv; family = :poisson, level = 0.95)
++    ci = laplace_reml_interval(yp, X, Z, Ainv; family = :poisson, level = 0.95)
+     @test ci.lower < ci.sigma_a2 < ci.upper
+     @test ci.level == 0.95
+ 
+@@ -9233,17 +9056,17 @@ end
+ 
+ @testset "Phase 6 Poisson variance-component profile interval" begin
+     # Profile LRT interval for the Poisson animal-model sigma_a2, by inverting
+-    # 2·(ℓ̂ − ℓ(σ²a)) = χ²₁,level. Repeated records provide within-animal
+-    # information, so this fixture supports interior endpoint checks.
++    # 2·(ℓ̂ − ℓ(σ²a)) = χ²₁,level. For this 8-animal count fixture the estimate
++    # is near zero with a flat lower profile (the lower endpoint clamps), while
++    # the upper endpoint is an interior LRT root.
+     ids = ["a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8"]
+     ped = normalize_pedigree(ids,
+         ["0", "0", "a1", "a1", "a2", "a2", "a3", "a5"],
+         ["0", "0", "a2", "a2", "0", "0", "a4", "a6"])
+     Ainv = pedigree_inverse(ped)
+-    groups = repeat(1:8, inner = 8)
+-    Z = sparse(1:length(groups), groups, ones(length(groups)), length(groups), 8)
+-    yp = Float64.(repeat([1, 1, 1, 2, 2, 15, 16, 17], inner = 8))
+-    X = ones(length(yp), 1)
++    yp = [3.0, 5.0, 8.0, 4.0, 6.0, 2.0, 5.0, 7.0]
++    X = ones(8, 1)
++    Z = sparse(1.0I, 8, 8)
+ 
+     fp = HSquared.fit_laplace_reml(yp, X, Z, Ainv; family = :poisson, initial = (sigma_a2 = 1.0,))
+     sa2hat = fp.variance_components.sigma_a2
+@@ -9318,14 +9141,15 @@ end
+     @test 0 < civ.lower < civ.sigma_a2 < civ.upper
+     @test civ.lower_clamped && !civ.upper_clamped        # lower clamps, upper interior
+ 
+-    # This binary fixture puts the point fit at the search boundary. The interval
+-    # API refuses it rather than returning finite-looking endpoints for an
+-    # uninformative profile.
++    # Bernoulli is supported but binary data is uninformative — the profile is flat so
++    # BOTH endpoints clamp (the `*_clamped` flags make the degeneracy machine-readable,
++    # not a silent finite CI). The converged flag does NOT catch this; the clamps do.
+     yb01 = [1.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0]
+-    @test_throws ArgumentError HSquared.laplace_reml_interval(
+-        yb01, X, Z, Ainv; family = :bernoulli, level = 0.95)
++    cib = HSquared.laplace_reml_interval(yb01, X, Z, Ainv; family = :bernoulli, level = 0.95)
++    @test cib.level == 0.95
++    @test cib.lower_clamped && cib.upper_clamped         # degenerate: both endpoints are bounds
+ 
+-    # The variational objective does not supply a calibrated χ²₁ likelihood-ratio test.
++    # marginal = :variational is REJECTED (the ELBO is a lower bound, not a χ²₁ LRT).
+     @test_throws ArgumentError HSquared.laplace_reml_interval(yb, X, Z, Ainv;
+                                     family = :binomial, n_trials = m, marginal = :variational)
+ 
+@@ -10491,7 +10315,7 @@ end
+     @test gr2.converged
+     @test gr2.loglik ≥ gl(Yp2, Ainv, Λ0, HSquared.PoissonResponse(); X = X).loglik - 1e-6
+     @test size(gr2.genetic_covariance) == (2, 2)
+-    @test size(gr2.breeding_values) == size(Yp2)
++    @test size(gr2.breeding_values) == (q, 1)
+     @test haskey(gr2.latent_structure, :communality)
+ 
+     # --- Gaussian self-consistency: the marginal at the optimum equals the multivariate
+@@ -10580,7 +10404,7 @@ end
+     @test fit_mix.converged
+     @test isfinite(fit_mix.loglik)
+     @test size(fit_mix.genetic_covariance) == (2, 2)
+-    @test size(fit_mix.breeding_values) == size(Ymix)
++    @test size(fit_mix.breeding_values) == (q, 1)
+ 
+     # (b) Uniform-vector family gives the SAME genetic_covariance as the scalar fit (exact).
+     Yp2 = Float64[2 4; 1 3; 3 5; 0 2; 4 6; 2 1; 1 7; 5 0]
+@@ -10596,10 +10420,10 @@ end
+     @test G isa Matrix{Float64}
+     @test size(G) == (2, 2)
+     @test all(eigvals(Symmetric(G)) .>= -1e-12)      # PSD (rank-1 low-rank, smallest ≈ 0)
+-    #   breeding_values: q × T trait genetic conditional modes
++    #   breeding_values: q × K matrix
+     bv = HSquared.breeding_values(fit_scalar)
+     @test bv isa Matrix{Float64}
+-    @test size(bv) == size(Yp2)
++    @test size(bv) == (q, 1)
+     #   latent_structure: NamedTuple with communality field
+     ls = HSquared.latent_structure(fit_scalar)
+     @test haskey(ls, :communality)
+@@ -11009,12 +10833,9 @@ end
+         @test hasproperty(vb[1], :direct_variance)
+         @test hasproperty(vb[1], :partner_variance)
+         @test hasproperty(vb[1], :covariance)
+-        @test length(res.random_effects) == 1
+-        @test res.random_effects[1].name == "maternal"
+-        @test res.random_effects[1].ids == fit_v2.direct_effects.ids
+-        @test res.random_effects[1].direct ≈ fit_v2.direct_effects.values
+-        @test res.random_effects[1].partner ≈ fit_v2.maternal_effects.values
+-        @test !hasproperty(res.random_effects[1], :values)
++        @test length(res.random_effects) == 2   # direct + partner
++        @test res.random_effects[1].name == "animal"
++        @test res.random_effects[2].name == "maternal"
+     end
+ 
+     # -----------------------------------------------------------------------
+@@ -11102,46 +10923,9 @@ end
+                      "partner_incidence" => Zm2),
+             ],
+         ))
+-
+-        # A single coefcov block parses, but its fit route is not wired. Keep
+-        # the error accurate for this one-block case as well as multi-blocks.
+-        coefcov_payload = Dict(
+-            "payload_version" => 2,
+-            "y" => y_obs,
+-            "X" => X_int,
+-            "random_effects" => [Dict(
+-                "name" => "slope",
+-                "type" => "coefcov",
+-                "Z" => Z_animal,
+-                "relmat_status" => "identity",
+-                "ids" => ped_ids,
+-                "basis" => "raw",
+-                "order" => 2,
+-                "Phi" => hcat(ones(length(y_obs)), collect(1.0:length(y_obs))),
+-                "covariate" => "time",
+-                "cov_structure" => "unstructured",
+-            )],
+-        )
+-        parsed_coefcov = parse_payload_v2(coefcov_payload)
+-        @test parsed_coefcov.dispatch == :coefcov
+-        coefcov_error = try
+-            fit_payload_v2(coefcov_payload)
+-            nothing
+-        catch err
+-            err
+-        end
+-        @test coefcov_error isa Phase0NotImplementedError
+-        coefcov_message = sprint(showerror, coefcov_error)
+-        @test occursin("no coefcov payload fitting route is currently wired", coefcov_message)
+-        @test !occursin("multi-block", coefcov_message)
+-        coefcov_doc = string(@doc fit_payload_v2)
+-        @test occursin("no coefcov payload fitting route is currently wired", coefcov_doc)
+     end
+ end
+ 
+-# Frozen coefficient-covariance payload field validation; no fitting route.
+-include(joinpath(@__DIR__, "test_coefcov_fields.jl"))
+-
+ # 0.8 S3 FA uniqueness-interior bound + Ledermann covered-flip refuse (not a flip).
+ include(joinpath(@__DIR__, "test_fa_uniqueness_interior.jl"))
+ 
+@@ -11179,9 +10963,6 @@ end
+ include("test_214_217_dense_cells.jl")
+ include("test_352_multi_effect_se.jl")
+ include("test_multivariate_repeatability.jl")
+-include("test_multivariate_fa_multistart.jl")
+-include("test_fa_weak_direction.jl")
+-include("test_fa_ordinary_start_driver.jl")
+ include("test_365_loglik_convention.jl")
+ include("test_post_fit_uncertainty_reuse.jl")
+ include("test_api_docstrings.jl")
+@@ -11198,102 +10979,3 @@ include(joinpath(@__DIR__, "test_selinv_defaults_350.jl"))
+ # 1 + F: the reliability denominator from the inbreeding coefficients pedigree_inverse
+ # already computes, carried on the spec (Szymek Drobniak, #350 follow-up).
+ include(joinpath(@__DIR__, "test_relationship_diag_1pF.jl"))
+-
+-include(joinpath(@__DIR__, "genetic_gllvm_trait_effects.jl"))
+-
+-include(joinpath(@__DIR__, "fa_independent_dense_reml.jl"))
+-include(joinpath(@__DIR__, "bootstrap_convergence_contract.jl"))
+-include(joinpath(@__DIR__, "wave1_numerical_contracts.jl"))
+-include(joinpath(@__DIR__, "wave1_stationarity_contracts.jl"))
+-include(joinpath(@__DIR__, "wave1_boundary_score_contracts.jl"))
+-include(joinpath(@__DIR__, "wave1_simd_fit_parity.jl"))
+-include(joinpath(@__DIR__, "wave1_workspace_pattern_contracts.jl"))
+-include(joinpath(@__DIR__, "wave2_nongaussian_contracts.jl"))
+-include(joinpath(@__DIR__, "wave2_precision_contracts.jl"))
+-include(joinpath(@__DIR__, "wave3_payload_pedigree_order.jl"))
+-include(joinpath(@__DIR__, "wave4_covariance_contracts.jl"))
+-include(joinpath(@__DIR__, "wave4_planned_term_wording.jl"))
+-include(joinpath(@__DIR__, "test_data_empty_marker_status.jl"))
+-include(joinpath(@__DIR__, "test_data_dict_id_lengths.jl"))
+-include(joinpath(@__DIR__, "test_sparse_reml_finite_variances.jl"))
+-include(joinpath(@__DIR__, "test_evolvability_stability.jl"))
+-include(joinpath(@__DIR__, "test_pedigree_constructor_contract.jl"))
+-include(joinpath(@__DIR__, "test_sparse_aireml_input_contracts.jl"))
+-
+-# Exact-current E1 repairs: keep standalone test scopes independent.
+-module E1GLLVMInputGuards
+-    include(joinpath(@__DIR__, "gllvm_input_guard_regression.jl"))
+-end
+-
+-module E1GLLVMDescriptorRecord
+-    include(joinpath(@__DIR__, "gllvm_descriptor_record_regression.jl"))
+-end
+-
+-module E1RRDescriptors
+-    include(joinpath(@__DIR__, "rr_descriptor_scale_regression.jl"))
+-end
+-
+-module E1DataDictMissingCount
+-    include(joinpath(@__DIR__, "data_dict_missing_count_regression.jl"))
+-end
+-
+-module E1FlatIntegralEndpoints
+-    include(joinpath(@__DIR__, "flat_integral_endpoint_regression.jl"))
+-end
+-
+-module E1NonGaussianFiniteIngress
+-    include(joinpath(@__DIR__, "nongaussian_finite_ingress_regression.jl"))
+-end
+-
+-
+-module E1NonGaussianH2Descriptors
+-    include(joinpath(@__DIR__, "nongaussian_h2_descriptor_regression.jl"))
+-end
+-
+-module E1GenomicContracts
+-    include(joinpath(@__DIR__, "test_genomic_summary_contracts.jl"))
+-    include(joinpath(@__DIR__, "test_genomic_doc_bindings.jl"))
+-    include(joinpath(@__DIR__, "test_genomic_variance_boundary.jl"))
+-end
+-
+-module E1MultivariateContracts
+-    include(joinpath(@__DIR__, "multivariate_contract_regression.jl"))
+-end
+-
+-module E1LikelihoodInput
+-    include(joinpath(@__DIR__, "likelihood_input_guard_regression.jl"))
+-end
+-
+-module E1LikelihoodUncertainty
+-    include(joinpath(@__DIR__, "likelihood_uncertainty_contract_regression.jl"))
+-end
+-
+-module E1LikelihoodProfilePEV
+-    include(joinpath(@__DIR__, "likelihood_profile_pev_contracts.jl"))
+-    include(joinpath(@__DIR__, "likelihood_profile_pev_analytic_controls.jl"))
+-end
+-
+-module E1IterativeFinite
+-    include(joinpath(@__DIR__, "iterative_finite_contracts.jl"))
+-    include(joinpath(@__DIR__, "iterative_summary_controls.jl"))
+-end
+-
+-module E1PedigreeResidual
+-    include(joinpath(@__DIR__, "pedigree_residual_contracts.jl"))
+-end
+-
+-module E1SelinvTraceFinite
+-    using HSquared
+-    include(joinpath(@__DIR__, "selinv_trace_finite_regression.jl"))
+-end
+-
+-module E1EvolvabilityFinite
+-    using HSquared
+-    include(joinpath(@__DIR__, "evolvability_finite_output_regression.jl"))
+-end
+-
+-# Preserve original specification identity while computing validated buffers.
+-include("likelihood_original_spec_regression.jl")
+-
+-# Preserve original specification identity while computing validated buffers.
+-include("likelihood_helper_identity_regression.jl")

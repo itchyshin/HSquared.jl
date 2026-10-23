@@ -1,0 +1,39 @@
+--- a/test/runtests.jl
++++ b/test/runtests.jl
+@@ -2,6 +2,7 @@
+ using LinearAlgebra
+ using SparseArrays
+ using Test
++using REPL  # Julia >= 1.11 loads the Docs.doc rendering API through this stdlib.
+ using TOML
+ using Statistics  # means used by post-fit contract fixtures
+ using Random  # seeded fixtures only (e.g. the repeatability-interval test); deterministic/reproducible
+@@ -11134,7 +11135,7 @@
+         coefcov_message = sprint(showerror, coefcov_error)
+         @test occursin("no coefcov payload fitting route is currently wired", coefcov_message)
+         @test !occursin("multi-block", coefcov_message)
+-        coefcov_doc = string(@doc fit_payload_v2)
++        coefcov_doc = string(Base.Docs.doc(fit_payload_v2))
+         @test occursin("no coefcov payload fitting route is currently wired", coefcov_doc)
+     end
+ end
+--- a/test/test_api_docstrings.jl
++++ b/test/test_api_docstrings.jl
+@@ -15,6 +15,8 @@
+ # Neither instance was a docs edit. Both were ordinary refactors that moved a definition out
+ # from under its docstring, which is why this is asserted as a PROPERTY of `api.md` rather
+ # than pinned symbol by symbol: the next one will be a different name.
++using REPL  # Render documentation through Docs.doc on Julia 1.10 and newer.
++
+ @testset "every api.md @docs entry has a docstring" begin
+     api = joinpath(@__DIR__, "..", "docs", "src", "api.md")
+     @test isfile(api)
+@@ -37,7 +39,7 @@
+ end
+ 
+ @testset "fit_animal_model help describes implemented methods" begin
+-    help = string(@doc HSquared.fit_animal_model)
++    help = string(Base.Docs.doc(HSquared.fit_animal_model))
+     @test occursin("AnimalModelSpec", help)
+     @test occursin("y, X, Z, Ainv", help)
+     @test all(target -> occursin(target, help),

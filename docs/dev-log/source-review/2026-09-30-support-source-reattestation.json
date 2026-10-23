@@ -1,0 +1,91 @@
+{
+  "candidate_head": "9c10f09c1bdc7f7ab19cb07c339d1dc83179f429",
+  "comparison_input": "/Users/z3437171/.codex/worktrees/hsquared-fa-gllvm-foundations/HSquared.jl/docs/dev-log/source-review/2026-09-30-support-baseline-byte-comparison.json",
+  "comparison_input_sha256": "fb0ad0047564f08bfed5f9dc14294ad07bdf409ef4b3b94ca412e15f5a6eb003",
+  "independent_method": "SHA-256 of exact current file bytes plus LF-line counts; no source reread",
+  "files": [
+    {
+      "file": "src/HSquared.jl",
+      "bytes": 6388,
+      "lines": 258,
+      "sha256": "5c6c4c84e372e9adb75dd43d326e7603243286313c788cd3c98a599d1468eaf0",
+      "matches_parent_current_pin": true,
+      "matches_baseline": true
+    },
+    {
+      "file": "src/backends.jl",
+      "bytes": 4641,
+      "lines": 167,
+      "sha256": "b22f118ea8aeba5dceb80918ee40a3f7d698211c69e91ee6c7e6c5b718b10cf9",
+      "matches_parent_current_pin": true,
+      "matches_baseline": true
+    },
+    {
+      "file": "src/control.jl",
+      "bytes": 3214,
+      "lines": 107,
+      "sha256": "c466b4cf9e33fcafe8b4821791af54cc559a2dab78755fa759f387f6601e6b3f",
+      "matches_parent_current_pin": true,
+      "matches_baseline": true
+    },
+    {
+      "file": "src/model_spec.jl",
+      "bytes": 3854,
+      "lines": 104,
+      "sha256": "d49de74e3990e18e73db37bab9b3019f46dcaa29c4f7102fc3f53fe60fa9f5fb",
+      "matches_parent_current_pin": true,
+      "matches_baseline": true
+    },
+    {
+      "file": "src/plotting_ext.jl",
+      "bytes": 4126,
+      "lines": 61,
+      "sha256": "e38c4d436d59bce93315eebc0296e6227fdd71990b25f2b4f608f302c458a569",
+      "matches_parent_current_pin": true,
+      "matches_baseline": true
+    },
+    {
+      "file": "src/postfit.jl",
+      "bytes": 3028,
+      "lines": 58,
+      "sha256": "d065d525ccdca8c8d881432f3c312141929571d52629f38bf72cfc513bdbf71f",
+      "matches_parent_current_pin": true,
+      "matches_baseline": true
+    },
+    {
+      "file": "src/sparse_bridge.jl",
+      "bytes": 2854,
+      "lines": 87,
+      "sha256": "f8a681b7491a002577747775fef26f486d53ab2b4b8def6f6071e7a5eb4c2427",
+      "matches_parent_current_pin": true,
+      "matches_baseline": true
+    },
+    {
+      "file": "src/gpu_ext.jl",
+      "bytes": 5362,
+      "lines": 90,
+      "sha256": "b5bfbe73e12363cb7c9d518841006554c220d93038294a1826faefc1a1b2767f",
+      "matches_parent_current_pin": true,
+      "matches_baseline": false
+    },
+    {
+      "file": "src/errors.jl",
+      "bytes": 616,
+      "lines": 22,
+      "sha256": "6ebb3635c308097213b1581fae26e94089969f34a07cbf5b735a5ee945d44fba",
+      "matches_parent_current_pin": true,
+      "matches_baseline": false
+    },
+    {
+      "file": "src/planned_terms.jl",
+      "bytes": 10854,
+      "lines": 359,
+      "sha256": "a47d953d72565f347db805b5d0c7bdc86d5440dedaa6454c674f6e48c9607d5c",
+      "matches_parent_current_pin": true,
+      "matches_baseline": false
+    }
+  ],
+  "all_ten_match_parent_inventory": true,
+  "unchanged_count": 7,
+  "changed_count": 3
+}

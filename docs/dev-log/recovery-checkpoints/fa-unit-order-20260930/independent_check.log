@@ -1,0 +1,3 @@
+PASS five raw fits and 30 independent fixed-covariance map identities; no refits or RNG
+max_raw_loglik_error=1.3642420526593924e-12 max_raw_beta_norm_error=8.447367374246271e-15 max_raw_ebv_norm_error=5.818681269778951e-14
+max_fixed_metric_G=7.882011293976801e-6 max_fixed_metric_R=7.995605305247666e-6 max_oracle_ll_shift_error=2.0463630789890885e-12

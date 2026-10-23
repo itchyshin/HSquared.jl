@@ -1,0 +1,3 @@
+Julia=1.10.0 JuliaThreads=1 BLASThreads=1
+Test Summary:                                 | Pass  Total  Time
+Gauss independent iterative finite challenges |   34     34  5.4s

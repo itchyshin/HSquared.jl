@@ -1,0 +1,69 @@
+{
+  "mutation_groups": 75,
+  "protected": [
+    {
+      "baseline_span": [
+        667,
+        1161
+      ],
+      "unchanged": true
+    },
+    {
+      "baseline_span": [
+        1437,
+        1440
+      ],
+      "unchanged": true
+    },
+    {
+      "baseline_span": [
+        1561,
+        1645
+      ],
+      "unchanged": true
+    },
+    {
+      "baseline_span": [
+        1686,
+        1720
+      ],
+      "unchanged": true
+    },
+    {
+      "baseline_span": [
+        1993,
+        2357
+      ],
+      "unchanged": true
+    },
+    {
+      "baseline_span": [
+        3169,
+        3268
+      ],
+      "unchanged": true
+    },
+    {
+      "baseline_span": [
+        3386,
+        3427
+      ],
+      "unchanged": true
+    },
+    {
+      "baseline_span": [
+        3446,
+        4183
+      ],
+      "unchanged": true
+    },
+    {
+      "baseline_span": [
+        4350,
+        4613
+      ],
+      "unchanged": true
+    }
+  ],
+  "live_likelihood_sha": "90cc76897c2b977f4bebc456d1e6c8d8f2647a7bb7ec6e8c9135884da0f17e30"
+}

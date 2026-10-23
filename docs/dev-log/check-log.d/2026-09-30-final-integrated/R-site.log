@@ -1,0 +1,351 @@
+hsquared is an experimental 0.9.0 release (not production; CRAN availability is tracked separately). Default fitting needs Julia + HSquared.jl; preview with hs_control(engine = "validate").
+What you may report is listed on Can I fit and report this? -- not in validation_status(). Intervals are not coverage-calibrated.
+See https://itchyshin.github.io/hsquared/articles/current-limits.html
+── Building pkgdown site for package hsquared ──────────────────────────────────
+Reading from:
+/private/tmp/hsq-final-integrated-checks-20260930/r-package-source/hsquared
+Writing to:
+/private/tmp/hsq-final-integrated-checks-20260930/r-package-source/hsquared/pkgdown-site
+── Sitrep ──────────────────────────────────────────────────────────────────────
+✔ URLs ok.
+✔ Favicons ok.
+✔ Open graph metadata ok.
+✔ Articles metadata ok.
+✔ Reference metadata ok.
+── Initialising site ───────────────────────────────────────────────────────────
+── Building home ───────────────────────────────────────────────────────────────
+Reading AGENTS.md
+Writing `AGENTS.html`
+Reading CLAUDE.md
+Writing `CLAUDE.html`
+Reading ROADMAP.md
+Reading README.md
+Writing `index.html`
+Writing `404.html`
+── Building function reference ─────────────────────────────────────────────────
+Reading man/animal.Rd
+Writing `reference/animal.html`
+Reading man/backend_info.Rd
+Writing `reference/backend_info.html`
+Reading man/breeding_values.Rd
+Writing `reference/breeding_values.html`
+Reading man/common_env_effects.Rd
+Writing `reference/common_env_effects.html`
+Reading man/common_env_proportion.Rd
+Writing `reference/common_env_proportion.html`
+Reading man/common_env_proportion_interval.Rd
+Writing `reference/common_env_proportion_interval.html`
+Reading man/covariance_standard_errors.Rd
+Writing `reference/covariance_standard_errors.html`
+Reading man/covariance_structure_lrt.Rd
+Writing `reference/covariance_structure_lrt.html`
+Reading man/data_status.Rd
+Writing `reference/data_status.html`
+Reading man/direct_maternal_extractors.Rd
+Writing `reference/direct_maternal_extractors.html`
+Reading man/factor_g_extractors.Rd
+Writing `reference/factor_g_extractors.html`
+Reading man/fit_diagnostics.Rd
+Writing `reference/fit_diagnostics.html`
+Reading man/fixef.Rd
+Writing `reference/fixef.html`
+Reading man/formula_status.Rd
+Writing `reference/formula_status.html`
+Reading man/g_matrix_geometry.Rd
+Writing `reference/g_matrix_geometry.html`
+Reading man/gamma_matrix.Rd
+Writing `reference/gamma_matrix.html`
+Reading man/genomic_markers.Rd
+Writing `reference/genomic_markers.html`
+Reading man/gwas.Rd
+Writing `reference/gwas.html`
+Reading man/heritability.Rd
+Writing `reference/heritability.html`
+Reading man/heritability_interval.Rd
+Writing `reference/heritability_interval.html`
+Reading man/hs_control.Rd
+Writing `reference/hs_control.html`
+Reading man/hs_data.Rd
+Writing `reference/hs_data.html`
+Reading man/hs_recovery_forest.Rd
+Writing `reference/hs_recovery_forest.html`
+Reading man/hsquared-autoplot.Rd
+Writing `reference/hsquared-autoplot.html`
+Reading man/hsquared-package.Rd
+Writing `reference/hsquared-package.html`
+Reading man/hsquared.Rd
+Reading man/inference_blocks.Rd
+Writing `reference/inference_blocks.html`
+Reading man/marker_extractors.Rd
+Writing `reference/marker_extractors.html`
+Reading man/maternal_effects.Rd
+Writing `reference/maternal_effects.html`
+Reading man/maternal_proportion.Rd
+Writing `reference/maternal_proportion.html`
+Reading man/metafounder_effects.Rd
+Writing `reference/metafounder_effects.html`
+Reading man/metafounder_groups.Rd
+Writing `reference/metafounder_groups.html`
+Reading man/model_spec.Rd
+Writing `reference/model_spec.html`
+Reading man/multivariate_extractors.Rd
+Writing `reference/multivariate_extractors.html`
+Reading man/permanent_effects.Rd
+Writing `reference/permanent_effects.html`
+Reading man/plot.hsquared_fit.Rd
+Writing `reference/plot.hsquared_fit.html`
+Reading man/prediction_error_variance.Rd
+Writing `reference/prediction_error_variance.html`
+Reading man/qg_effect_markers.Rd
+Writing `reference/qg_effect_markers.html`
+Reading man/random_regression_extractors.Rd
+Writing `reference/random_regression_extractors.html`
+Reading man/ranef.Rd
+Writing `reference/ranef.html`
+Reading man/reexports.Rd
+Writing `reference/reexports.html`
+Reading man/reliability.Rd
+Writing `reference/reliability.html`
+Reading man/repeatability.Rd
+Writing `reference/repeatability.html`
+Reading man/repeatability_interval.Rd
+Writing `reference/repeatability_interval.html`
+Reading man/response_scale_methods.Rd
+Writing `reference/response_scale_methods.html`
+Reading man/theme_hsquared.Rd
+Writing `reference/theme_hsquared.html`
+Reading man/validation_status.Rd
+Writing `reference/validation_status.html`
+Reading man/variance_component_standard_errors.Rd
+Writing `reference/variance_component_standard_errors.html`
+Reading man/variance_components.Rd
+Writing `reference/variance_components.html`
+── Building articles ───────────────────────────────────────────────────────────
+Writing `articles/index.html`
+Reading vignettes/articles/benchmark-comparators.Rmd
+Writing `articles/benchmark-comparators.html`
+Reading vignettes/articles/current-limits.Rmd
+Reading vignettes/articles/fitting-models.Rmd
+Writing `articles/fitting-models.html`
+Reading vignettes/articles/formula-grammar.Rmd
+Writing `articles/formula-grammar.html`
+Reading vignettes/articles/function-map-cheatsheet.Rmd
+Writing `articles/function-map-cheatsheet.html`
+Reading vignettes/articles/g-matrix-interpretation.Rmd
+Writing `articles/g-matrix-interpretation.html`
+Reading vignettes/articles/genetic-gllvm.Rmd
+Writing `articles/genetic-gllvm.html`
+Reading vignettes/articles/genomic-prediction.Rmd
+Writing `articles/genomic-prediction.html`
+Reading vignettes/articles/genomics-gpu-roadmap.Rmd
+Writing `articles/genomics-gpu-roadmap.html`
+Reading vignettes/articles/gryphon-worked-example.Rmd
+Writing `articles/gryphon-worked-example.html`
+Reading vignettes/hsquared.Rmd
+Writing `articles/hsquared.html`
+Reading vignettes/articles/inheritance-systems.Rmd
+Writing `articles/inheritance-systems.html`
+Reading vignettes/articles/model-status.Rmd
+Writing `articles/model-status.html`
+Reading vignettes/articles/multi-effect-comparator.Rmd
+Writing `articles/multi-effect-comparator.html`
+Reading vignettes/articles/multivariate.Rmd
+Reading vignettes/articles/progression-evidence.Rmd
+Writing `articles/progression-evidence.html`
+Reading vignettes/articles/qtl-gwas-eqtl-status.Rmd
+Writing `articles/qtl-gwas-eqtl-status.html`
+Reading vignettes/articles/rr-comparator.Rmd
+Writing `articles/rr-comparator.html`
+Reading vignettes/articles/twin-boundary.Rmd
+Writing `articles/twin-boundary.html`
+Reading vignettes/articles/two-effect-comparator.Rmd
+Writing `articles/two-effect-comparator.html`
+Reading vignettes/articles/validation-evidence.Rmd
+Writing `articles/validation-evidence.html`
+Reading vignettes/articles/visualizing-models.Rmd
+Writing `articles/visualizing-models.html`
+── Building news ───────────────────────────────────────────────────────────────
+Writing `news/index.html`
+── Building sitemap ────────────────────────────────────────────────────────────
+Writing `sitemap.xml`
+── Building docs for llms ──────────────────────────────────────────────────────
+── Building redirects ──────────────────────────────────────────────────────────
+Adding redirect from reference/accuracy.html to reference/reliability.html.
+Adding redirect from reference/anova.hsquared_fit.html to
+reference/inference_blocks.html.
+Adding redirect from reference/autonomy.html to
+reference/g_matrix_geometry.html.
+Adding redirect from reference/autoplot.html to reference/reexports.html.
+Adding redirect from reference/autoplot.hs_gwas.html to
+reference/hsquared-autoplot.html.
+Adding redirect from reference/autoplot.hsquared_fit.html to
+reference/hsquared-autoplot.html.
+Adding redirect from reference/BLUP.html to reference/breeding_values.html.
+Adding redirect from reference/common_env.html to
+reference/qg_effect_markers.html.
+Adding redirect from reference/conditional_evolvability.html to
+reference/g_matrix_geometry.html.
+Adding redirect from reference/confint.hsquared_fit.html to
+reference/inference_blocks.html.
+Adding redirect from reference/cytoplasmic.html to
+reference/qg_effect_markers.html.
+Adding redirect from reference/direct_heritability.html to
+reference/direct_maternal_extractors.html.
+Adding redirect from reference/direct_maternal_covariance.html to
+reference/direct_maternal_extractors.html.
+Adding redirect from reference/direct_variance.html to
+reference/direct_maternal_extractors.html.
+Adding redirect from reference/dominance.html to
+reference/qg_effect_markers.html.
+Adding redirect from reference/EBV.html to reference/breeding_values.html.
+Adding redirect from reference/eigen_G.html to
+reference/g_matrix_geometry.html.
+Adding redirect from reference/epistasis.html to
+reference/qg_effect_markers.html.
+Adding redirect from reference/eqtl_table.html to
+reference/marker_extractors.html.
+Adding redirect from reference/evolvability.html to
+reference/g_matrix_geometry.html.
+Adding redirect from reference/fitted.hsquared_fit.html to
+reference/response_scale_methods.html.
+Adding redirect from reference/G_matrix.html to
+reference/multivariate_extractors.html.
+Adding redirect from reference/g_max.html to reference/g_matrix_geometry.html.
+Adding redirect from reference/genetic_correlation.html to
+reference/multivariate_extractors.html.
+Adding redirect from reference/genetic_covariance.html to
+reference/multivariate_extractors.html.
+Adding redirect from reference/genetic_loadings.html to
+reference/factor_g_extractors.html.
+Adding redirect from reference/genomic.html to reference/genomic_markers.html.
+Adding redirect from reference/group.html to reference/qg_effect_markers.html.
+Adding redirect from reference/gwas_table.html to
+reference/marker_extractors.html.
+Adding redirect from reference/heritability_standard_error.html to
+reference/variance_component_standard_errors.html.
+Adding redirect from reference/imprinting.html to
+reference/qg_effect_markers.html.
+Adding redirect from reference/inbreeding.html to
+reference/qg_effect_markers.html.
+Adding redirect from reference/latent_breeding_values.html to
+reference/factor_g_extractors.html.
+Adding redirect from reference/lod_scores.html to
+reference/marker_extractors.html.
+Adding redirect from reference/marker_effects.html to
+reference/marker_extractors.html.
+Adding redirect from reference/marker_scan.html to
+reference/genomic_markers.html.
+Adding redirect from reference/marker_variance_explained.html to
+reference/marker_extractors.html.
+Adding redirect from reference/markers.html to reference/genomic_markers.html.
+Adding redirect from reference/maternal_env.html to
+reference/qg_effect_markers.html.
+Adding redirect from reference/maternal_genetic.html to
+reference/qg_effect_markers.html.
+Adding redirect from reference/maternal_proportion_interval.html to
+reference/common_env_proportion_interval.html.
+Adding redirect from reference/mean_evolvability.html to
+reference/g_matrix_geometry.html.
+Adding redirect from reference/metafounder.html to
+reference/qg_effect_markers.html.
+Adding redirect from reference/partner_variance.html to
+reference/direct_maternal_extractors.html.
+Adding redirect from reference/paternal_env.html to
+reference/qg_effect_markers.html.
+Adding redirect from reference/paternal_genetic.html to
+reference/qg_effect_markers.html.
+Adding redirect from reference/permanent.html to
+reference/qg_effect_markers.html.
+Adding redirect from reference/precision.html to
+reference/qg_effect_markers.html.
+Adding redirect from reference/predict.hsquared_fit.html to
+reference/response_scale_methods.html.
+Adding redirect from reference/profile.hsquared_fit.html to
+reference/inference_blocks.html.
+Adding redirect from reference/qtl_scan.html to reference/genomic_markers.html.
+Adding redirect from reference/qtl_table.html to
+reference/marker_extractors.html.
+Adding redirect from reference/R_matrix.html to
+reference/multivariate_extractors.html.
+Adding redirect from reference/random_coefficients.html to
+reference/random_regression_extractors.html.
+Adding redirect from reference/relmat.html to reference/qg_effect_markers.html.
+Adding redirect from reference/residual_correlation.html to
+reference/multivariate_extractors.html.
+Adding redirect from reference/residual_covariance.html to
+reference/multivariate_extractors.html.
+Adding redirect from reference/residuals.hsquared_fit.html to
+reference/response_scale_methods.html.
+Adding redirect from reference/respondability.html to
+reference/g_matrix_geometry.html.
+Adding redirect from reference/rr_correlation.html to
+reference/random_regression_extractors.html.
+Adding redirect from reference/rr_covariance.html to
+reference/random_regression_extractors.html.
+Adding redirect from reference/rr_eigenfunctions.html to
+reference/random_regression_extractors.html.
+Adding redirect from reference/rr_genetic_variance.html to
+reference/random_regression_extractors.html.
+Adding redirect from reference/rr_heritability.html to
+reference/random_regression_extractors.html.
+Adding redirect from reference/single_step.html to
+reference/genomic_markers.html.
+Adding redirect from reference/specific_variance.html to
+reference/factor_g_extractors.html.
+Adding redirect from reference/total_heritability.html to
+reference/direct_maternal_extractors.html.
+Adding redirect from reference/unknown_parent_group.html to
+reference/qg_effect_markers.html.
+Adding redirect from reference/variance_along_gradient.html to
+reference/g_matrix_geometry.html.
+Adding redirect from reference/vcov.hsquared_fit.html to
+reference/inference_blocks.html.
+Adding redirect from articles/articles/benchmark-comparators.html to
+articles/benchmark-comparators.html.
+Adding redirect from articles/articles/current-limits.html to
+articles/current-limits.html.
+Adding redirect from articles/articles/fitting-models.html to
+articles/fitting-models.html.
+Adding redirect from articles/articles/formula-grammar.html to
+articles/formula-grammar.html.
+Adding redirect from articles/articles/function-map-cheatsheet.html to
+articles/function-map-cheatsheet.html.
+Adding redirect from articles/articles/g-matrix-interpretation.html to
+articles/g-matrix-interpretation.html.
+Adding redirect from articles/articles/genetic-gllvm.html to
+articles/genetic-gllvm.html.
+Adding redirect from articles/articles/genomic-prediction.html to
+articles/genomic-prediction.html.
+Adding redirect from articles/articles/genomics-gpu-roadmap.html to
+articles/genomics-gpu-roadmap.html.
+Adding redirect from articles/articles/gryphon-worked-example.html to
+articles/gryphon-worked-example.html.
+Adding redirect from articles/articles/inheritance-systems.html to
+articles/inheritance-systems.html.
+Adding redirect from articles/articles/model-status.html to
+articles/model-status.html.
+Adding redirect from articles/articles/multi-effect-comparator.html to
+articles/multi-effect-comparator.html.
+Adding redirect from articles/articles/multivariate.html to
+articles/multivariate.html.
+Adding redirect from articles/articles/progression-evidence.html to
+articles/progression-evidence.html.
+Adding redirect from articles/articles/qtl-gwas-eqtl-status.html to
+articles/qtl-gwas-eqtl-status.html.
+Adding redirect from articles/articles/rr-comparator.html to
+articles/rr-comparator.html.
+Adding redirect from articles/articles/twin-boundary.html to
+articles/twin-boundary.html.
+Adding redirect from articles/articles/two-effect-comparator.html to
+articles/two-effect-comparator.html.
+Adding redirect from articles/articles/validation-evidence.html to
+articles/validation-evidence.html.
+Adding redirect from articles/articles/visualizing-models.html to
+articles/visualizing-models.html.
+Adding redirect from articles/can-i-fit-and-report-this.html to
+articles/current-limits.html.
+Adding redirect from articles/progression-and-evidence.html to
+articles/progression-evidence.html.
+── Building search index ───────────────────────────────────────────────────────
+── Checking for problems ───────────────────────────────────────────────────────
+── Finished building pkgdown site for package hsquared ─────────────────────────

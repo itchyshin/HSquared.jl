@@ -1,0 +1,1293 @@
+[
+  {
+    "start": 1,
+    "end": 1,
+    "component": "input",
+    "kind": "insert",
+    "new": [
+      "\n",
+      "# Likelihood ingress shares the sparse QR and precision contracts with the\n",
+      "# iterative engine. Validation happens once before optimization, including p=0.\n",
+      "function _likelihood_check_finite(name::AbstractString, value)\n",
+      "    finite = value isa Number ? isfinite(value) :\n",
+      "             all(isfinite, issparse(value) ? nonzeros(value) : value)\n",
+      "    finite || throw(ArgumentError(\"likelihood numerical range: $name must be finite\"))\n",
+      "    return value\n",
+      "end\n",
+      "\n",
+      "function _likelihood_positive(name::AbstractString, value::Real; precision::Bool = false)\n",
+      "    (isfinite(value) && value > 0) ||\n",
+      "        throw(ArgumentError(\"$name must be finite and positive\"))\n",
+      "    return precision ? _finite_positive_variance_float64(name, value) :\n",
+      "                       _finite_positive_float64(name, value)\n",
+      "end\n",
+      "\n",
+      "function _likelihood_design(y::AbstractVector, X::AbstractMatrix; method::Symbol = :REML)\n",
+      "    method in (:ML, :REML) || throw(ArgumentError(\"method must be :ML or :REML\"))\n",
+      "    n = length(y)\n",
+      "    n > 0 || throw(ArgumentError(\"at least one response record is required\"))\n",
+      "    size(X, 1) == n || throw(ArgumentError(\"X must have one row per response value\"))\n",
+      "    yv = _likelihood_check_finite(\"converted y\", Float64.(y))\n",
+      "    Xs = _likelihood_check_finite(\"converted X\", sparse(Float64.(X)))\n",
+      "    method == :REML && size(Xs, 2) >= n &&\n",
+      "        throw(ArgumentError(\"REML requires fewer fixed-effect columns than observations\"))\n",
+      "    _require_full_fixed_effect_rank(Xs)\n",
+      "    return yv, Xs\n",
+      "end\n",
+      "\n",
+      "function _likelihood_random_inputs(Z::AbstractMatrix, Q::AbstractMatrix, n::Integer, i::Int)\n",
+      "    size(Z, 1) == n || throw(ArgumentError(\"Z[$i] must have one row per record\"))\n",
+      "    size(Q, 1) == size(Q, 2) || throw(ArgumentError(\"Ainv[$i] must be square\"))\n",
+      "    size(Z, 2) == size(Q, 1) || throw(ArgumentError(\"Z[$i] columns must match Ainv[$i] dimensions\"))\n",
+      "    Zs = _likelihood_check_finite(\"converted Z[$i]\", sparse(Float64.(Z)))\n",
+      "    Qs, factor = _validate_matrix_free_precision(sparse(Float64.(Q)), i)\n",
+      "    return Zs, Qs, factor\n",
+      "end\n",
+      "\n",
+      "function _likelihood_effect_ids(ids, q::Integer, name::AbstractString)\n",
+      "    values = ids === nothing ? collect(1:q) : collect(ids)\n",
+      "    length(values) == q || throw(ArgumentError(\"$name length must match relationship dimensions\"))\n",
+      "    length(unique(values)) == q || throw(ArgumentError(\"$name must contain unique IDs\"))\n",
+      "    return values\n",
+      "end\n",
+      "\n",
+      "function _likelihood_block_ids(ids, qs)\n",
+      "    ids === nothing || length(ids) == length(qs) ||\n",
+      "        throw(ArgumentError(\"ids must contain one ID vector per random effect\"))\n",
+      "    return [_likelihood_effect_ids(ids === nothing ? nothing : ids[i], qs[i], \"ids[$i]\")\n",
+      "            for i in eachindex(qs)]\n",
+      "end\n",
+      "\n",
+      "function _likelihood_validated_spec(spec::AnimalModelSpec; method = spec.method, supplied::Bool = false)\n",
+      "    spec.family isa GaussianFamily || throw(ArgumentError(\"family must be GaussianFamily()\"))\n",
+      "    normalized_method = _coerce_method(method)\n",
+      "    normalized_method in (:ML, :REML) || throw(ArgumentError(\"method must be :ML or :REML\"))\n",
+      "    yv, Xs = _likelihood_design(spec.y, spec.X; method = supplied ? :ML : normalized_method)\n",
+      "    Zs, Q, factor = _likelihood_random_inputs(spec.Z, spec.Ainv, length(yv), 1)\n",
+      "    ids = _likelihood_effect_ids(spec.ids, size(Q, 1), \"ids\")\n",
+      "    rdiag = Q == sparse(Float64.(spec.Ainv)) ? spec.relationship_diag : nothing\n",
+      "    validated = animal_model_spec(yv, Xs, Zs, Q; ids = ids, family = spec.family,\n",
+      "                                  method = normalized_method, relationship_diag = rdiag)\n",
+      "    return validated, factor\n",
+      "end\n",
+      "\n",
+      "function _likelihood_result_finite(loglik, beta, effects...)\n",
+      "    _likelihood_check_finite(\"log-likelihood\", loglik)\n",
+      "    _likelihood_check_finite(\"fixed effects\", beta)\n",
+      "    for effect in effects\n",
+      "        _likelihood_check_finite(\"random effects\", effect)\n",
+      "    end\n",
+      "    return nothing\n",
+      "end\n",
+      "\n",
+      "# Only expected numerical range/factorization failures become rejected proposals.\n",
+      "_likelihood_proposal_failure(err) = err isa PosDefException || err isa SingularException ||\n",
+      "    err isa LinearAlgebra.LAPACKException || err isa LinearAlgebra.ZeroPivotException ||\n",
+      "    (err isa ArgumentError && startswith(err.msg, \"likelihood numerical range:\"))\n"
+    ]
+  },
+  {
+    "start": 112,
+    "end": 116,
+    "component": "input",
+    "kind": "replace",
+    "new": [
+      "    sigma_a2 = _likelihood_positive(\"sigma_a2\", sigma_a2)\n",
+      "    sigma_e2 = _likelihood_positive(\"sigma_e2\", sigma_e2)\n"
+    ]
+  },
+  {
+    "start": 120,
+    "end": 120,
+    "component": "input",
+    "kind": "insert",
+    "new": [
+      "    spec, _ = _likelihood_validated_spec(spec; method = normalized_method)\n"
+    ]
+  },
+  {
+    "start": 127,
+    "end": 137,
+    "component": "input",
+    "kind": "replace",
+    "new": [
+      "    canonical, _ = _validate_matrix_free_precision(sparse(Float64.(Ainv_input)), 1)\n",
+      "    A = inv(Symmetric(Matrix{Float64}(canonical)))\n",
+      "    return _likelihood_check_finite(\"relationship covariance\", A)\n"
+    ]
+  },
+  {
+    "start": 146,
+    "end": 148,
+    "component": "input",
+    "kind": "replace",
+    "new": [
+      "    sigma_a2 = _likelihood_positive(\"sigma_a2\", sigma_a2)\n",
+      "    sigma_e2 = _likelihood_positive(\"sigma_e2\", sigma_e2)\n"
+    ]
+  },
+  {
+    "start": 159,
+    "end": 159,
+    "component": "input",
+    "kind": "insert",
+    "new": [
+      "    _likelihood_check_finite(\"marginal covariance\", V)\n"
+    ]
+  },
+  {
+    "start": 178,
+    "end": 178,
+    "component": "input",
+    "kind": "insert",
+    "new": [
+      "    _likelihood_result_finite(loglik, beta)\n"
+    ]
+  },
+  {
+    "start": 199,
+    "end": 201,
+    "component": "input",
+    "kind": "replace",
+    "new": [
+      "    sigma_a2 = _likelihood_positive(\"sigma_a2\", sigma_a2; precision = true)\n",
+      "    sigma_e2 = _likelihood_positive(\"sigma_e2\", sigma_e2; precision = true)\n"
+    ]
+  },
+  {
+    "start": 214,
+    "end": 225,
+    "component": "input",
+    "kind": "replace",
+    "new": [
+      "    return _likelihood_validated_spec(spec)\n"
+    ]
+  },
+  {
+    "start": 259,
+    "end": 259,
+    "component": "input",
+    "kind": "insert",
+    "new": [
+      "    _likelihood_result_finite(loglik, beta, u)\n"
+    ]
+  },
+  {
+    "start": 294,
+    "end": 298,
+    "component": "input",
+    "kind": "replace",
+    "new": [
+      "    iterations >= 1 || throw(ArgumentError(\"iterations must be at least 1\"))\n"
+    ]
+  },
+  {
+    "start": 302,
+    "end": 302,
+    "component": "input",
+    "kind": "insert",
+    "new": [
+      "    spec, _ = _likelihood_validated_spec(spec; method = normalized_method)\n"
+    ]
+  },
+  {
+    "start": 304,
+    "end": 311,
+    "component": "input",
+    "kind": "replace",
+    "new": [
+      "    function objective(logtheta)\n",
+      "        variances = _try_positive_exp(logtheta)\n",
+      "        variances === nothing && return Inf\n",
+      "        try\n",
+      "            value = -_gaussian_loglik_with_covariance(spec, variances..., A, normalized_method).loglik\n",
+      "            return isfinite(value) ? value : Inf\n",
+      "        catch err\n",
+      "            _likelihood_proposal_failure(err) || rethrow()\n",
+      "            return Inf\n",
+      "        end\n",
+      "    end\n"
+    ]
+  },
+  {
+    "start": 319,
+    "end": 320,
+    "component": "input",
+    "kind": "replace",
+    "new": [
+      "    isfinite(Optim.minimum(result)) || throw(ArgumentError(\"dense optimizer did not find a finite objective\"))\n",
+      "    variances = _try_positive_exp(Optim.minimizer(result))\n",
+      "    variances === nothing && throw(ArgumentError(\"dense optimizer did not return finite positive variances\"))\n",
+      "    sigma_a2, sigma_e2 = variances\n"
+    ]
+  },
+  {
+    "start": 351,
+    "end": 351,
+    "component": "input",
+    "kind": "insert",
+    "new": [
+      "\n",
+      "`converged` is the optimizer stopping flag for a finite returned result. It does\n",
+      "not certify score stationarity or a closed-boundary optimum. Exact zero\n",
+      "components are unavailable in this positive log-variance parameterization;\n",
+      "nonfinite proposals are rejected and nonfinite final results raise an error.\n"
+    ]
+  },
+  {
+    "start": 371,
+    "end": 372,
+    "component": "input",
+    "kind": "replace",
+    "new": [
+      "        _finite_positive_variance_update((sigma_a2,), sigma_e2) ||\n"
+    ]
+  },
+  {
+    "start": 374,
+    "end": 375,
+    "component": "input",
+    "kind": "replace",
+    "new": [
+      "            value = -_sparse_reml_loglik(\n"
+    ]
+  },
+  {
+    "start": 381,
+    "end": 381,
+    "component": "input",
+    "kind": "insert",
+    "new": [
+      "            return isfinite(value) ? value : Inf\n"
+    ]
+  },
+  {
+    "start": 382,
+    "end": 383,
+    "component": "input",
+    "kind": "replace",
+    "new": [
+      "            _likelihood_proposal_failure(err) && return Inf\n"
+    ]
+  },
+  {
+    "start": 394,
+    "end": 395,
+    "component": "input",
+    "kind": "replace",
+    "new": [
+      "    isfinite(Optim.minimum(result)) || throw(ArgumentError(\"sparse optimizer did not find a finite objective\"))\n",
+      "    variances = _try_positive_exp(Optim.minimizer(result))\n",
+      "    variances === nothing && throw(ArgumentError(\"sparse optimizer did not return finite positive variances\"))\n",
+      "    sigma_a2, sigma_e2 = variances\n",
+      "    _finite_positive_variance_update((sigma_a2,), sigma_e2) ||\n",
+      "        throw(ArgumentError(\"sparse optimizer returned variances outside the finite precision range\"))\n"
+    ]
+  },
+  {
+    "start": 622,
+    "end": 624,
+    "component": "input",
+    "kind": "replace",
+    "new": [
+      "        if !_finite_positive_variance_update((a_new,), e_new)\n",
+      "            termination_reason = (a_new <= 0 || e_new <= 0) ?\n",
+      "                                 \"step_halving_exhausted\" : \"nonrepresentable_variance_update\"\n"
+    ]
+  },
+  {
+    "start": 1174,
+    "end": 1178,
+    "component": "input",
+    "kind": "replace",
+    "new": [
+      "    sigma_a2 = _likelihood_positive(\"sigma_a2\", sigma_a2; precision = true)\n",
+      "    sigma_e2 = _likelihood_positive(\"sigma_e2\", sigma_e2; precision = true)\n",
+      "    spec, _ = _likelihood_validated_spec(spec; supplied = true)\n"
+    ]
+  },
+  {
+    "start": 1182,
+    "end": 1182,
+    "component": "input",
+    "kind": "insert",
+    "new": [
+      "    _likelihood_check_finite(\"MME solution\", solution)\n"
+    ]
+  },
+  {
+    "start": 1258,
+    "end": 1261,
+    "component": "input",
+    "kind": "replace",
+    "new": [
+      "    sigma1 = _likelihood_positive(\"sigma1\", sigma1; precision = true)\n",
+      "    sigma2 = _likelihood_positive(\"sigma2\", sigma2; precision = true)\n",
+      "    sigma_e2 = _likelihood_positive(\"sigma_e2\", sigma_e2; precision = true)\n"
+    ]
+  },
+  {
+    "start": 1276,
+    "end": 1282,
+    "component": "input",
+    "kind": "replace",
+    "new": [
+      "    yv, Xs = _likelihood_design(y, X; method = :ML)\n",
+      "    Z1s, A1, _ = _likelihood_random_inputs(Z1, Ainv1, n, 1)\n",
+      "    Z2s, A2, _ = _likelihood_random_inputs(Z2, Ainv2, n, 2)\n",
+      "    e1ids = _likelihood_effect_ids(e1ids, n1, \"ids1\")\n",
+      "    e2ids = _likelihood_effect_ids(e2ids, n2, \"ids2\")\n"
+    ]
+  },
+  {
+    "start": 1293,
+    "end": 1293,
+    "component": "input",
+    "kind": "insert",
+    "new": [
+      "    _likelihood_check_finite(\"MME coefficient matrix\", lhs)\n",
+      "    _likelihood_check_finite(\"MME right-hand side\", rhs)\n"
+    ]
+  },
+  {
+    "start": 1294,
+    "end": 1294,
+    "component": "input",
+    "kind": "insert",
+    "new": [
+      "    _likelihood_check_finite(\"MME solution\", solution)\n"
+    ]
+  },
+  {
+    "start": 1448,
+    "end": 1448,
+    "component": "input",
+    "kind": "insert",
+    "new": [
+      "    _likelihood_check_finite(\"marginal covariance\", V)\n"
+    ]
+  },
+  {
+    "start": 1457,
+    "end": 1457,
+    "component": "input",
+    "kind": "insert",
+    "new": [
+      "    _likelihood_result_finite(loglik, beta, u1, u2)\n"
+    ]
+  },
+  {
+    "start": 1492,
+    "end": 1494,
+    "component": "input",
+    "kind": "replace",
+    "new": [
+      "    starts = [_likelihood_positive(\"initial sigma1\", initial.sigma1), _likelihood_positive(\"initial sigma2\", initial.sigma2), _likelihood_positive(\"initial sigma_e2\", initial.sigma_e2)]\n",
+      "    iterations >= 1 || throw(ArgumentError(\"iterations must be at least 1\"))\n"
+    ]
+  },
+  {
+    "start": 1509,
+    "end": 1515,
+    "component": "input",
+    "kind": "replace",
+    "new": [
+      "    yv, Xs = _likelihood_design(y, X)\n",
+      "    Z1s, Q1, _ = _likelihood_random_inputs(Z1, Ainv1, n, 1)\n",
+      "    Z2s, Q2, _ = _likelihood_random_inputs(Z2, Ainv2, n, 2)\n",
+      "    A1 = _dense_relationship_covariance(Q1)\n",
+      "    A2 = _dense_relationship_covariance(Q2)\n",
+      "    Xd = Matrix{Float64}(Xs)\n",
+      "    Z1d = Matrix{Float64}(Z1s)\n",
+      "    Z2d = Matrix{Float64}(Z2s)\n",
+      "    e1ids = _likelihood_effect_ids(e1ids, n1, \"ids1\")\n",
+      "    e2ids = _likelihood_effect_ids(e2ids, n2, \"ids2\")\n"
+    ]
+  },
+  {
+    "start": 1522,
+    "end": 1523,
+    "component": "input",
+    "kind": "replace",
+    "new": [
+      "            _likelihood_proposal_failure(err) && return Inf\n"
+    ]
+  },
+  {
+    "start": 1526,
+    "end": 1527,
+    "component": "input",
+    "kind": "replace",
+    "new": [
+      "    p0 = log.(starts)\n"
+    ]
+  },
+  {
+    "start": 1756,
+    "end": 1758,
+    "component": "input",
+    "kind": "replace",
+    "new": [
+      "    sigmas = [_likelihood_positive(\"sigma[$i]\", s; precision = true) for (i, s) in enumerate(sigmas)]\n",
+      "    sigma_e2 = _likelihood_positive(\"sigma_e2\", sigma_e2; precision = true)\n"
+    ]
+  },
+  {
+    "start": 1769,
+    "end": 1771,
+    "component": "input",
+    "kind": "replace",
+    "new": [
+      "        Zif, Qif, _ = _likelihood_random_inputs(Zi, Ainvi, n, i)\n",
+      "        push!(Zs, Zif)\n",
+      "        push!(Ainvs, Qif)\n"
+    ]
+  },
+  {
+    "start": 1782,
+    "end": 1784,
+    "component": "input",
+    "kind": "replace",
+    "new": [
+      "    yv, Xs = _likelihood_design(y, X; method = :ML)\n",
+      "    eids = _likelihood_block_ids(eids, qs)\n"
+    ]
+  },
+  {
+    "start": 1795,
+    "end": 1795,
+    "component": "input",
+    "kind": "insert",
+    "new": [
+      "    _likelihood_check_finite(\"MME coefficient matrix\", lhs)\n",
+      "    _likelihood_check_finite(\"MME right-hand side\", rhs)\n"
+    ]
+  },
+  {
+    "start": 1796,
+    "end": 1796,
+    "component": "input",
+    "kind": "insert",
+    "new": [
+      "    _likelihood_check_finite(\"MME solution\", solution)\n"
+    ]
+  },
+  {
+    "start": 1825,
+    "end": 1825,
+    "component": "input",
+    "kind": "insert",
+    "new": [
+      "    _likelihood_check_finite(\"marginal covariance\", V)\n"
+    ]
+  },
+  {
+    "start": 1833,
+    "end": 1833,
+    "component": "input",
+    "kind": "insert",
+    "new": [
+      "    _likelihood_result_finite(loglik, beta, us...)\n"
+    ]
+  },
+  {
+    "start": 1879,
+    "end": 1879,
+    "component": "input",
+    "kind": "insert",
+    "new": [
+      "    iterations >= 1 || throw(ArgumentError(\"iterations must be at least 1\"))\n"
+    ]
+  },
+  {
+    "start": 1893,
+    "end": 1895,
+    "component": "input",
+    "kind": "replace",
+    "new": [
+      "        Zif, Qif, _ = _likelihood_random_inputs(Zi, Ainvi, n, i)\n",
+      "        push!(As, _dense_relationship_covariance(Qif))\n",
+      "        push!(Zds, Matrix{Float64}(Zif))\n"
+    ]
+  },
+  {
+    "start": 1897,
+    "end": 1897,
+    "component": "input",
+    "kind": "insert",
+    "new": [
+      "    eids = _likelihood_block_ids(ids, qs)\n"
+    ]
+  },
+  {
+    "start": 1903,
+    "end": 1904,
+    "component": "input",
+    "kind": "replace",
+    "new": [
+      "        p0 = log.([_likelihood_positive(\"initial variance component $i\", s) for (i, s) in enumerate(initial)])\n"
+    ]
+  },
+  {
+    "start": 1905,
+    "end": 1907,
+    "component": "input",
+    "kind": "replace",
+    "new": [
+      "    yv, Xs = _likelihood_design(y, X)\n",
+      "    Xd = Matrix{Float64}(Xs)\n"
+    ]
+  },
+  {
+    "start": 1915,
+    "end": 1916,
+    "component": "input",
+    "kind": "replace",
+    "new": [
+      "            _likelihood_proposal_failure(err) && return Inf\n"
+    ]
+  },
+  {
+    "start": 1928,
+    "end": 1929,
+    "component": "input",
+    "kind": "delete",
+    "new": []
+  },
+  {
+    "start": 2475,
+    "end": 2475,
+    "component": "input",
+    "kind": "insert",
+    "new": [
+      "    _likelihood_check_finite(\"MME coefficient matrix\", ws.lhs)\n",
+      "    _likelihood_check_finite(\"MME right-hand side\", ws.rhs)\n"
+    ]
+  },
+  {
+    "start": 2507,
+    "end": 2512,
+    "component": "input",
+    "kind": "replace",
+    "new": [
+      "    yv, Xs = _likelihood_design(y, X)\n"
+    ]
+  },
+  {
+    "start": 2595,
+    "end": 2599,
+    "component": "input",
+    "kind": "replace",
+    "new": [
+      "    ss = [_likelihood_positive(\"sigma[$i]\", s; precision = true) for (i, s) in enumerate(sigmas)]\n",
+      "    se2 = _likelihood_positive(\"sigma_e2\", sigma_e2; precision = true)\n"
+    ]
+  },
+  {
+    "start": 2602,
+    "end": 2602,
+    "component": "input",
+    "kind": "insert",
+    "new": [
+      "    _likelihood_check_finite(\"MME coefficient matrix\", lhs)\n",
+      "    _likelihood_check_finite(\"MME right-hand side\", rhs)\n"
+    ]
+  },
+  {
+    "start": 2628,
+    "end": 2628,
+    "component": "input",
+    "kind": "insert",
+    "new": [
+      "    _likelihood_result_finite(loglik, beta, us...)\n"
+    ]
+  },
+  {
+    "start": 2664,
+    "end": 2666,
+    "component": "input",
+    "kind": "replace",
+    "new": [
+      "    sigmas = [_likelihood_positive(\"sigma[$i]\", value; precision = true) for (i, value) in enumerate(sigmas)]\n",
+      "    sigma_e2 = _likelihood_positive(\"sigma_e2\", sigma_e2; precision = true)\n"
+    ]
+  },
+  {
+    "start": 2798,
+    "end": 2798,
+    "component": "input",
+    "kind": "insert",
+    "new": [
+      "    eids = _likelihood_block_ids(eids, qs)\n"
+    ]
+  },
+  {
+    "start": 3005,
+    "end": 3005,
+    "component": "input",
+    "kind": "insert",
+    "new": [
+      "    _likelihood_check_finite(\"marginal covariance\", V)\n"
+    ]
+  },
+  {
+    "start": 3013,
+    "end": 3013,
+    "component": "input",
+    "kind": "insert",
+    "new": [
+      "    _likelihood_result_finite(loglik, beta, u)\n"
+    ]
+  },
+  {
+    "start": 3061,
+    "end": 3061,
+    "component": "input",
+    "kind": "insert",
+    "new": [
+      "    initial === nothing || hasproperty(initial, :G_dm) || hasproperty(initial, :sigma_e2) ||\n",
+      "        throw(ArgumentError(\"initial must supply G_dm or sigma_e2\"))\n",
+      "    iterations >= 1 || throw(ArgumentError(\"iterations must be at least 1\"))\n"
+    ]
+  },
+  {
+    "start": 3072,
+    "end": 3077,
+    "component": "input",
+    "kind": "replace",
+    "new": [
+      "    yv, Xs = _likelihood_design(y, X)\n",
+      "    Zds, Q, _ = _likelihood_random_inputs(Zd, Ainv, n, 1)\n",
+      "    Zms, _, _ = _likelihood_random_inputs(Zm, Q, n, 2)\n",
+      "    aids = _likelihood_effect_ids(ids, q, \"ids\")\n",
+      "    A = _dense_relationship_covariance(Q)\n",
+      "    Xd = Matrix{Float64}(Xs)\n",
+      "    Zdd = Matrix{Float64}(Zds)\n",
+      "    Zmd = Matrix{Float64}(Zms)\n"
+    ]
+  },
+  {
+    "start": 3083,
+    "end": 3084,
+    "component": "input",
+    "kind": "replace",
+    "new": [
+      "        Gcanonical, _ = _validate_matrix_free_precision(sparse(G0), 1)\n",
+      "        G0 = Matrix(Gcanonical)\n"
+    ]
+  },
+  {
+    "start": 3088,
+    "end": 3090,
+    "component": "input",
+    "kind": "replace",
+    "new": [
+      "        s = _likelihood_positive(\"initial.sigma_e2\", initial.sigma_e2)\n"
+    ]
+  },
+  {
+    "start": 3094,
+    "end": 3094,
+    "component": "input",
+    "kind": "insert",
+    "new": [
+      "    se0 = _likelihood_positive(\"initial residual variance\", se0)\n",
+      "    _likelihood_check_finite(\"initial genetic covariance\", G0)\n"
+    ]
+  },
+  {
+    "start": 3103,
+    "end": 3104,
+    "component": "input",
+    "kind": "replace",
+    "new": [
+      "            _likelihood_proposal_failure(err) && return Inf\n"
+    ]
+  },
+  {
+    "start": 3117,
+    "end": 3119,
+    "component": "input",
+    "kind": "delete",
+    "new": []
+  },
+  {
+    "start": 3318,
+    "end": 3320,
+    "component": "input",
+    "kind": "replace",
+    "new": [
+      "    starts = [_likelihood_positive(\"initial sigma_a2\", initial.sigma_a2), _likelihood_positive(\"initial sigma_pe2\", initial.sigma_pe2), _likelihood_positive(\"initial sigma_e2\", initial.sigma_e2)]\n",
+      "    iterations >= 1 || throw(ArgumentError(\"iterations must be at least 1\"))\n"
+    ]
+  },
+  {
+    "start": 3331,
+    "end": 3335,
+    "component": "input",
+    "kind": "replace",
+    "new": [
+      "    yv, Xs = _likelihood_design(y, X)\n",
+      "    Zs, Q, _ = _likelihood_random_inputs(Z, Ainv, n, 1)\n",
+      "    encoded_ids = _likelihood_effect_ids(encoded_ids, na, \"ids\")\n",
+      "    A = _dense_relationship_covariance(Q)\n",
+      "    Xd = Matrix{Float64}(Xs)\n",
+      "    Zd = Matrix{Float64}(Zs)\n"
+    ]
+  },
+  {
+    "start": 3342,
+    "end": 3343,
+    "component": "input",
+    "kind": "replace",
+    "new": [
+      "            _likelihood_proposal_failure(err) && return Inf\n"
+    ]
+  },
+  {
+    "start": 3346,
+    "end": 3347,
+    "component": "input",
+    "kind": "replace",
+    "new": [
+      "    p0 = log.(starts)\n"
+    ]
+  },
+  {
+    "start": 4189,
+    "end": 4190,
+    "component": "input",
+    "kind": "replace",
+    "new": [
+      "    return _likelihood_positive(\"initial variance\", initial.sigma_a2), _likelihood_positive(\"initial variance\", initial.sigma_e2)\n"
+    ]
+  },
+  {
+    "start": 4195,
+    "end": 4196,
+    "component": "input",
+    "kind": "replace",
+    "new": [
+      "    return _likelihood_positive(\"initial variance\", initial[1]), _likelihood_positive(\"initial variance\", initial[2])\n"
+    ]
+  },
+  {
+    "start": 4201,
+    "end": 4202,
+    "component": "input",
+    "kind": "replace",
+    "new": [
+      "    return _likelihood_positive(\"initial variance\", initial[1]), _likelihood_positive(\"initial variance\", initial[2])\n"
+    ]
+  },
+  {
+    "start": 4233,
+    "end": 4234,
+    "component": "input",
+    "kind": "replace",
+    "new": [
+      "    return _likelihood_positive(\"supplied variance\", variance_components.sigma_a2; precision = true), _likelihood_positive(\"supplied variance\", variance_components.sigma_e2; precision = true)\n"
+    ]
+  },
+  {
+    "start": 4239,
+    "end": 4240,
+    "component": "input",
+    "kind": "replace",
+    "new": [
+      "    return _likelihood_positive(\"supplied variance\", variance_components[1]; precision = true), _likelihood_positive(\"supplied variance\", variance_components[2]; precision = true)\n"
+    ]
+  },
+  {
+    "start": 4245,
+    "end": 4246,
+    "component": "input",
+    "kind": "replace",
+    "new": [
+      "    return _likelihood_positive(\"supplied variance\", variance_components[1]; precision = true), _likelihood_positive(\"supplied variance\", variance_components[2]; precision = true)\n"
+    ]
+  },
+  {
+    "start": 4277,
+    "end": 4277,
+    "component": "input",
+    "kind": "insert",
+    "new": [
+      "    _likelihood_check_finite(\"MME coefficient matrix\", lhs)\n",
+      "    _likelihood_check_finite(\"MME right-hand side\", rhs)\n"
+    ]
+  },
+  {
+    "start": 4339,
+    "end": 4339,
+    "component": "input",
+    "kind": "insert",
+    "new": [
+      "    _likelihood_check_finite(\"MME coefficient matrix\", lhs)\n",
+      "    _likelihood_check_finite(\"MME right-hand side\", rhs)\n"
+    ]
+  },
+  {
+    "start": 428,
+    "end": 433,
+    "component": "uncertainty",
+    "kind": "replace",
+    "new": [
+      "comparators or hardened for boundary/large-pedigree cases. For a Gaussian linear\n",
+      "mixed model whose covariance is linear in the variance components, average\n",
+      "information is the arithmetic average of observed and expected REML information.\n",
+      "Its working-variate quadratic need not equal the observed information. This\n",
+      "Gaussian identity does not directly extend to Laplace-approximated non-Gaussian\n",
+      "models.\n"
+    ]
+  },
+  {
+    "start": 1554,
+    "end": 1556,
+    "component": "uncertainty",
+    "kind": "replace",
+    "new": [
+      "# they are dropped from `info` while held fixed at their supplied values. The\n",
+      "# reported ratio retains the full denominator; only its active coordinates vary.\n",
+      "# At an exact zero component this is conditional information at zero, so a ratio built on\n"
+    ]
+  },
+  {
+    "start": 1564,
+    "end": 1564,
+    "component": "uncertainty",
+    "kind": "insert",
+    "new": [
+      "end\n",
+      "\n",
+      "# Invalid user controls are errors, distinct from unavailable boundary information.\n",
+      "function _validate_uncertainty_fd_step(fd_step::Real)\n",
+      "    (isfinite(fd_step) && fd_step > 0) ||\n",
+      "        throw(ArgumentError(\"fd_step must be finite and positive\"))\n",
+      "    step = Float64(fd_step)\n",
+      "    (isfinite(step) && step > 0) ||\n",
+      "        throw(ArgumentError(\"fd_step must remain finite and positive after Float64 conversion\"))\n",
+      "    return step\n",
+      "end\n",
+      "\n",
+      "function _uncertainty_component_steps(theta::AbstractVector, fd_step::Real)\n",
+      "    step = _validate_uncertainty_fd_step(fd_step)\n",
+      "    h = step .* max.(abs.(theta), 1e-3)\n",
+      "    all(x -> isfinite(x) && x > 0, h) ||\n",
+      "        throw(ArgumentError(\"fd_step must produce finite positive component steps\"))\n",
+      "    return h\n",
+      "end\n",
+      "\n",
+      "function _uncertainty_variance_vector(sigmas::AbstractVector, sigma_e2::Real, K::Integer)\n",
+      "    length(sigmas) == K || throw(ArgumentError(\"sigmas length must match number of effects\"))\n",
+      "    all(s -> s isa Real && isfinite(s) && s > 0, sigmas) ||\n",
+      "        throw(ArgumentError(\"all sigmas must be finite and positive\"))\n",
+      "    (isfinite(sigma_e2) && sigma_e2 > 0) ||\n",
+      "        throw(ArgumentError(\"sigma_e2 must be finite and positive\"))\n",
+      "    ss = Float64.(collect(sigmas))\n",
+      "    all(s -> isfinite(s) && s > 0, ss) ||\n",
+      "        throw(ArgumentError(\"all sigmas must remain finite and positive after Float64 conversion\"))\n",
+      "    se = Float64(sigma_e2)\n",
+      "    (isfinite(se) && se > 0) ||\n",
+      "        throw(ArgumentError(\"sigma_e2 must remain finite and positive after Float64 conversion\"))\n",
+      "    theta = vcat(ss, se)\n",
+      "    isfinite(sum(theta)) || throw(ArgumentError(\"total variance must be finite after Float64 conversion\"))\n",
+      "    return theta\n",
+      "end\n",
+      "\n",
+      "function _validate_uncertainty_selection(which, K::Integer)\n",
+      "    applicable(iterate, which) ||\n",
+      "        throw(ArgumentError(\"which must be a nonempty collection of unique integer component indices\"))\n",
+      "    idx = collect(which)\n",
+      "    isempty(idx) && throw(ArgumentError(\"which must select at least one component\"))\n",
+      "    all(i -> i isa Integer && !(i isa Bool) && 1 <= i <= K, idx) ||\n",
+      "        throw(ArgumentError(\"which must contain integer component indices 1..$K; Boolean values are invalid\"))\n",
+      "    allunique(idx) || throw(ArgumentError(\"which must contain unique component indices\"))\n",
+      "    return Int.(idx)\n"
+    ]
+  },
+  {
+    "start": 1591,
+    "end": 1594,
+    "component": "uncertainty",
+    "kind": "replace",
+    "new": [
+      "    # Inactive components stay in total and are held fixed at their supplied values.\n",
+      "    g = [k == keep_num ? (total - theta[keep_num]) / total^2 :\n",
+      "                         -theta[keep_num] / total^2 for k in keep]\n"
+    ]
+  },
+  {
+    "start": 1633,
+    "end": 1633,
+    "component": "uncertainty",
+    "kind": "insert",
+    "new": [
+      "    fd_step = _validate_uncertainty_fd_step(fd_step)\n"
+    ]
+  },
+  {
+    "start": 1634,
+    "end": 1635,
+    "component": "uncertainty",
+    "kind": "replace",
+    "new": [
+      "    d >= 1 || throw(ArgumentError(\"variance vector must be nonempty\"))\n",
+      "    theta = _uncertainty_variance_vector(theta[1:end-1], theta[end], d - 1)\n",
+      "    h = _uncertainty_component_steps(theta, fd_step)\n"
+    ]
+  },
+  {
+    "start": 1674,
+    "end": 1676,
+    "component": "uncertainty",
+    "kind": "replace",
+    "new": [
+      "information sub-block conditional on that component held at its supplied value.\n",
+      "The reported ratio and its gradient retain the full denominator, so e.g. `ratio1` remains well-defined when only\n"
+    ]
+  },
+  {
+    "start": 1695,
+    "end": 1695,
+    "component": "uncertainty",
+    "kind": "insert",
+    "new": [
+      "    fd_step = _validate_uncertainty_fd_step(fd_step)\n"
+    ]
+  },
+  {
+    "start": 1735,
+    "end": 1736,
+    "component": "uncertainty",
+    "kind": "replace",
+    "new": [
+      "`blockdiag(Ainv_1/\u03c3_1, \u2026, Ainv_K/\u03c3_K)` over `[u_1; \u2026; u_K]` and the random design is\n"
+    ]
+  },
+  {
+    "start": 1864,
+    "end": 1867,
+    "component": "uncertainty",
+    "kind": "replace",
+    "new": [
+      "Non-identifiability (e.g. two `A=I` effects on the same grouping) can produce a\n",
+      "flat ridge even when the optimizer reports `converged = true`. Optimizer\n",
+      "convergence and boundary flags do not certify identifiability.\n"
+    ]
+  },
+  {
+    "start": 1975,
+    "end": 1977,
+    "component": "uncertainty",
+    "kind": "replace",
+    "new": [
+      "conditional on those components held at their supplied values. The reported\n",
+      "ratio and its gradient retain the full denominator. At exact zero this gives\n",
+      "the corresponding zero-component reduction; the approximation is not a\n",
+      "near-boundary coverage guarantee.\n"
+    ]
+  },
+  {
+    "start": 2000,
+    "end": 2000,
+    "component": "uncertainty",
+    "kind": "insert",
+    "new": [
+      "    fd_step = _validate_uncertainty_fd_step(fd_step)\n"
+    ]
+  },
+  {
+    "start": 2055,
+    "end": 2060,
+    "component": "uncertainty",
+    "kind": "replace",
+    "new": [
+      "    fd_step = _validate_uncertainty_fd_step(fd_step)\n",
+      "    theta = _uncertainty_variance_vector(sigmas, sigma_e2, K)\n"
+    ]
+  },
+  {
+    "start": 2066,
+    "end": 2067,
+    "component": "uncertainty",
+    "kind": "replace",
+    "new": [
+      "    h = _uncertainty_component_steps(theta, fd_step)\n"
+    ]
+  },
+  {
+    "start": 2172,
+    "end": 2172,
+    "component": "uncertainty",
+    "kind": "insert",
+    "new": [
+      "    idx = _validate_uncertainty_selection(idx, K)\n"
+    ]
+  },
+  {
+    "start": 2212,
+    "end": 2213,
+    "component": "uncertainty",
+    "kind": "replace",
+    "new": [
+      "rail or the information is not positive definite. `which` must be a nonempty\n",
+      "collection of unique integer component indices (Boolean values are invalid).\n",
+      "Variances and `fd_step` must remain finite and positive after Float64 conversion;\n",
+      "invalid inputs throw even when the ratio would lie on a rail. Asymptotic; REML only.\n"
+    ]
+  },
+  {
+    "start": 2228,
+    "end": 2233,
+    "component": "uncertainty",
+    "kind": "replace",
+    "new": [
+      "    idx = _validate_uncertainty_selection(which, K)\n",
+      "    fd_step = _validate_uncertainty_fd_step(fd_step)\n",
+      "    theta = _uncertainty_variance_vector(sigmas, sigma_e2, K)\n",
+      "    _uncertainty_component_steps(theta, fd_step)\n"
+    ]
+  },
+  {
+    "start": 2306,
+    "end": 2307,
+    "component": "uncertainty",
+    "kind": "replace",
+    "new": [
+      "this only stops paying three times for one matrix. `which` has the same nonempty,\n",
+      "unique integer selection contract as `multi_effect_sum_ratio_interval`. Invalid\n",
+      "variances or finite-difference controls throw before information is computed.\n"
+    ]
+  },
+  {
+    "start": 2332,
+    "end": 2335,
+    "component": "uncertainty",
+    "kind": "replace",
+    "new": [
+      "    idx = _validate_uncertainty_selection(which, K)\n",
+      "    fd_step = _validate_uncertainty_fd_step(fd_step)\n",
+      "    theta = _uncertainty_variance_vector(sigmas, sigma_e2, K)\n"
+    ]
+  },
+  {
+    "start": 2339,
+    "end": 2340,
+    "component": "uncertainty",
+    "kind": "delete",
+    "new": []
+  },
+  {
+    "start": 3645,
+    "end": 3645,
+    "component": "profile",
+    "kind": "insert",
+    "new": [
+      "Components must be finite and nonnegative, with at least one positive. The\n",
+      "ratio is scaled before summation to avoid overflow in the total variance.\n"
+    ]
+  },
+  {
+    "start": 3648,
+    "end": 3649,
+    "component": "profile",
+    "kind": "replace",
+    "new": [
+      "    return _gaussian_variance_fraction(vc.sigma_a2, vc.sigma_e2)\n"
+    ]
+  },
+  {
+    "start": 3653,
+    "end": 3654,
+    "component": "profile",
+    "kind": "replace",
+    "new": [
+      "    return _gaussian_variance_fraction(vc.sigma_a2, vc.sigma_e2)\n",
+      "end\n",
+      "\n",
+      "# Scale before summing: finite components can have an unrepresentable total.\n",
+      "function _gaussian_variance_fraction(sigma_a2::Real, sigma_e2::Real)\n",
+      "    sa, se = Float64(sigma_a2), Float64(sigma_e2)\n",
+      "    isfinite(sa) && sa >= 0 && isfinite(se) && se >= 0 ||\n",
+      "        throw(ArgumentError(\"Gaussian variance components must be finite and nonnegative after Float64 conversion\"))\n",
+      "    scale = max(sa, se)\n",
+      "    scale > 0 || throw(ArgumentError(\"at least one Gaussian variance component must be positive\"))\n",
+      "    a, e = sa / scale, se / scale\n",
+      "    return a / (a + e)\n"
+    ]
+  },
+  {
+    "start": 3717,
+    "end": 3717,
+    "component": "profile",
+    "kind": "insert",
+    "new": [
+      "\n",
+      "A supplied `pev` must contain finite nonnegative values and each model animal ID\n",
+      "exactly once. Values and relationship diagonals are aligned by ID; the returned\n",
+      "order follows `pev.ids`. Ratios are evaluated without requiring the intermediate\n",
+      "product `sigma_a2 * A_ii` to fit in `Float64`; a nonfinite ratio is rejected.\n"
+    ]
+  },
+  {
+    "start": 3720,
+    "end": 3729,
+    "component": "profile",
+    "kind": "replace",
+    "new": [
+      "    return _reliability_from_pev(fit.spec, fit.variance_components.sigma_a2, pev_res, method)\n"
+    ]
+  },
+  {
+    "start": 3733,
+    "end": 3734,
+    "component": "profile",
+    "kind": "replace",
+    "new": [
+      "    return _reliability_from_pev(result.spec, result.sigma_a2, pev, method)\n",
+      "end\n"
+    ]
+  },
+  {
+    "start": 3735,
+    "end": 3742,
+    "component": "profile",
+    "kind": "replace",
+    "new": [
+      "function _reliability_from_pev(spec::AnimalModelSpec, sigma_a2::Real, pev, method::Symbol)\n",
+      "    ids, values = collect(pev.ids), Float64.(pev.values)\n",
+      "    n = length(spec.ids)\n",
+      "    length(ids) == length(values) == n ||\n",
+      "        throw(ArgumentError(\"PEV ids and values must have one entry per model animal\"))\n",
+      "    all(v -> isfinite(v) && v >= 0, values) ||\n",
+      "        throw(ArgumentError(\"PEV values must be finite and nonnegative after Float64 conversion\"))\n",
+      "    index = Dict(id => i for (i, id) in enumerate(spec.ids))\n",
+      "    length(index) == n && length(Set(ids)) == n && all(id -> haskey(index, id), ids) ||\n",
+      "        throw(ArgumentError(\"PEV ids must contain each unique model animal ID exactly once\"))\n",
+      "    sa = Float64(sigma_a2)\n",
+      "    isfinite(sa) && sa > 0 ||\n",
+      "        throw(ArgumentError(\"sigma_a2 must be finite and positive after Float64 conversion\"))\n",
+      "    diagonal = Float64.(_relationship_diag(spec, method))\n",
+      "    length(diagonal) == n && all(d -> isfinite(d) && d > 0, diagonal) ||\n",
+      "        throw(ArgumentError(\"relationship diagonal must be finite and positive for every animal\"))\n",
+      "    # p/(sa*d) = (mp/(ma*md))*2^(ep-ea-ed). Mantissa products are bounded,\n",
+      "    # so neither an overflowing nor an underflowing denominator loses the ratio.\n",
+      "    ma, ea = frexp(sa)\n",
+      "    out = Vector{Float64}(undef, n)\n",
+      "    for i in eachindex(values)\n",
+      "        mp, ep = frexp(values[i])\n",
+      "        md, ed = frexp(diagonal[index[ids[i]]])\n",
+      "        ratio = values[i] == 0 ? 0.0 : ldexp(mp / (ma * md), ep - ea - ed)\n",
+      "        isfinite(ratio) || throw(ArgumentError(\"PEV divided by animal-level additive variance must be finite\"))\n",
+      "        out[i] = 1 - ratio\n",
+      "    end\n",
+      "    return (ids = ids, values = out)\n"
+    ]
+  },
+  {
+    "start": 3927,
+    "end": 3927,
+    "component": "profile",
+    "kind": "insert",
+    "new": [
+      "# A nonfinite evaluation or invalid anchor is an error, never a clamped endpoint.\n"
+    ]
+  },
+  {
+    "start": 3928,
+    "end": 3929,
+    "component": "profile",
+    "kind": "replace",
+    "new": [
+      "    isfinite(bound) && isfinite(anchor) ||\n",
+      "        throw(ArgumentError(\"profile bound and anchor must be finite\"))\n",
+      "    function evaluated_target(x)\n",
+      "        value = target(x)\n",
+      "        isfinite(value) || throw(ArgumentError(\"profile target must be finite at every evaluated point\"))\n",
+      "        return value\n",
+      "    end\n",
+      "    evaluated_target(anchor) < 0 ||\n",
+      "        throw(ArgumentError(\"profile anchor must lie strictly inside the interval (target < 0)\"))\n",
+      "    evaluated_target(bound) > 0 || return float(bound)\n"
+    ]
+  },
+  {
+    "start": 3931,
+    "end": 3933,
+    "component": "profile",
+    "kind": "replace",
+    "new": [
+      "        m = a / 2 + b / 2\n",
+      "        fm = evaluated_target(m)\n"
+    ]
+  },
+  {
+    "start": 3934,
+    "end": 3934,
+    "component": "profile",
+    "kind": "insert",
+    "new": [
+      "        (m == a || m == b) && return m\n"
+    ]
+  },
+  {
+    "start": 3936,
+    "end": 3937,
+    "component": "profile",
+    "kind": "replace",
+    "new": [
+      "    throw(ArgumentError(\"profile root did not resolve within the bisection budget\"))\n"
+    ]
+  },
+  {
+    "start": 3970,
+    "end": 3970,
+    "component": "profile",
+    "kind": "insert",
+    "new": [
+      "Nonfinite profile targets or an invalid point-estimate anchor throw an\n",
+      "`ArgumentError`; they are not reported as numeric endpoints.\n"
+    ]
+  },
+  {
+    "start": 4036,
+    "end": 4038,
+    "component": "profile",
+    "kind": "replace",
+    "new": [
+      "pedigree-scale `sigma_a2`. If a failed profile evaluation, including a non-PD\n",
+      "precision, yields a nonfinite likelihood-ratio target, the interval throws an\n",
+      "`ArgumentError`; this is not a clamped confidence endpoint.\n"
+    ]
+  },
+  {
+    "start": 4518,
+    "end": 4520,
+    "component": "profile",
+    "kind": "replace",
+    "new": [
+      "    sa = Float64(fit.variance_components.sigma_a2)\n",
+      "    se = Float64(fit.variance_components.sigma_e2)\n"
+    ]
+  },
+  {
+    "start": 4583,
+    "end": 4584,
+    "component": "profile",
+    "kind": "replace",
+    "new": [
+      "    h2 = _gaussian_variance_fraction(s2a, s2e)\n"
+    ]
+  },
+  {
+    "start": 4597,
+    "end": 4598,
+    "component": "profile",
+    "kind": "replace",
+    "new": [
+      "            hhb = _gaussian_variance_fraction(sab, seb)\n",
+      "            push!(sa, sab); push!(se, seb); push!(hh, hhb)\n"
+    ]
+  }
+]

@@ -1,0 +1,3 @@
+syntax PASS /private/tmp/hsq-likelihood-uncertainty-fix-20260930/prepared/src/likelihood.jl
+syntax PASS /private/tmp/hsq-likelihood-uncertainty-fix-20260930/prepared/test/likelihood_uncertainty_contract_regression.jl
+syntax PASS /private/tmp/hsq-likelihood-uncertainty-fix-20260930/prepared/test/runtests.jl

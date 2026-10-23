@@ -1,0 +1,19 @@
+{
+  "base_gllvm_sha256": "0727459d2f163835519ae8cf8481d2439b90ba5065cfc8d74ad2c0c08736d2ca",
+  "patched_gllvm_sha256": "44e871db58417273e04d4e76b00db6d81edb28e6fddef21505e9248af0fd0a15",
+  "base_source_tree_sha256": "d3c2de8d7f0a1a86918f15938264bbdc892a7303b5ddd488553ac923f073ad0a",
+  "patched_source_tree_sha256": "570123ce873c76a7e015ff6a3fa26359d4bee9f460f1c0b53a8d86beaff6689a",
+  "changed_source_files": [
+    "genetic_gllvm.jl"
+  ],
+  "artifacts": {
+    "test/gllvm_input_guard_regression.jl": "59d254178a426bd58a6bf7ea58d416bc517acc8e9505622bea297007858a7edf",
+    "gllvm-input-guards.patch": "b3dd47ab24c491ec4e727cb3a36b2d5aa89a5dfc1bc3bb35092853029fff9ef1",
+    "red.log": "d41b20e6a46eb88f0eebc5a0e1d06c20f174bffbc27721e354881d29e440576d",
+    "red-all.log": "ce34dba39e59729329af5b5afba8bcae16cec139875141095f7fd7f6a9e52ce5",
+    "green.log": "017650c6b63e6cad7375acf7a7c4aea41638d8e2c445fe7d5b3bfa6d64722f28",
+    "green-final.log": "017650c6b63e6cad7375acf7a7c4aea41638d8e2c445fe7d5b3bfa6d64722f28",
+    "Project.toml": "37f0e6aaa6492c76519ed7771b226972cea531a7104866e5753890e31e163033",
+    "Manifest.toml": "c5940f2be0347f7ff987468aed67f17070f556a0aa99e0e5ec5317898cfa0fad"
+  }
+}

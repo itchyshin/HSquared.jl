@@ -1,0 +1,7 @@
+Julia=1.10.0 JuliaThreads=1 BLASThreads=1
+Test Summary:                               | Pass  Total  Time
+likelihood profile PEV and scalar contracts |   71     71  1.2s
+Test Summary:                          | Pass  Total  Time
+independent supplied-variance controls |   23     23  2.3s
+Test Summary:                        | Pass  Total  Time
+bootstrap refit convergence contract |    4      4  0.0s

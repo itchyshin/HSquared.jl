@@ -1,0 +1,5 @@
+Julia=1.10.0 JuliaThreads=1 BLASThreads=1
+Test Summary:                         | Pass  Total  Time
+iterative finite arithmetic contracts |  105    105  4.6s
+Test Summary:                      | Pass  Total  Time
+independent probe summary controls |   18     18  0.0s

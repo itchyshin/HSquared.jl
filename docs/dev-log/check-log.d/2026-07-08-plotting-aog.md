@@ -239,6 +239,16 @@ rendered PNGs as an artifact**. `inputs` is empty on `pull_request`, so the job 
 default — the dependency-free CI posture is unchanged. A green there is still not visual
 verification; download the artifact and look.
 
+**Exercised, not merely written.** On PR #264 the job reported `skipping` while both `test` jobs
+passed (off-by-default, confirmed empirically rather than by reading the `if:` expression). After
+merge it was dispatched once on `main` — run
+[28960736583](https://github.com/itchyshin/HSquared.jl/actions/runs/28960736583), `ubuntu-latest`,
+**green**, artifact `live-draw-figures` 116,138 bytes. The figures were downloaded and inspected,
+and are **byte-identical** to the macOS/arm64 renders (`forest` `89d15dfdd47f`, `caterpillar`
+`99a7382b92f1`) — so on this version set the raster is reproducible across ubuntu-x86_64 and
+macOS-arm64. Still uncovered: no *failing* run has been observed on GitHub, so
+`if-no-files-found: error` has never faced the case it was written for (verified locally only).
+
 ### Not covered
 
 One machine, one version set (Julia 1.10.0, macOS/arm64). No cross-version or cross-platform

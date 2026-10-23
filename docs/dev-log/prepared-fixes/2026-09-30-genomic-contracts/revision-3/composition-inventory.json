@@ -1,0 +1,13 @@
+{
+  "base_head": "6271cfd58651e69cd27a64dcf02cb8960a29e260",
+  "original_genomic_sha256": "f6f8ba22302d55f81d25d36c2f8803fc22dfa4473cb0087613f37ec403e91523",
+  "composed_genomic_sha256": "a861e0336eb8b793c2dccc8bcbdf8ff920ccc0cfa4f2f8a217bc165a33306b17",
+  "original_runner_sha256": "4da75986ff69040a2c8353e743fd98c336c66848c8ccb8c4cc5ac6472fdbaa23",
+  "composed_runner_sha256": "fe26d995e0192f59629f5472e9c2f8fc2c0fe37d070f7cabf3c1341eaa4b70d1",
+  "patch_sha256": "b91e7696609ab36f8bfdc29643c64f803be358b4093a7df8ef3c8d076ef8daba",
+  "new_tests": {
+    "test_genomic_summary_contracts.jl": "4abf2b647d13110f92fb91f572e182a914f50f982fa513b37c4645b668e8c23c",
+    "test_genomic_doc_bindings.jl": "9d18639f80a0a6847f13128a26fe6a77117d9a58b4c0f08012f56c2eb37c0b27",
+    "test_genomic_variance_boundary.jl": "a1113c6f13defe90a419442ffd4f98b7cd6182820ba3e3095ce9020cf2b0897f"
+  }
+}

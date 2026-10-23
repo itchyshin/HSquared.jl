@@ -1,0 +1,80 @@
+[
+  {
+    "name": "gllvm-input-guards",
+    "source": "/Users/z3437171/.codex/worktrees/hsquared-fa-gllvm-foundations/HSquared.jl/docs/dev-log/prepared-fixes/2026-09-30-gllvm-input-guards/gllvm-input-guards.patch",
+    "snapshot": "/private/tmp/hsq-reviewed-repairs-composed-20260930/inputs/gllvm-input-guards--gllvm-input-guards.patch",
+    "sha256": "b3dd47ab24c491ec4e727cb3a36b2d5aa89a5dfc1bc3bb35092853029fff9ef1"
+  },
+  {
+    "name": "gllvm-descriptor-record",
+    "source": "/Users/z3437171/.codex/worktrees/hsquared-fa-gllvm-foundations/HSquared.jl/docs/dev-log/prepared-fixes/2026-09-30-gllvm-descriptor-record/gllvm-descriptor-record.patch",
+    "snapshot": "/private/tmp/hsq-reviewed-repairs-composed-20260930/inputs/gllvm-descriptor-record--gllvm-descriptor-record.patch",
+    "sha256": "737bd4156a4ac8186ea49c9af1eb6ddc0275c68a1a7f3801d0fc6301e6ae680d"
+  },
+  {
+    "name": "coefcov-fields",
+    "source": "/Users/z3437171/.codex/worktrees/hsquared-fa-gllvm-foundations/HSquared.jl/docs/dev-log/prepared-fixes/2026-09-30-coefcov-fields/coefcov-field-validation.patch",
+    "snapshot": "/private/tmp/hsq-reviewed-repairs-composed-20260930/inputs/coefcov-fields--coefcov-field-validation.patch",
+    "sha256": "ea88557d2533bc8bb5e2f0270eb825967e8622d32543188fedf959808403f72f"
+  },
+  {
+    "name": "rr-descriptors",
+    "source": "/Users/z3437171/.codex/worktrees/hsquared-fa-gllvm-foundations/HSquared.jl/docs/dev-log/prepared-fixes/2026-09-30-rr-descriptors/rr-descriptor-fixes.patch",
+    "snapshot": "/private/tmp/hsq-reviewed-repairs-composed-20260930/inputs/rr-descriptors--rr-descriptor-fixes.patch",
+    "sha256": "ec27b69dc016d5cd1f9cd18a757da78eddc7115ce27767c129469105433f4290"
+  },
+  {
+    "name": "validation-status",
+    "source": "/Users/z3437171/.codex/worktrees/hsquared-fa-gllvm-foundations/HSquared.jl/docs/dev-log/prepared-fixes/2026-09-30-validation-status/validation-status-wording.patch",
+    "snapshot": "/private/tmp/hsq-reviewed-repairs-composed-20260930/inputs/validation-status--validation-status-wording.patch",
+    "sha256": "e2d76592dc28faa99c36808d063619e2cc80e25da107f2ef9794687a08cba042"
+  },
+  {
+    "name": "validation-ledger-sync",
+    "source": "/Users/z3437171/.codex/worktrees/hsquared-fa-gllvm-foundations/HSquared.jl/docs/dev-log/prepared-fixes/2026-09-30-validation-ledger-sync/docs.patch",
+    "snapshot": "/private/tmp/hsq-reviewed-repairs-composed-20260930/inputs/validation-ledger-sync--docs.patch",
+    "sha256": "5462382c48f55702cf04ac974370b94ec24dfc52544aca20a5afb68d5f0b0ba7"
+  },
+  {
+    "name": "validation-ledger-sync",
+    "source": "/Users/z3437171/.codex/worktrees/hsquared-fa-gllvm-foundations/HSquared.jl/docs/dev-log/prepared-fixes/2026-09-30-validation-ledger-sync/nongaussian-docstring.patch",
+    "snapshot": "/private/tmp/hsq-reviewed-repairs-composed-20260930/inputs/validation-ledger-sync--nongaussian-docstring.patch",
+    "sha256": "4b702a972ea1f79c929614791b4849190d224c94783a857ea7e73b4f5a6d35a1"
+  },
+  {
+    "name": "data-dict-missing-count",
+    "source": "/Users/z3437171/.codex/worktrees/hsquared-fa-gllvm-foundations/HSquared.jl/docs/dev-log/prepared-fixes/2026-09-30-data-dict-missing-count/data-dict-missing-count.patch",
+    "snapshot": "/private/tmp/hsq-reviewed-repairs-composed-20260930/inputs/data-dict-missing-count--data-dict-missing-count.patch",
+    "sha256": "7f8255c686f74c097b4787d85742c0cc4c9a7dcaefea001fba98ad7e27ff26c1"
+  },
+  {
+    "name": "flat-integral-endpoints",
+    "source": "/Users/z3437171/.codex/worktrees/hsquared-fa-gllvm-foundations/HSquared.jl/docs/dev-log/prepared-fixes/2026-09-30-flat-integral-endpoints/flat-integral-endpoints.patch",
+    "snapshot": "/private/tmp/hsq-reviewed-repairs-composed-20260930/inputs/flat-integral-endpoints--flat-integral-endpoints.patch",
+    "sha256": "377949339080913493db2a6c48916b4eae7aae9c15f5c54c5d859c1f139c1e9e"
+  },
+  {
+    "name": "postfit-marker-contract",
+    "source": "/Users/z3437171/.codex/worktrees/hsquared-fa-gllvm-foundations/HSquared.jl/docs/dev-log/prepared-fixes/2026-09-30-postfit-marker-contract/contract-fix.patch",
+    "snapshot": "/private/tmp/hsq-reviewed-repairs-composed-20260930/inputs/postfit-marker-contract--contract-fix.patch",
+    "sha256": "67281094c94e34fd7a29414534f5304b1a5e5fb02a5598f547e909f37afff70c"
+  },
+  {
+    "name": "nongaussian-finite-ingress",
+    "source": "/Users/z3437171/.codex/worktrees/hsquared-fa-gllvm-foundations/HSquared.jl/docs/dev-log/prepared-fixes/2026-09-30-nongaussian-finite-ingress/nongaussian-finite-ingress.patch",
+    "snapshot": "/private/tmp/hsq-reviewed-repairs-composed-20260930/inputs/nongaussian-finite-ingress--nongaussian-finite-ingress.patch",
+    "sha256": "2e3aa1fac2f1a5b1567113bd9e986992315b756faf3350df83678d657aa102db"
+  },
+  {
+    "name": "mv-repeatability-labels-schema",
+    "source": "/private/tmp/hsq-mv-repeatability-label-fix-20260930/schema-wording.patch",
+    "snapshot": "/private/tmp/hsq-reviewed-repairs-composed-20260930/inputs/mv-repeatability-labels--schema-wording.patch",
+    "sha256": "bb03a9d1ef664b61b28d70fd7f3658e730d1eb5a5411f42128cbf7cf1a733175"
+  },
+  {
+    "name": "nongaussian-h2-descriptors",
+    "source": "/private/tmp/hsq-nongaussian-h2-descriptors-fix-20260930/h2-descriptor-fix.patch",
+    "snapshot": "/private/tmp/hsq-reviewed-repairs-composed-20260930/inputs/nongaussian-h2--h2-descriptor-fix.patch",
+    "sha256": "e255f85afdb3b68e77d7a5e303c7f46109340464aad52fcbb9e0315c682780c8"
+  }
+]

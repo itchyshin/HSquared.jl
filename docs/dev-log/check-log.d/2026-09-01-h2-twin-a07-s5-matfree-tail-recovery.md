@@ -1,0 +1,100 @@
+# check-log — 2026-09-01 h2-twin A07 S5 matfree tail recovery
+
+**Arc:** A07 (B2)  
+**Lane:** `claude/lane-h2-twin-20260901` @ `~/local-scratch/lanes/HSquared.jl-h2-twin-20260901`  
+**Goal:** Frozen S5 gate at q=25,000 on Totoro (owner-approved 2026-09-01)
+
+## Commands
+
+```sh
+# Port verification (local worktree)
+git log --oneline -3
+# a0ffb86a chore(H2): port frozen S5 ...
+# f261165e fix(H2): port fit_matrix_free_reml ...
+
+# Totoro (ControlMaster ssh totoro; julia 1.10.10)
+export PATH=~/hsq_work/julia-1.10.10/bin:$PATH
+export OPENBLAS_NUM_THREADS=1 JULIA_NUM_THREADS=1
+cd ~/hsq_work/h2-a07-s5-20260901
+julia --project=. sim/phase_s5_matfree_tail_recovery_gate.jl a07_s5_recovery.tsv
+# exit 0; OVERALL GATE: PASS
+```
+
+## Results
+
+| Check | Outcome |
+|-------|---------|
+| Port `a0ffb86a` | S5 script + predeclaration on campaign branch |
+| Engine `f261165e` | `fit_matrix_free_reml` reachable (required for gate) |
+| A3_MAX_CAP_EXHAUSTED | 4 (matches A08 decision) |
+| Leg A A3 | 0/48 cap-exhausted (≤ 4/48) PASS |
+| Overall gate | PASS (Leg A + Leg X) |
+| Wall time | ~44m 39s (2026-09-01T17:42:28 → 18:27:07 -06:00) |
+| Receipt | `~/local-scratch/h2-a07-s5-receipt.md` |
+
+## Full pre-declared criteria (Ada, consolidating)
+
+| Leg | Criterion | Bound | Observed | Verdict |
+|-----|-----------|-------|----------|---------|
+| A | A1 mean rel.err vs truth, both components | ≤ 0.05 | 0.0016 / 0.0007 | PASS |
+| A | A2 NON_GRACEFUL | 0/48 | 0/48 | PASS |
+| A | A3 CAP_EXHAUSTED | ≤ 4/48 | 0/48 | PASS |
+| X | mean \|reldiff\| vs exact `fit_ai_reml`, nprobe=64 | ≤ 0.05 | 0.0090 / 0.0052 | PASS |
+
+Buckets: CONVERGED 48, CAP_EXHAUSTED 0, NON_GRACEFUL 0, ANOMALY_ITER_MISMATCH 0.
+Iterations 52–62 against a cap of 200; fill mean 582.4 (min 571.4, max 596.5).
+
+## Independent replication, same interpreter
+
+A second invocation of the same frozen script on Julia 1.10.10, launched concurrently,
+wrote `~/hsq_work/results/h2-a07-s5-20260901/s5_recovery.tsv`.
+
+```sh
+diff <(grep -E '^  (A|X) ' R1.log | sed 's/wall=[0-9.]*s//') \
+     <(grep -E '^  (A|X) ' R2.log | sed 's/wall=[0-9.]*s//')
+```
+
+Outcome: **empty diff — all 56 per-seed rows identical**, and the two `GATE_JSON`
+strings are byte-equal. Determinism measured, not assumed.
+
+## Cross-version arm — NOT the verdict
+
+A third concurrent invocation on **Julia 1.12.6** diverges per seed (dgp 20269500:
+`sigma_a2` 1.0286 vs 0.9890; fill 582.5 vs 580.2). Expected: `MersenneTwister` streams
+are not version-portable for this fixture, as the script's own manifest states. Kept as
+a cross-version robustness arm; excluded from the pre-declared verdict.
+Adjudication of all three runs: `~/local-scratch/h2-a07-s5-run-adjudication.md`.
+
+It completed, and it also **passes** every criterion:
+
+| Criterion | Bound | 1.10.10 (record) | 1.12.6 (arm) |
+|-----------|-------|------------------|--------------|
+| A1 `sigma_a2` / `sigma_e2` | ≤ 0.05 | 0.0016 / 0.0007 | 0.0142 / 0.0020 |
+| A2 / A3 | 0 · ≤4 | 0/48 · 0/48 | 0/48 · 0/48 |
+| Leg X `sigma_a2` / `sigma_e2` | ≤ 0.05 | 0.0090 / 0.0052 | 0.0097 / 0.0050 |
+
+The verdict is robust to the RNG realization. The **A1 margin is not**: `sigma_a2`
+relative error moves by a factor of ~9 between realizations. State the margin as
+**~3.5× across the two realizations measured**, not ~30× from the 1.10.10 draw alone.
+Leg X is stable across interpreters, consistent with probe noise rather than fixture
+dependence. See the result document's cross-version section.
+
+## Artifacts
+
+- In repo: `sim/drac/results/s5_matfree_tail_recovery_20260901.tsv`
+- Result document: `docs/dev-log/recovery-checkpoints/2026-09-01-f6-matfree-tail-recovery-result.md`
+- Off repo: `~/local-scratch/receipts/h2-a07-s5-20260901/` (both logs, both TSVs)
+
+## Claim boundary
+
+- Validation evidence only; no capability promotion; no push from this slice.
+- `public_covered_count` stays **5**; no `validation_status` row flips; G10 S3 unsigned.
+- Discharges validation-debt item (1) for `V1-MATFREE-REML`; narrows item (3) at
+  q = 25,000 **only**; S6 (at-scale comparator) and S7 (R bridge) remain open.
+
+## Follow-up owed
+
+The frozen gate records its interpreter version but does not pin it — three agents
+reached for three `julia` binaries across two versions. Recommend a version assertion
+in the script or a required version in the predeclaration. Not changed here: editing a
+frozen gate after its run is the post-hoc relaxation the predeclaration forbids.

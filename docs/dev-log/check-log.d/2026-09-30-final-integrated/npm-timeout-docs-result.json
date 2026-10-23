@@ -1,0 +1,16 @@
+{
+  "kind": "docs",
+  "start_utc": "2026-09-30T21:43:19.668865+00:00",
+  "elapsed_seconds": 300.0818096669391,
+  "exit_status": 124,
+  "over_estimate": true,
+  "estimate_seconds": 300,
+  "commands": [
+    [
+      "/Users/z3437171/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/bin/julia",
+      "--startup-file=no",
+      "--project=docs",
+      "docs/make.jl"
+    ]
+  ]
+}

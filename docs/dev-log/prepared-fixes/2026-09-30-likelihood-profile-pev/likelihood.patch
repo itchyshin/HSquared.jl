@@ -1,0 +1,185 @@
+--- a/src/likelihood.jl
++++ b/src/likelihood.jl
+@@ -3643,15 +3643,28 @@
+ 
+ Return simple narrow-sense heritability for the Phase 1 univariate Gaussian
+ animal model: `sigma_a2 / (sigma_a2 + sigma_e2)`.
++Components must be finite and nonnegative, with at least one positive. The
++ratio is scaled before summation to avoid overflow in the total variance.
+ """
+ function heritability(fit::AnimalModelFit)
+     vc = fit.variance_components
+-    return vc.sigma_a2 / (vc.sigma_a2 + vc.sigma_e2)
++    return _gaussian_variance_fraction(vc.sigma_a2, vc.sigma_e2)
+ end
+ 
+ function heritability(result::HendersonMMEResult)
+     vc = variance_components(result)
+-    return vc.sigma_a2 / (vc.sigma_a2 + vc.sigma_e2)
++    return _gaussian_variance_fraction(vc.sigma_a2, vc.sigma_e2)
++end
++
++# Scale before summing: finite components can have an unrepresentable total.
++function _gaussian_variance_fraction(sigma_a2::Real, sigma_e2::Real)
++    sa, se = Float64(sigma_a2), Float64(sigma_e2)
++    isfinite(sa) && sa >= 0 && isfinite(se) && se >= 0 ||
++        throw(ArgumentError("Gaussian variance components must be finite and nonnegative after Float64 conversion"))
++    scale = max(sa, se)
++    scale > 0 || throw(ArgumentError("at least one Gaussian variance component must be positive"))
++    a, e = sa / scale, se / scale
++    return a / (a + e)
+ end
+ 
+ """
+@@ -3715,31 +3728,50 @@
+ the sparse Takahashi selected inverse of `Ainv` (no dense `A` is formed);
+ `:dense` forms `inv(Ainv)` densely (validation oracle). Values are not clipped;
+ small examples can expose weakly informed animals directly.
++
++A supplied `pev` must contain finite nonnegative values and each model animal ID
++exactly once. Values and relationship diagonals are aligned by ID; the returned
++order follows `pev.ids`. Ratios are evaluated without requiring the intermediate
++product `sigma_a2 * A_ii` to fit in `Float64`; a nonfinite ratio is rejected.
+ """
+ function reliability(fit::AnimalModelFit; method::Symbol = :auto, pev = nothing)
+     pev_res = pev === nothing ? prediction_error_variance(fit; method = method) : pev
+-    animal_variance = fit.variance_components.sigma_a2 .* _relationship_diag(fit.spec, method)
+-
+-    all(>(0), animal_variance) ||
+-        throw(ArgumentError("animal-level additive variances must be positive"))
+-
+-    return (
+-        ids = pev_res.ids,
+-        values = Vector{Float64}(1 .- pev_res.values ./ animal_variance),
+-    )
++    return _reliability_from_pev(fit.spec, fit.variance_components.sigma_a2, pev_res, method)
+ end
+ 
+ function reliability(result::HendersonMMEResult; method::Symbol = :auto)
+     pev = prediction_error_variance(result; method = method)
+-    animal_variance = result.sigma_a2 .* _relationship_diag(result.spec, method)
+-
+-    all(>(0), animal_variance) ||
+-        throw(ArgumentError("animal-level additive variances must be positive"))
+-
+-    return (
+-        ids = pev.ids,
+-        values = Vector{Float64}(1 .- pev.values ./ animal_variance),
+-    )
++    return _reliability_from_pev(result.spec, result.sigma_a2, pev, method)
++end
++
++function _reliability_from_pev(spec::AnimalModelSpec, sigma_a2::Real, pev, method::Symbol)
++    ids, values = collect(pev.ids), Float64.(pev.values)
++    n = length(spec.ids)
++    length(ids) == length(values) == n ||
++        throw(ArgumentError("PEV ids and values must have one entry per model animal"))
++    all(v -> isfinite(v) && v >= 0, values) ||
++        throw(ArgumentError("PEV values must be finite and nonnegative after Float64 conversion"))
++    index = Dict(id => i for (i, id) in enumerate(spec.ids))
++    length(index) == n && length(Set(ids)) == n && all(id -> haskey(index, id), ids) ||
++        throw(ArgumentError("PEV ids must contain each unique model animal ID exactly once"))
++    sa = Float64(sigma_a2)
++    isfinite(sa) && sa > 0 ||
++        throw(ArgumentError("sigma_a2 must be finite and positive after Float64 conversion"))
++    diagonal = Float64.(_relationship_diag(spec, method))
++    length(diagonal) == n && all(d -> isfinite(d) && d > 0, diagonal) ||
++        throw(ArgumentError("relationship diagonal must be finite and positive for every animal"))
++    # p/(sa*d) = (mp/(ma*md))*2^(ep-ea-ed). Mantissa products are bounded,
++    # so neither an overflowing nor an underflowing denominator loses the ratio.
++    ma, ea = frexp(sa)
++    out = Vector{Float64}(undef, n)
++    for i in eachindex(values)
++        mp, ep = frexp(values[i])
++        md, ed = frexp(diagonal[index[ids[i]]])
++        ratio = values[i] == 0 ? 0.0 : ldexp(mp / (ma * md), ep - ea - ed)
++        isfinite(ratio) || throw(ArgumentError("PEV divided by animal-level additive variance must be finite"))
++        out[i] = 1 - ratio
++    end
++    return (ids = ids, values = out)
+ end
+ 
+ """
+@@ -3925,16 +3957,27 @@
+ # is the point-estimate side where `target(anchor) < 0`; `bound` is the search
+ # boundary. If `target(bound) <= 0` the interval reaches the search bound and the
+ # (clamped) bound is returned; otherwise bisect to the crossing.
++# A nonfinite evaluation or invalid anchor is an error, never a clamped endpoint.
+ function _profile_root(target, bound::Real, anchor::Real)
+-    target(bound) > 0 || return float(bound)
++    isfinite(bound) && isfinite(anchor) ||
++        throw(ArgumentError("profile bound and anchor must be finite"))
++    function evaluated_target(x)
++        value = target(x)
++        isfinite(value) || throw(ArgumentError("profile target must be finite at every evaluated point"))
++        return value
++    end
++    evaluated_target(anchor) < 0 ||
++        throw(ArgumentError("profile anchor must lie strictly inside the interval (target < 0)"))
++    evaluated_target(bound) > 0 || return float(bound)
+     a, b = float(anchor), float(bound)
+     for _ in 1:200
+-        m = 0.5 * (a + b)
+-        fm = target(m)
++        m = a / 2 + b / 2
++        fm = evaluated_target(m)
+         (abs(fm) < 1e-9 || abs(b - a) < 1e-13) && return m
++        (m == a || m == b) && return m
+         fm < 0 ? (a = m) : (b = m)
+     end
+-    return 0.5 * (a + b)
++    throw(ArgumentError("profile root did not resolve within the bisection budget"))
+ end
+ 
+ function _heritability_interval_profile(fit::AnimalModelFit; level::Real)
+@@ -3968,6 +4011,8 @@
+ `h²` range where `2·(ℓmax − ℓprofile(h²)) ≤ χ²₁,level`. Endpoints that reach the
+ `(0, 1)` search bounds are clamped. It returns
+ `(heritability, lower, upper, level, method)` (no `se`).
++Nonfinite profile targets or an invalid point-estimate anchor throw an
++`ArgumentError`; they are not reported as numeric endpoints.
+ 
+ Both are large-sample approximations: on small samples the REML surface is flat,
+ so the intervals are wide.
+@@ -4034,8 +4079,9 @@
+ only the spec's precision through `sparse_reml_loglik`. On a genomic spec `sigma_a2`
+ is the GENOMIC additive variance and the interval is CONDITIONAL on the supplied
+ `Ginv` (ridge + centering), so the implied `A_ii = diag(inv(Ginv)) ≠ 1` — not a
+-pedigree-scale `sigma_a2`. A non-PD `Ginv` degrades to a clamped endpoint (the
+-`PosDefException` is caught as `Inf`), never a silent number.
++pedigree-scale `sigma_a2`. If a failed profile evaluation, including a non-PD
++precision, yields a nonfinite likelihood-ratio target, the interval throws an
++`ArgumentError`; this is not a clamped confidence endpoint.
+ 
+ Experimental, asymptotic, REML only; no coverage calibration.
+ """
+@@ -4516,8 +4562,8 @@
+ 
+ function _bootstrap_usable_refit(fit)
+     fit.converged || return false
+-    sa = fit.variance_components.sigma_a2
+-    se = fit.variance_components.sigma_e2
++    sa = Float64(fit.variance_components.sigma_a2)
++    se = Float64(fit.variance_components.sigma_e2)
+     return isfinite(sa) && isfinite(se) && sa > 0 && se > 0
+ end
+ 
+@@ -4581,7 +4627,7 @@
+     beta = Float64.(fit.likelihood.beta)
+     s2a = fit.variance_components.sigma_a2
+     s2e = fit.variance_components.sigma_e2
+-    h2 = s2a / (s2a + s2e)
++    h2 = _gaussian_variance_fraction(s2a, s2e)
+     n = length(spec.y); q = size(Z, 2)
+     mu = X * beta
+     refit = estimator === :sparse_reml ? fit_sparse_reml : fit_ai_reml
+@@ -4595,7 +4641,8 @@
+             fb = refit(spec_b)
+             _bootstrap_usable_refit(fb) || continue
+             sab = fb.variance_components.sigma_a2; seb = fb.variance_components.sigma_e2
+-            push!(sa, sab); push!(se, seb); push!(hh, sab / (sab + seb))
++            hhb = _gaussian_variance_fraction(sab, seb)
++            push!(sa, sab); push!(se, seb); push!(hh, hhb)
+         catch
+             # PosDefException / non-converged refit → dropped, surfaced via n_converged
+         end

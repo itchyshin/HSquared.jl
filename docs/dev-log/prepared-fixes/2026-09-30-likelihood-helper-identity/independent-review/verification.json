@@ -1,0 +1,10 @@
+{
+  "manifest_entries_verified": 50,
+  "patch_replay_exact": true,
+  "original_sparse_file_exact": true,
+  "four_original_testsets_exact": true,
+  "three_computational_bodies_exact_after_call_rename": true,
+  "source_sha": "d77e6565e574ce428371fb86f8322d12edc977ead5f05093d24c4204ef85e935",
+  "expected_source_tree": "11f6319f4fcc9f69b98d0291676d5fe44bd5252485b09853d2e5553225abd773",
+  "independent_controls_sha": "e4d0a653e696cdeef60477f44d6ebe49ae29de6c37a831609d8ea3d45c8dd943"
+}

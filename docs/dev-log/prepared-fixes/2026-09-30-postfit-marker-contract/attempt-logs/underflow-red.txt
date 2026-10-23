@@ -1,0 +1,4 @@
+Estimated runtime before launch: under 1 minute, 1 Julia thread, 1 BLAS thread, existing toolchain, no fit/optimizer.
+Command: OPENBLAS_NUM_THREADS=1 JULIA_NUM_THREADS=1 JULIA_DEPOT_PATH=/private/tmp/hsq-goal-julia-depot:/Users/z3437171/.julia julia --project=. --startup-file=no --compiled-modules=no check_marker_contract.jl
+Unsafe proposed guard result: negative additive variance underflow rejection had 1 pass (the BigFloat sign/conversion witness) and 2 failures. Both explicit mixed and LOCO scans returned normally instead of throwing ArgumentError. This is the expected red result before the raw-sign guard.
+Source exercised: red-unsafe-proposal/genomic.jl SHA-256 0b68901b2a7f1e5cd72d5046f6ae46ec9c9ab70dfb7f927012f046cfe333e40e. This is the prior prepared shared guard, not the original candidate freeze.

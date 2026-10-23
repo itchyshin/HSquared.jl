@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/z3437171/.juliaup/bin/julia",
+    "--compiled-modules=no",
+    "--startup-file=no",
+    "--project=package",
+    "-e",
+    "using LinearAlgebra; println(\"Julia=\",VERSION,\" JuliaThreads=\",Threads.nthreads(),\" BLASThreads=\",BLAS.get_num_threads());include(\"/private/tmp/hsq-likelihood-original-spec-fix-20260930/test/likelihood_original_spec_regression.jl\");include(\"/private/tmp/hsq-likelihood-original-spec-fix-20260930/test/likelihood_input_guard_regression.jl\");include(\"/private/tmp/hsq-likelihood-original-spec-fix-20260930/test/original_phase1_dense_fit.jl\");"
+  ],
+  "elapsed_seconds": 29.214698957977816,
+  "exitcode": 0,
+  "threads": 1,
+  "timeout": 110
+}

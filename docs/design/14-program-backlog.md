@@ -56,7 +56,7 @@ claim).
 
 - **B1** Production (non-experimental) sparse REML path (V1-REML production row). [JL]
 - **B2** Large/real-pedigree conditioning + deep-inbreeding stress (V1-DENSE-COND). [JL]
-- **B3** Meuwissen–Luo O(n) inbreeding in the production Ainv path. [JL]
+- **B3** Meuwissen–Luo inbreeding traversal in the production Ainv path; document ancestry and heap costs without claiming a general runtime bound. [JL]
 - **B4** Fill-reducing ordering (AMD/METIS) for the sparse MME factorization. [JL]
 - **B5** AI-REML convergence hardening (step control, restarts, PD guards). [JL]
 - **B6** SQUAREM / augmented AI-REML accelerators (R#24/#25, JL#58). [JL]
@@ -131,7 +131,8 @@ claim).
 ## H · Non-Gaussian & GLLVM (Phase 6)
 
 > Note: genetic-GLLVM #50 slices 1–3 are already built on the engine
-> (descriptors, Gaussian + non-Gaussian latent solve, REML over G_lat, per-trait
+> (descriptors, Gaussian + non-Gaussian latent solve, Laplace-marginal fitting over
+> `G_lat` (exact REML only for Gaussian), per-trait
 > families). H8/H9 build on that.
 
 - **H1** ✅ Negative-binomial family + overdispersion (Laplace). [JL] (`NegativeBinomialResponse` + joint `(σ²a,θ)` profile + oracle merged #165; `V6-NBINOM` row + recovery sim + .md mirrors closed in the deferred-ledger close-out; partial)

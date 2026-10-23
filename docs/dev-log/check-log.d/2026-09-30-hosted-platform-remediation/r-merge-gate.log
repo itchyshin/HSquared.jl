@@ -1,0 +1,5 @@
+#259: polling until every check has COMPLETED (every 45s) ...
+--- settled checks ---
+COMPLETED	SUCCESS	R-CMD-check (ubuntu-latest)
+COMPLETED	SUCCESS	R-CMD-check (windows-latest)
+MERGED #259 after verifying every check settled green

@@ -1,5 +1,70 @@
 # Live Phase Snapshot — archive
 
+- **As of 2026-07-08 (plotting-layer AlgebraOfGraphics migration — RECOVERED + FIXED + VERIFIED
+  LIVE + TWICE ROSE-AUDITED + **MERGED** (PR #264 → `main` @ `50131e69`); Claude (Opus), two sessions,
+  R-lane session on maintainer instruction; rows **55** / covered **13** / `public_covered_count` **5**
+  UNCHANGED).** Five plotting files had sat
+  uncommitted for two days (mtime 07-06) as an unfinished mid-conversion of `HSquaredMakieExt` to
+  AlgebraOfGraphics (`:variance_components` + `:breeding_values`); AoG had never existed on any ref.
+  **Five defect classes fixed** (three found by reading, two — (4) and (5) — only by rendering the PNG
+  and looking at it)**:** (1) every marker drawn TWICE — the manual `scatter!` was restoring
+  z-order after the whiskers overpainted, so AoG now owns the single marker layer and whiskers go behind
+  via `translate!`; (2) `_axes_by_panel` pattern-matched `Label`s out of `fig.content` and index-zipped
+  them to axes (two undocumented internals) — replaced with AoG's supported `FigureGrid.grid` accessor +
+  a shape guard; (3) the full term list was forced onto EVERY facet's yticks — now per-facet; (4) *found
+  only by rendering the PNG and looking at it* — title/subtitle drawn once PER FACET, `ylabel` leaking
+  the mapped variable `"rank"`, x/y scales LINKED across facets (h² on `[0,1]` crushed against a `0–40`
+  variance scale), and the `[0,1] boundary` annotation clipped at the data limit; (5) *found only by
+  rendering the PNG, and it had PASSED an object assertion* — the `[0,1] boundary` flag was anchored at
+  `hi` for EVERY crossing, so a `lo <= 0` interval flagged the one end it respects, with the headroom
+  bump on the wrong side; the flag is now anchored at the crossed end (both ends when both cross) and the
+  driver asserts anchor position, row, and alignment rather than merely counting the annotation.
+  **VERIFIED:** compat
+  pin resolves (`AlgebraOfGraphics 0.13.0` + `Makie 0.24.13` + `CairoMakie 0.15.13`, Julia 1.10.0), the
+  extension precompiles, **9/9 kinds draw a `Makie.Figure`** (explicit + inferred); on the *forest payload
+  specifically*: `Scatter=1` per axis, `NaN` whisker draws nothing, whisker/zero-line `z=-1.0`, boundary
+  `Text` on the h² axis ONLY (control payload draws none); both AoG figures rasterize, `Pkg.test()` GREEN
+  dependency-free. **One machine, one version set** (Julia 1.10.0, macOS/arm64) — not a cross-version or
+  cross-platform claim. The facet-order assumption HOLDS on AoG 0.13.0. Re-runnable, **mutation-tested**
+  driver: `docs/dev-log/scripts/2026-07-08-plotting-aog-livedraw.jl` (it rasterizes BEFORE asserting, so
+  the PNGs exist on a failing run). The driver also runs as the **opt-in `plotting` CI job** — off by
+  default; dispatch CI with `run_plotting = true` — which uploads the figures as an artifact.
+  **Standing trap:** the default-CI stub test
+  asserts `isempty(methods(hsquared_figure))` with Makie/AoG out of that environment, so it passes
+  *precisely when the extension fails to load* — a green `Pkg.test()` is NEVER evidence about the
+  drawing layer. Also:
+  **`julia` is not on `PATH` in a Claude Code shell** (`~/.juliaup/bin`) — do not conclude the toolchain
+  is absent. **PR #264 MERGED** → `main` @ `50131e69`; branch `feat/2026-07-08-plotting-aog` retained.
+  **Two** real `rose-systems-auditor` audits, both PROMOTE-WITH-CHANGES, all changes applied:
+  the first on the branch (false 2026-06-22 AoG evidence pointer in `test/runtests.jl`, unreproducible
+  evidence, under-covering SUPERSEDED banner); the second on the defect-5 delta (a dangling "(see below)"
+  evidence pointer, a defect count left inconsistent across **five** surfaces — Rose named four, the
+  sweep found the fifth — three absolutes falsified by the new opt-in CI job, and an `if: always()`
+  artifact upload defeated by rasterizing *after* asserting).
+  Coordination board **UPDATED** — the R-lane-session lane exception is recorded and closed
+  (`docs/dev-log/coordination-board.md`, 2026-07-08 entry). No action owed from the R lane.
+  **SIX GATES THAT COULD NOT FAIL** were found closing this slice, each by the reflex the previous
+  one taught: (1) the CI stub test above; (2) `shinichi-brain/tools/check-after-task.R` defined a
+  main and never called it, so the documented CLI exited 0 for ANY input — including nonexistent
+  files — for its entire life, while `protocols/after-task.md` cited it as *the* DoD gate; (3) the
+  sibling sweep found `rose-pattern-scan.R` with the identical defect (both R honesty gates dead;
+  every shell/Python tool fine); (4) `handoff_gate.sh` audited only the checked-out branch;
+  (5) **restoring (3)'s missing `main()` did NOT restore the gate** — a later negative control showed
+  `rose-pattern-scan.R <nonexistent-root>` still exiting 0, because `list.files()` globs a missing
+  directory into zero files with no error and no warning, so a typo'd path "passed"; (6) this repo's
+  own live-draw driver asserted `nplots(ax, Text) == 1` — it *counted* the `[0,1]` flag and never
+  asked where it sat, which is exactly how defect (5) of the plotting layer survived a Rose audit.
+  (2) fixed + pushed (`shinichi-brain` @ `3468312`, guarded by `sys.nframe() == 0L` — NOT
+  `!interactive()`, which is FALSE under `Rscript -e 'source(...)'` too and would break the
+  workaround); (4) fixed independently by a parallel session (`1f1df6f`); (3)+(5) genuinely fixed at
+  `shinichi-brain` @ `d85299f` (root guard) and `@bbc1c34` (locale-independent matching), lesson banked
+  at `@58a2936`; (6) fixed here — the driver now asserts anchor position, row, and alignment.
+  **Before trusting a green, make it go red on purpose — including the gate you just repaired.**
+  Nothing promoted. Evidence: `docs/dev-log/check-log.d/2026-07-08-plotting-aog.md`.
+  START HERE: `docs/dev-log/handover/2026-07-08-claude-handover.md`.
+
+
+
 Thirty entries evicted verbatim from `AGENTS.md` on 2026-07-08, newest first (2026-07-03 back to
 2026-06-20). **Nothing is summarised; nothing is deleted.**
 
@@ -15,6 +80,27 @@ block** — nor does DRM.jl, nor the R twin `hsquared`, whose `AGENTS.md` carrie
 6,000 B. The pattern was attributed, not copied.
 
 ---
+
+- **As of 2026-07-03 (doc-25 V7 GPU stream COMPLETE + V8 stream COMPLETE — ALL numbered slices done;
+  Claude solo (Opus), autonomous; `/goal` "finish everything left in doc-25"; rows **55** / covered
+  **13** / `public_covered_count` **5** UNCHANGED throughout).** The doc-25 numbered map is CLEARED.
+  This continuation delivered + MERGED, each pre-declared + Rose-audited: **V8.5** APY genomic inverse
+  (#253), **V8.4** external blupf90 comparator for the matrix-free fit — estimand leg (#254), and the
+  ENTIRE **v0.7 GPU stream**: **V7.1** G-B Float32 (#255, tamia H100 — Float64 gate 7.3e-15, Float32
+  GEBV ~1e-6, speedup MODEST ~1.2×, TF32 not engaged), **V7.2** G-7.2 cross-device (#256, Narval A100 —
+  agreement PORTABLE ~1e-15, Float64 gate 3.0e-15; GBLUP bench 5.9×→46.7×), **V7.4** G-D backend
+  dispatcher (#257, opt-in `backend=:cuda` on the two construction ops; `:cpu` byte-identical), **V7.3**
+  G-C large-panel benchmark (#258, tamia H100 — handles n=20k×m=300k on one H100, 29% of 80GB; Float32
+  modest, transfer-bound), and **V7.5** G-E close-out (this slice — `status_cache` pointer refreshed,
+  stream consolidated). HONEST GPU summary: numerically exact + architecture-portable + handles realistic
+  panels, but Float32 only a minor win + no R-public surface → `V2-GRM-GPU` stays `partial`, NO covered
+  move. **doc-25 FULLY CLOSED** — both owed hardening legs now DISCHARGED (each Rose-audited + merged):
+  **V8.4 at-scale** (blupf90 vs exact-sparse vs matrix-free at q=4060, PR #260 — exact==blupf90 4.7e-6,
+  matrix-free ≤1%; the exact-infeasible regime q≫50k has NO external oracle by construction) and
+  **coverage-calibrated intervals** (DRAC fir job 46853279 — empirical coverage of the shipped
+  `:delta`/`:profile` h²/σ²a intervals: CONSERVATIVE over-coverage at small n, converging to nominal,
+  `:profile` > `:delta`; a characterization, no covered flip). `public_covered_count` **5** held across
+  the ENTIRE arc. START HERE: `docs/dev-log/after-task/2026-07-03-interval-coverage.md`.
 
 - **As of 2026-07-03 (doc-25 V7 GPU stream STARTED — V7.1 G-B Float32 RUN on tamia H100; Claude solo
   (Opus), autonomous; user steer "V7 GPU stream (finish doc-25)"; rows **55** / covered **13** /
@@ -679,3 +765,33 @@ block** — nor does DRM.jl, nor the R twin `hsquared`, whose `AGENTS.md` carrie
   benchmarks); RR slice 4 (eigen-function / PE term / R `rr()` spec); the metafounder
   R-bridge + single-step H^Γ (gated on #61 Q1–Q4); scout cadence #56; Phase 7/8
   hardware-gated.
+
+## Archived snapshot, 2026-10-01
+
+- **As of 2026-09-07 (Path FULL 0.9 finish — R-lane Layer B honesty PRs #191/#192 MERGED;
+  Julia lane owes FA/SS honesty + bridge fences + a merge-when-green pass on #313; owner
+  STOPPED the Cursor continuous run).** `public_covered_count` **stays 7** on both twins;
+  version **0.8.0** on both twins; **0.9.0 NOT authorized**; after 0.9 → **0.10.x**, not
+  **1.0**. This is a **twin-repo** campaign — the R sibling `hsquared` carries the full
+  narrative and the ordered critical-path chain; this repo's job is narrower: land the Julia
+  FA/SS status-honesty draft (scratch commit `2b1ad22`, not yet a PR), the Julia
+  bridge-production-fences draft (`d47aa3f`, not yet a PR), and merge-when-green **Julia #313**
+  (Gate-6 Rose evidence mirror, OPEN/CLEAN/CI-green at handover time), then run fresh
+  `Pkg.test()` / `docs/make.jl` / `preamble_cap.sh` and record them in `check-log.md` (tail
+  currently ends 2026-08-04 — no entry yet for this arc). **G10 held** `V1-MATFREE-REML` this
+  session (owner: "the evidence packet is not sufficient for an experimental→covered flip");
+  S5's frozen pre-declaration (`33ab68f6`) stays frozen, not run. **STANDING DRIFT FOUND AND
+  NOT SILENTLY FIXED:** this snapshot block had been stale on `main` since `e6bf8a17`
+  (2026-07-12) — nearly two months — because all the intervening Julia-engine narrative
+  (Szymek's arc, the matrix-free fitter, the 2026-08-04 G10/S5 saga, and the September #294-#313
+  stack) happened on `main` via ordinary PRs that never touched this block; the "2026-08-04"
+  narrative some agents may recall lives only on the abandoned branch
+  `codex/2026-07-13-v07-performance-localization` (tip `853bcc12`), which was **never merged to
+  `main`** and still sits uncommitted/unpushed-diverged in the Dropbox checkout as of this
+  handover. Do not treat that branch's AGENTS.md content as authoritative for `main`. **Do
+  not** authorize 0.9.0, bump `Project.toml`, tag, or flip any row from this lane — that chain
+  is owner-gated and lives in the R twin's handover. Julia `#267` (pre-existing, CI FAILURE)
+  and `#265` (chore) are off this campaign's critical path.
+  START HERE: `docs/dev-log/handover/2026-09-07-codex-handover.md` (this repo's pointer doc;
+  it sends you to `hsquared/docs/dev-log/handover/2026-09-07-codex-handover.md` — the sibling
+  repo, same Dropbox parent — for the full Path FULL narrative and Landing State ledger).

@@ -1,0 +1,26 @@
+{
+  "base_root": "/Users/z3437171/.codex/worktrees/hsquared-fa-gllvm-foundations/HSquared.jl",
+  "isolated_root": "/private/tmp/hsq-gllvm-descriptor-record-fix-20260930",
+  "base_source_tree_sha256": "d3c2de8d7f0a1a86918f15938264bbdc892a7303b5ddd488553ac923f073ad0a",
+  "isolated_source_tree_sha256": "017d3dd68d08158e849b585405bed15c7c9ff71f800e3f3d9e7c32bc5a4862f8",
+  "tree_algorithm": "SHA256 sorted src-relative UTF8 path, NUL, file bytes, NUL",
+  "changed_source_files": [
+    "src/genetic_gllvm.jl"
+  ],
+  "base_files": {
+    "src/genetic_gllvm.jl": "0727459d2f163835519ae8cf8481d2439b90ba5065cfc8d74ad2c0c08736d2ca",
+    "Project.toml": "37f0e6aaa6492c76519ed7771b226972cea531a7104866e5753890e31e163033",
+    "Manifest.toml": "c5940f2be0347f7ff987468aed67f17070f556a0aa99e0e5ec5317898cfa0fad"
+  },
+  "isolated_files": {
+    "src/genetic_gllvm.jl": "7cf01057c9a101e64f50f476eda10c17b47dddb04b090b416810467eeba453c9",
+    "Project.toml": "37f0e6aaa6492c76519ed7771b226972cea531a7104866e5753890e31e163033",
+    "Manifest.toml": "c5940f2be0347f7ff987468aed67f17070f556a0aa99e0e5ec5317898cfa0fad",
+    "test/gllvm_descriptor_record_regression.jl": "9932c6e4a91a065c519a41d66f11aadf4d829d2f8eb75329f9f5b6635ccbbd36",
+    "gllvm-descriptor-record.patch": "737bd4156a4ac8186ea49c9af1eb6ddc0275c68a1a7f3801d0fc6301e6ae680d",
+    "red.log": "6e4ebef0ec5e24bd83fc20d8ebe3f82c277ec0a6828863b57c0eced21ea6e8d1",
+    "green.log": "9167e630c773be809bb9ff96685450478fdf22c9fb4193c5dd8f83833fb88b2f",
+    "green-final.log": "983b5d46eb867d843dc40e33568df188f610044a8a321b24aa05882fa320ab84",
+    "receipt.md": "f698d8d78412efa677e05c734e41b6a3bafd95430a6b370a100d1855b8c46c5f"
+  }
+}

@@ -1,0 +1,7 @@
+AGHmatrix 3.0.1  method=Martini tau=1 omega=1
+max|Hinv_agh - Hinv_engine| = 4.239720e-12
+frobenius(Hinv delta)       = 6.993968e-12
+max|H_agh - H_engine|       = 3.140599e-12
+tol = 1.0e-08
+COMPARATOR: AGREE
+NOT a covered flip. Mrode Ch.11 = explicit NO-ANCHOR.

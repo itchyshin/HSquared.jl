@@ -1,0 +1,873 @@
+coefcov preserves metadata and frozen fit boundary: Test Failed at /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:54
+  Expression: hasproperty(b, field)
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:54 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:49 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:48
+coefcov preserves metadata and frozen fit boundary: Test Failed at /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:54
+  Expression: hasproperty(b, field)
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:54 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:49 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:48
+coefcov preserves metadata and frozen fit boundary: Test Failed at /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:54
+  Expression: hasproperty(b, field)
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:54 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:49 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:48
+coefcov preserves metadata and frozen fit boundary: Test Failed at /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:54
+  Expression: hasproperty(b, field)
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:54 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:49 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:48
+coefcov preserves metadata and frozen fit boundary: Test Failed at /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:54
+  Expression: hasproperty(b, field)
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:54 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:49 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:48
+coefcov preserves metadata and frozen fit boundary: Test Failed at /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:54
+  Expression: hasproperty(b, field)
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:54 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:49 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:48
+missing basis: Test Failed at /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:77
+  Expression: ScratchParser.parse_payload_v2(p)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:77 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:76 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:74 [inlined]
+ [6] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [7] top-level scope
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:48
+missing order: Test Failed at /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:77
+  Expression: ScratchParser.parse_payload_v2(p)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:77 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:76 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:74 [inlined]
+ [6] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [7] top-level scope
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:48
+missing Phi: Test Failed at /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:77
+  Expression: ScratchParser.parse_payload_v2(p)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:77 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:76 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:74 [inlined]
+ [6] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [7] top-level scope
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:48
+missing covariate: Test Failed at /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:77
+  Expression: ScratchParser.parse_payload_v2(p)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:77 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:76 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:74 [inlined]
+ [6] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [7] top-level scope
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:48
+missing cov_structure: Test Failed at /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:77
+  Expression: ScratchParser.parse_payload_v2(p)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:77 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:76 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:74 [inlined]
+ [6] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [7] top-level scope
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:48
+basis = "spline": Test Failed at /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:77
+  Expression: ScratchParser.parse_payload_v2(p)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:77 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:76 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:74 [inlined]
+ [6] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [7] top-level scope
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:48
+basis = :legendre: Test Failed at /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:77
+  Expression: ScratchParser.parse_payload_v2(p)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:77 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:76 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:74 [inlined]
+ [6] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [7] top-level scope
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:48
+order = true: Test Failed at /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:77
+  Expression: ScratchParser.parse_payload_v2(p)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:77 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:76 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:74 [inlined]
+ [6] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [7] top-level scope
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:48
+order = 0: Test Failed at /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:77
+  Expression: ScratchParser.parse_payload_v2(p)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:77 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:76 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:74 [inlined]
+ [6] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [7] top-level scope
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:48
+order = -1: Test Failed at /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:77
+  Expression: ScratchParser.parse_payload_v2(p)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:77 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:76 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:74 [inlined]
+ [6] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [7] top-level scope
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:48
+order = 2.0: Test Failed at /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:77
+  Expression: ScratchParser.parse_payload_v2(p)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:77 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:76 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:74 [inlined]
+ [6] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [7] top-level scope
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:48
+order = "2": Test Failed at /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:77
+  Expression: ScratchParser.parse_payload_v2(p)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:77 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:76 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:74 [inlined]
+ [6] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [7] top-level scope
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:48
+Phi = [1.0 1.0; 1.0 1.0]: Test Failed at /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:77
+  Expression: ScratchParser.parse_payload_v2(p)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:77 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:76 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:74 [inlined]
+ [6] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [7] top-level scope
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:48
+Phi = [1.0 1.0 1.0; 1.0 1.0 1.0; 1.0 1.0 1.0]: Test Failed at /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:77
+  Expression: ScratchParser.parse_payload_v2(p)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:77 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:76 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:74 [inlined]
+ [6] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [7] top-level scope
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:48
+Phi = [1.0, 2.0, 3.0]: Test Failed at /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:77
+  Expression: ScratchParser.parse_payload_v2(p)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:77 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:76 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:74 [inlined]
+ [6] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [7] top-level scope
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:48
+Phi = [1.0 NaN; 1.0 0.0; 1.0 1.0]: Test Failed at /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:77
+  Expression: ScratchParser.parse_payload_v2(p)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:77 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:76 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:74 [inlined]
+ [6] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [7] top-level scope
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:48
+Phi = [1.0 Inf; 1.0 0.0; 1.0 1.0]: Test Failed at /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:77
+  Expression: ScratchParser.parse_payload_v2(p)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:77 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:76 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:74 [inlined]
+ [6] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [7] top-level scope
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:48
+Phi = ["1" "0"; "1" "0"; "1" "0"]: Test Failed at /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:77
+  Expression: ScratchParser.parse_payload_v2(p)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:77 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:76 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:74 [inlined]
+ [6] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [7] top-level scope
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:48
+Phi = ComplexF64[1.0 + 0.0im 1.0 + 0.0im; 1.0 + 0.0im 1.0 + 0.0im; 1.0 + 0.0im 1.0 + 0.0im]: Test Failed at /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:77
+  Expression: ScratchParser.parse_payload_v2(p)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:77 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:76 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:74 [inlined]
+ [6] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [7] top-level scope
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:48
+Phi = sparse([1, 2, 3, 1, 2, 3], [1, 1, 1, 2, 2, 2], [1.0, 1.0, 1.0, 1.0, 1.0, 1.0], 3, 2): Test Failed at /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:77
+  Expression: ScratchParser.parse_payload_v2(p)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:77 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:76 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:74 [inlined]
+ [6] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [7] top-level scope
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:48
+Phi = BigFloat[1.000000000000000000000000000000000000000000000000000000000000000000000000000004e+1000 0.0; 1.0 0.0; 1.0 0.0]: Test Failed at /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:77
+  Expression: ScratchParser.parse_payload_v2(p)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:77 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:76 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:74 [inlined]
+ [6] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [7] top-level scope
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:48
+covariate = " ": Test Failed at /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:77
+  Expression: ScratchParser.parse_payload_v2(p)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:77 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:76 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:74 [inlined]
+ [6] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [7] top-level scope
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:48
+covariate = 7: Test Failed at /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:77
+  Expression: ScratchParser.parse_payload_v2(p)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:77 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:76 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:74 [inlined]
+ [6] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [7] top-level scope
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:48
+covariate_bounds = nothing: Test Failed at /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:77
+  Expression: ScratchParser.parse_payload_v2(p)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:77 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:76 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:74 [inlined]
+ [6] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [7] top-level scope
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:48
+covariate_bounds = [0.0, 0.0]: Test Failed at /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:77
+  Expression: ScratchParser.parse_payload_v2(p)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:77 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:76 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:74 [inlined]
+ [6] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [7] top-level scope
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:48
+covariate_bounds = [30.0, 10.0]: Test Failed at /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:77
+  Expression: ScratchParser.parse_payload_v2(p)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:77 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:76 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:74 [inlined]
+ [6] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [7] top-level scope
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:48
+covariate_bounds = [10.0, Inf]: Test Failed at /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:77
+  Expression: ScratchParser.parse_payload_v2(p)
+    Expected: ERROR: LoadError: Some tests did not pass: 17 passed, 44 failed, 0 errored, 0 broken.
+in expression starting at /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:47
+ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:77 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:76 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:74 [inlined]
+ [6] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [7] top-level scope
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:48
+covariate_bounds = [10.0]: Test Failed at /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:77
+  Expression: ScratchParser.parse_payload_v2(p)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:77 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:76 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:74 [inlined]
+ [6] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [7] top-level scope
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:48
+covariate_bounds = Bool[1, 0]: Test Failed at /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:77
+  Expression: ScratchParser.parse_payload_v2(p)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:77 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:76 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:74 [inlined]
+ [6] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [7] top-level scope
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:48
+covariate_bounds = ["10", "30"]: Test Failed at /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:77
+  Expression: ScratchParser.parse_payload_v2(p)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:77 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:76 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:74 [inlined]
+ [6] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [7] top-level scope
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:48
+cov_structure = "full": Test Failed at /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:77
+  Expression: ScratchParser.parse_payload_v2(p)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:77 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:76 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:74 [inlined]
+ [6] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [7] top-level scope
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:48
+cov_structure = :diagonal: Test Failed at /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:77
+  Expression: ScratchParser.parse_payload_v2(p)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:77 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:76 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:74 [inlined]
+ [6] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [7] top-level scope
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:48
+coefcov rejects sparse wrappers before conversion: Test Failed at /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:101
+  Expression: ScratchParser.parse_payload_v2(p)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:101 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:95 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:48
+coefcov rejects sparse wrappers before conversion: Test Failed at /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:101
+  Expression: ScratchParser.parse_payload_v2(p)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:101 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:95 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:48
+coefcov rejects sparse wrappers before conversion: Test Failed at /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:101
+  Expression: ScratchParser.parse_payload_v2(p)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:101 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:95 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:48
+coefcov accepts dense transpose, adjoint, and view controls: Test Failed at /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:114
+  Expression: hasproperty(parsed.blocks[1], :Phi)
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:114 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:106 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:48
+coefcov accepts dense transpose, adjoint, and view controls: Test Failed at /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:114
+  Expression: hasproperty(parsed.blocks[1], :Phi)
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:114 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:106 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:48
+coefcov accepts dense transpose, adjoint, and view controls: Test Failed at /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:114
+  Expression: hasproperty(parsed.blocks[1], :Phi)
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:114 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:106 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/e1-coefcov-fix-20260930/test/test_coefcov_parser.jl:48
+Test Summary:                                                                                                                    | Pass  Fail  Total  Time
+coefcov parser contract                                                                                                          |   17    44     61  1.8s
+  coefcov preserves metadata and frozen fit boundary                                                                             |    6     6     12  1.7s
+  coefcov rejects malformed coefficient fields                                                                                   |         32     32  0.1s
+    missing basis                                                                                                                |          1      1  0.0s
+    missing order                                                                                                                |          1      1  0.0s
+    missing Phi                                                                                                                  |          1      1  0.0s
+    missing covariate                                                                                                            |          1      1  0.0s
+    missing cov_structure                                                                                                        |          1      1  0.0s
+    basis = "spline"                                                                                                             |          1      1  0.0s
+    basis = :legendre                                                                                                            |          1      1  0.0s
+    order = true                                                                                                                 |          1      1  0.0s
+    order = 0                                                                                                                    |          1      1  0.0s
+    order = -1                                                                                                                   |          1      1  0.0s
+    order = 2.0                                                                                                                  |          1      1  0.0s
+    order = "2"                                                                                                                  |          1      1  0.0s
+    Phi = [1.0 1.0; 1.0 1.0]                                                                                                     |          1      1  0.0s
+    Phi = [1.0 1.0 1.0; 1.0 1.0 1.0; 1.0 1.0 1.0]                                                                                |          1      1  0.0s
+    Phi = [1.0, 2.0, 3.0]                                                                                                        |          1      1  0.0s
+    Phi = [1.0 NaN; 1.0 0.0; 1.0 1.0]                                                                                            |          1      1  0.0s
+    Phi = [1.0 Inf; 1.0 0.0; 1.0 1.0]                                                                                            |          1      1  0.0s
+    Phi = ["1" "0"; "1" "0"; "1" "0"]                                                                                            |          1      1  0.0s
+    Phi = ComplexF64[1.0 + 0.0im 1.0 + 0.0im; 1.0 + 0.0im 1.0 + 0.0im; 1.0 + 0.0im 1.0 + 0.0im]                                  |          1      1  0.0s
+    Phi = sparse([1, 2, 3, 1, 2, 3], [1, 1, 1, 2, 2, 2], [1.0, 1.0, 1.0, 1.0, 1.0, 1.0], 3, 2)                                   |          1      1  0.0s
+    Phi = BigFloat[1.000000000000000000000000000000000000000000000000000000000000000000000000000004e+1000 0.0; 1.0 0.0; 1.0 0.0] |          1      1  0.0s
+    covariate = " "                                                                                                              |          1      1  0.0s
+    covariate = 7                                                                                                                |          1      1  0.0s
+    covariate_bounds = nothing                                                                                                   |          1      1  0.0s
+    covariate_bounds = [0.0, 0.0]                                                                                                |          1      1  0.0s
+    covariate_bounds = [30.0, 10.0]                                                                                              |          1      1  0.0s
+    covariate_bounds = [10.0, Inf]                                                                                               |          1      1  0.0s
+    covariate_bounds = [10.0]                                                                                                    |          1      1  0.0s
+    covariate_bounds = Bool[1, 0]                                                                                                |          1      1  0.0s
+    covariate_bounds = ["10", "30"]                                                                                              |          1      1  0.0s
+    cov_structure = "full"                                                                                                       |          1      1  0.0s
+    cov_structure = :diagonal                                                                                                    |          1      1  0.0s
+  ordinary independent-block parsing remains valid                                                                               |    2            2  0.0s
+  coefcov rejects sparse wrappers before conversion                                                                              |    3     3      6  0.0s
+  coefcov accepts dense transpose, adjoint, and view controls                                                                    |    6     3      9  0.0s

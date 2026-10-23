@@ -1,0 +1,155 @@
+ERROR: LoadError: Some tests did not pass: 0 passed, 2 failed, 9 errored, 0 broken.
+in expression starting at /private/tmp/hsq-evolvability-finite-fix-20260930/test/existing_evolvability_stability.jl:1
+in expression starting at /private/tmp/hsq-evolvability-finite-fix-20260930/run.jl:7
+Test Summary:                        | Pass  Total  Time
+Evolvability finite output contracts |    7      7  0.8s
+G-metric conditioning and extreme scales: Test Failed at /private/tmp/hsq-evolvability-finite-fix-20260930/test/existing_evolvability_stability.jl:9
+  Expression: conditional_evolvability(Gill, βill)
+    Expected: ArgumentError
+      Thrown: UndefVarError
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-evolvability-finite-fix-20260930/test/existing_evolvability_stability.jl:9 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] top-level scope
+   @ /private/tmp/hsq-evolvability-finite-fix-20260930/test/existing_evolvability_stability.jl:2
+G-metric conditioning and extreme scales: Test Failed at /private/tmp/hsq-evolvability-finite-fix-20260930/test/existing_evolvability_stability.jl:10
+  Expression: autonomy(Gill, βill)
+    Expected: ArgumentError
+      Thrown: UndefVarError
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-evolvability-finite-fix-20260930/test/existing_evolvability_stability.jl:10 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] top-level scope
+   @ /private/tmp/hsq-evolvability-finite-fix-20260930/test/existing_evolvability_stability.jl:2
+G-metric conditioning and extreme scales: Error During Test at /private/tmp/hsq-evolvability-finite-fix-20260930/test/existing_evolvability_stability.jl:15
+  Test threw exception
+  Expression: ≈(evolvability(Gbase, βextreme), evolvability(Gbase, βref), rtol = 1.0e-12)
+  UndefVarError: `evolvability` not defined
+  Stacktrace:
+   [1] macro expansion
+     @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:669 [inlined]
+   [2] macro expansion
+     @ /private/tmp/hsq-evolvability-finite-fix-20260930/test/existing_evolvability_stability.jl:15 [inlined]
+   [3] macro expansion
+     @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+   [4] top-level scope
+     @ /private/tmp/hsq-evolvability-finite-fix-20260930/test/existing_evolvability_stability.jl:2
+G-metric conditioning and extreme scales: Error During Test at /private/tmp/hsq-evolvability-finite-fix-20260930/test/existing_evolvability_stability.jl:16
+  Test threw exception
+  Expression: ≈(respondability(Gbase, βextreme), respondability(Gbase, βref), rtol = 1.0e-12)
+  UndefVarError: `respondability` not defined
+  Stacktrace:
+   [1] macro expansion
+     @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:669 [inlined]
+   [2] macro expansion
+     @ /private/tmp/hsq-evolvability-finite-fix-20260930/test/existing_evolvability_stability.jl:16 [inlined]
+   [3] macro expansion
+     @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+   [4] top-level scope
+     @ /private/tmp/hsq-evolvability-finite-fix-20260930/test/existing_evolvability_stability.jl:2
+G-metric conditioning and extreme scales: Error During Test at /private/tmp/hsq-evolvability-finite-fix-20260930/test/existing_evolvability_stability.jl:17
+  Test threw exception
+  Expression: ≈(conditional_evolvability(Gbase, βextreme), conditional_evolvability(Gbase, βref), rtol = 1.0e-12)
+  UndefVarError: `conditional_evolvability` not defined
+  Stacktrace:
+   [1] macro expansion
+     @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:669 [inlined]
+   [2] macro expansion
+     @ /private/tmp/hsq-evolvability-finite-fix-20260930/test/existing_evolvability_stability.jl:17 [inlined]
+   [3] macro expansion
+     @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+   [4] top-level scope
+     @ /private/tmp/hsq-evolvability-finite-fix-20260930/test/existing_evolvability_stability.jl:2
+G-metric conditioning and extreme scales: Error During Test at /private/tmp/hsq-evolvability-finite-fix-20260930/test/existing_evolvability_stability.jl:18
+  Test threw exception
+  Expression: ≈(autonomy(Gbase, βextreme), autonomy(Gbase, βref), rtol = 1.0e-12)
+  UndefVarError: `autonomy` not defined
+  Stacktrace:
+   [1] macro expansion
+     @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:669 [inlined]
+   [2] macro expansion
+     @ /private/tmp/hsq-evolvability-finite-fix-20260930/test/existing_evolvability_stability.jl:18 [inlined]
+   [3] macro expansion
+     @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+   [4] top-level scope
+     @ /private/tmp/hsq-evolvability-finite-fix-20260930/test/existing_evolvability_stability.jl:2
+G-metric conditioning and extreme scales: Error During Test at /private/tmp/hsq-evolvability-finite-fix-20260930/test/existing_evolvability_stability.jl:15
+  Test threw exception
+  Expression: ≈(evolvability(Gbase, βextreme), evolvability(Gbase, βref), rtol = 1.0e-12)
+  UndefVarError: `evolvability` not defined
+  Stacktrace:
+   [1] macro expansion
+     @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:669 [inlined]
+   [2] macro expansion
+     @ /private/tmp/hsq-evolvability-finite-fix-20260930/test/existing_evolvability_stability.jl:15 [inlined]
+   [3] macro expansion
+     @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+   [4] top-level scope
+     @ /private/tmp/hsq-evolvability-finite-fix-20260930/test/existing_evolvability_stability.jl:2
+G-metric conditioning and extreme scales: Error During Test at /private/tmp/hsq-evolvability-finite-fix-20260930/test/existing_evolvability_stability.jl:16
+  Test threw exception
+  Expression: ≈(respondability(Gbase, βextreme), respondability(Gbase, βref), rtol = 1.0e-12)
+  UndefVarError: `respondability` not defined
+  Stacktrace:
+   [1] macro expansion
+     @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:669 [inlined]
+   [2] macro expansion
+     @ /private/tmp/hsq-evolvability-finite-fix-20260930/test/existing_evolvability_stability.jl:16 [inlined]
+   [3] macro expansion
+     @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+   [4] top-level scope
+     @ /private/tmp/hsq-evolvability-finite-fix-20260930/test/existing_evolvability_stability.jl:2
+G-metric conditioning and extreme scales: Error During Test at /private/tmp/hsq-evolvability-finite-fix-20260930/test/existing_evolvability_stability.jl:17
+  Test threw exception
+  Expression: ≈(conditional_evolvability(Gbase, βextreme), conditional_evolvability(Gbase, βref), rtol = 1.0e-12)
+  UndefVarError: `conditional_evolvability` not defined
+  Stacktrace:
+   [1] macro expansion
+     @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:669 [inlined]
+   [2] macro expansion
+     @ /private/tmp/hsq-evolvability-finite-fix-20260930/test/existing_evolvability_stability.jl:17 [inlined]
+   [3] macro expansion
+     @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+   [4] top-level scope
+     @ /private/tmp/hsq-evolvability-finite-fix-20260930/test/existing_evolvability_stability.jl:2
+G-metric conditioning and extreme scales: Error During Test at /private/tmp/hsq-evolvability-finite-fix-20260930/test/existing_evolvability_stability.jl:18
+  Test threw exception
+  Expression: ≈(autonomy(Gbase, βextreme), autonomy(Gbase, βref), rtol = 1.0e-12)
+  UndefVarError: `autonomy` not defined
+  Stacktrace:
+   [1] macro expansion
+     @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:669 [inlined]
+   [2] macro expansion
+     @ /private/tmp/hsq-evolvability-finite-fix-20260930/test/existing_evolvability_stability.jl:18 [inlined]
+   [3] macro expansion
+     @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+   [4] top-level scope
+     @ /private/tmp/hsq-evolvability-finite-fix-20260930/test/existing_evolvability_stability.jl:2
+G-metric conditioning and extreme scales: Error During Test at /private/tmp/hsq-evolvability-finite-fix-20260930/test/existing_evolvability_stability.jl:1
+  Got exception outside of a @test
+  UndefVarError: `conditional_evolvability` not defined
+  Stacktrace:
+   [1] macro expansion
+     @ /private/tmp/hsq-evolvability-finite-fix-20260930/test/existing_evolvability_stability.jl:22 [inlined]
+   [2] macro expansion
+     @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+   [3] top-level scope
+     @ /private/tmp/hsq-evolvability-finite-fix-20260930/test/existing_evolvability_stability.jl:2
+   [4] include(fname::String)
+     @ Base.MainInclude ./client.jl:489
+   [5] top-level scope
+     @ /private/tmp/hsq-evolvability-finite-fix-20260930/run.jl:7
+   [6] include(mod::Module, _path::String)
+     @ Base ./Base.jl:495
+   [7] exec_options(opts::Base.JLOptions)
+     @ Base ./client.jl:318
+   [8] _start()
+     @ Base ./client.jl:552
+Test Summary:                            | Fail  Error  Total  Time
+G-metric conditioning and extreme scales |    2      9     11  1.0s

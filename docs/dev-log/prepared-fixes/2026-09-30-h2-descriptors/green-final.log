@@ -1,0 +1,5 @@
+Test Summary:          | Pass  Total  Time
+H2 descriptor contract |  170    170  1.2s
+real 17.54
+user 16.40
+sys 0.40

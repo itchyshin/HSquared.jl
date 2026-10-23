@@ -1,0 +1,35 @@
+{
+  "current-limits": {
+    "path": "rendered-R-current-limits.html",
+    "sha256": "399490895ea55304b6b725776fb0223ee6966b3b53e76c88bcd9157b8c2fe3c2",
+    "checks": {
+      "200-seed": true,
+      "141 fits converged": true,
+      "110 met": true,
+      "All 200 attempts": true,
+      "experimental": true
+    }
+  },
+  "multivariate": {
+    "path": "rendered-R-multivariate.html",
+    "sha256": "e1a29bad6ee980582a3c289caa01c01e36090f2071dee40c48d3feab49013af6",
+    "checks": {
+      "59 nonconverged": true,
+      "20 genetic": true,
+      "11 residual": true,
+      "55%": true,
+      "Wilson": true,
+      "no overall pass cutoff": true
+    }
+  },
+  "genetic-gllvm": {
+    "path": "rendered-R-genetic-gllvm.html",
+    "sha256": "0c5f171c4251463f93a93973a71f4b7ec6b8739a150886deb94fad9ae53eed4b",
+    "checks": {
+      "Poisson": true,
+      "conditional": true,
+      "link": true,
+      "experimental": true
+    }
+  }
+}

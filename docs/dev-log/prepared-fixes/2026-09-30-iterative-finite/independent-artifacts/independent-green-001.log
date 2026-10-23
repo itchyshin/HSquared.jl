@@ -1,0 +1,44 @@
+ERROR: LoadError: Some tests did not pass: 33 passed, 1 failed, 0 errored, 0 broken.
+in expression starting at /private/tmp/e1-iterative-finite-independent-probes-20260930/test/gauss_independent_challenges.jl:3
+Julia=1.10.0 JuliaThreads=1 BLASThreads=1
+Test Summary:                         | Pass  Total  Time
+iterative finite arithmetic contracts |  105    105  5.2s
+Test Summary:                      | Pass  Total  Time
+independent probe summary controls |   18     18  0.0s
+Test Summary:              | Pass  Total  Time
+Wave 1 numerical contracts |  167    167  5.8s
+Test Summary:                                                  | Pass  Total  Time
+constructed genomic relationships are symmetric and invertible |   16     16  0.0s
+Test Summary:                                    | Pass  Total  Time
+APY finite inputs and conditional variance scale |    8      8  0.6s
+Test Summary:                                   | Pass  Total  Time
+APY partial-core block formula and Schur cutoff |    5      5  0.0s
+Test Summary:                                                  | Pass  Total  Time
+dense Gaussian routes reject indefinite relationship precision |    4      4  0.0s
+Test Summary:                                                | Pass  Total  Time
+dense Gaussian routes validate relationship precision inputs |    4      4  0.0s
+Test Summary:                                                       | Pass  Total  Time
+V1-MATFREE-REML in-CI pins (fitter path exists; not a covered flip) |   22     22  1.4s
+failed SLQ is explicit: Test Failed at /private/tmp/e1-iterative-finite-independent-probes-20260930/test/gauss_independent_challenges.jl:61
+  Expression: occursin("SLQ", sprint(showerror, err))
+   Evaluated: occursin("SLQ", "ArgumentError: Ainv[1] has a non-finite matrix norm")
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/e1-iterative-finite-independent-probes-20260930/test/gauss_independent_challenges.jl:61 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/e1-iterative-finite-independent-probes-20260930/test/gauss_independent_challenges.jl:52 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/e1-iterative-finite-independent-probes-20260930/test/gauss_independent_challenges.jl:4
+Test Summary:                                     | Pass  Fail  Total  Time
+Gauss independent iterative finite challenges     |   33     1     34  0.9s
+  finite range refusal and finite failure iterate |   11           11  0.1s
+  independent scaled summaries                    |   10           10  0.0s
+  invalid update retains coherent fitted state    |   11           11  0.1s
+  failed SLQ is explicit                          |    1     1      2  0.6s

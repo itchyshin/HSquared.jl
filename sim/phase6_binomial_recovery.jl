@@ -7,13 +7,10 @@ using Random
 Opt-in known-truth recovery harness for the fitted Binomial (logit) animal model
 (`fit_laplace_reml(...; family = :binomial, n_trials = m)`).
 
-Deliberately outside `test/` so the suite stays RNG-free. It is the scientific
-counterpart to `sim/phase6_bernoulli_recovery.jl`: the single-trial Bernoulli
-fit recovers the latent breeding values well but leaves `σ̂²a` DOWNWARD-biased and
-uncalibrated, because binary data carries little variance information. With more
-trials per record the data is far more informative, and the same Laplace REML
-estimator recovers `σ̂²a` TIGHTLY — so the binary "bias" is fundamentally an
-information effect, not an estimator flaw.
+Deliberately outside `test/` so the suite stays RNG-free. It is compared descriptively with `sim/phase6_bernoulli_recovery.jl`. In these
+separate five-seed runs, the Binomial(20) estimates were closer to truth than the
+Bernoulli estimates. This contrast does not establish a causal effect of trial
+count, population bias, or an estimator flaw.
 
 Model: half-sib pedigree, `u ~ N(0, A·σ²a)` on the logit scale, and
 `yᵢ ~ Binomial(m, logistic(μ + uₐ))`.

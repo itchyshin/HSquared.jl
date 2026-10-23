@@ -1,0 +1,29 @@
+ERROR: LoadError: Some tests did not pass: 5 passed, 2 failed, 0 errored, 0 broken.
+in expression starting at /private/tmp/hsq-evolvability-finite-fix-20260930/test/evolvability_finite_output_regression.jl:2
+in expression starting at /private/tmp/hsq-evolvability-finite-fix-20260930/run.jl:6
+Evolvability finite output contracts: Test Failed at /private/tmp/hsq-evolvability-finite-fix-20260930/test/evolvability_finite_output_regression.jl:4
+  Expression: HSquared.variance_along_gradient(G, [1.0e200, 0.0]; normalize = false)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-evolvability-finite-fix-20260930/test/evolvability_finite_output_regression.jl:4 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] top-level scope
+   @ /private/tmp/hsq-evolvability-finite-fix-20260930/test/evolvability_finite_output_regression.jl:3
+Evolvability finite output contracts: Test Failed at /private/tmp/hsq-evolvability-finite-fix-20260930/test/evolvability_finite_output_regression.jl:5
+  Expression: HSquared.variance_along_gradient(diagm([1.0e308, 1.0e308]), [2.0, 0.0]; normalize = false)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-evolvability-finite-fix-20260930/test/evolvability_finite_output_regression.jl:5 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] top-level scope
+   @ /private/tmp/hsq-evolvability-finite-fix-20260930/test/evolvability_finite_output_regression.jl:3
+Test Summary:                        | Pass  Fail  Total  Time
+Evolvability finite output contracts |    5     2      7  1.4s

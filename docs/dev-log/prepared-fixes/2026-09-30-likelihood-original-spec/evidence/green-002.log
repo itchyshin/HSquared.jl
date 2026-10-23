@@ -1,0 +1,7 @@
+Julia=1.10.0 JuliaThreads=1 BLASThreads=1
+Test Summary:                            | Pass  Total  Time
+likelihood result specification identity |   64     64  7.5s
+Test Summary:                          | Pass  Total  Time
+likelihood input and result boundaries |  202    202  4.4s
+Test Summary:                            | Pass  Total  Time
+Phase 1 dense variance component fitting |   37     37  1.0s

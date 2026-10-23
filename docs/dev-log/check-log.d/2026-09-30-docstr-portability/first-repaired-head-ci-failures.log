@@ -1,0 +1,1086 @@
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	﻿2026-10-01T00:26:46.9696900Z ##[group]Run julia-actions/julia-runtest@v1
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:46.9697274Z with:
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:46.9697461Z   check_bounds: yes
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:46.9697655Z   coverage: true
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:46.9697838Z   depwarn: yes
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:46.9698039Z   force_latest_compatible_version: auto
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:46.9698285Z   inline: yes
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:46.9698447Z   project: @.
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:46.9698610Z   annotate: false
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:46.9698796Z   compiled_modules: yes
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:46.9699006Z   allow_reresolve: true
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:46.9699192Z env:
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:46.9699372Z   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:46.9699668Z   JULIA_PKG_SERVER_REGISTRY_PREFERENCE: eager
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:46.9699927Z ##[endgroup]
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:46.9726534Z ##[start-action display=Set and export registry flavor preference;id=__julia-actions_julia-runtest.__run]
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:46.9866247Z ##[group]Run # Set and export registry flavor preference
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:46.9866665Z [36;1m# Set and export registry flavor preference[0m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:46.9867249Z [36;1mecho "JULIA_PKG_SERVER_REGISTRY_PREFERENCE=${JULIA_PKG_SERVER_REGISTRY_PREFERENCE:-eager}" >> ${GITHUB_ENV}[0m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:46.9883513Z shell: C:\Program Files\Git\bin\bash.EXE --noprofile --norc -e -o pipefail {0}
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:46.9883932Z env:
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:46.9884136Z   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:46.9884435Z   JULIA_PKG_SERVER_REGISTRY_PREFERENCE: eager
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:46.9884703Z ##[endgroup]
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:47.0346580Z ##[end-action id=__julia-actions_julia-runtest.__run;outcome=success;conclusion=success;duration_ms=61]
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:47.0349345Z ##[start-action display=Install dependencies in their own (shared) environment;id=__julia-actions_julia-runtest.__run_2]
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:47.0353756Z ##[end-action id=__julia-actions_julia-runtest.__run_2;outcome=skipped;conclusion=skipped;duration_ms=0]
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:47.0357078Z ##[start-action display=Run the package tests;id=__julia-actions_julia-runtest.__run_3]
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:47.0496317Z ##[group]Run # Run the package tests
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:47.0496639Z [36;1m# Run the package tests[0m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:47.0496953Z [36;1m[0m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:47.0497454Z [36;1m# On Windows the executable is julia.exe, elsewhere it is julia[0m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:47.0497849Z [36;1mjulia_bin=julia[0m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:47.0498115Z [36;1m[[ "Windows" == "Windows" ]] && julia_bin=julia.exe[0m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:47.0498415Z [36;1m[0m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:47.0498726Z [36;1m# Optionally set the optimization level (empty means use the Julia default)[0m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:47.0499123Z [36;1mopt_flag=()[0m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:47.0499414Z [36;1m[[ -n "${OPTIMIZE}" ]] && opt_flag=( "--optimize=${OPTIMIZE}" )[0m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:47.0499754Z [36;1m[0m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:47.0499968Z [36;1m# The Julia command that will be executed[0m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:47.0500671Z [36;1mjulia_cmd=( "${julia_bin:?}" --color=yes --inline=yes "${opt_flag[@]}" --project=@. -e 'include(joinpath(ENV["GITHUB_ACTION_PATH"], "test_harness.jl"))' --  )[0m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:47.0501310Z [36;1m[0m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:47.0501557Z [36;1m# Add the prefix in front of the command if there is one[0m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:47.0501872Z [36;1mprefix=(  )[0m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:47.0502387Z [36;1m[[ -n ${prefix[*]} ]] && julia_cmd=( "${prefix[@]}" "${julia_cmd[@]}" )[0m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:47.0502726Z [36;1m[0m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:47.0502912Z [36;1m# Run the Julia command[0m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:47.0503200Z [36;1mecho "::debug::Executing Julia: ${julia_cmd[*]}"[0m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:47.0503501Z [36;1m"${julia_cmd[@]}"[0m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:47.0519508Z shell: C:\Program Files\Git\bin\bash.EXE --noprofile --norc -e -o pipefail {0}
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:47.0519935Z env:
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:47.0520141Z   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:47.0520455Z   JULIA_PKG_SERVER_REGISTRY_PREFERENCE: eager
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:47.0520956Z   ANNOTATE: false
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:47.0523682Z   COVERAGE: true
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:47.0523898Z   FORCE_LATEST_COMPATIBLE_VERSION: auto
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:47.0524165Z   CHECK_BOUNDS: yes
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:47.0524360Z   COMPILED_MODULES: yes
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:47.0524565Z   ALLOW_RERESOLVE: true
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:47.0524769Z   DEPWARN: yes
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:47.0524956Z   OPTIMIZE: 
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:47.0525141Z ##[endgroup]
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:48.5409113Z │
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:48.5410065Z │ To reproduce this CI run locally run the following from the same repository state on julia version 1.13.1:
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:48.5410599Z │
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:48.5411729Z │ `import Pkg; Pkg.test(;coverage=true, julia_args=["--check-bounds=yes", "--compiled-modules=yes", "--depwarn=yes"], force_latest_compatible_version=false, allow_reresolve=true)`
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:48.5413106Z │
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:50.4593105Z [33m[1m┌ [22m[39m[33m[1mWarning: [22m[39mIgnoring incompatible compat entry `SHA = "0.7"` in "D:\\a\\HSquared.jl\\HSquared.jl\\Project.toml".
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:50.4594876Z [33m[1m│ [22m[39mSHA is a non-upgradable standard library with version 1.0.0 in the current Julia version.
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:50.4596377Z [33m[1m│ [22m[39mFix by setting compat to "0.7, 1" to mark support of the current version 1.0.0.
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:50.4597780Z [33m[1m└ [22m[39m[90m@ Pkg.Operations C:\hostedtoolcache\windows\julia\1.13.1\x64\share\julia\stdlib\v1.13\Pkg\src\Operations.jl:490[39m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:50.4798346Z [32m[1m     Testing[22m[39m HSquared
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.6340629Z [32m[1m      Status[22m[39m `C:\Users\runneradmin\AppData\Local\Temp\jl_kcwsUG\Project.toml`
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.6468411Z   [90m[4c88cf16] [39mAqua v0.8.18
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.6470902Z   [90m[8bb1440f] [39mDelimitedFiles v1.9.1
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.6473979Z   [90m[31c24e10] [39mDistributions v0.25.131
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.6477213Z   [90m[a0667dea] [39mHSquared v0.9.0 `D:\a\HSquared.jl\HSquared.jl`
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.6480952Z   [90m[0f8b85d8] [39mJSON3 v1.14.3[33m [deprecated][39m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.6483481Z [33m⌅[39m [90m[429524aa] [39mOptim v1.13.3
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.6486418Z   [90m[10745b16] [39mStatistics v1.11.5
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.6536678Z   [90m[ade2ca70] [39mDates v1.11.0
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.6580335Z   [90m[37e2e46d] [39mLinearAlgebra v1.13.0
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.6622468Z   [90m[de0858da] [39mPrintf v1.11.0
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.6666666Z   [90m[9a3f8284] [39mRandom v1.11.0
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.6710765Z   [90m[ea8e919c] [39mSHA v1.0.0
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.6756274Z   [90m[6462fe0b] [39mSockets v1.11.0
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.6759575Z   [90m[2f01184e] [39mSparseArrays v1.13.0
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.6803118Z   [90m[fa267f1f] [39mTOML v1.0.3
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.6806033Z   [90m[8dfed614] [39mTest v1.11.0
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.9078037Z [36m[1m        Info[22m[39m Packages marked with [33m[deprecated][39m are no longer maintained.
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.9082338Z [32m[1m      Status[22m[39m `C:\Users\runneradmin\AppData\Local\Temp\jl_kcwsUG\Manifest.toml`
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.9689342Z   [90m[47edcb42] [39mADTypes v1.24.0
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.9691916Z   [90m[7d9f7c33] [39mAccessors v0.1.45
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.9694923Z   [90m[79e6a3ab] [39mAdapt v4.7.1
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.9697865Z   [90m[66dad0bd] [39mAliasTables v1.1.3
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.9701116Z   [90m[4c88cf16] [39mAqua v0.8.18
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.9704322Z   [90m[4fba245c] [39mArrayInterface v7.30.2
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.9707384Z   [90m[38540f10] [39mCommonSolve v0.2.14
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.9710167Z   [90m[bbf7d656] [39mCommonSubexpressions v0.3.1
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.9712860Z   [90m[34da2185] [39mCompat v4.18.1
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.9715767Z   [90m[a33af91c] [39mCompositionsBase v0.1.2
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.9718628Z   [90m[187b0558] [39mConstructionBase v1.6.0
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.9722031Z   [90m[9a962f9c] [39mDataAPI v1.16.0
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.9725388Z   [90m[864edb3b] [39mDataStructures v0.19.6
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.9728282Z   [90m[8bb1440f] [39mDelimitedFiles v1.9.1
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.9731591Z   [90m[163ba53b] [39mDiffResults v1.1.0
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.9734313Z   [90m[b552c78f] [39mDiffRules v1.16.0
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.9737222Z   [90m[a0c0ee7d] [39mDifferentiationInterface v0.7.21
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.9741032Z   [90m[31c24e10] [39mDistributions v0.25.131
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.9743898Z   [90m[ffbed154] [39mDocStringExtensions v0.9.5
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.9746702Z   [90m[4e289a0a] [39mEnumX v1.0.7
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.9749532Z   [90m[1a297f60] [39mFillArrays v1.17.1
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.9752254Z   [90m[6a86dc24] [39mFiniteDiff v2.33.0
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.9755062Z   [90m[f6369f11] [39mForwardDiff v1.4.6
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.9757853Z   [90m[a0844989] [39mGamma v1.2.0
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.9761896Z   [90m[a0667dea] [39mHSquared v0.9.0 `D:\a\HSquared.jl\HSquared.jl`
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.9764715Z   [90m[34004b35] [39mHypergeometricFunctions v0.3.30
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.9767678Z   [90m[3587e190] [39mInverseFunctions v0.1.17
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.9770665Z   [90m[92d709cd] [39mIrrationalConstants v0.2.6
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.9773506Z   [90m[692b3bcd] [39mJLLWrappers v1.8.0
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.9776848Z   [90m[0f8b85d8] [39mJSON3 v1.14.3[33m [deprecated][39m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.9780255Z [32m⌃[39m [90m[d3d80556] [39mLineSearches v7.5.1
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.9782900Z   [90m[2ab3a3ac] [39mLogExpFunctions v1.0.2
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.9785859Z   [90m[1914dd2f] [39mMacroTools v0.5.16
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.9788672Z   [90m[e1d29d7a] [39mMissings v1.2.0
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.9791681Z [33m⌅[39m [90m[d41bc354] [39mNLSolversBase v7.10.0
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.9794547Z   [90m[77ba4419] [39mNaNMath v1.1.4
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.9797649Z [33m⌅[39m [90m[429524aa] [39mOptim v1.13.3
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.9800548Z   [90m[bac558e1] [39mOrderedCollections v2.0.1
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.9803748Z   [90m[90014a1f] [39mPDMats v0.11.41
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.9806401Z [33m⌅[39m [90m[69de0a69] [39mParsers v2.8.8
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.9809258Z   [90m[85a6dd25] [39mPositiveFactorizations v0.2.4
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.9812060Z   [90m[aea7be01] [39mPrecompileTools v1.3.4
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.9814782Z   [90m[21216c6a] [39mPreferences v1.6.0
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.9817451Z   [90m[43287f4e] [39mPtrArrays v1.4.0
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.9820614Z   [90m[1fd47b50] [39mQuadGK v2.11.3
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.9822982Z   [90m[189a3867] [39mReexport v1.2.2
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.9825821Z   [90m[79098fc4] [39mRmath v0.9.0
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.9828618Z   [90m[f2b01f46] [39mRoots v3.0.9
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.9831319Z   [90m[efcf1570] [39mSetfield v1.1.2
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.9834123Z   [90m[a2af1166] [39mSortingAlgorithms v1.2.3
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.9836870Z   [90m[276daf66] [39mSpecialFunctions v2.9.0
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.9839973Z   [90m[1e83bf80] [39mStaticArraysCore v1.4.4
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.9843116Z   [90m[10745b16] [39mStatistics v1.11.5
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.9845989Z   [90m[82ae8749] [39mStatsAPI v1.8.0
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.9848844Z   [90m[2913bbd2] [39mStatsBase v0.34.13
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.9851765Z   [90m[4c63d2b9] [39mStatsFuns v2.2.1
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.9854624Z   [90m[856f2bd8] [39mStructTypes v1.11.0
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.9857565Z   [90m[efe28fd5] [39mOpenSpecFun_jll v0.5.6+0
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.9860977Z   [90m[f50d1b31] [39mRmath_jll v0.5.2+0
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.9907974Z   [90m[0dad84c5] [39mArgTools v1.1.2
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.9951574Z   [90m[56f22d72] [39mArtifacts v1.11.0
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:56.9994284Z   [90m[2a0f44e3] [39mBase64 v1.11.0
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:57.0039335Z   [90m[ade2ca70] [39mDates v1.11.0
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:57.0042283Z   [90m[8ba89e20] [39mDistributed v1.11.0
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:57.0084215Z   [90m[f43a241f] [39mDownloads v1.7.0
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:57.0125883Z   [90m[7b1f6079] [39mFileWatching v1.11.0
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:57.0129226Z   [90m[9fa8497b] [39mFuture v1.11.0
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:57.0132354Z   [90m[b77e0a4c] [39mInteractiveUtils v1.11.0
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:57.0176225Z   [90m[ac6e5ff7] [39mJuliaSyntaxHighlighting v1.12.0
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:57.0221313Z   [90m[b27032c2] [39mLibCURL v1.0.0
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:57.0266041Z   [90m[76f85450] [39mLibGit2 v1.11.0
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:57.0319057Z   [90m[8f399da3] [39mLibdl v1.11.0
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:57.0375325Z   [90m[37e2e46d] [39mLinearAlgebra v1.13.0
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:57.0422438Z   [90m[56ddb016] [39mLogging v1.11.0
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:57.0480130Z   [90m[d6f4376e] [39mMarkdown v1.11.0
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:57.0482791Z   [90m[a63ad114] [39mMmap v1.11.0
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:57.0540287Z   [90m[ca575930] [39mNetworkOptions v1.3.0
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:57.0584675Z   [90m[44cfe95a] [39mPkg v1.13.0
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:57.0645310Z   [90m[de0858da] [39mPrintf v1.11.0
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:57.0703654Z   [90m[9a3f8284] [39mRandom v1.11.0
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:57.0748716Z   [90m[ea8e919c] [39mSHA v1.0.0
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:57.0751157Z   [90m[9e88b42a] [39mSerialization v1.11.0
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:57.0798133Z   [90m[6462fe0b] [39mSockets v1.11.0
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:57.0801369Z   [90m[2f01184e] [39mSparseArrays v1.13.0
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:57.0844607Z   [90m[f489334b] [39mStyledStrings v1.11.0
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:57.0846935Z   [90m[4607b0f0] [39mSuiteSparse
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:57.0892507Z   [90m[fa267f1f] [39mTOML v1.0.3
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:57.0938011Z   [90m[a4e569a6] [39mTar v1.10.0
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:57.0941143Z   [90m[8dfed614] [39mTest v1.11.0
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:57.0985653Z   [90m[cf7118a7] [39mUUIDs v1.11.0
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:57.0988568Z   [90m[4ec0a83e] [39mUnicode v1.11.0
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:57.0991822Z   [90m[e66e0078] [39mCompilerSupportLibraries_jll v1.5.5+2
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:57.1040344Z   [90m[deac9b47] [39mLibCURL_jll v8.18.0+1
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:57.1082128Z   [90m[e37daf67] [39mLibGit2_jll v1.9.1+0
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:57.1125471Z   [90m[29816b5a] [39mLibSSH2_jll v1.11.104+0
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:57.1166423Z   [90m[14a3606d] [39mMozillaCACerts_jll v2026.8.13
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:57.1208033Z   [90m[4536629a] [39mOpenBLAS_jll v0.3.30+0
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:57.1212121Z   [90m[05823500] [39mOpenLibm_jll v0.8.7+0
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:57.1215161Z   [90m[458c3c95] [39mOpenSSL_jll v3.5.6+0
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:57.1258129Z   [90m[efcefdf7] [39mPCRE2_jll v10.46.0+0
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:57.1261227Z   [90m[bea87d4a] [39mSuiteSparse_jll v7.10.1+0
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:57.1306286Z   [90m[83775a58] [39mZlib_jll v1.3.1+2
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:57.1352516Z   [90m[3161d3a3] [39mZstd_jll v1.5.7+1
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:57.1397000Z   [90m[8e850b90] [39mlibblastrampoline_jll v5.15.0+0
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:57.1441245Z   [90m[8e850ede] [39mnghttp2_jll v1.67.1+0
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:57.1484035Z   [90m[3f19e933] [39mp7zip_jll v17.8.2+0
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:57.1487248Z [36m[1m        Info[22m[39m Packages marked with [32m⌃[39m and [33m⌅[39m have new versions available. Those with [32m⌃[39m may be upgradable, but those with [33m⌅[39m are restricted by compatibility constraints from upgrading.
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:57.1490902Z [36m[1m        Info[22m[39m Packages marked with [33m[deprecated][39m are no longer maintained.
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:58.1173848Z [32m[1mPrecompiling[22m[39m for configuration --code-coverage=@D:\a\HSquared.jl\HSquared.jl --color=yes --warn-overwrite=yes --depwarn=yes --inline=yes --startup-file=no --track-allocation=none --check-bounds=yes --compiled-modules=yes --depwarn=yes
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:01.5945051Z    3.5 s[32m  ✓ [39m[90mRoots[39m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:02.5712974Z    1.0 s[32m  ✓ [39m[90mRoots → RootsForwardDiffExt[39m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:03.1735885Z    5.0 s[32m  ✓ [39mHSquared
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:08.5977432Z    7.0 s[32m  ✓ [39mDistributions
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:10.2088325Z    1.6 s[32m  ✓ [39mDistributions → DistributionsTestExt
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:10.2092364Z   5 dependencies successfully precompiled in 13 seconds. 117 already precompiled.
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:10.2095534Z [32m[1m     Testing[22m[39m Running tests...
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:16.3164205Z [0m[1mTest Summary:                                           | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:16.3167706Z Selected inverse trace validates support and dimensions | [32m  28  [39m[36m   28  [39m[0m2.9s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:16.5186392Z [0m[1mTest Summary:                                     | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:16.5189302Z Selected inverse rejects a failed Cholesky factor | [32m   2  [39m[36m    2  [39m[0m0.2s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:16.5915579Z [0m[1mTest Summary:                                     | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:16.5917697Z Selected inverse rejects nonfinite inverse values | [32m   3  [39m[36m    3  [39m[0m0.1s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:18.5198736Z [0m[1mTest Summary:                                            | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:18.5201542Z one known inbred parent and one unrelated missing parent | [32m  18  [39m[36m   18  [39m[0m1.7s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:18.5842797Z [0m[1mTest Summary:                                            | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:18.5845922Z Float64 selfing boundary rejects zero Mendelian variance | [32m   2  [39m[36m    2  [39m[0m0.1s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:32.8635845Z [0m[1mTest Summary:             | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1m Time[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:32.8638687Z Aqua.jl quality assurance | [32m  10  [39m[36m   10  [39m[0m13.8s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:40.2061267Z [0m[1mTest Summary:             | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:40.2064979Z HSquared Phase 0 scaffold | [32m 446  [39m[36m  446  [39m[0m3.7s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:42.5464937Z [0m[1mTest Summary:                       | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:42.5467716Z Recovery calibration log summarizer | [32m  21  [39m[36m   21  [39m[0m2.3s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:43.6514331Z [0m[1mTest Summary:                          | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:43.6517397Z Validation-debt burn-down tracker (I9) | [32m  11  [39m[36m   11  [39m[0m0.9s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:43.7746492Z [0m[1mTest Summary:                              | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:43.7747961Z nested_lrt helper + chi-bar boundary (C10) | [32m  14  [39m[36m   14  [39m[0m0.1s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:59.5157841Z [0m[1mTest Summary:                                         | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1m Time[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:59.5160599Z Phase 6 negative-binomial (NB2, log link) family (H1) | [32m  20  [39m[36m   20  [39m[0m15.7s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:12.0533260Z [0m[1mTest Summary:                                             | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1m Time[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:12.0536399Z Phase 6 beta-binomial (logit, overdispersion) family (H2) | [32m  85  [39m[36m   85  [39m[0m12.5s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:15.8105585Z [0m[1mTest Summary:                                              | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:15.8108328Z Phase 6 Bernoulli probit (threshold/liability) family (H3) | [32m  66  [39m[36m   66  [39m[0m3.6s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:17.1131739Z [0m[1mTest Summary:                                                            | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:17.1134626Z Phase 6 ordered-categorical probit (ordinal threshold) family (T1, v0.6) | [32m  62  [39m[36m   62  [39m[0m1.3s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:17.8324135Z [0m[1mTest Summary:                                                   | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:17.8330272Z Phase 6 ordered-probit JOINT cutpoint estimation (T1 fit, v0.6) | [32m  10  [39m[36m   10  [39m[0m0.7s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:18.4134284Z [0m[1mTest Summary:                                                        | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:18.4136962Z Phase 6 Gamma (log link, positive continuous) family (T-Gamma, v0.6) | [32m  31  [39m[36m   31  [39m[0m0.6s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:18.6804360Z [0m[1mTest Summary:                                                   | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:18.6807289Z Phase 6 Gamma JOINT (σ²a, shape) estimation (T-Gamma fit, v0.6) | [32m   6  [39m[36m    6  [39m[0m0.1s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:21.9591541Z [0m[1mTest Summary:                                            | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:21.9594372Z Phase 6 non-Gaussian interval cross-family contract (H6) | [32m  10  [39m[36m   10  [39m[0m3.3s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:25.6009436Z [0m[1mTest Summary:                                                   | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:25.6013569Z Phase 6 non-Gaussian latent/observation-scale heritability (H7) | [32m  25  [39m[36m   25  [39m[0m3.6s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:26.6717690Z [0m[1mTest Summary:                                                                   | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:26.6723232Z Phase 6 probit/ordinal LIABILITY + binary-OBSERVED h² (doc-20 Step 4, V6-NS-H2) | [32m  21  [39m[36m   21  [39m[0m1.0s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:26.7147532Z [0m[1mTest Summary:                                                                      | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:26.7150422Z Phase 6 Gamma LATENT + DATA-scale h² (trigamma + multiplicative, doc-19, V6-NS-H2) | [32m  16  [39m[36m   16  [39m[0m0.0s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:27.0524077Z [0m[1mTest Summary:                           | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:27.0527012Z Phase 1 pedigree normalization and Ainv | [32m  22  [39m[36m   22  [39m[0m0.3s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:28.0367779Z [0m[1mTest Summary:                                                 | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:28.0370856Z F1 Meuwissen-Luo inbreeding avoids dense relationship storage | [32m  13  [39m[36m   13  [39m[0m1.0s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:28.2965074Z [0m[1mTest Summary:                                       | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:28.2967508Z Phase 3 cytoplasmic (maternal-lineage) relationship | [32m  53  [39m[36m   53  [39m[0m0.2s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:28.3261273Z [0m[1mTest Summary:                        | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:28.3264302Z Phase 3 selfing (self-fertilization) | [32m  11  [39m[36m   11  [39m[0m0.0s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:28.6431825Z [0m[1mTest Summary:                         | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:28.6434912Z Phase 3 clonal (asexual) relationship | [32m  15  [39m[36m   15  [39m[0m0.3s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:28.7273415Z [0m[1mTest Summary:                  | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:28.7276176Z Phase 3 dominance relationship | [32m  22  [39m[36m   22  [39m[0m0.1s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:28.7656136Z [0m[1mTest Summary:                                          | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:28.7657505Z Phase 1 additive relationship matrix (public accessor) | [32m  10  [39m[36m   10  [39m[0m0.0s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:28.9695537Z [0m[1mTest Summary:                        | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:28.9699494Z Phase 1 Mendelian sampling variances | [32m  12  [39m[36m   12  [39m[0m0.2s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:35.4057874Z [0m[1mTest Summary:                                       | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:35.4061728Z Phase 1 finite deep-inbreeding case (V1-DENSE-COND) | [32m  12  [39m[36m   12  [39m[0m6.4s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:36.0147282Z [0m[1mTest Summary:                                      | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:36.0150538Z Phase 3 epistatic relationship (Hadamard products) | [32m  13  [39m[36m   13  [39m[0m0.6s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:38.3425278Z [0m[1mTest Summary:                                                | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:38.3428117Z Phase 1 metafounder relationship / inverse (supplied Γ, #53) | [32m  19  [39m[36m   19  [39m[0m2.3s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:39.2059483Z [0m[1mTest Summary:                                                | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:39.2061049Z Phase 1 metafounder animal-model MME solve (supplied Γ, #53) | [32m   7  [39m[36m    7  [39m[0m0.8s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:47.6765671Z [0m[1mTest Summary:               | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:47.6768177Z Phase 1 HSData ID container | [32m 114  [39m[36m  114  [39m[0m7.9s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:52.2816469Z [0m[1mTest Summary:                         | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:52.2820146Z Phase 1 sparse CSC bridge marshalling | [32m  15  [39m[36m   15  [39m[0m4.6s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:52.7443724Z [0m[1mTest Summary:                        | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:52.7446112Z Phase 1 animal model spec validation | [32m  16  [39m[36m   16  [39m[0m0.4s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:53.5761944Z [0m[1mTest Summary:                          | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:53.5764535Z Phase 1 Gaussian likelihood evaluation | [32m  25  [39m[36m   25  [39m[0m0.8s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:56.5153140Z [0m[1mTest Summary:                            | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:56.5155579Z Phase 1 dense variance component fitting | [32m  37  [39m[36m   37  [39m[0m2.9s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:58.4112548Z [0m[1mTest Summary:                | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:58.4116604Z Phase 1 dense fit extractors | [32m  87  [39m[36m   87  [39m[0m1.8s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:58.6230486Z [0m[1mTest Summary:                     | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:58.6233731Z Phase 1 bridge payload fit target | [32m  24  [39m[36m   24  [39m[0m0.2s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:00.0470007Z [0m[1mTest Summary:                                              | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:00.0472267Z Phase 1 Henderson MME supplied-variance validation fixture | [32m  42  [39m[36m   42  [39m[0m1.4s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:00.4663168Z [0m[1mTest Summary:                                            | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:00.4666371Z Phase 1 Mrode-style supplied-variance validation fixture | [32m  31  [39m[36m   31  [39m[0m0.4s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:00.6709359Z [0m[1mTest Summary:                                                 | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:00.6712579Z Phase 1 Mrode Example 3.1 published animal-model anchor (#46) | [32m   9  [39m[36m    9  [39m[0m0.2s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:01.3559244Z [0m[1mTest Summary:                                     | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:01.3562400Z Phase 1 sparse selected-inversion PEV/reliability | [32m  16  [39m[36m   16  [39m[0m0.7s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:01.5356389Z [0m[1mTest Summary:                                                         | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:01.5359753Z Phase 1 selinv PEV — larger multi-generation pedigree (V1-SELINV-PEV) | [32m   6  [39m[36m    6  [39m[0m0.2s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:04.1124964Z [0m[1mTest Summary:                                        | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:04.1127755Z Phase 1 PCG MME solver (iterative == direct, V1-PCG) | [32m  42  [39m[36m   42  [39m[0m2.5s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:10.4510842Z [0m[1mTest Summary:                                                                     | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:10.4513796Z Multi-effect matrix-free PCG (iterative == direct, V1-PCG multi-effect / v0.8-S2) | [32m  29  [39m[36m   29  [39m[0m5.6s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:12.0715777Z [0m[1mTest Summary:                                                                  | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:12.0720486Z Matrix-free MC REML block traces (Hutchinson == selinv, v0.8-S2 fit primitive) | [32m  18  [39m[36m   18  [39m[0m1.3s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:15.3327226Z [0m[1mTest Summary:                                                         | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:15.3330206Z Matrix-free REML loglik via stochastic Lanczos quadrature (v0.8 V8.1) | [32m   8  [39m[36m    8  [39m[0m3.2s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:19.9377036Z [0m[1mTest Summary:                                            | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:19.9380257Z Matrix-free AI information + ratio intervals (v0.8 V8.3) | [32m  14  [39m[36m   14  [39m[0m4.6s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:24.2712359Z [0m[1mTest Summary:                                                        | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:24.2715736Z fit_multi_effect :auto/:exact/:matrix_free dispatch (v0.8 usability) | [32m  11  [39m[36m   11  [39m[0m4.1s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:26.6816777Z [0m[1mTest Summary:                                                              | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:26.6819664Z V1-MATFREE-REML opt-in fence (fit_matrix_free_reml reachable only by name) | [32m  21  [39m[36m   21  [39m[0m2.4s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:29.0425566Z [0m[1mTest Summary:                                                       | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:29.0428601Z V1-MATFREE-REML in-CI pins (fitter path exists; not a covered flip) | [32m  22  [39m[36m   22  [39m[0m2.3s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:32.8727544Z [0m[1mTest Summary:                                                  | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:32.8730448Z 0.7-S0 genomic GREML identity scaffolding (not a covered flip) | [32m  13  [39m[36m   13  [39m[0m3.8s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:10.0300220Z [0m[1mTest Summary:                                                   | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1m Time[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:10.0303475Z Matrix-free MC-EM-REML fit recovers exact AI-REML (v0.8-S2 fit) | [32m   9  [39m[36m    9  [39m[0m37.1s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:10.6002354Z [0m[1mTest Summary:                                             | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:10.6004653Z Phase 1 fused AI-REML selinv trace (selinv_trace_against) | [32m   7  [39m[36m    7  [39m[0m0.6s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:11.6091352Z [0m[1mTest Summary:                                                   | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:11.6094185Z Variance-component forest plot-data (#54 set B, R hs_gg_forest) | [32m  18  [39m[36m   18  [39m[0m1.0s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:11.6351281Z [0m[1mTest Summary:                                     | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:11.6354310Z Phase 1 REML optimizer recovery (dense vs sparse) | [32m  11  [39m[36m   11  [39m[0m0.0s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:11.7056987Z [0m[1mTest Summary:             | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:11.7060028Z Phase 1 AI-REML estimator | [32m  16  [39m[36m   16  [39m[0m0.0s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:11.7950585Z [0m[1mTest Summary:                                           | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:11.7953637Z fit_ai_reml internal optimizer-localization diagnostics | [32m  23  [39m[36m   23  [39m[0m0.1s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:22.6297868Z [0m[1mTest Summary:                                    | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1m Time[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:22.6300296Z v0.7 genomic closed-boundary resolution (doc 46) | [32m  71  [39m[36m   71  [39m[0m10.7s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:24.4887098Z [0m[1mTest Summary:                                                     | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:24.4889218Z genomic boundary profile retains a near-endpoint interior optimum | [32m  28  [39m[36m   28  [39m[0m1.8s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:25.7908348Z [0m[1mTest Summary:                                                    | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:25.7911671Z fit_ai_reml graceful σ²→0 boundary (no throw on degenerate spec) | [32m   6  [39m[36m    6  [39m[0m1.3s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:26.0483497Z [0m[1mTest Summary:                                                 | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:26.0486289Z fit_ai_reml EM-REML warm-start (em_warmup, opt-in robustness) | [32m  23  [39m[36m   23  [39m[0m0.2s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:26.3175954Z [0m[1mTest Summary:                                                         | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:26.3178485Z Phase 1 large-pedigree sparse AI-REML fit + selinv PEV hardening (#6) | [32m   7  [39m[36m    7  [39m[0m0.2s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:26.3463641Z [0m[1mTest Summary:                                           | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:26.3466683Z Phase 1 sparse AI-REML / selinv boundary hardening (#6) | [32m  14  [39m[36m   14  [39m[0m0.0s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:26.4592103Z [0m[1mTest Summary:                                  | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:26.4594513Z Phase 2 genomic relationship matrix (VanRaden) | [32m   9  [39m[36m    9  [39m[0m0.1s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:26.8420651Z [0m[1mTest Summary:                                                 | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:26.8423219Z Phase 2 VanRaden method-2 (standardized) genomic relationship | [32m   8  [39m[36m    8  [39m[0m0.4s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:30.2181395Z [0m[1mTest Summary:                                                 | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:30.2184319Z APY genomic inverse (Algorithm for Proven & Young, v0.8 V8.5) | [32m   9  [39m[36m    9  [39m[0m3.4s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:30.3102907Z [0m[1mTest Summary:                                            | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:30.3106348Z v0.7 G-D backend dispatch (:cpu default / :cuda routing) | [32m   7  [39m[36m    7  [39m[0m0.1s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:30.8758642Z [0m[1mTest Summary:                                          | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:30.8762049Z Phase 2 weighted genomic relationship (weighted GBLUP) | [32m   9  [39m[36m    9  [39m[0m0.6s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:32.2453027Z [0m[1mTest Summary:                              | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:32.2456369Z Phase 2 regularized genomic inverse (Ginv) | [32m  10  [39m[36m   10  [39m[0m1.4s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:33.3229169Z [0m[1mTest Summary:                         | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:33.3232008Z Phase 2 GBLUP supplied-variance solve | [32m  11  [39m[36m   11  [39m[0m1.1s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:33.9122052Z [0m[1mTest Summary:                                   | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:33.9125318Z Phase 2 SNP-BLUP and GBLUP-SNP-BLUP equivalence | [32m  15  [39m[36m   15  [39m[0m0.6s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:58.6227104Z [0m[1mTest Summary:                           | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1m Time[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:58.6230304Z Phase 5 fixed-effect single-marker scan | [32m 443  [39m[36m  443  [39m[0m24.1s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:00.7512663Z [0m[1mTest Summary:                      | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:00.7515334Z Phase 5 post-fit marker scan (#45) | [32m  45  [39m[36m   45  [39m[0m1.3s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:01.2813651Z [0m[1mTest Summary:                            | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:01.2815402Z Phase 5 marker-scan parity fixture (#45) | [32m  19  [39m[36m   19  [39m[0m0.5s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:02.9162225Z [0m[1mTest Summary:                                 | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:02.9165984Z Phase 5 genome-wide threshold machinery (#48) | [32m  57  [39m[36m   57  [39m[0m1.6s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:04.4101160Z [0m[1mTest Summary:                                                              | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:04.4104758Z genome_wide_marker_scan (R-activation entry point, exact per-dataset rule) | [32m  29  [39m[36m   29  [39m[0m1.5s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:04.5585673Z [0m[1mTest Summary:            | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:04.5589034Z Phase 2 dense NRM helper | [32m   7  [39m[36m    7  [39m[0m0.1s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:05.5273955Z [0m[1mTest Summary:                                          | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:05.5277160Z Phase 2 genomic reliability / PEV / accuracy semantics | [32m   9  [39m[36m    9  [39m[0m1.0s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:05.6177633Z [0m[1mTest Summary:                                                                           | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:05.6179582Z _relationship_diag(:selinv) matches dense diag(inv(Ainv)) directly (pedigree + genomic) | [32m   3  [39m[36m    3  [39m[0m0.1s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:06.1327782Z [0m[1mTest Summary:                                                          | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:06.1330319Z _sparse_mme_from_cross_products matches _sparse_mme_system bit-for-bit | [32m  25  [39m[36m   25  [39m[0m0.4s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:08.1976147Z [0m[1mTest Summary:                                                    | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:08.1979593Z _selinv_zvals clique-scatter path == per-pair reference, bitwise | [32m   8  [39m[36m    8  [39m[0m2.0s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:10.0403550Z [0m[1mTest Summary:                                                                      | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:10.0406787Z _selinv_zvals aligned-tail SIMD path: fill-path property, rtol, fit-level equality | [32m  15  [39m[36m   15  [39m[0m1.8s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:12.2244108Z [0m[1mTest Summary:                                                                           | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:12.2247833Z _relationship_diag(:selinv) matches the analytic 1+F oracle beyond dense-feasible scale | [32m   1  [39m[36m    1  [39m[0m2.1s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:13.9877090Z [0m[1mTest Summary:                              | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:13.9880227Z Phase 2 single-step H-inverse construction | [32m  18  [39m[36m   18  [39m[0m1.7s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:14.2818833Z [0m[1mTest Summary:                                   | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:14.2822196Z Phase 2 single-step fitting (public Hinv + fit) | [32m  11  [39m[36m   11  [39m[0m0.3s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:16.0277084Z [0m[1mTest Summary:                                            | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:16.0278951Z Phase 2 metafounder single-step H^Gamma bridge primitive | [32m  40  [39m[36m   40  [39m[0m1.7s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:17.2749052Z [0m[1mTest Summary:                                    | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:17.2751795Z Phase 2 GBLUP REML variance-component estimation | [32m  11  [39m[36m   11  [39m[0m1.2s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:17.4946534Z [0m[1mTest Summary:                                                           | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:17.4949400Z Phase 2 GBLUP/SNP-BLUP REML convenience (variance-component estimation) | [32m  13  [39m[36m   13  [39m[0m0.2s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:19.7423155Z [0m[1mTest Summary:                                                   | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:19.7425788Z Phase 1 variance-component covariance and heritability interval | [32m  50  [39m[36m   50  [39m[0m2.2s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:29.6252964Z [0m[1mTest Summary:                                                 | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:29.6256108Z Phase 1 parametric-bootstrap variance-component interval (C6) | [32m  22  [39m[36m   22  [39m[0m9.9s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:30.3998555Z [0m[1mTest Summary:                                                         | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:30.4001605Z Phase 3 repeatability / permanent-environment MME (supplied variance) | [32m  11  [39m[36m   11  [39m[0m0.8s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:33.4494557Z [0m[1mTest Summary:                                              | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:33.4497069Z Phase 3 repeatability t confidence interval (delta method) | [32m   6  [39m[36m    6  [39m[0m3.0s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:33.6196398Z [0m[1mTest Summary:                                              | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:33.6199168Z Phase 3 repeatability REML (variance-component estimation) | [32m  13  [39m[36m   13  [39m[0m0.1s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:33.9305227Z [0m[1mTest Summary:                                       | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:33.9307624Z Phase 3 general two-effect MME (common environment) | [32m   8  [39m[36m    8  [39m[0m0.3s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:34.8479630Z [0m[1mTest Summary:                                                      | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:34.8482664Z Phase 3 two-effect REML (common-environment / maternal estimation) | [32m  12  [39m[36m   12  [39m[0m0.6s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:41.8823451Z [0m[1mTest Summary:                                               | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:41.8826152Z Phase 3 two-effect ratio interval (asymptotic delta-method) | [32m  26  [39m[36m   26  [39m[0m6.6s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:45.3219406Z [0m[1mTest Summary:                                                      | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:45.3223177Z Phase 3 N-effect MME + REML (arbitrary independent random effects) | [32m  26  [39m[36m   26  [39m[0m2.9s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:00.1889391Z [0m[1mTest Summary:                                             | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1m Time[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:00.1893404Z Phase 3 N-effect ratio interval (asymptotic delta-method) | [32m  47  [39m[36m   47  [39m[0m14.3s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:01.9525249Z [0m[1mTest Summary:                                                                   | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:01.9528429Z Phase 5 sparse multi-effect AI-REML (reduces EXACTLY to dense N-effect optimum) | [32m  27  [39m[36m   27  [39m[0m1.7s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:03.6170910Z [0m[1mTest Summary:                                                   | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:03.6174524Z Phase 4 direct–maternal 2×2 G (first correlated genetic effect) | [32m  16  [39m[36m   16  [39m[0m1.3s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:07.8298246Z [0m[1mTest Summary:                                              | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:07.8300820Z direct_maternal_interval (asymptotic delta-method SEs/CIs) | [32m  32  [39m[36m   32  [39m[0m4.2s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:13.2922178Z [0m[1mTest Summary:                                                         | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:13.2924692Z Phase 4 multivariate (multi-trait) animal model (supplied covariance) | [32m  37  [39m[36m   37  [39m[0m4.6s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:13.6964451Z [0m[1mTest Summary:                             | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:13.6967466Z Phase 4 multivariate covariance hardening | [32m  11  [39m[36m   11  [39m[0m0.4s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:15.0736267Z [0m[1mTest Summary:                                           | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:15.0739585Z Phase 4 multivariate missing-trait records (unbalanced) | [32m   8  [39m[36m    8  [39m[0m1.3s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:19.9493059Z [0m[1mTest Summary:                              | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:19.9496068Z Phase 4 multivariate REML (estimate G0/R0) | [32m  34  [39m[36m   34  [39m[0m4.3s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:21.3375744Z [0m[1mTest Summary:                                            | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:21.3381050Z Phase 4 derived-estimand identities on the REML fit path | [32m  69  [39m[36m   69  [39m[0m1.3s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:22.1471066Z [0m[1mTest Summary:                             | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:22.1473794Z Phase 4 shared multi-trait parity fixture | [32m  13  [39m[36m   13  [39m[0m0.8s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:22.2454031Z [0m[1mTest Summary:                                          | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:22.2456497Z Phase 4B diagonal structured-covariance parity fixture | [32m  10  [39m[36m   10  [39m[0m0.1s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:22.8727398Z [0m[1mTest Summary:                                       | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:22.8730132Z Univariate fitted animal-model target fixture (#46) | [32m  13  [39m[36m   13  [39m[0m0.6s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:22.9969530Z [0m[1mTest Summary:                                       | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:22.9971272Z Phase 2 genomic GBLUP/SNP-BLUP target fixture (#49) | [32m  22  [39m[36m   22  [39m[0m0.1s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:26.5625782Z [0m[1mTest Summary:                                              | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:26.5628653Z v0.7 genomic public-activation construction and provenance | [32m  71  [39m[36m   71  [39m[0m3.4s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:26.6226111Z [0m[1mTest Summary:                          | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:26.6229352Z Sire-model fitted target fixture (#16) | [32m  17  [39m[36m   17  [39m[0m0.0s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:26.9887850Z [0m[1mTest Summary:                                 | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:26.9891099Z Comparator target manifest (#49 coordination) | [32m 117  [39m[36m  117  [39m[0m0.3s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:32.8900698Z [0m[1mTest Summary:                                  | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:32.8903253Z Unified comparator harness (A11 validate-only) | [32m  34  [39m[36m   34  [39m[0m5.1s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:33.3441561Z [0m[1mTest Summary:                                         | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:33.3445048Z Real-data validation manifest (A13 three-tier ladder) | [32m 126  [39m[36m  126  [39m[0m0.4s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:33.6171630Z [0m[1mTest Summary:                                         | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:33.6174037Z FA t=4 K=1 local rank, uniqueness, and variance units | [32m  16  [39m[36m   16  [39m[0m0.2s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:38.6879450Z [0m[1mTest Summary:                                            | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:38.6881710Z Phase 4B structured genetic covariance (diag/lowrank/fa) | [32m 121  [39m[36m  121  [39m[0m3.6s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:40.6007149Z [0m[1mTest Summary:                                      | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:40.6008895Z Phase 6 non-Gaussian Laplace marginal (foundation) | [32m  11  [39m[36m   11  [39m[0m1.9s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:44.0683501Z [0m[1mTest Summary:                                  | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:44.0687561Z Phase 6 variational (VA) marginal (foundation) | [32m  16  [39m[36m   16  [39m[0m3.4s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:44.0903030Z [0m[1mTest Summary:                         | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:44.0905774Z Phase 6 non-Gaussian family hardening | [32m   6  [39m[36m    6  [39m[0m0.0s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:44.4076011Z [0m[1mTest Summary:                                             | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:44.4080349Z Phase 6 Poisson marginal value vs Gauss–Hermite (β-fixed) | [32m   3  [39m[36m    3  [39m[0m0.3s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:45.9651619Z [0m[1mTest Summary:                                      | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:45.9654363Z Phase 6 public (exported) non-Gaussian fitting API | [32m  14  [39m[36m   14  [39m[0m1.5s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:49.3686727Z [0m[1mTest Summary:                                                       | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:49.3692109Z Phase 6 MarginalMethod dispatch + non-Gaussian bridge payload (#44) | [32m  41  [39m[36m   41  [39m[0m3.4s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:51.8535916Z [0m[1mTest Summary:                             | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:51.8539130Z Phase 6 non-Gaussian parity fixture (#44) | [32m  46  [39m[36m   46  [39m[0m2.4s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:51.9194579Z [0m[1mTest Summary:                                             | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:51.9197157Z Phase 6 fitted non-Gaussian (Laplace/VA marginal fitting) | [32m  11  [39m[36m   11  [39m[0m0.0s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:52.0660242Z [0m[1mTest Summary:                                       | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:52.0663467Z Phase 6 Poisson variance-component profile interval | [32m  12  [39m[36m   12  [39m[0m0.1s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:55.6156703Z [0m[1mTest Summary:                                         | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:55.6160083Z Phase 6 Binomial/Bernoulli profile-LRT interval (σ²a) | [32m  19  [39m[36m   19  [39m[0m3.5s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:02.7459287Z [0m[1mTest Summary:                                   | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:02.7462286Z Phase 6 Bernoulli (logit) family (Laplace + VA) | [32m  15  [39m[36m   15  [39m[0m7.1s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:03.9074736Z [0m[1mTest Summary:                             | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:03.9077402Z Phase 6 Binomial (logit, n trials) family | [32m  31  [39m[36m   31  [39m[0m1.1s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:06.9709077Z [0m[1mTest Summary:                                     | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:06.9711828Z Phase 6 Binomial per-record n_trials (cbind GLMM) | [32m  39  [39m[36m   39  [39m[0m3.0s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:09.7357161Z [0m[1mTest Summary:                              | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:09.7360456Z Phase 4 multivariate covariance SEs + LRTs | [32m  34  [39m[36m   34  [39m[0m2.7s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:10.4450304Z [0m[1mTest Summary:                             | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:10.4453185Z Phase 4 genetic-correlation interval (C2) | [32m  16  [39m[36m   16  [39m[0m0.7s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:11.8386144Z [0m[1mTest Summary:                                   | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:11.8387741Z Phase 4B evolvability / G-matrix geometry (#55) | [32m  67  [39m[36m   67  [39m[0m0.8s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:12.6732741Z [0m[1mTest Summary:                                                     | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:12.6735610Z G-geometry plot-data preparers (#54 plotting, rotation-invariant) | [32m  18  [39m[36m   18  [39m[0m0.8s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:15.4902128Z [0m[1mTest Summary:                                                   | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:15.4905398Z Phase 3 random-regression covariance-function descriptors (#54) | [32m  31  [39m[36m   31  [39m[0m2.8s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:16.2836310Z [0m[1mTest Summary:                                                        | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:16.2838982Z Phase 3 random-regression eigen-function decomposition (#54 slice 4) | [32m  17  [39m[36m   17  [39m[0m0.8s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:16.3805262Z [0m[1mTest Summary:                                                       | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:16.3808009Z Phase 3 random-regression plot-data preparers (#54, plotting layer) | [32m  18  [39m[36m   18  [39m[0m0.1s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:17.5050813Z [0m[1mTest Summary:                                                   | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:17.5052888Z Phase 3 supplied-covariance random-regression MME (#54 slice 2) | [32m  14  [39m[36m   14  [39m[0m1.1s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:19.0848041Z [0m[1mTest Summary:                                | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:19.0850492Z Phase 3 random-regression REML (#54 slice 3) | [32m  21  [39m[36m   21  [39m[0m1.5s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:20.0326819Z [0m[1mTest Summary:                                                        | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:20.0330015Z Genetic-GLLVM latent-structure descriptors (#50 slice 1, supplied Λ) | [32m  24  [39m[36m   24  [39m[0m0.9s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:20.2285939Z [0m[1mTest Summary:                                                     | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:20.2288708Z Genetic-GLLVM Gaussian latent solve (#50 slice 2, supplied G_lat) | [32m  15  [39m[36m   15  [39m[0m0.2s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:21.4012466Z [0m[1mTest Summary:                                                    | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:21.4016287Z Genetic-GLLVM descriptors from an estimated FA/lowrank fit (#50) | [32m  14  [39m[36m   14  [39m[0m1.2s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:28.5857983Z [0m[1mTest Summary:                                                              | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:28.5860088Z Genetic-GLLVM K-factor latent Laplace marginal (#50 slice 2, non-Gaussian) | [32m  15  [39m[36m   15  [39m[0m7.2s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:31.5575871Z [0m[1mTest Summary:                               | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:31.5578787Z Genetic-GLLVM REML over G_lat (#50 slice 3) | [32m  21  [39m[36m   21  [39m[0m2.9s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:34.5862532Z [0m[1mTest Summary:                                                     | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:34.5865539Z Genetic-GLLVM per-trait response families (#50 slice 2 extension) | [32m   8  [39m[36m    8  [39m[0m3.0s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:35.2159881Z [0m[1mTest Summary:                                                                   | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:35.2162543Z Genetic-GLLVM consumability: per-trait families in REML + GeneticGLLVMFit (#50) | [32m  19  [39m[36m   19  [39m[0m0.6s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:35.6120889Z [0m[1mTest Summary:                                                      | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:35.6123629Z breeding_values_plot_data (#54 set B, EBV caterpillar, #93 parity) | [32m   7  [39m[36m    7  [39m[0m0.4s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:35.7138132Z [0m[1mTest Summary:                                                 | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:35.7141279Z hsquared_figure drawing stub (HSquaredMakieExt weak-dep, #93) | [32m  11  [39m[36m   11  [39m[0m0.1s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:35.7277779Z [0m[1mTest Summary:                                                        | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:35.7280215Z gpu genomic relationship stubs (HSquaredCUDAExt weak-dep, Wave F G1) | [32m  11  [39m[36m   11  [39m[0m0.0s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:37.3776139Z [0m[1mTest Summary:                                       | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:37.3778932Z BLUPF90 multivariate starter packet preflight (#49) | [32m  42  [39m[36m   42  [39m[0m1.6s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:48.0279166Z 
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:48.4250803Z (e) malformed block errors: [91m[1mTest Failed[22m[39m at [39m[1mD:\a\HSquared.jl\HSquared.jl\test\runtests.jl:11138[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:48.4252667Z   Expression: occursin("no coefcov payload fitting route is currently wired", coefcov_doc)
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:49.6263975Z    Evaluated: occursin("no coefcov payload fitting route is currently wired", "Base.Docs.DocStr(svec(\"    fit_payload_v2(payload; scale_method = :dense, initial = nothing,\\n                  iterations = nothing) → fit NamedTuple\\n\\nParse a payload-v2 request and run the dispatched estimator, returning the\\nestimator's raw `NamedTuple` result.  For a single-pedigree-block payload\\nthis is exactly the result of `fit_animal_model(…)`.\\n\\n`initial` and `iterations` (hsquared#212) are forwarded ONLY to the\\n`:multi_effect` and `:direct_maternal` dispatch arms — the two engine calls\\nthis dispatcher previously hardcoded with neither, silently discarding\\n`engine_control\\\$initial`/`\\\$iterations` from the R side. Default `nothing`\\nfor both reproduces the exact pre-#212-fix call (each underlying fitter's own\\ndefault: `fit_multi_effect_reml`'s `initial = nothing` / `iterations = 200`,\\n`fit_direct_maternal_reml`'s `initial = nothing` / `iterations = 200`). For\\n`:multi_effect`, forwarding applies on BOTH `scale_method` routes (#343): the\\ndefault `:dense` fitter `fit_multi_effect_reml`, and the opt-in `:auto` route's\\n`fit_multi_effect`, which itself forwards `kwargs...` to whichever engine it\\nselects (`fit_sparse_multi_effect_aireml`'s `initial = nothing` / `iterations = 100`,\\nor `fit_multi_effect_mc_reml`'s `initial = nothing` / `iterations = 200`). Every\\nother dispatch arm (`:animal`, `:two_effect`, `:multivariate`; `:coefcov` still raises\\n`Phase0NotImplementedError`) is unaffected; passing either kwarg for those payloads is\\nsilently ignored, matching the pre-existing byte-identical default path.\\n\\nThe `:coefcov` dispatch is a frozen slot: `fit_payload_v2` raises\\n`Phase0NotImplementedError` for it (§6: \\\"no coefcov payload fitting route is\\ncurrently wired\\\").\\n\"), nothing, Dict{Symbol, Any}(:typesig => Tuple{Any}, :module => HSquared, :linenumber => 594, :binding => HSquared.fit_payload_v2, :path => \"D:\\\\a\\\\HSquared.jl\\\\HSquared.jl\\\\src\\\\bridge_payload_v2.jl\"))")
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:49.6275702Z   Stacktrace:
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:49.6276440Z    [1] [0m[1mmacro expansion[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:49.6277843Z    [90m  @[39m [90mC:\hostedtoolcache\windows\julia\1.13.1\x64\share\julia\stdlib\v1.13\Test\src\[39m[90m[4mTest.jl:758[24m[39m[90m [inlined][39m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:49.6278969Z    [2] [0m[1mmacro expansion[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:49.6280060Z    [90m  @[39m [90mD:\a\HSquared.jl\HSquared.jl\test\[39m[90m[4mruntests.jl:11138[24m[39m[90m [inlined][39m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:49.6281190Z    [3] [0m[1mmacro expansion[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:49.6283983Z    [90m  @[39m [90mC:\hostedtoolcache\windows\julia\1.13.1\x64\share\julia\stdlib\v1.13\Test\src\[39m[90m[4mTest.jl:1967[24m[39m[90m [inlined][39m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:49.6287441Z    [4] [0m[1mmacro expansion[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:49.6293177Z    [90m  @[39m [90mD:\a\HSquared.jl\HSquared.jl\test\[39m[90m[4mruntests.jl:11025[24m[39m[90m [inlined][39m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:49.6296793Z    [5] [0m[1mmacro expansion[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:49.6302934Z    [90m  @[39m [90mC:\hostedtoolcache\windows\julia\1.13.1\x64\share\julia\stdlib\v1.13\Test\src\[39m[90m[4mTest.jl:1967[24m[39m[90m [inlined][39m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:49.6306201Z    [6] top-level scope
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:49.6311803Z    [90m  @[39m [90mD:\a\HSquared.jl\HSquared.jl\test\[39m[90m[4mruntests.jl:10782[24m[39m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:49.6601523Z [0m[1mTest Summary:                                          | [22m[32m[1mPass  [22m[39m[91m[1mFail  [22m[39m[36m[1mTotal  [22m[39m[0m[1m Time[22m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:49.6605398Z payload-v2 parser (P0.3)                               | [32m  66  [39m[91m   1  [39m[36m   67  [39m[0m10.3s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:49.6610114Z   (a) v0.1 alias — single pedigree block               | [32m  17  [39m[91m      [39m[36m   17  [39m[0m 4.2s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:49.6613592Z   (b) two independent blocks (pedigree + iid)          | [32m  10  [39m[91m      [39m[36m   10  [39m[0m 0.9s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:49.6617695Z   (c) three independent blocks → fit_multi_effect_reml | [32m  11  [39m[91m      [39m[36m   11  [39m[0m 2.2s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:49.6621515Z   (d) correlated block → fit_direct_maternal_reml      | [32m  16  [39m[91m      [39m[36m   16  [39m[0m 0.6s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:49.6625435Z   (e) malformed block errors                           | [32m  12  [39m[91m   1  [39m[36m   13  [39m[0m 2.3s
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:50.2099384Z RNG of the outermost testset: Xoshiro(0x190c14fdf528a2b6, 0x7423682ce6c85627, 0xf7da5d4d42d8481b, 0x5133c58b98bad2e8, 0x852486d824d6d20a)
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:50.6792434Z [91m[1mERROR: [22m[39mLoadError: [91mSome tests did not pass: 66 passed, 1 failed, 0 errored, 0 broken.[39m
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:50.6793945Z in expression starting at D:\a\HSquared.jl\HSquared.jl\test\runtests.jl:10779
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:51.4713539Z Package HSquared errored during testing
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:51.4743743Z ##[error]Process completed with exit code 1.
+Julia 1 - windows-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:33:51.4757047Z ##[end-action id=__julia-actions_julia-runtest.__run_3;outcome=failure;conclusion=failure;duration_ms=424431]
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	﻿2026-10-01T00:26:30.4607003Z ##[group]Run julia-actions/julia-runtest@v1
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:30.4607497Z with:
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:30.4607691Z   check_bounds: yes
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:30.4607898Z   coverage: true
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:30.4608109Z   depwarn: yes
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:30.4608323Z   force_latest_compatible_version: auto
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:30.4608589Z   inline: yes
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:30.4608781Z   project: @.
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:30.4608972Z   annotate: false
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:30.4609184Z   compiled_modules: yes
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:30.4609597Z   allow_reresolve: true
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:30.4609807Z env:
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:30.4610015Z   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:30.4610321Z   JULIA_PKG_SERVER_REGISTRY_PREFERENCE: eager
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:30.4610598Z ##[endgroup]
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:30.4614751Z ##[start-action display=Set and export registry flavor preference;id=__julia-actions_julia-runtest.__run]
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:30.4630778Z ##[group]Run # Set and export registry flavor preference
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:30.4631171Z [36;1m# Set and export registry flavor preference[0m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:30.4631759Z [36;1mecho "JULIA_PKG_SERVER_REGISTRY_PREFERENCE=${JULIA_PKG_SERVER_REGISTRY_PREFERENCE:-eager}" >> ${GITHUB_ENV}[0m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:30.4693481Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:30.4693832Z env:
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:30.4694048Z   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:30.4694364Z   JULIA_PKG_SERVER_REGISTRY_PREFERENCE: eager
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:30.4694662Z ##[endgroup]
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:30.4779032Z ##[end-action id=__julia-actions_julia-runtest.__run;outcome=success;conclusion=success;duration_ms=16]
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:30.4781173Z ##[start-action display=Install dependencies in their own (shared) environment;id=__julia-actions_julia-runtest.__run_2]
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:30.4784749Z ##[end-action id=__julia-actions_julia-runtest.__run_2;outcome=skipped;conclusion=skipped;duration_ms=0]
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:30.4788113Z ##[start-action display=Run the package tests;id=__julia-actions_julia-runtest.__run_3]
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:30.4804882Z ##[group]Run # Run the package tests
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:30.4805201Z [36;1m# Run the package tests[0m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:30.4805444Z [36;1m[0m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:30.4805734Z [36;1m# On Windows the executable is julia.exe, elsewhere it is julia[0m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:30.4806107Z [36;1mjulia_bin=julia[0m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:30.4806378Z [36;1m[[ "Linux" == "Windows" ]] && julia_bin=julia.exe[0m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:30.4806673Z [36;1m[0m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:30.4807003Z [36;1m# Optionally set the optimization level (empty means use the Julia default)[0m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:30.4807729Z [36;1mopt_flag=()[0m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:30.4808043Z [36;1m[[ -n "${OPTIMIZE}" ]] && opt_flag=( "--optimize=${OPTIMIZE}" )[0m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:30.4808384Z [36;1m[0m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:30.4808609Z [36;1m# The Julia command that will be executed[0m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:30.4809301Z [36;1mjulia_cmd=( "${julia_bin:?}" --color=yes --inline=yes "${opt_flag[@]}" --project=@. -e 'include(joinpath(ENV["GITHUB_ACTION_PATH"], "test_harness.jl"))' --  )[0m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:30.4809920Z [36;1m[0m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:30.4810184Z [36;1m# Add the prefix in front of the command if there is one[0m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:30.4810526Z [36;1mprefix=(  )[0m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:30.4810835Z [36;1m[[ -n ${prefix[*]} ]] && julia_cmd=( "${prefix[@]}" "${julia_cmd[@]}" )[0m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:30.4811179Z [36;1m[0m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:30.4811374Z [36;1m# Run the Julia command[0m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:30.4811685Z [36;1mecho "::debug::Executing Julia: ${julia_cmd[*]}"[0m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:30.4812006Z [36;1m"${julia_cmd[@]}"[0m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:30.4867031Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:30.4867589Z env:
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:30.4867813Z   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:30.4868122Z   JULIA_PKG_SERVER_REGISTRY_PREFERENCE: eager
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:30.4868400Z   ANNOTATE: false
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:30.4868603Z   COVERAGE: true
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:30.4868819Z   FORCE_LATEST_COMPATIBLE_VERSION: auto
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:30.4869304Z   CHECK_BOUNDS: yes
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:30.4869513Z   COMPILED_MODULES: yes
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:30.4869739Z   ALLOW_RERESOLVE: true
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:30.4869948Z   DEPWARN: yes
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:30.4870147Z   OPTIMIZE: 
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:30.4870334Z ##[endgroup]
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:31.4975323Z │
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:31.4976322Z │ To reproduce this CI run locally run the following from the same repository state on julia version 1.13.1:
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:31.4977482Z │
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:31.4979259Z │ `import Pkg; Pkg.test(;coverage=true, julia_args=["--check-bounds=yes", "--compiled-modules=yes", "--depwarn=yes"], force_latest_compatible_version=false, allow_reresolve=true)`
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:31.4980549Z │
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:33.0565705Z [33m[1m┌ [22m[39m[33m[1mWarning: [22m[39mIgnoring incompatible compat entry `SHA = "0.7"` in "/home/runner/work/HSquared.jl/HSquared.jl/Project.toml".
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:33.0568082Z [33m[1m│ [22m[39mSHA is a non-upgradable standard library with version 1.0.0 in the current Julia version.
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:33.0569540Z [33m[1m│ [22m[39mFix by setting compat to "0.7, 1" to mark support of the current version 1.0.0.
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:33.0570725Z [33m[1m└ [22m[39m[90m@ Pkg.Operations /opt/hostedtoolcache/julia/1.13.1/x64/share/julia/stdlib/v1.13/Pkg/src/Operations.jl:490[39m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:33.0639832Z [32m[1m     Testing[22m[39m HSquared
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.3925215Z [32m[1m      Status[22m[39m `/tmp/jl_ulnvZQ/Project.toml`
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.3967671Z   [90m[4c88cf16] [39mAqua v0.8.18
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.3968755Z   [90m[8bb1440f] [39mDelimitedFiles v1.9.1
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.3969267Z   [90m[31c24e10] [39mDistributions v0.25.131
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.3969810Z   [90m[a0667dea] [39mHSquared v0.9.0 `~/work/HSquared.jl/HSquared.jl`
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.3970408Z   [90m[0f8b85d8] [39mJSON3 v1.14.3[33m [deprecated][39m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.3970927Z [33m⌅[39m [90m[429524aa] [39mOptim v1.13.3
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.3971353Z   [90m[10745b16] [39mStatistics v1.11.5
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.3974723Z   [90m[ade2ca70] [39mDates v1.11.0
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.3975755Z   [90m[37e2e46d] [39mLinearAlgebra v1.13.0
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.3977576Z   [90m[de0858da] [39mPrintf v1.11.0
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.3979716Z   [90m[9a3f8284] [39mRandom v1.11.0
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.3981779Z   [90m[ea8e919c] [39mSHA v1.0.0
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.3983646Z   [90m[6462fe0b] [39mSockets v1.11.0
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.3984245Z   [90m[2f01184e] [39mSparseArrays v1.13.0
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.3985256Z   [90m[fa267f1f] [39mTOML v1.0.3
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.3985853Z   [90m[8dfed614] [39mTest v1.11.0
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6184445Z [36m[1m        Info[22m[39m Packages marked with [33m[deprecated][39m are no longer maintained.
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6185689Z [32m[1m      Status[22m[39m `/tmp/jl_ulnvZQ/Manifest.toml`
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6378135Z   [90m[47edcb42] [39mADTypes v1.24.0
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6379220Z   [90m[7d9f7c33] [39mAccessors v0.1.45
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6379766Z   [90m[79e6a3ab] [39mAdapt v4.7.1
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6380327Z   [90m[66dad0bd] [39mAliasTables v1.1.3
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6380879Z   [90m[4c88cf16] [39mAqua v0.8.18
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6381404Z   [90m[4fba245c] [39mArrayInterface v7.30.2
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6381963Z   [90m[38540f10] [39mCommonSolve v0.2.14
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6382559Z   [90m[bbf7d656] [39mCommonSubexpressions v0.3.1
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6383148Z   [90m[34da2185] [39mCompat v4.18.1
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6383696Z   [90m[a33af91c] [39mCompositionsBase v0.1.2
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6384297Z   [90m[187b0558] [39mConstructionBase v1.6.0
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6384843Z   [90m[9a962f9c] [39mDataAPI v1.16.0
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6385387Z   [90m[864edb3b] [39mDataStructures v0.19.6
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6385960Z   [90m[8bb1440f] [39mDelimitedFiles v1.9.1
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6386507Z   [90m[163ba53b] [39mDiffResults v1.1.0
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6387039Z   [90m[b552c78f] [39mDiffRules v1.16.0
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6388035Z   [90m[a0c0ee7d] [39mDifferentiationInterface v0.7.21
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6389608Z   [90m[31c24e10] [39mDistributions v0.25.131
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6390362Z   [90m[ffbed154] [39mDocStringExtensions v0.9.5
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6391146Z   [90m[4e289a0a] [39mEnumX v1.0.7
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6391809Z   [90m[1a297f60] [39mFillArrays v1.17.1
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6392575Z   [90m[6a86dc24] [39mFiniteDiff v2.33.0
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6416549Z   [90m[f6369f11] [39mForwardDiff v1.4.6
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6417602Z   [90m[a0844989] [39mGamma v1.2.0
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6418311Z   [90m[a0667dea] [39mHSquared v0.9.0 `~/work/HSquared.jl/HSquared.jl`
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6419071Z   [90m[34004b35] [39mHypergeometricFunctions v0.3.30
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6419708Z   [90m[3587e190] [39mInverseFunctions v0.1.17
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6420309Z   [90m[92d709cd] [39mIrrationalConstants v0.2.6
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6420884Z   [90m[692b3bcd] [39mJLLWrappers v1.8.0
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6421504Z   [90m[0f8b85d8] [39mJSON3 v1.14.3[33m [deprecated][39m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6422220Z [32m⌃[39m [90m[d3d80556] [39mLineSearches v7.5.1
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6422853Z   [90m[2ab3a3ac] [39mLogExpFunctions v1.0.2
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6423272Z   [90m[1914dd2f] [39mMacroTools v0.5.16
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6423582Z   [90m[e1d29d7a] [39mMissings v1.2.0
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6423944Z [33m⌅[39m [90m[d41bc354] [39mNLSolversBase v7.10.0
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6424647Z   [90m[77ba4419] [39mNaNMath v1.1.4
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6425164Z [33m⌅[39m [90m[429524aa] [39mOptim v1.13.3
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6425735Z   [90m[bac558e1] [39mOrderedCollections v2.0.1
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6426252Z   [90m[90014a1f] [39mPDMats v0.11.41
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6426756Z [33m⌅[39m [90m[69de0a69] [39mParsers v2.8.8
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6427661Z   [90m[85a6dd25] [39mPositiveFactorizations v0.2.4
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6428302Z   [90m[aea7be01] [39mPrecompileTools v1.3.4
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6428894Z   [90m[21216c6a] [39mPreferences v1.6.0
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6429504Z   [90m[43287f4e] [39mPtrArrays v1.4.0
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6430101Z   [90m[1fd47b50] [39mQuadGK v2.11.3
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6430686Z   [90m[189a3867] [39mReexport v1.2.2
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6431274Z   [90m[79098fc4] [39mRmath v0.9.0
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6431805Z   [90m[f2b01f46] [39mRoots v3.0.9
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6432329Z   [90m[efcf1570] [39mSetfield v1.1.2
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6432810Z   [90m[a2af1166] [39mSortingAlgorithms v1.2.3
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6433173Z   [90m[276daf66] [39mSpecialFunctions v2.9.0
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6433540Z   [90m[1e83bf80] [39mStaticArraysCore v1.4.4
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6433864Z   [90m[10745b16] [39mStatistics v1.11.5
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6434168Z   [90m[82ae8749] [39mStatsAPI v1.8.0
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6434468Z   [90m[2913bbd2] [39mStatsBase v0.34.13
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6434783Z   [90m[4c63d2b9] [39mStatsFuns v2.2.1
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6435087Z   [90m[856f2bd8] [39mStructTypes v1.11.0
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6435417Z   [90m[efe28fd5] [39mOpenSpecFun_jll v0.5.6+0
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6435747Z   [90m[f50d1b31] [39mRmath_jll v0.5.2+0
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6436046Z   [90m[0dad84c5] [39mArgTools v1.1.2
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6436341Z   [90m[56f22d72] [39mArtifacts v1.11.0
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6436638Z   [90m[2a0f44e3] [39mBase64 v1.11.0
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6436929Z   [90m[ade2ca70] [39mDates v1.11.0
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6437543Z   [90m[8ba89e20] [39mDistributed v1.11.0
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6437862Z   [90m[f43a241f] [39mDownloads v1.7.0
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6438176Z   [90m[7b1f6079] [39mFileWatching v1.11.0
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6438479Z   [90m[9fa8497b] [39mFuture v1.11.0
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6438793Z   [90m[b77e0a4c] [39mInteractiveUtils v1.11.0
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6439163Z   [90m[ac6e5ff7] [39mJuliaSyntaxHighlighting v1.12.0
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6439501Z   [90m[b27032c2] [39mLibCURL v1.0.0
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6439784Z   [90m[76f85450] [39mLibGit2 v1.11.0
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6440073Z   [90m[8f399da3] [39mLibdl v1.11.0
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6440380Z   [90m[37e2e46d] [39mLinearAlgebra v1.13.0
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6441395Z   [90m[56ddb016] [39mLogging v1.11.0
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6441955Z   [90m[d6f4376e] [39mMarkdown v1.11.0
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6442485Z   [90m[a63ad114] [39mMmap v1.11.0
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6443025Z   [90m[ca575930] [39mNetworkOptions v1.3.0
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6443592Z   [90m[44cfe95a] [39mPkg v1.13.0
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6444117Z   [90m[de0858da] [39mPrintf v1.11.0
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6444670Z   [90m[9a3f8284] [39mRandom v1.11.0
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6445416Z   [90m[ea8e919c] [39mSHA v1.0.0
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6445933Z   [90m[9e88b42a] [39mSerialization v1.11.0
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6446474Z   [90m[6462fe0b] [39mSockets v1.11.0
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6446995Z   [90m[2f01184e] [39mSparseArrays v1.13.0
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6447814Z   [90m[f489334b] [39mStyledStrings v1.11.0
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6448405Z   [90m[4607b0f0] [39mSuiteSparse
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6448915Z   [90m[fa267f1f] [39mTOML v1.0.3
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6449384Z   [90m[a4e569a6] [39mTar v1.10.0
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6449877Z   [90m[8dfed614] [39mTest v1.11.0
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6450367Z   [90m[cf7118a7] [39mUUIDs v1.11.0
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6450751Z   [90m[4ec0a83e] [39mUnicode v1.11.0
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6451141Z   [90m[e66e0078] [39mCompilerSupportLibraries_jll v1.5.5+2
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6451535Z   [90m[deac9b47] [39mLibCURL_jll v8.18.0+1
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6451853Z   [90m[e37daf67] [39mLibGit2_jll v1.9.1+0
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6452178Z   [90m[29816b5a] [39mLibSSH2_jll v1.11.104+0
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6452533Z   [90m[14a3606d] [39mMozillaCACerts_jll v2026.8.13
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6452880Z   [90m[4536629a] [39mOpenBLAS_jll v0.3.30+0
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6453197Z   [90m[05823500] [39mOpenLibm_jll v0.8.7+0
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6453504Z   [90m[458c3c95] [39mOpenSSL_jll v3.5.6+0
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6453807Z   [90m[efcefdf7] [39mPCRE2_jll v10.46.0+0
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6454138Z   [90m[bea87d4a] [39mSuiteSparse_jll v7.10.1+0
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6454457Z   [90m[83775a58] [39mZlib_jll v1.3.1+2
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6454756Z   [90m[3161d3a3] [39mZstd_jll v1.5.7+1
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6455094Z   [90m[8e850b90] [39mlibblastrampoline_jll v5.15.0+0
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6455472Z   [90m[8e850ede] [39mnghttp2_jll v1.67.1+0
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6455794Z   [90m[3f19e933] [39mp7zip_jll v17.8.2+0
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6456819Z [36m[1m        Info[22m[39m Packages marked with [32m⌃[39m and [33m⌅[39m have new versions available. Those with [32m⌃[39m may be upgradable, but those with [33m⌅[39m are restricted by compatibility constraints from upgrading.
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:36.6458899Z [36m[1m        Info[22m[39m Packages marked with [33m[deprecated][39m are no longer maintained.
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:37.0675524Z [32m[1mPrecompiling[22m[39m for configuration --code-coverage=@/home/runner/work/HSquared.jl/HSquared.jl --color=yes --warn-overwrite=yes --depwarn=yes --inline=yes --startup-file=no --track-allocation=none --check-bounds=yes --compiled-modules=yes --depwarn=yes
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:39.9120984Z    2.8 s[32m  ✓ [39m[90mRoots[39m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:40.4373439Z    0.5 s[32m  ✓ [39m[90mRoots → RootsForwardDiffExt[39m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:41.1789910Z    4.0 s[32m  ✓ [39mHSquared
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:44.8673260Z    4.9 s[32m  ✓ [39mDistributions
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:46.0079447Z    1.1 s[32m  ✓ [39mDistributions → DistributionsTestExt
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:46.0080111Z   5 dependencies successfully precompiled in 9 seconds. 117 already precompiled.
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:46.0080928Z [32m[1m     Testing[22m[39m Running tests...
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:51.0406664Z [0m[1mTest Summary:                                           | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:51.0408528Z Selected inverse trace validates support and dimensions | [32m  28  [39m[36m   28  [39m[0m2.4s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:51.2086953Z [0m[1mTest Summary:                                     | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:51.2088571Z Selected inverse rejects a failed Cholesky factor | [32m   2  [39m[36m    2  [39m[0m0.2s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:51.2672085Z [0m[1mTest Summary:                                     | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:51.2673230Z Selected inverse rejects nonfinite inverse values | [32m   3  [39m[36m    3  [39m[0m0.0s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:52.8921282Z [0m[1mTest Summary:                                            | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:52.8923027Z one known inbred parent and one unrelated missing parent | [32m  18  [39m[36m   18  [39m[0m1.4s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:52.9452572Z [0m[1mTest Summary:                                            | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:26:52.9453945Z Float64 selfing boundary rejects zero Mendelian variance | [32m   2  [39m[36m    2  [39m[0m0.0s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:01.1934275Z [0m[1mTest Summary:             | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:01.1935203Z Aqua.jl quality assurance | [32m  10  [39m[36m   10  [39m[0m8.0s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:07.4172990Z [0m[1mTest Summary:             | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:07.4174074Z HSquared Phase 0 scaffold | [32m 446  [39m[36m  446  [39m[0m3.1s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:09.4754376Z [0m[1mTest Summary:                       | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:09.4755214Z Recovery calibration log summarizer | [32m  21  [39m[36m   21  [39m[0m2.0s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:10.3949827Z [0m[1mTest Summary:                          | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:10.3950822Z Validation-debt burn-down tracker (I9) | [32m  11  [39m[36m   11  [39m[0m0.8s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:10.4975922Z [0m[1mTest Summary:                              | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:10.4976911Z nested_lrt helper + chi-bar boundary (C10) | [32m  14  [39m[36m   14  [39m[0m0.1s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:23.6978547Z [0m[1mTest Summary:                                         | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1m Time[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:23.6979757Z Phase 6 negative-binomial (NB2, log link) family (H1) | [32m  20  [39m[36m   20  [39m[0m13.2s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:34.7820764Z [0m[1mTest Summary:                                             | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1m Time[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:34.7822163Z Phase 6 beta-binomial (logit, overdispersion) family (H2) | [32m  85  [39m[36m   85  [39m[0m11.0s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:37.9860461Z [0m[1mTest Summary:                                              | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:37.9861891Z Phase 6 Bernoulli probit (threshold/liability) family (H3) | [32m  66  [39m[36m   66  [39m[0m3.0s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:39.1022353Z [0m[1mTest Summary:                                                            | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:39.1023900Z Phase 6 ordered-categorical probit (ordinal threshold) family (T1, v0.6) | [32m  62  [39m[36m   62  [39m[0m1.1s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:39.6898654Z [0m[1mTest Summary:                                                   | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:39.6900042Z Phase 6 ordered-probit JOINT cutpoint estimation (T1 fit, v0.6) | [32m  10  [39m[36m   10  [39m[0m0.6s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:40.1921057Z [0m[1mTest Summary:                                                        | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:40.1922251Z Phase 6 Gamma (log link, positive continuous) family (T-Gamma, v0.6) | [32m  31  [39m[36m   31  [39m[0m0.5s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:40.4306190Z [0m[1mTest Summary:                                                   | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:40.4307823Z Phase 6 Gamma JOINT (σ²a, shape) estimation (T-Gamma fit, v0.6) | [32m   6  [39m[36m    6  [39m[0m0.1s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:43.1709056Z [0m[1mTest Summary:                                            | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:43.1710927Z Phase 6 non-Gaussian interval cross-family contract (H6) | [32m  10  [39m[36m   10  [39m[0m2.7s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:46.4154812Z [0m[1mTest Summary:                                                   | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:46.4156024Z Phase 6 non-Gaussian latent/observation-scale heritability (H7) | [32m  25  [39m[36m   25  [39m[0m3.2s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:47.3725970Z [0m[1mTest Summary:                                                                   | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:47.3727762Z Phase 6 probit/ordinal LIABILITY + binary-OBSERVED h² (doc-20 Step 4, V6-NS-H2) | [32m  21  [39m[36m   21  [39m[0m0.9s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:47.4098751Z [0m[1mTest Summary:                                                                      | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:47.4100055Z Phase 6 Gamma LATENT + DATA-scale h² (trigamma + multiplicative, doc-19, V6-NS-H2) | [32m  16  [39m[36m   16  [39m[0m0.0s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:47.6755979Z [0m[1mTest Summary:                           | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:47.6757041Z Phase 1 pedigree normalization and Ainv | [32m  22  [39m[36m   22  [39m[0m0.2s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:48.5944710Z [0m[1mTest Summary:                                                 | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:48.5945639Z F1 Meuwissen-Luo inbreeding avoids dense relationship storage | [32m  13  [39m[36m   13  [39m[0m0.9s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:48.8189557Z [0m[1mTest Summary:                                       | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:48.8191164Z Phase 3 cytoplasmic (maternal-lineage) relationship | [32m  53  [39m[36m   53  [39m[0m0.2s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:48.8454808Z [0m[1mTest Summary:                        | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:48.8456236Z Phase 3 selfing (self-fertilization) | [32m  11  [39m[36m   11  [39m[0m0.0s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:49.1256531Z [0m[1mTest Summary:                         | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:49.1257838Z Phase 3 clonal (asexual) relationship | [32m  15  [39m[36m   15  [39m[0m0.2s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:49.2007704Z [0m[1mTest Summary:                  | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:49.2008808Z Phase 3 dominance relationship | [32m  22  [39m[36m   22  [39m[0m0.1s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:49.2325942Z [0m[1mTest Summary:                                          | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:49.2326962Z Phase 1 additive relationship matrix (public accessor) | [32m  10  [39m[36m   10  [39m[0m0.0s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:49.4041445Z [0m[1mTest Summary:                        | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:49.4042635Z Phase 1 Mendelian sampling variances | [32m  12  [39m[36m   12  [39m[0m0.2s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:55.0454494Z [0m[1mTest Summary:                                       | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:55.0455582Z Phase 1 finite deep-inbreeding case (V1-DENSE-COND) | [32m  12  [39m[36m   12  [39m[0m5.6s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:55.5910831Z [0m[1mTest Summary:                                      | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:55.5911912Z Phase 3 epistatic relationship (Hadamard products) | [32m  13  [39m[36m   13  [39m[0m0.5s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:57.6439862Z [0m[1mTest Summary:                                                | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:57.6441535Z Phase 1 metafounder relationship / inverse (supplied Γ, #53) | [32m  19  [39m[36m   19  [39m[0m2.0s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:58.4345805Z [0m[1mTest Summary:                                                | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:27:58.4346987Z Phase 1 metafounder animal-model MME solve (supplied Γ, #53) | [32m   7  [39m[36m    7  [39m[0m0.8s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:05.4698527Z [0m[1mTest Summary:               | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:05.4699773Z Phase 1 HSData ID container | [32m 114  [39m[36m  114  [39m[0m6.6s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:09.4364668Z [0m[1mTest Summary:                         | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:09.4365906Z Phase 1 sparse CSC bridge marshalling | [32m  15  [39m[36m   15  [39m[0m3.9s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:09.8322290Z [0m[1mTest Summary:                        | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:09.8323311Z Phase 1 animal model spec validation | [32m  16  [39m[36m   16  [39m[0m0.4s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:10.5375904Z [0m[1mTest Summary:                          | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:10.5376905Z Phase 1 Gaussian likelihood evaluation | [32m  25  [39m[36m   25  [39m[0m0.7s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:12.9902152Z [0m[1mTest Summary:                            | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:12.9903388Z Phase 1 dense variance component fitting | [32m  37  [39m[36m   37  [39m[0m2.4s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:14.6850313Z [0m[1mTest Summary:                | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:14.6851428Z Phase 1 dense fit extractors | [32m  87  [39m[36m   87  [39m[0m1.6s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:14.8544721Z [0m[1mTest Summary:                     | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:14.8545635Z Phase 1 bridge payload fit target | [32m  24  [39m[36m   24  [39m[0m0.1s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:16.0474094Z [0m[1mTest Summary:                                              | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:16.0475449Z Phase 1 Henderson MME supplied-variance validation fixture | [32m  42  [39m[36m   42  [39m[0m1.1s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:16.4472541Z [0m[1mTest Summary:                                            | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:16.4473952Z Phase 1 Mrode-style supplied-variance validation fixture | [32m  31  [39m[36m   31  [39m[0m0.4s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:16.6172901Z [0m[1mTest Summary:                                                 | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:16.6174303Z Phase 1 Mrode Example 3.1 published animal-model anchor (#46) | [32m   9  [39m[36m    9  [39m[0m0.2s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:17.2040539Z [0m[1mTest Summary:                                     | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:17.2041825Z Phase 1 sparse selected-inversion PEV/reliability | [32m  16  [39m[36m   16  [39m[0m0.6s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:17.3535976Z [0m[1mTest Summary:                                                         | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:17.3538181Z Phase 1 selinv PEV — larger multi-generation pedigree (V1-SELINV-PEV) | [32m   6  [39m[36m    6  [39m[0m0.1s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:19.5976601Z [0m[1mTest Summary:                                        | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:19.5978318Z Phase 1 PCG MME solver (iterative == direct, V1-PCG) | [32m  42  [39m[36m   42  [39m[0m2.2s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:25.1581133Z [0m[1mTest Summary:                                                                     | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:25.1582634Z Multi-effect matrix-free PCG (iterative == direct, V1-PCG multi-effect / v0.8-S2) | [32m  29  [39m[36m   29  [39m[0m4.9s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:26.6516851Z [0m[1mTest Summary:                                                                  | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:26.6519032Z Matrix-free MC REML block traces (Hutchinson == selinv, v0.8-S2 fit primitive) | [32m  18  [39m[36m   18  [39m[0m1.2s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:29.3292288Z [0m[1mTest Summary:                                                         | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:29.3293507Z Matrix-free REML loglik via stochastic Lanczos quadrature (v0.8 V8.1) | [32m   8  [39m[36m    8  [39m[0m2.7s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:33.3282314Z [0m[1mTest Summary:                                            | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:33.3283365Z Matrix-free AI information + ratio intervals (v0.8 V8.3) | [32m  14  [39m[36m   14  [39m[0m4.0s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:36.9504721Z [0m[1mTest Summary:                                                        | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:36.9506117Z fit_multi_effect :auto/:exact/:matrix_free dispatch (v0.8 usability) | [32m  11  [39m[36m   11  [39m[0m3.4s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:38.9573279Z [0m[1mTest Summary:                                                              | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:38.9574778Z V1-MATFREE-REML opt-in fence (fit_matrix_free_reml reachable only by name) | [32m  21  [39m[36m   21  [39m[0m2.0s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:40.8200060Z [0m[1mTest Summary:                                                       | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:40.8201182Z V1-MATFREE-REML in-CI pins (fitter path exists; not a covered flip) | [32m  22  [39m[36m   22  [39m[0m1.8s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:44.1856754Z [0m[1mTest Summary:                                                  | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:28:44.1857964Z 0.7-S0 genomic GREML identity scaffolding (not a covered flip) | [32m  13  [39m[36m   13  [39m[0m3.3s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:14.4886883Z [0m[1mTest Summary:                                                   | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1m Time[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:14.4888739Z Matrix-free MC-EM-REML fit recovers exact AI-REML (v0.8-S2 fit) | [32m   9  [39m[36m    9  [39m[0m30.3s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:15.0020768Z [0m[1mTest Summary:                                             | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:15.0022116Z Phase 1 fused AI-REML selinv trace (selinv_trace_against) | [32m   7  [39m[36m    7  [39m[0m0.5s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:15.8918986Z [0m[1mTest Summary:                                                   | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:15.8920485Z Variance-component forest plot-data (#54 set B, R hs_gg_forest) | [32m  18  [39m[36m   18  [39m[0m0.9s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:15.9295827Z [0m[1mTest Summary:                                     | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:15.9298195Z Phase 1 REML optimizer recovery (dense vs sparse) | [32m  11  [39m[36m   11  [39m[0m0.0s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:15.9901983Z [0m[1mTest Summary:             | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:15.9902919Z Phase 1 AI-REML estimator | [32m  16  [39m[36m   16  [39m[0m0.0s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:16.0635908Z [0m[1mTest Summary:                                           | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:16.0637985Z fit_ai_reml internal optimizer-localization diagnostics | [32m  23  [39m[36m   23  [39m[0m0.0s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:25.4234580Z [0m[1mTest Summary:                                    | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:25.4235637Z v0.7 genomic closed-boundary resolution (doc 46) | [32m  71  [39m[36m   71  [39m[0m9.2s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:27.0503954Z [0m[1mTest Summary:                                                     | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:27.0505430Z genomic boundary profile retains a near-endpoint interior optimum | [32m  28  [39m[36m   28  [39m[0m1.6s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:28.1464510Z [0m[1mTest Summary:                                                    | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:28.1465730Z fit_ai_reml graceful σ²→0 boundary (no throw on degenerate spec) | [32m   6  [39m[36m    6  [39m[0m1.1s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:28.3485034Z [0m[1mTest Summary:                                                 | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:28.3486078Z fit_ai_reml EM-REML warm-start (em_warmup, opt-in robustness) | [32m  23  [39m[36m   23  [39m[0m0.2s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:28.5802204Z [0m[1mTest Summary:                                                         | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:28.5803683Z Phase 1 large-pedigree sparse AI-REML fit + selinv PEV hardening (#6) | [32m   7  [39m[36m    7  [39m[0m0.2s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:28.6066527Z [0m[1mTest Summary:                                           | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:28.6068083Z Phase 1 sparse AI-REML / selinv boundary hardening (#6) | [32m  14  [39m[36m   14  [39m[0m0.0s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:28.7071160Z [0m[1mTest Summary:                                  | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:28.7072472Z Phase 2 genomic relationship matrix (VanRaden) | [32m   9  [39m[36m    9  [39m[0m0.1s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:29.0385274Z [0m[1mTest Summary:                                                 | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:29.0386722Z Phase 2 VanRaden method-2 (standardized) genomic relationship | [32m   8  [39m[36m    8  [39m[0m0.3s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:31.9644980Z [0m[1mTest Summary:                                                 | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:31.9646300Z APY genomic inverse (Algorithm for Proven & Young, v0.8 V8.5) | [32m   9  [39m[36m    9  [39m[0m2.9s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:32.0450562Z [0m[1mTest Summary:                                            | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:32.0451911Z v0.7 G-D backend dispatch (:cpu default / :cuda routing) | [32m   7  [39m[36m    7  [39m[0m0.1s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:32.5881766Z [0m[1mTest Summary:                                          | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:32.5882889Z Phase 2 weighted genomic relationship (weighted GBLUP) | [32m   9  [39m[36m    9  [39m[0m0.5s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:33.7968101Z [0m[1mTest Summary:                              | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:33.7969400Z Phase 2 regularized genomic inverse (Ginv) | [32m  10  [39m[36m   10  [39m[0m1.2s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:34.8986549Z [0m[1mTest Summary:                         | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:34.8988118Z Phase 2 GBLUP supplied-variance solve | [32m  11  [39m[36m   11  [39m[0m1.1s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:35.4164018Z [0m[1mTest Summary:                                   | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:35.4165240Z Phase 2 SNP-BLUP and GBLUP-SNP-BLUP equivalence | [32m  15  [39m[36m   15  [39m[0m0.5s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:57.1205118Z [0m[1mTest Summary:                           | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1m Time[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:57.1206612Z Phase 5 fixed-effect single-marker scan | [32m 443  [39m[36m  443  [39m[0m21.2s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:59.0105478Z [0m[1mTest Summary:                      | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:59.0106429Z Phase 5 post-fit marker scan (#45) | [32m  45  [39m[36m   45  [39m[0m1.2s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:59.4770238Z [0m[1mTest Summary:                            | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:29:59.4771341Z Phase 5 marker-scan parity fixture (#45) | [32m  19  [39m[36m   19  [39m[0m0.4s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:00.8773807Z [0m[1mTest Summary:                                 | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:00.8774650Z Phase 5 genome-wide threshold machinery (#48) | [32m  57  [39m[36m   57  [39m[0m1.3s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:02.2312600Z [0m[1mTest Summary:                                                              | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:02.2313896Z genome_wide_marker_scan (R-activation entry point, exact per-dataset rule) | [32m  29  [39m[36m   29  [39m[0m1.3s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:02.3611338Z [0m[1mTest Summary:            | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:02.3612053Z Phase 2 dense NRM helper | [32m   7  [39m[36m    7  [39m[0m0.1s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:03.2519570Z [0m[1mTest Summary:                                          | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:03.2520769Z Phase 2 genomic reliability / PEV / accuracy semantics | [32m   9  [39m[36m    9  [39m[0m0.9s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:03.3391367Z [0m[1mTest Summary:                                                                           | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:03.3392939Z _relationship_diag(:selinv) matches dense diag(inv(Ainv)) directly (pedigree + genomic) | [32m   3  [39m[36m    3  [39m[0m0.1s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:03.8257515Z [0m[1mTest Summary:                                                          | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:03.8259068Z _sparse_mme_from_cross_products matches _sparse_mme_system bit-for-bit | [32m  25  [39m[36m   25  [39m[0m0.3s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:05.8325745Z [0m[1mTest Summary:                                                    | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:05.8327396Z _selinv_zvals clique-scatter path == per-pair reference, bitwise | [32m   8  [39m[36m    8  [39m[0m2.0s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:07.4557906Z [0m[1mTest Summary:                                                                      | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:07.4559498Z _selinv_zvals aligned-tail SIMD path: fill-path property, rtol, fit-level equality | [32m  15  [39m[36m   15  [39m[0m1.6s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:09.5876203Z [0m[1mTest Summary:                                                                           | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:09.5878380Z _relationship_diag(:selinv) matches the analytic 1+F oracle beyond dense-feasible scale | [32m   1  [39m[36m    1  [39m[0m2.0s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:11.1521446Z [0m[1mTest Summary:                              | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:11.1522841Z Phase 2 single-step H-inverse construction | [32m  18  [39m[36m   18  [39m[0m1.5s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:11.4099236Z [0m[1mTest Summary:                                   | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:11.4100463Z Phase 2 single-step fitting (public Hinv + fit) | [32m  11  [39m[36m   11  [39m[0m0.2s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:12.9104379Z [0m[1mTest Summary:                                            | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:12.9105816Z Phase 2 metafounder single-step H^Gamma bridge primitive | [32m  40  [39m[36m   40  [39m[0m1.4s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:13.9827482Z [0m[1mTest Summary:                                    | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:13.9828809Z Phase 2 GBLUP REML variance-component estimation | [32m  11  [39m[36m   11  [39m[0m1.1s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:14.1748955Z [0m[1mTest Summary:                                                           | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:14.1750557Z Phase 2 GBLUP/SNP-BLUP REML convenience (variance-component estimation) | [32m  13  [39m[36m   13  [39m[0m0.2s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:16.0889976Z [0m[1mTest Summary:                                                   | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:16.0890968Z Phase 1 variance-component covariance and heritability interval | [32m  50  [39m[36m   50  [39m[0m1.8s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:24.0838704Z [0m[1mTest Summary:                                                 | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:24.0839921Z Phase 1 parametric-bootstrap variance-component interval (C6) | [32m  22  [39m[36m   22  [39m[0m8.0s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:24.7590007Z [0m[1mTest Summary:                                                         | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:24.7591382Z Phase 3 repeatability / permanent-environment MME (supplied variance) | [32m  11  [39m[36m   11  [39m[0m0.7s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:27.4087358Z [0m[1mTest Summary:                                              | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:27.4089099Z Phase 3 repeatability t confidence interval (delta method) | [32m   6  [39m[36m    6  [39m[0m2.6s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:27.5601087Z [0m[1mTest Summary:                                              | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:27.5602780Z Phase 3 repeatability REML (variance-component estimation) | [32m  13  [39m[36m   13  [39m[0m0.1s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:27.8388265Z [0m[1mTest Summary:                                       | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:27.8389382Z Phase 3 general two-effect MME (common environment) | [32m   8  [39m[36m    8  [39m[0m0.3s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:28.6531824Z [0m[1mTest Summary:                                                      | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:28.6533307Z Phase 3 two-effect REML (common-environment / maternal estimation) | [32m  12  [39m[36m   12  [39m[0m0.6s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:34.0018150Z [0m[1mTest Summary:                                               | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:34.0019670Z Phase 3 two-effect ratio interval (asymptotic delta-method) | [32m  26  [39m[36m   26  [39m[0m5.0s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:37.0402537Z [0m[1mTest Summary:                                                      | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:37.0404377Z Phase 3 N-effect MME + REML (arbitrary independent random effects) | [32m  26  [39m[36m   26  [39m[0m2.6s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:47.1138659Z [0m[1mTest Summary:                                             | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:47.1139737Z Phase 3 N-effect ratio interval (asymptotic delta-method) | [32m  47  [39m[36m   47  [39m[0m9.6s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:48.5940543Z [0m[1mTest Summary:                                                                   | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:48.5941786Z Phase 5 sparse multi-effect AI-REML (reduces EXACTLY to dense N-effect optimum) | [32m  27  [39m[36m   27  [39m[0m1.4s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:50.0537737Z [0m[1mTest Summary:                                                   | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:50.0538891Z Phase 4 direct–maternal 2×2 G (first correlated genetic effect) | [32m  16  [39m[36m   16  [39m[0m1.2s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:53.1143485Z [0m[1mTest Summary:                                              | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:53.1144900Z direct_maternal_interval (asymptotic delta-method SEs/CIs) | [32m  32  [39m[36m   32  [39m[0m3.0s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:57.7286020Z [0m[1mTest Summary:                                                         | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:57.7287557Z Phase 4 multivariate (multi-trait) animal model (supplied covariance) | [32m  37  [39m[36m   37  [39m[0m3.9s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:58.0910688Z [0m[1mTest Summary:                             | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:58.0911711Z Phase 4 multivariate covariance hardening | [32m  11  [39m[36m   11  [39m[0m0.3s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:59.2245979Z [0m[1mTest Summary:                                           | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:30:59.2247012Z Phase 4 multivariate missing-trait records (unbalanced) | [32m   8  [39m[36m    8  [39m[0m1.1s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:03.5414726Z [0m[1mTest Summary:                              | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:03.5415942Z Phase 4 multivariate REML (estimate G0/R0) | [32m  34  [39m[36m   34  [39m[0m3.9s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:04.6973591Z [0m[1mTest Summary:                                            | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:04.6975014Z Phase 4 derived-estimand identities on the REML fit path | [32m  69  [39m[36m   69  [39m[0m1.1s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:05.3799197Z [0m[1mTest Summary:                             | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:05.3800374Z Phase 4 shared multi-trait parity fixture | [32m  13  [39m[36m   13  [39m[0m0.7s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:05.4662912Z [0m[1mTest Summary:                                          | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:05.4664294Z Phase 4B diagonal structured-covariance parity fixture | [32m  10  [39m[36m   10  [39m[0m0.1s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:06.0085339Z [0m[1mTest Summary:                                       | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:06.0086672Z Univariate fitted animal-model target fixture (#46) | [32m  13  [39m[36m   13  [39m[0m0.5s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:06.1157881Z [0m[1mTest Summary:                                       | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:06.1159183Z Phase 2 genomic GBLUP/SNP-BLUP target fixture (#49) | [32m  22  [39m[36m   22  [39m[0m0.1s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:08.8977078Z [0m[1mTest Summary:                                              | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:08.8979577Z v0.7 genomic public-activation construction and provenance | [32m  71  [39m[36m   71  [39m[0m2.6s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:08.9526792Z [0m[1mTest Summary:                          | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:08.9528136Z Sire-model fitted target fixture (#16) | [32m  17  [39m[36m   17  [39m[0m0.0s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:09.2433391Z [0m[1mTest Summary:                                 | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:09.2434379Z Comparator target manifest (#49 coordination) | [32m 117  [39m[36m  117  [39m[0m0.2s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:14.2226080Z [0m[1mTest Summary:                                  | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:14.2227049Z Unified comparator harness (A11 validate-only) | [32m  34  [39m[36m   34  [39m[0m4.3s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:14.5998243Z [0m[1mTest Summary:                                         | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:14.5999411Z Real-data validation manifest (A13 three-tier ladder) | [32m 126  [39m[36m  126  [39m[0m0.3s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:14.8630223Z [0m[1mTest Summary:                                         | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:14.8631277Z FA t=4 K=1 local rank, uniqueness, and variance units | [32m  16  [39m[36m   16  [39m[0m0.2s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:19.1839831Z [0m[1mTest Summary:                                            | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:19.1841073Z Phase 4B structured genetic covariance (diag/lowrank/fa) | [32m 121  [39m[36m  121  [39m[0m3.1s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:20.8462128Z [0m[1mTest Summary:                                      | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:20.8463430Z Phase 6 non-Gaussian Laplace marginal (foundation) | [32m  11  [39m[36m   11  [39m[0m1.6s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:23.7353228Z [0m[1mTest Summary:                                  | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:23.7354198Z Phase 6 variational (VA) marginal (foundation) | [32m  16  [39m[36m   16  [39m[0m2.9s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:23.7609008Z [0m[1mTest Summary:                         | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:23.7609898Z Phase 6 non-Gaussian family hardening | [32m   6  [39m[36m    6  [39m[0m0.0s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:24.0416650Z [0m[1mTest Summary:                                             | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:24.0420640Z Phase 6 Poisson marginal value vs Gauss–Hermite (β-fixed) | [32m   3  [39m[36m    3  [39m[0m0.3s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:25.5019139Z [0m[1mTest Summary:                                      | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:25.5020187Z Phase 6 public (exported) non-Gaussian fitting API | [32m  14  [39m[36m   14  [39m[0m1.4s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:28.4247954Z [0m[1mTest Summary:                                                       | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:28.4249200Z Phase 6 MarginalMethod dispatch + non-Gaussian bridge payload (#44) | [32m  41  [39m[36m   41  [39m[0m2.9s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:30.5642643Z [0m[1mTest Summary:                             | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:30.5643654Z Phase 6 non-Gaussian parity fixture (#44) | [32m  46  [39m[36m   46  [39m[0m2.1s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:30.6196162Z [0m[1mTest Summary:                                             | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:30.6198211Z Phase 6 fitted non-Gaussian (Laplace/VA marginal fitting) | [32m  11  [39m[36m   11  [39m[0m0.0s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:30.7542346Z [0m[1mTest Summary:                                       | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:30.7543675Z Phase 6 Poisson variance-component profile interval | [32m  12  [39m[36m   12  [39m[0m0.1s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:33.7442049Z [0m[1mTest Summary:                                         | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:33.7443425Z Phase 6 Binomial/Bernoulli profile-LRT interval (σ²a) | [32m  19  [39m[36m   19  [39m[0m3.0s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:39.9400695Z [0m[1mTest Summary:                                   | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:39.9402009Z Phase 6 Bernoulli (logit) family (Laplace + VA) | [32m  15  [39m[36m   15  [39m[0m6.2s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:40.9548091Z [0m[1mTest Summary:                             | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:40.9549053Z Phase 6 Binomial (logit, n trials) family | [32m  31  [39m[36m   31  [39m[0m1.0s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:43.5612547Z [0m[1mTest Summary:                                     | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:43.5613908Z Phase 6 Binomial per-record n_trials (cbind GLMM) | [32m  39  [39m[36m   39  [39m[0m2.5s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:46.0076973Z [0m[1mTest Summary:                              | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:46.0078538Z Phase 4 multivariate covariance SEs + LRTs | [32m  34  [39m[36m   34  [39m[0m2.4s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:46.6428336Z [0m[1mTest Summary:                             | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:46.6429594Z Phase 4 genetic-correlation interval (C2) | [32m  16  [39m[36m   16  [39m[0m0.6s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:47.8211425Z [0m[1mTest Summary:                                   | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:47.8212645Z Phase 4B evolvability / G-matrix geometry (#55) | [32m  67  [39m[36m   67  [39m[0m0.7s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:48.5680899Z [0m[1mTest Summary:                                                     | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:48.5682425Z G-geometry plot-data preparers (#54 plotting, rotation-invariant) | [32m  18  [39m[36m   18  [39m[0m0.7s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:51.0841721Z [0m[1mTest Summary:                                                   | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:51.0842811Z Phase 3 random-regression covariance-function descriptors (#54) | [32m  31  [39m[36m   31  [39m[0m2.5s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:51.7969792Z [0m[1mTest Summary:                                                        | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:51.7970937Z Phase 3 random-regression eigen-function decomposition (#54 slice 4) | [32m  17  [39m[36m   17  [39m[0m0.7s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:51.8762305Z [0m[1mTest Summary:                                                       | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:51.8764571Z Phase 3 random-regression plot-data preparers (#54, plotting layer) | [32m  18  [39m[36m   18  [39m[0m0.1s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:52.8729768Z [0m[1mTest Summary:                                                   | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:52.8730960Z Phase 3 supplied-covariance random-regression MME (#54 slice 2) | [32m  14  [39m[36m   14  [39m[0m1.0s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:54.2610175Z [0m[1mTest Summary:                                | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:54.2611554Z Phase 3 random-regression REML (#54 slice 3) | [32m  21  [39m[36m   21  [39m[0m1.3s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:55.1052014Z [0m[1mTest Summary:                                                        | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:55.1053175Z Genetic-GLLVM latent-structure descriptors (#50 slice 1, supplied Λ) | [32m  24  [39m[36m   24  [39m[0m0.8s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:55.2722620Z [0m[1mTest Summary:                                                     | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:55.2723962Z Genetic-GLLVM Gaussian latent solve (#50 slice 2, supplied G_lat) | [32m  15  [39m[36m   15  [39m[0m0.1s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:56.1372736Z [0m[1mTest Summary:                                                    | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:31:56.1374096Z Genetic-GLLVM descriptors from an estimated FA/lowrank fit (#50) | [32m  14  [39m[36m   14  [39m[0m0.8s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:02.2016342Z [0m[1mTest Summary:                                                              | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:02.2018062Z Genetic-GLLVM K-factor latent Laplace marginal (#50 slice 2, non-Gaussian) | [32m  15  [39m[36m   15  [39m[0m6.0s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:04.8239424Z [0m[1mTest Summary:                               | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:04.8240368Z Genetic-GLLVM REML over G_lat (#50 slice 3) | [32m  21  [39m[36m   21  [39m[0m2.6s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:07.3131178Z [0m[1mTest Summary:                                                     | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:07.3132556Z Genetic-GLLVM per-trait response families (#50 slice 2 extension) | [32m   8  [39m[36m    8  [39m[0m2.5s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:07.8919550Z [0m[1mTest Summary:                                                                   | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:07.8920851Z Genetic-GLLVM consumability: per-trait families in REML + GeneticGLLVMFit (#50) | [32m  19  [39m[36m   19  [39m[0m0.6s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:08.2465405Z [0m[1mTest Summary:                                                      | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:08.2466584Z breeding_values_plot_data (#54 set B, EBV caterpillar, #93 parity) | [32m   7  [39m[36m    7  [39m[0m0.3s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:08.3293914Z [0m[1mTest Summary:                                                 | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:08.3295329Z hsquared_figure drawing stub (HSquaredMakieExt weak-dep, #93) | [32m  11  [39m[36m   11  [39m[0m0.1s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:08.3422437Z [0m[1mTest Summary:                                                        | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:08.3423716Z gpu genomic relationship stubs (HSquaredCUDAExt weak-dep, Wave F G1) | [32m  11  [39m[36m   11  [39m[0m0.0s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:09.7132248Z [0m[1mTest Summary:                                       | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:09.7133556Z BLUPF90 multivariate starter packet preflight (#49) | [32m  42  [39m[36m   42  [39m[0m1.3s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:19.0847736Z 
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:19.4156463Z (e) malformed block errors: [91m[1mTest Failed[22m[39m at [39m[1m/home/runner/work/HSquared.jl/HSquared.jl/test/runtests.jl:11138[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:19.4158026Z   Expression: occursin("no coefcov payload fitting route is currently wired", coefcov_doc)
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:20.4768345Z    Evaluated: occursin("no coefcov payload fitting route is currently wired", "Base.Docs.DocStr(svec(\"    fit_payload_v2(payload; scale_method = :dense, initial = nothing,\\n                  iterations = nothing) → fit NamedTuple\\n\\nParse a payload-v2 request and run the dispatched estimator, returning the\\nestimator's raw `NamedTuple` result.  For a single-pedigree-block payload\\nthis is exactly the result of `fit_animal_model(…)`.\\n\\n`initial` and `iterations` (hsquared#212) are forwarded ONLY to the\\n`:multi_effect` and `:direct_maternal` dispatch arms — the two engine calls\\nthis dispatcher previously hardcoded with neither, silently discarding\\n`engine_control\\\$initial`/`\\\$iterations` from the R side. Default `nothing`\\nfor both reproduces the exact pre-#212-fix call (each underlying fitter's own\\ndefault: `fit_multi_effect_reml`'s `initial = nothing` / `iterations = 200`,\\n`fit_direct_maternal_reml`'s `initial = nothing` / `iterations = 200`). For\\n`:multi_effect`, forwarding applies on BOTH `scale_method` routes (#343): the\\ndefault `:dense` fitter `fit_multi_effect_reml`, and the opt-in `:auto` route's\\n`fit_multi_effect`, which itself forwards `kwargs...` to whichever engine it\\nselects (`fit_sparse_multi_effect_aireml`'s `initial = nothing` / `iterations = 100`,\\nor `fit_multi_effect_mc_reml`'s `initial = nothing` / `iterations = 200`). Every\\nother dispatch arm (`:animal`, `:two_effect`, `:multivariate`; `:coefcov` still raises\\n`Phase0NotImplementedError`) is unaffected; passing either kwarg for those payloads is\\nsilently ignored, matching the pre-existing byte-identical default path.\\n\\nThe `:coefcov` dispatch is a frozen slot: `fit_payload_v2` raises\\n`Phase0NotImplementedError` for it (§6: \\\"no coefcov payload fitting route is\\ncurrently wired\\\").\\n\"), nothing, Dict{Symbol, Any}(:typesig => Tuple{Any}, :module => HSquared, :linenumber => 594, :binding => HSquared.fit_payload_v2, :path => \"/home/runner/work/HSquared.jl/HSquared.jl/src/bridge_payload_v2.jl\"))")
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:20.4781313Z   Stacktrace:
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:20.4781838Z    [1] [0m[1mmacro expansion[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:20.4783112Z    [90m  @[39m [90m/opt/hostedtoolcache/julia/1.13.1/x64/share/julia/stdlib/v1.13/Test/src/[39m[90m[4mTest.jl:758[24m[39m[90m [inlined][39m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:20.4784364Z    [2] [0m[1mmacro expansion[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:20.4785386Z    [90m  @[39m [90m~/work/HSquared.jl/HSquared.jl/test/[39m[90m[4mruntests.jl:11138[24m[39m[90m [inlined][39m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:20.4786338Z    [3] [0m[1mmacro expansion[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:20.4787887Z    [90m  @[39m [90m/opt/hostedtoolcache/julia/1.13.1/x64/share/julia/stdlib/v1.13/Test/src/[39m[90m[4mTest.jl:1967[24m[39m[90m [inlined][39m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:20.4789115Z    [4] [0m[1mmacro expansion[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:20.4790146Z    [90m  @[39m [90m~/work/HSquared.jl/HSquared.jl/test/[39m[90m[4mruntests.jl:11025[24m[39m[90m [inlined][39m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:20.4791149Z    [5] [0m[1mmacro expansion[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:20.4792412Z    [90m  @[39m [90m/opt/hostedtoolcache/julia/1.13.1/x64/share/julia/stdlib/v1.13/Test/src/[39m[90m[4mTest.jl:1967[24m[39m[90m [inlined][39m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:20.4793490Z    [6] top-level scope
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:20.4794323Z    [90m  @[39m [90m~/work/HSquared.jl/HSquared.jl/test/[39m[90m[4mruntests.jl:10782[24m[39m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:20.5020612Z [0m[1mTest Summary:                                          | [22m[32m[1mPass  [22m[39m[91m[1mFail  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:20.5022012Z payload-v2 parser (P0.3)                               | [32m  66  [39m[91m   1  [39m[36m   67  [39m[0m9.2s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:20.5023571Z   (a) v0.1 alias — single pedigree block               | [32m  17  [39m[91m      [39m[36m   17  [39m[0m3.7s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:20.5024860Z   (b) two independent blocks (pedigree + iid)          | [32m  10  [39m[91m      [39m[36m   10  [39m[0m0.8s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:20.5026181Z   (c) three independent blocks → fit_multi_effect_reml | [32m  11  [39m[91m      [39m[36m   11  [39m[0m1.9s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:20.5027742Z   (d) correlated block → fit_direct_maternal_reml      | [32m  16  [39m[91m      [39m[36m   16  [39m[0m0.5s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:20.5029336Z   (e) malformed block errors                           | [32m  12  [39m[91m   1  [39m[36m   13  [39m[0m2.2s
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:20.9980912Z RNG of the outermost testset: Xoshiro(0xd23c7af061721124, 0xb045df3e3bb3c469, 0x59cc2c8c9e9d8f94, 0x623efae696136fa8, 0x53c3d3b8482939db)
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:21.3792410Z [91m[1mERROR: [22m[39mLoadError: [91mSome tests did not pass: 66 passed, 1 failed, 0 errored, 0 broken.[39m
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:21.3793980Z in expression starting at /home/runner/work/HSquared.jl/HSquared.jl/test/runtests.jl:10779
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:21.8087640Z Package HSquared errored during testing
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:21.8100116Z ##[error]Process completed with exit code 1.
+Julia 1 - ubuntu-latest	Run julia-actions/julia-runtest@v1	2026-10-01T00:32:21.8106835Z ##[end-action id=__julia-actions_julia-runtest.__run_3;outcome=failure;conclusion=failure;duration_ms=351331]

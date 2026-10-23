@@ -1,0 +1,27 @@
+{
+  "base_root": "/Users/z3437171/.codex/worktrees/hsquared-fa-gllvm-foundations/HSquared.jl",
+  "isolated_root": "/private/tmp/hsq-nongaussian-finite-ingress-fix-20260930",
+  "base_source_tree_sha256": "d3c2de8d7f0a1a86918f15938264bbdc892a7303b5ddd488553ac923f073ad0a",
+  "isolated_source_tree_sha256": "4f4ae6a15862b7afb85c21e7025e26ad0d6100810d5ddd5aaaf1dd0122951eb7",
+  "tree_algorithm": "SHA256 sorted src-relative UTF8 path, NUL, file bytes, NUL",
+  "changed_source_files": [
+    "src/nongaussian.jl"
+  ],
+  "base_files": {
+    "src/nongaussian.jl": "24a31752319a1c51dbded522d8e20d066227d208e71be970cb94891beb87da00",
+    "src/genetic_gllvm.jl": "0727459d2f163835519ae8cf8481d2439b90ba5065cfc8d74ad2c0c08736d2ca",
+    "Project.toml": "37f0e6aaa6492c76519ed7771b226972cea531a7104866e5753890e31e163033",
+    "Manifest.toml": "c5940f2be0347f7ff987468aed67f17070f556a0aa99e0e5ec5317898cfa0fad"
+  },
+  "isolated_files": {
+    "src/nongaussian.jl": "e96694a2dbd6cb1c416833a073fe0d38928eeb1ad2deeb0bc19a692cc351bd0a",
+    "src/genetic_gllvm.jl": "0727459d2f163835519ae8cf8481d2439b90ba5065cfc8d74ad2c0c08736d2ca",
+    "Project.toml": "37f0e6aaa6492c76519ed7771b226972cea531a7104866e5753890e31e163033",
+    "Manifest.toml": "c5940f2be0347f7ff987468aed67f17070f556a0aa99e0e5ec5317898cfa0fad",
+    "test/nongaussian_finite_ingress_regression.jl": "1947ae4f703436392d0a3556fefdfeec69bfd7eee5e704db833c021e366f9ab3",
+    "nongaussian-finite-ingress.patch": "2e3aa1fac2f1a5b1567113bd9e986992315b756faf3350df83678d657aa102db",
+    "red.log": "1f3d090153717c7b825ccdd9a11969c33b3f9501de4e20718c82b99e9ee1f319",
+    "green.log": "8236cf7e49e7ab45d510dbaaef38cd0241ed147e97282f71ae269277e661d08c",
+    "receipt.md": "505c1d5d4e15b450ac92374aefa371ba745bdbddebf87919b21f360415b89e29"
+  }
+}

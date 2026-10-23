@@ -1,0 +1,770 @@
+Julia=1.10.0 JuliaThreads=1 BLASThreads=1
+responses cannot hide behind structural zeros: Test Failed at /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:10
+  Expression: solve_animal_model_pcg(spec, 1.0, 1.0; matrix_free = matrix_free)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:10 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:6 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:4
+responses cannot hide behind structural zeros: Test Failed at /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:11
+  Expression: solve_multi_effect_pcg(y, X0, effects0, [1.0], 1.0; matrix_free = matrix_free)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:11 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:6 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:4
+responses cannot hide behind structural zeros: Test Failed at /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:10
+  Expression: solve_animal_model_pcg(spec, 1.0, 1.0; matrix_free = matrix_free)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:10 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:6 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:4
+responses cannot hide behind structural zeros: Test Failed at /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:11
+  Expression: solve_multi_effect_pcg(y, X0, effects0, [1.0], 1.0; matrix_free = matrix_free)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:11 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:6 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:4
+responses cannot hide behind structural zeros: Test Failed at /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:13
+  Expression: matrix_free_reml_loglik(y, X0, effects0, [1.0], 1.0; slq_probes = 2, slq_steps = 2)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:13 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:6 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:4
+responses cannot hide behind structural zeros: Test Failed at /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:14
+  Expression: matrix_free_reml_information(y, X0, effects0, [1.0], 1.0)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:14 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:6 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:4
+responses cannot hide behind structural zeros: Test Failed at /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:15
+  Expression: matrix_free_ratio_intervals(y, X0, effects0, [1.0], 1.0)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:15 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:6 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:4
+responses cannot hide behind structural zeros: Test Failed at /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:16
+  Expression: fit_multi_effect_mc_reml(y, X0, effects0; iterations = 1, nprobe = 2)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:16 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:6 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:4
+responses cannot hide behind structural zeros: Test Failed at /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:17
+  Expression: fit_matrix_free_reml(spec; iterations = 1, nprobe = 2, compute_loglik = false)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:17 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:6 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:4
+responses cannot hide behind structural zeros: Test Failed at /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:10
+  Expression: solve_animal_model_pcg(spec, 1.0, 1.0; matrix_free = matrix_free)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:10 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:6 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:4
+responses cannot hide behind structural zeros: Test Failed at /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:11
+  Expression: solve_multi_effect_pcg(y, X0, effects0, [1.0], 1.0; matrix_free = matrix_free)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:11 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:6 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:4
+responses cannot hide behind structural zeros: Test Failed at /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:10
+  Expression: solve_animal_model_pcg(spec, 1.0, 1.0; matrix_free = matrix_free)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:10 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:6 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:4
+responses cannot hide behind structural zeros: Test Failed at /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:11
+  Expression: solve_multi_effect_pcg(y, X0, effects0, [1.0], 1.0; matrix_free = matrix_free)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:11 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:6 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:4
+responses cannot hide behind structural zeros: Test Failed at /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:13
+  Expression: matrix_free_reml_loglik(y, X0, effects0, [1.0], 1.0; slq_probes = 2, slq_steps = 2)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:13 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:6 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:4
+responses cannot hide behind structural zeros: Test Failed at /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:14
+  Expression: matrix_free_reml_information(y, X0, effects0, [1.0], 1.0)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:14 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:6 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:4
+responses cannot hide behind structural zeros: Test Failed at /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:15
+  Expression: matrix_free_ratio_intervals(y, X0, effects0, [1.0], 1.0)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:15 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:6 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:4
+responses cannot hide behind structural zeros: Test Failed at /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:16
+  Expression: fit_multi_effect_mc_reml(y, X0, effects0; iterations = 1, nprobe = 2)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:16 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:6 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:4
+responses cannot hide behind structural zeros: Test Failed at /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:17
+  Expression: fit_matrix_free_reml(spec; iterations = 1, nprobe = 2, compute_loglik = false)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:17 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:6 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:4
+responses cannot hide behind structural zeros: Test Failed at /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:10
+  Expression: solve_animal_model_pcg(spec, 1.0, 1.0; matrix_free = matrix_free)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:10 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:6 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:4
+responses cannot hide behind structural zeros: Test Failed at /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:11
+  Expression: solve_multi_effect_pcg(y, X0, effects0, [1.0], 1.0; matrix_free = matrix_free)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:11 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:6 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:4
+responses cannot hide behind structural zeros: Test Failed at /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:10
+  Expression: solve_animal_model_pcg(spec, 1.0, 1.0; matrix_free = matrix_free)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:10 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:6 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:4
+responses cannot hide behind structural zeros: Test Failed at /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:11
+  Expression: solve_multi_effect_pcg(y, X0, effects0, [1.0], 1.0; matrix_free = matrix_free)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:11 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:6 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:4
+responses cannot hide behind structural zeros: Test Failed at /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:13
+  Expression: matrix_free_reml_loglik(y, X0, effects0, [1.0], 1.0; slq_probes = 2, slq_steps = 2)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:13 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:6 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:4
+responses cannot hide behind structural zeros: Test Failed at /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:14
+  Expression: matrix_free_reml_information(y, X0, effects0, [1.0], 1.0)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:14 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:6 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:4
+responses cannot hide behind structural zeros: Test Failed at /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:15
+  Expression: matrix_free_ratio_intervals(y, X0, effects0, [1.0], 1.0)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:15 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:6 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:4
+responses cannot hide behind structural zeros: Test Failed at /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:16
+  Expression: fit_multi_effect_mc_reml(y, X0, effects0; iterations = 1, nprobe = 2)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:16 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:6 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:4
+responses cannot hide behind structural zeros: Test Failed at /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:17
+  Expression: fit_matrix_free_reml(spec; iterations = 1, nprobe = 2, compute_loglik = false)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:17 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:6 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:4
+responses cannot hide behind structural zeros: Test Failed at /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:10
+  Expression: solve_animal_model_pcg(spec, 1.0, 1.0; matrix_free = matrix_free)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:10 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:6 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:4
+responses cannot hide behind structural zeros: Test Failed at /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:11
+  Expression: solve_multi_effect_pcg(y, X0, effects0, [1.0], 1.0; matrix_free = matrix_free)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:11 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:6 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:4
+responses cannot hide behind structural zeros: Test Failed at /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:10
+  Expression: solve_animal_model_pcg(spec, 1.0, 1.0; matrix_free = matrix_free)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:10 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:6 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:4
+responses cannot hide behind structural zeros: Test Failed at /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:11
+  Expression: solve_multi_effect_pcg(y, X0, effects0, [1.0], 1.0; matrix_free = matrix_free)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:11 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:6 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:4
+responses cannot hide behind structural zeros: Test Failed at /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:13
+  Expression: matrix_free_reml_loglik(y, X0, effects0, [1.0], 1.0; slq_probes = 2, slq_steps = 2)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:13 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:6 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:4
+responses cannot hide behind structural zeros: Test Failed at /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:14
+  Expression: matrix_free_reml_information(y, X0, effects0, [1.0], 1.0)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:14 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:6 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:4
+responses cannot hide behind structural zeros: Test Failed at /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:15
+  Expression: matrix_free_ratio_intervals(y, X0, effects0, [1.0], 1.0)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:15 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:6 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:4
+ERROR: LoadError: Some tests did not pass: 58 passed, 47 failed, 0 errored, 0 broken.
+in expression starting at /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:3
+responses cannot hide behind structural zeros: Test Failed at /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:16
+  Expression: fit_multi_effect_mc_reml(y, X0, effects0; iterations = 1, nprobe = 2)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:16 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:6 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:4
+responses cannot hide behind structural zeros: Test Failed at /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:17
+  Expression: fit_matrix_free_reml(spec; iterations = 1, nprobe = 2, compute_loglik = false)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:17 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:6 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:4
+unrepresentable result fails explicitly: Test Failed at /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:39
+  Expression: matrix_free_reml_information(huge, X0, effects0, [1.0], 1.0)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:39 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:38 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:4
+unrepresentable result fails explicitly: Test Failed at /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:40
+  Expression: matrix_free_reml_loglik(huge, X0, effects0, [1.0], 1.0; slq_probes = 2, slq_steps = 2)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:40 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:38 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:4
+unrepresentable result fails explicitly: Test Failed at /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:42
+  Expression: HSquared._pcg_solve(identity, [1.0e200]; tol = 1.0e-10, maxiter = 1, applyMinv = identity)
+    Expected: ArgumentError
+  No exception thrown
+
+Stacktrace:
+ [1] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:42 [inlined]
+ [2] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [3] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:38 [inlined]
+ [4] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [5] top-level scope
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:4
+finite trace mean and unchanged MCSE convention: Test Failed at /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:47
+  Expression: tr ≈ [1.2e308]
+   Evaluated: [Inf] ≈ [1.2e308]
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:47 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:45 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:4
+finite trace mean and unchanged MCSE convention: Test Failed at /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:48
+  Expression: se == [0.0]
+   Evaluated: [Inf] == [0.0]
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:48 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:45 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:4
+finite trace mean and unchanged MCSE convention: Test Failed at /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:47
+  Expression: tr ≈ [1.2e308]
+   Evaluated: [Inf] ≈ [1.2e308]
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:47 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:45 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:4
+finite trace mean and unchanged MCSE convention: Test Failed at /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:48
+  Expression: se == [0.0]
+   Evaluated: [Inf] == [0.0]
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:48 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:45 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:4
+scale-safe fitted ratio: Test Failed at /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:57
+  Expression: fit.converged
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:57 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:55 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:4
+scale-safe fitted ratio: Test Failed at /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:58
+  Expression: only(fit.ratios) ≈ 0.625
+   Evaluated: 0.0 ≈ 0.625
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:58 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:55 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:4
+scale-safe fitted ratio: Test Failed at /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:59
+  Expression: fit.boundary == [false]
+   Evaluated: Bool[1] == Bool[0]
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:59 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:55 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:4
+scale-safe fitted ratio: Test Failed at /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:60
+  Expression: fit.trace_mcse == [0.0]
+   Evaluated: [Inf] == [0.0]
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:672 [inlined]
+ [2] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:60 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [4] macro expansion
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:55 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+ [6] top-level scope
+   @ /private/tmp/hsq-iterative-finite-contracts-fix-20260930/test/iterative_finite_contracts.jl:4
+Test Summary:                                     | Pass  Fail  Total  Time
+iterative finite arithmetic contracts             |   58    47    105  6.3s
+  responses cannot hide behind structural zeros   |         36     36  2.1s
+  converted design inputs                         |   42           42  2.8s
+  unrepresentable result fails explicitly         |    1     3      4  0.0s
+  finite trace mean and unchanged MCSE convention |    4     4      8  0.1s
+  scale-safe fitted ratio                         |    2     4      6  0.1s
+  independent ordinary Gaussian controls          |    9            9  1.2s

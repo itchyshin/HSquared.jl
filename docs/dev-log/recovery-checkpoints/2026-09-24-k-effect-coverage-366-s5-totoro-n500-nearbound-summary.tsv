@@ -1,0 +1,16 @@
+cell	host	route	N	fit_ok	fit_converged	se_ok	target	n_eval	n_cover	coverage	mcse	n_refuse	refusal_rate	claim_class
+low_pe	Totoro	sparse_auto	500	500	356	356	Va	356	320	0.898876	0.015979	144	0.288000	directional-conservative-bank
+low_pe	Totoro	sparse_auto	500	500	356	356	Vpe	356	342	0.960674	0.010302	144	0.288000	directional-conservative-bank
+low_pe	Totoro	sparse_auto	500	500	356	356	Ve	356	332	0.932584	0.013289	144	0.288000	directional-conservative-bank
+low_pe	Totoro	sparse_auto	500	500	356	356	h2	356	356	1.000000	0.000000	144	0.288000	directional-conservative-bank
+low_pe	Totoro	sparse_auto	500	500	356	356	t	356	344	0.966292	0.009565	144	0.288000	directional-conservative-bank
+near_pe	Totoro	sparse_auto	500	500	275	271	Va	271	235	0.867159	0.020617	229	0.458000	directional-conservative-bank
+near_pe	Totoro	sparse_auto	500	500	275	271	Vpe	271	259	0.955720	0.012496	229	0.458000	directional-conservative-bank
+near_pe	Totoro	sparse_auto	500	500	275	271	Ve	271	251	0.926199	0.015882	229	0.458000	directional-conservative-bank
+near_pe	Totoro	sparse_auto	500	500	275	271	h2	271	271	1.000000	0.000000	229	0.458000	directional-conservative-bank
+near_pe	Totoro	sparse_auto	500	500	275	271	t	271	263	0.970480	0.010282	229	0.458000	directional-conservative-bank
+near_va	Totoro	sparse_auto	500	500	267	266	Va	266	266	1.000000	0.000000	234	0.468000	directional-conservative-bank
+near_va	Totoro	sparse_auto	500	500	267	266	Vpe	266	257	0.966165	0.011086	234	0.468000	directional-conservative-bank
+near_va	Totoro	sparse_auto	500	500	267	266	Ve	266	254	0.954887	0.012726	234	0.468000	directional-conservative-bank
+near_va	Totoro	sparse_auto	500	500	267	266	h2	266	203	0.763158	0.026067	234	0.468000	directional-conservative-bank
+near_va	Totoro	sparse_auto	500	500	267	266	t	266	258	0.969925	0.010472	234	0.468000	directional-conservative-bank

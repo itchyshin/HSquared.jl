@@ -1,0 +1,987 @@
+﻿2026-09-30T23:29:26.6410929Z Current runner version: '2.337.0'
+2026-09-30T23:29:26.6431519Z ##[group]Runner Image Provisioner
+2026-09-30T23:29:26.6432059Z Hosted Compute Agent
+2026-09-30T23:29:26.6432410Z Version: 20260828.587
+2026-09-30T23:29:26.6432833Z Commit: abac92662cab4cc7352de4f9f9d2e2419aad9c29
+2026-09-30T23:29:26.6433271Z Build Date: 2026-08-28T16:44:25Z
+2026-09-30T23:29:26.6433752Z Worker ID: {265a2ce8-bed6-4e99-b28c-22d7c58363a5}
+2026-09-30T23:29:26.6434184Z Azure Region: centralus
+2026-09-30T23:29:26.6434548Z ##[endgroup]
+2026-09-30T23:29:26.6435401Z ##[group]Operating System
+2026-09-30T23:29:26.6435776Z Microsoft Windows Server 2025
+2026-09-30T23:29:26.6436127Z 10.0.26100
+2026-09-30T23:29:26.6436444Z Datacenter
+2026-09-30T23:29:26.6436748Z ##[endgroup]
+2026-09-30T23:29:26.6437060Z ##[group]Runner Image
+2026-09-30T23:29:26.6437442Z Image: windows-2025-vs2026
+2026-09-30T23:29:26.6437785Z Version: 20260922.246.2
+2026-09-30T23:29:26.6438829Z Included Software: https://github.com/actions/runner-images/blob/win25-vs2026/20260922.246/images/windows/Windows2025-VS2026-Readme.md
+2026-09-30T23:29:26.6439767Z Image Release: https://github.com/actions/runner-images/releases/tag/win25-vs2026%2F20260922.246
+2026-09-30T23:29:26.6440372Z ##[endgroup]
+2026-09-30T23:29:26.6441432Z ##[group]GITHUB_TOKEN Permissions
+2026-09-30T23:29:26.6442739Z Contents: read
+2026-09-30T23:29:26.6443064Z Metadata: read
+2026-09-30T23:29:26.6443407Z Packages: read
+2026-09-30T23:29:26.6443731Z ##[endgroup]
+2026-09-30T23:29:26.6445232Z Secret source: Actions
+2026-09-30T23:29:26.6445760Z Cache mode: write
+2026-09-30T23:29:26.6446227Z Prepare workflow directory
+2026-09-30T23:29:26.6737299Z Prepare all required actions
+2026-09-30T23:29:26.6772361Z Getting action download info
+2026-09-30T23:29:27.0088965Z Download action repository 'actions/checkout@v6' (SHA:d23441a48e516b6c34aea4fa41551a30e30af803)
+2026-09-30T23:29:27.0949136Z Download action repository 'julia-actions/setup-julia@v3' (SHA:fa02766e078afaaf09b14210362cee14137e6a32)
+2026-09-30T23:29:27.4999273Z Download action repository 'julia-actions/cache@v2' (SHA:d10a6fd8f31b12404a54613ebad242900567f2b9)
+2026-09-30T23:29:27.7347399Z Download action repository 'julia-actions/julia-buildpkg@v1' (SHA:e3eb439fad4f9aba7da2667e7510e4a46ebc46e1)
+2026-09-30T23:29:27.8971443Z Download action repository 'julia-actions/julia-runtest@v1' (SHA:6e050c8013b833b1195105ff2fce9cd802f53271)
+2026-09-30T23:29:28.2139732Z Getting action download info
+2026-09-30T23:29:28.3570603Z Download action repository 'dcarbone/install-jq-action@f0e10f46ff84f4d32178b4b76e1ef180b16f82c3' (SHA:f0e10f46ff84f4d32178b4b76e1ef180b16f82c3)
+2026-09-30T23:29:28.5923331Z Download action repository 'actions/cache@5a3ec84eff668545956fd18022155c47e93e2684' (SHA:5a3ec84eff668545956fd18022155c47e93e2684)
+2026-09-30T23:29:28.8200845Z Download action repository 'pyTooling/Actions@42e17fae05f224e5ac3d79d021a4e3577878efe5' (SHA:42e17fae05f224e5ac3d79d021a4e3577878efe5)
+2026-09-30T23:29:29.2290279Z Complete job name: Julia 1.10 - windows-latest
+2026-09-30T23:29:29.3280392Z ##[group]Run actions/checkout@v6
+2026-09-30T23:29:29.3281317Z with:
+2026-09-30T23:29:29.3281778Z   repository: itchyshin/HSquared.jl
+2026-09-30T23:29:29.3285327Z   token: ***
+2026-09-30T23:29:29.3285770Z   ssh-strict: true
+2026-09-30T23:29:29.3286210Z   ssh-user: git
+2026-09-30T23:29:29.3286671Z   persist-credentials: true
+2026-09-30T23:29:29.3287144Z   clean: true
+2026-09-30T23:29:29.3287597Z   sparse-checkout-cone-mode: true
+2026-09-30T23:29:29.3288110Z   fetch-depth: 1
+2026-09-30T23:29:29.3288556Z   fetch-tags: false
+2026-09-30T23:29:29.3289003Z   show-progress: true
+2026-09-30T23:29:29.3289447Z   lfs: false
+2026-09-30T23:29:29.3289869Z   submodules: false
+2026-09-30T23:29:29.3290321Z   set-safe-directory: true
+2026-09-30T23:29:29.3290820Z   allow-unsafe-pr-checkout: false
+2026-09-30T23:29:29.3291428Z env:
+2026-09-30T23:29:29.3291881Z   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+2026-09-30T23:29:29.3292400Z ##[endgroup]
+2026-09-30T23:29:29.4329608Z Syncing repository: itchyshin/HSquared.jl
+2026-09-30T23:29:29.4333276Z ##[group]Getting Git version info
+2026-09-30T23:29:29.4335747Z Working directory is 'D:\a\HSquared.jl\HSquared.jl'
+2026-09-30T23:29:29.4809632Z [command]"C:\Program Files\Git\bin\git.exe" version
+2026-09-30T23:29:29.8539242Z git version 2.55.0.windows.5
+2026-09-30T23:29:29.8599984Z ##[endgroup]
+2026-09-30T23:29:29.8603626Z Temporarily overriding HOME='D:\a\_temp\b7dd69ce-3ab8-4adb-a743-d007c84a423f' before making global git config changes
+2026-09-30T23:29:29.8604063Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-30T23:29:29.8604475Z [command]"C:\Program Files\Git\bin\git.exe" config --global --add safe.directory D:\a\HSquared.jl\HSquared.jl
+2026-09-30T23:29:29.9138545Z Deleting the contents of 'D:\a\HSquared.jl\HSquared.jl'
+2026-09-30T23:29:29.9142913Z ##[group]Determining repository object format
+2026-09-30T23:29:29.9144703Z ##[endgroup]
+2026-09-30T23:29:29.9145208Z ##[group]Initializing the repository
+2026-09-30T23:29:29.9151186Z [command]"C:\Program Files\Git\bin\git.exe" init D:\a\HSquared.jl\HSquared.jl
+2026-09-30T23:29:29.9857432Z Initialized empty Git repository in D:/a/HSquared.jl/HSquared.jl/.git/
+2026-09-30T23:29:29.9889963Z [command]"C:\Program Files\Git\bin\git.exe" remote add origin https://github.com/itchyshin/HSquared.jl
+2026-09-30T23:29:30.0395757Z ##[endgroup]
+2026-09-30T23:29:30.0396093Z ##[group]Disabling automatic garbage collection
+2026-09-30T23:29:30.0402964Z [command]"C:\Program Files\Git\bin\git.exe" config --local gc.auto 0
+2026-09-30T23:29:30.0590335Z ##[endgroup]
+2026-09-30T23:29:30.0590595Z ##[group]Setting up auth
+2026-09-30T23:29:30.0591590Z Removing SSH command configuration
+2026-09-30T23:29:30.0598918Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp core\.sshCommand
+2026-09-30T23:29:30.0811070Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :\""
+2026-09-30T23:29:31.3356799Z Removing HTTP extra header
+2026-09-30T23:29:31.3367076Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-30T23:29:31.3566317Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :\""
+2026-09-30T23:29:31.7275974Z Removing includeIf entries pointing to credentials config files
+2026-09-30T23:29:31.7287773Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-30T23:29:31.7501841Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "git config --local --show-origin --name-only --get-regexp remote.origin.url"
+2026-09-30T23:29:32.0989280Z [command]"C:\Program Files\Git\bin\git.exe" config --file D:\a\_temp\git-credentials-7cad2523-f930-44ab-b4e8-5f5f64f3d3ac.config http.https://github.com/.extraheader "AUTHORIZATION: basic ***"
+2026-09-30T23:29:32.1195716Z [command]"C:\Program Files\Git\bin\git.exe" config --local includeIf.gitdir:D:/a/HSquared.jl/HSquared.jl/.git.path D:\a\_temp\git-credentials-7cad2523-f930-44ab-b4e8-5f5f64f3d3ac.config
+2026-09-30T23:29:32.1382737Z [command]"C:\Program Files\Git\bin\git.exe" config --local includeIf.gitdir:D:/a/HSquared.jl/HSquared.jl/.git/worktrees/*.path D:\a\_temp\git-credentials-7cad2523-f930-44ab-b4e8-5f5f64f3d3ac.config
+2026-09-30T23:29:32.1610847Z [command]"C:\Program Files\Git\bin\git.exe" config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-7cad2523-f930-44ab-b4e8-5f5f64f3d3ac.config
+2026-09-30T23:29:32.1796536Z [command]"C:\Program Files\Git\bin\git.exe" config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-7cad2523-f930-44ab-b4e8-5f5f64f3d3ac.config
+2026-09-30T23:29:32.1989590Z ##[endgroup]
+2026-09-30T23:29:32.1989929Z ##[group]Fetching the repository
+2026-09-30T23:29:32.1999332Z [command]"C:\Program Files\Git\bin\git.exe" -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +1aa19cb244fffb5190d43adff0a6a5e7dc4b8371:refs/remotes/pull/401/merge
+2026-09-30T23:29:34.2887212Z From https://github.com/itchyshin/HSquared.jl
+2026-09-30T23:29:34.2887912Z  * [new ref]         1aa19cb244fffb5190d43adff0a6a5e7dc4b8371 -> pull/401/merge
+2026-09-30T23:29:34.2918598Z ##[endgroup]
+2026-09-30T23:29:34.2919002Z ##[group]Determining the checkout info
+2026-09-30T23:29:34.2919355Z ##[endgroup]
+2026-09-30T23:29:34.2927282Z [command]"C:\Program Files\Git\bin\git.exe" sparse-checkout disable
+2026-09-30T23:29:34.3264471Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset-all extensions.worktreeConfig
+2026-09-30T23:29:34.3473755Z ##[group]Checking out the ref
+2026-09-30T23:29:34.3481603Z [command]"C:\Program Files\Git\bin\git.exe" checkout --progress --force refs/remotes/pull/401/merge
+2026-09-30T23:29:34.8091543Z Note: switching to 'refs/remotes/pull/401/merge'.
+2026-09-30T23:29:34.8091787Z 
+2026-09-30T23:29:34.8091983Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-09-30T23:29:34.8092406Z changes and commit them, and you can discard any commits you make in this
+2026-09-30T23:29:34.8092817Z state without impacting any branches by switching back to a branch.
+2026-09-30T23:29:34.8093047Z 
+2026-09-30T23:29:34.8093238Z If you want to create a new branch to retain commits you create, you may
+2026-09-30T23:29:34.8093591Z do so (now or later) by using -c with the switch command. Example:
+2026-09-30T23:29:34.8093733Z 
+2026-09-30T23:29:34.8093801Z   git switch -c <new-branch-name>
+2026-09-30T23:29:34.8093966Z 
+2026-09-30T23:29:34.8094028Z Or undo this operation with:
+2026-09-30T23:29:34.8094148Z 
+2026-09-30T23:29:34.8094197Z   git switch -
+2026-09-30T23:29:34.8094326Z 
+2026-09-30T23:29:34.8094449Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-09-30T23:29:34.8094617Z 
+2026-09-30T23:29:34.8094850Z HEAD is now at 1aa19cb Merge 73ace301a7e79e922d911345f5033c72968e2ecd into faed40182cdbba2bf69f3e8dff0c5054be2dd214
+2026-09-30T23:29:34.8214809Z ##[endgroup]
+2026-09-30T23:29:34.8537717Z [command]"C:\Program Files\Git\bin\git.exe" log -1 --format=%H
+2026-09-30T23:29:34.8724164Z 1aa19cb244fffb5190d43adff0a6a5e7dc4b8371
+2026-09-30T23:29:34.9032262Z ##[group]Run julia-actions/setup-julia@v3
+2026-09-30T23:29:34.9032478Z with:
+2026-09-30T23:29:34.9032592Z   version: 1.10
+2026-09-30T23:29:34.9032713Z   include-all-prereleases: false
+2026-09-30T23:29:34.9032844Z   arch: default
+2026-09-30T23:29:34.9032948Z   force-arch: false
+2026-09-30T23:29:34.9033066Z   show-versioninfo: false
+2026-09-30T23:29:34.9033184Z env:
+2026-09-30T23:29:34.9033295Z   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+2026-09-30T23:29:34.9033461Z ##[endgroup]
+2026-09-30T23:29:36.4019618Z [command]C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -Command "& \"$env:WINDIR/System32/tar\" xf D:\a\_temp\3c511ef4-cda8-48b9-bbe3-5bc79a81cdb7 --strip-components=1 -C C:\hostedtoolcache\windows\julia\1.10.12\x64"
+2026-09-30T23:29:41.8832450Z [command]C:\hostedtoolcache\windows\julia\1.10.12\x64\bin\julia.exe --version
+2026-09-30T23:29:45.9421385Z julia version 1.10.12
+2026-09-30T23:29:45.9736687Z ##[group]Run julia-actions/cache@v2
+2026-09-30T23:29:45.9736891Z with:
+2026-09-30T23:29:45.9737019Z   cache-name: julia-cache;workflow=CI;job=test
+2026-09-30T23:29:45.9737174Z   include-matrix: true
+2026-09-30T23:29:45.9737287Z   cache-artifacts: true
+2026-09-30T23:29:45.9737402Z   cache-packages: true
+2026-09-30T23:29:45.9737511Z   cache-registries: true
+2026-09-30T23:29:45.9737625Z   cache-compiled: true
+2026-09-30T23:29:45.9737737Z   cache-scratchspaces: true
+2026-09-30T23:29:45.9737854Z   cache-logs: true
+2026-09-30T23:29:45.9738132Z   delete-old-caches: true
+2026-09-30T23:29:45.9739430Z   token: ***
+2026-09-30T23:29:45.9739527Z env:
+2026-09-30T23:29:45.9739632Z   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+2026-09-30T23:29:45.9739772Z ##[endgroup]
+2026-09-30T23:29:45.9780158Z ##[start-action display=Install jq;id=__julia-actions_cache.__dcarbone_install-jq-action]
+2026-09-30T23:29:45.9901653Z ##[group]Run dcarbone/install-jq-action@f0e10f46ff84f4d32178b4b76e1ef180b16f82c3
+2026-09-30T23:29:45.9901863Z with:
+2026-09-30T23:29:45.9901962Z   force: false
+2026-09-30T23:29:45.9902058Z   version: 1.7.1
+2026-09-30T23:29:45.9902154Z env:
+2026-09-30T23:29:45.9902261Z   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+2026-09-30T23:29:45.9902560Z ##[endgroup]
+2026-09-30T23:29:45.9905568Z ##[start-action display=Check for jq - Unix-ish;id=__julia-actions_cache.__dcarbone_install-jq-action.jq-check-unix]
+2026-09-30T23:29:45.9921072Z ##[end-action id=__julia-actions_cache.__dcarbone_install-jq-action.jq-check-unix;outcome=skipped;conclusion=skipped;duration_ms=0]
+2026-09-30T23:29:45.9923155Z ##[start-action display=Install jq - Unix-ish non-1.7;id=__julia-actions_cache.__dcarbone_install-jq-action.__run]
+2026-09-30T23:29:45.9927159Z ##[end-action id=__julia-actions_cache.__dcarbone_install-jq-action.__run;outcome=skipped;conclusion=skipped;duration_ms=0]
+2026-09-30T23:29:45.9928526Z ##[start-action display=Install jq - Unix-ish 1.7;id=__julia-actions_cache.__dcarbone_install-jq-action.__run_2]
+2026-09-30T23:29:45.9931340Z ##[end-action id=__julia-actions_cache.__dcarbone_install-jq-action.__run_2;outcome=skipped;conclusion=skipped;duration_ms=0]
+2026-09-30T23:29:45.9932322Z ##[start-action display=Check for jq - Windows-ish;id=__julia-actions_cache.__dcarbone_install-jq-action.jq-check-windows]
+2026-09-30T23:29:46.0031420Z ##[group]Run if (Get-Command "jq.exe" -ErrorAction SilentlyContinue)
+2026-09-30T23:29:46.0031694Z [36;1mif (Get-Command "jq.exe" -ErrorAction SilentlyContinue)[0m
+2026-09-30T23:29:46.0031921Z [36;1m{[0m
+2026-09-30T23:29:46.0032084Z [36;1m    Add-Content $Env:GITHUB_OUTPUT "found=true"[0m
+2026-09-30T23:29:46.0032237Z [36;1m}[0m
+2026-09-30T23:29:46.0032334Z [36;1melse[0m
+2026-09-30T23:29:46.0032434Z [36;1m{[0m
+2026-09-30T23:29:46.0032559Z [36;1m    Add-Content $Env:GITHUB_OUTPUT "found=false"[0m
+2026-09-30T23:29:46.0032707Z [36;1m}[0m
+2026-09-30T23:29:46.0368287Z shell: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.EXE -command ". '{0}'"
+2026-09-30T23:29:46.0368513Z env:
+2026-09-30T23:29:46.0368627Z   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+2026-09-30T23:29:46.0368768Z ##[endgroup]
+2026-09-30T23:29:46.4855945Z ##[end-action id=__julia-actions_cache.__dcarbone_install-jq-action.jq-check-windows;outcome=success;conclusion=success;duration_ms=492]
+2026-09-30T23:29:46.4858977Z ##[start-action display=Install jq - Windows-ish non-1.7;id=__julia-actions_cache.__dcarbone_install-jq-action.__run_3]
+2026-09-30T23:29:46.4864660Z ##[end-action id=__julia-actions_cache.__dcarbone_install-jq-action.__run_3;outcome=skipped;conclusion=skipped;duration_ms=0]
+2026-09-30T23:29:46.4866118Z ##[start-action display=Install jq - Windows-ish 1.7;id=__julia-actions_cache.__dcarbone_install-jq-action.__run_4]
+2026-09-30T23:29:46.4869994Z ##[end-action id=__julia-actions_cache.__dcarbone_install-jq-action.__run_4;outcome=skipped;conclusion=skipped;duration_ms=0]
+2026-09-30T23:29:46.4902164Z ##[end-action id=__julia-actions_cache.__dcarbone_install-jq-action;outcome=success;conclusion=success;duration_ms=512]
+2026-09-30T23:29:46.4909294Z ##[start-action display=Run if [ -n "" %5D%3B then;id=__julia-actions_cache.paths]
+2026-09-30T23:29:46.4991940Z ##[group]Run if [ -n "" ]; then
+2026-09-30T23:29:46.4992176Z [36;1mif [ -n "" ]; then[0m
+2026-09-30T23:29:46.4992292Z [36;1m    depot=""[0m
+2026-09-30T23:29:46.4992421Z [36;1melif [ -n "$JULIA_DEPOT_PATH" ]; then[0m
+2026-09-30T23:29:46.4992575Z [36;1m    # Use the first depot path[0m
+2026-09-30T23:29:46.4992754Z [36;1m    depot=$(echo $JULIA_DEPOT_PATH | cut -d$PATH_DELIMITER -f1)[0m
+2026-09-30T23:29:46.4993056Z [36;1melse[0m
+2026-09-30T23:29:46.4993161Z [36;1m    depot="~/.julia"[0m
+2026-09-30T23:29:46.4993271Z [36;1mfi[0m
+2026-09-30T23:29:46.4993403Z [36;1mif [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]]; then[0m
+2026-09-30T23:29:46.4993605Z [36;1m  depot="${depot/#\~/$USERPROFILE}"  # Windows paths[0m
+2026-09-30T23:29:46.4993834Z [36;1m  depot="${depot//\\//}"             # Replace backslashes with forward slashes[0m
+2026-09-30T23:29:46.4994018Z [36;1melse[0m
+2026-09-30T23:29:46.4994140Z [36;1m  depot="${depot/#\~/$HOME}"  # Unix-like paths[0m
+2026-09-30T23:29:46.4994283Z [36;1mfi[0m
+2026-09-30T23:29:46.4994406Z [36;1mecho "depot=$depot" | tee -a "$GITHUB_OUTPUT"[0m
+2026-09-30T23:29:46.4994557Z [36;1m[0m
+2026-09-30T23:29:46.4994653Z [36;1mcache_paths=()[0m
+2026-09-30T23:29:46.4994777Z [36;1martifacts_path="${depot}/artifacts"[0m
+2026-09-30T23:29:46.4994948Z [36;1m[ "true" = "true" ] && cache_paths+=("$artifacts_path")[0m
+2026-09-30T23:29:46.4995124Z [36;1mpackages_path="${depot}/packages"[0m
+2026-09-30T23:29:46.4995292Z [36;1m[ "true" = "true" ] && cache_paths+=("$packages_path")[0m
+2026-09-30T23:29:46.4995465Z [36;1mregistries_path="${depot}/registries"[0m
+2026-09-30T23:29:46.4995610Z [36;1mif [ "true" = "true" ]; then[0m
+2026-09-30T23:29:46.4995755Z [36;1m    if [ ! -d "${registries_path}" ]; then[0m
+2026-09-30T23:29:46.4995924Z [36;1m        cache_paths+=("$registries_path")[0m
+2026-09-30T23:29:46.4996060Z [36;1m    else[0m
+2026-09-30T23:29:46.4996517Z [36;1m        echo "::warning::Julia depot registries already exist. Skipping restoring of cached registries to avoid potential merge conflicts when updating. Please ensure that \`julia-actions/cache\` precedes any workflow steps which add registries."[0m
+2026-09-30T23:29:46.4996994Z [36;1m    fi[0m
+2026-09-30T23:29:46.4997085Z [36;1mfi[0m
+2026-09-30T23:29:46.4997192Z [36;1mcompiled_path="${depot}/compiled"[0m
+2026-09-30T23:29:46.4997361Z [36;1m[ "true" = "true" ] && cache_paths+=("$compiled_path")[0m
+2026-09-30T23:29:46.4997549Z [36;1mscratchspaces_path="${depot}/scratchspaces"[0m
+2026-09-30T23:29:46.4997737Z [36;1m[ "true" = "true" ] && cache_paths+=("$scratchspaces_path")[0m
+2026-09-30T23:29:46.4997906Z [36;1mlogs_path="${depot}/logs"[0m
+2026-09-30T23:29:46.4998061Z [36;1m[ "true" = "true" ] && cache_paths+=("$logs_path")[0m
+2026-09-30T23:29:46.4998239Z [36;1m{[0m
+2026-09-30T23:29:46.4998342Z [36;1m    echo "cache-paths<<EOF"[0m
+2026-09-30T23:29:46.4998481Z [36;1m    printf "%s\n" "${cache_paths[@]}"[0m
+2026-09-30T23:29:46.4998616Z [36;1m    echo "EOF"[0m
+2026-09-30T23:29:46.4998733Z [36;1m} | tee -a "$GITHUB_OUTPUT"[0m
+2026-09-30T23:29:46.5328851Z shell: C:\Program Files\Git\bin\bash.EXE --noprofile --norc -e -o pipefail {0}
+2026-09-30T23:29:46.5329058Z env:
+2026-09-30T23:29:46.5329169Z   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+2026-09-30T23:29:46.5329306Z   PATH_DELIMITER: ;
+2026-09-30T23:29:46.5329414Z ##[endgroup]
+2026-09-30T23:29:46.7130724Z depot=C:/Users/runneradmin/.julia
+2026-09-30T23:29:46.7381774Z cache-paths<<EOF
+2026-09-30T23:29:46.7382491Z C:/Users/runneradmin/.julia/artifacts
+2026-09-30T23:29:46.7382771Z C:/Users/runneradmin/.julia/packages
+2026-09-30T23:29:46.7383441Z C:/Users/runneradmin/.julia/registries
+2026-09-30T23:29:46.7383675Z C:/Users/runneradmin/.julia/compiled
+2026-09-30T23:29:46.7385810Z C:/Users/runneradmin/.julia/scratchspaces
+2026-09-30T23:29:46.7386095Z C:/Users/runneradmin/.julia/logs
+2026-09-30T23:29:46.7386303Z EOF
+2026-09-30T23:29:46.7437038Z ##[end-action id=__julia-actions_cache.paths;outcome=success;conclusion=success;duration_ms=252]
+2026-09-30T23:29:46.7454820Z ##[start-action display=Generate Keys;id=__julia-actions_cache.keys]
+2026-09-30T23:29:46.7537258Z ##[group]Run # `matrix_key` joins all of matrix keys/values (including nested objects) to ensure that concurrent runs each use a unique cache key.
+2026-09-30T23:29:46.7537767Z [36;1m# `matrix_key` joins all of matrix keys/values (including nested objects) to ensure that concurrent runs each use a unique cache key.[0m
+2026-09-30T23:29:46.7538689Z [36;1m# When `matrix` isn't set for the job then `MATRIX_JSON=null`.[0m
+2026-09-30T23:29:46.7538918Z [36;1mif [ "true" == "true" ] && [ "$MATRIX_JSON" != "null" ]; then[0m
+2026-09-30T23:29:46.7539278Z [36;1m  matrix_key=$(echo "$MATRIX_JSON" | jq 'paths(type != "object") as $p | ($p | join("-")) + "=" + (getpath($p) | tostring)' | jq -rs 'join(";") | . + ";"')[0m
+2026-09-30T23:29:46.7539584Z [36;1mfi[0m
+2026-09-30T23:29:46.7539767Z [36;1mrestore_key="julia-cache;workflow=CI;job=test;os=Windows;${matrix_key}"[0m
+2026-09-30T23:29:46.7539996Z [36;1m# URL encode any restricted characters:[0m
+2026-09-30T23:29:46.7540321Z [36;1m# https://github.com/actions/toolkit/blob/5430c5d84832076372990c7c27f900878ff66dc9/packages/cache/src/cache.ts#L38-L43[0m
+2026-09-30T23:29:46.7540652Z [36;1mrestore_key=$(sed 's/,/%2C/g' <<<"${restore_key}")[0m
+2026-09-30T23:29:46.7540925Z [36;1mkey="${restore_key}run_id=36791342250;run_attempt=1"[0m
+2026-09-30T23:29:46.7541346Z [36;1mecho "restore-key=${restore_key}" >> $GITHUB_OUTPUT[0m
+2026-09-30T23:29:46.7541529Z [36;1mecho "key=${key}" >> $GITHUB_OUTPUT[0m
+2026-09-30T23:29:46.7549097Z shell: C:\Program Files\Git\bin\bash.EXE --noprofile --norc -e -o pipefail {0}
+2026-09-30T23:29:46.7549302Z env:
+2026-09-30T23:29:46.7549423Z   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+2026-09-30T23:29:46.7549611Z   MATRIX_JSON: {
+  "version": "1.10",
+  "os": "windows-latest"
+}
+2026-09-30T23:29:46.7549787Z ##[endgroup]
+2026-09-30T23:29:47.0088178Z ##[end-action id=__julia-actions_cache.keys;outcome=success;conclusion=success;duration_ms=263]
+2026-09-30T23:29:47.0090079Z ##[start-action display=Run actions/cache@5a3ec84eff668545956fd18022155c47e93e2684;id=__julia-actions_cache.cache]
+2026-09-30T23:29:47.0183113Z ##[group]Run actions/cache@5a3ec84eff668545956fd18022155c47e93e2684
+2026-09-30T23:29:47.0183306Z with:
+2026-09-30T23:29:47.0183762Z   path: C:/Users/runneradmin/.julia/artifacts
+C:/Users/runneradmin/.julia/packages
+C:/Users/runneradmin/.julia/registries
+C:/Users/runneradmin/.julia/compiled
+C:/Users/runneradmin/.julia/scratchspaces
+C:/Users/runneradmin/.julia/logs
+
+2026-09-30T23:29:47.0184347Z   key: julia-cache;workflow=CI;job=test;os=Windows;version=1.10;os=windows-latest;run_id=36791342250;run_attempt=1
+2026-09-30T23:29:47.0184692Z   restore-keys: julia-cache;workflow=CI;job=test;os=Windows;version=1.10;os=windows-latest;
+2026-09-30T23:29:47.0184924Z   enableCrossOsArchive: false
+2026-09-30T23:29:47.0185055Z   fail-on-cache-miss: false
+2026-09-30T23:29:47.0185175Z   lookup-only: false
+2026-09-30T23:29:47.0185279Z   save-always: false
+2026-09-30T23:29:47.0185380Z env:
+2026-09-30T23:29:47.0185495Z   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+2026-09-30T23:29:47.0185634Z ##[endgroup]
+2026-09-30T23:29:47.0992519Z (node:4792) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-09-30T23:29:47.0992944Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-09-30T23:29:47.3452882Z Cache hit for: julia-cache;workflow=CI;job=test;os=Windows;version=1.10;os=windows-latest;run_id=36791342250;run_attempt=1
+2026-09-30T23:29:47.3524425Z (node:4792) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+2026-09-30T23:29:48.2686561Z Received 43340523 of 43340523 (100.0%), 53.5 MBs/sec
+2026-09-30T23:29:48.2689876Z Cache Size: ~41 MB (43340523 B)
+2026-09-30T23:29:48.2716233Z [command]"C:\Program Files\Git\usr\bin\tar.exe" -xf D:/a/_temp/3b449e6f-9acf-457b-bb30-6b8a1a56fa78/cache.tzst -P -C D:/a/HSquared.jl/HSquared.jl --force-local --use-compress-program "zstd -d"
+2026-09-30T23:29:53.6176706Z Cache restored successfully
+2026-09-30T23:29:53.6280887Z Cache restored from key: julia-cache;workflow=CI;job=test;os=Windows;version=1.10;os=windows-latest;run_id=36379264619;run_attempt=1
+2026-09-30T23:29:53.6400555Z ##[end-action id=__julia-actions_cache.cache;outcome=success;conclusion=success;duration_ms=6630]
+2026-09-30T23:29:53.6402251Z ##[start-action display=make depot if not restored, then list depot directory sizes;id=__julia-actions_cache.__run]
+2026-09-30T23:29:53.6696680Z ##[group]Run mkdir -p C:/Users/runneradmin/.julia
+2026-09-30T23:29:53.6696890Z [36;1mmkdir -p C:/Users/runneradmin/.julia[0m
+2026-09-30T23:29:53.6698136Z [36;1mdu -shc C:/Users/runneradmin/.julia/* || true[0m
+2026-09-30T23:29:53.6720766Z shell: C:\Program Files\Git\bin\bash.EXE --noprofile --norc -e -o pipefail {0}
+2026-09-30T23:29:53.6721598Z env:
+2026-09-30T23:29:53.6722353Z   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+2026-09-30T23:29:53.6722573Z ##[endgroup]
+2026-09-30T23:29:53.8011105Z 1.5M	C:/Users/runneradmin/.julia/artifacts
+2026-09-30T23:29:53.8357294Z 165M	C:/Users/runneradmin/.julia/compiled
+2026-09-30T23:29:53.8364431Z 10K	C:/Users/runneradmin/.julia/logs
+2026-09-30T23:29:54.1452810Z 18M	C:/Users/runneradmin/.julia/packages
+2026-09-30T23:29:54.1453332Z 11M	C:/Users/runneradmin/.julia/registries
+2026-09-30T23:29:54.1455018Z 1.0K	C:/Users/runneradmin/.julia/scratchspaces
+2026-09-30T23:29:54.1455962Z 195M	total
+2026-09-30T23:29:54.1506064Z ##[end-action id=__julia-actions_cache.__run;outcome=success;conclusion=success;duration_ms=510]
+2026-09-30T23:29:54.1508009Z ##[start-action display=Update any cached registries;id=__julia-actions_cache.__run_2]
+2026-09-30T23:29:54.1599497Z ##[group]Run if [ -d "C:/Users/runneradmin/.julia/registries" ] && [ -n "$(ls -A "C:/Users/runneradmin/.julia/registries")" ]; then
+2026-09-30T23:29:54.1599922Z [36;1mif [ -d "C:/Users/runneradmin/.julia/registries" ] && [ -n "$(ls -A "C:/Users/runneradmin/.julia/registries")" ]; then[0m
+2026-09-30T23:29:54.1600260Z [36;1m  echo "Registries directory exists and is non-empty. Updating any registries"[0m
+2026-09-30T23:29:54.1600566Z [36;1m  julia -e "import Pkg; isdefined(Pkg, :Registry) && Pkg.Registry.update();"[0m
+2026-09-30T23:29:54.1600770Z [36;1melse[0m
+2026-09-30T23:29:54.1600957Z [36;1m  echo "Registries directory does not exist or is empty. Skipping registry update"[0m
+2026-09-30T23:29:54.1601172Z [36;1mfi[0m
+2026-09-30T23:29:54.1609205Z shell: C:\Program Files\Git\bin\bash.EXE --noprofile --norc -e -o pipefail {0}
+2026-09-30T23:29:54.1609420Z env:
+2026-09-30T23:29:54.1609544Z   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+2026-09-30T23:29:54.1609692Z ##[endgroup]
+2026-09-30T23:29:54.3507446Z Registries directory exists and is non-empty. Updating any registries
+2026-09-30T23:29:57.1111849Z     Updating registry at `C:\Users\runneradmin\.julia\registries\General.toml`
+2026-09-30T23:29:58.5865600Z ##[end-action id=__julia-actions_cache.__run_2;outcome=success;conclusion=success;duration_ms=4435]
+2026-09-30T23:29:58.5868519Z ##[start-action display=Run pyTooling/Actions/with-post-step@42e17fae05f224e5ac3d79d021a4e3577878efe5;id=__julia-actions_cache.__pyTooling_Actions]
+2026-09-30T23:29:58.5876090Z ##[end-action id=__julia-actions_cache.__pyTooling_Actions;outcome=skipped;conclusion=skipped;duration_ms=0]
+2026-09-30T23:29:58.5877888Z ##[start-action display=Run pyTooling/Actions/with-post-step@42e17fae05f224e5ac3d79d021a4e3577878efe5;id=__julia-actions_cache.__pyTooling_Actions_2]
+2026-09-30T23:29:58.5973229Z ##[group]Run pyTooling/Actions/with-post-step@42e17fae05f224e5ac3d79d021a4e3577878efe5
+2026-09-30T23:29:58.5973456Z with:
+2026-09-30T23:29:58.5973553Z   main: echo ""
+2026-09-30T23:29:58.5973903Z   post: cd %GITHUB_ACTION_PATH% && julia handle_caches.jl rm "itchyshin/HSquared.jl" "julia-cache;workflow=CI;job=test;os=Windows;version=1.10;os=windows-latest;" "refs/pull/401/merge" "true"
+2026-09-30T23:29:58.5974282Z   key: POST
+2026-09-30T23:29:58.5974378Z env:
+2026-09-30T23:29:58.5974481Z   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+2026-09-30T23:29:58.5976081Z   GH_TOKEN: ***
+2026-09-30T23:29:58.5976316Z ##[endgroup]
+2026-09-30T23:29:58.6351761Z ""
+2026-09-30T23:29:58.6424765Z ##[end-action id=__julia-actions_cache.__pyTooling_Actions_2;outcome=success;conclusion=success;duration_ms=54]
+2026-09-30T23:29:58.6427155Z ##[start-action display=Run echo "cache-hit=$CACHE_HIT" >> $GITHUB_OUTPUT;id=__julia-actions_cache.hit]
+2026-09-30T23:29:58.6505519Z ##[group]Run echo "cache-hit=$CACHE_HIT" >> $GITHUB_OUTPUT
+2026-09-30T23:29:58.6505748Z [36;1mecho "cache-hit=$CACHE_HIT" >> $GITHUB_OUTPUT[0m
+2026-09-30T23:29:58.6513676Z shell: C:\Program Files\Git\bin\bash.EXE --noprofile --norc -e -o pipefail {0}
+2026-09-30T23:29:58.6513880Z env:
+2026-09-30T23:29:58.6513999Z   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+2026-09-30T23:29:58.6514142Z   CACHE_HIT: false
+2026-09-30T23:29:58.6514243Z ##[endgroup]
+2026-09-30T23:29:58.6794260Z ##[end-action id=__julia-actions_cache.hit;outcome=success;conclusion=success;duration_ms=36]
+2026-09-30T23:29:58.6906173Z ##[group]Run julia-actions/julia-buildpkg@v1
+2026-09-30T23:29:58.6906393Z with:
+2026-09-30T23:29:58.6906501Z   project: @.
+2026-09-30T23:29:58.6906603Z   precompile: no
+2026-09-30T23:29:58.6906706Z   git_cli: false
+2026-09-30T23:29:58.6906813Z   ignore-no-cache: false
+2026-09-30T23:29:58.6906930Z env:
+2026-09-30T23:29:58.6907040Z   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+2026-09-30T23:29:58.6907178Z ##[endgroup]
+2026-09-30T23:29:58.6909554Z ##[start-action display=Set and export registry flavor preference;id=__julia-actions_julia-buildpkg.__run]
+2026-09-30T23:29:58.6995297Z ##[group]Run echo "JULIA_PKG_SERVER_REGISTRY_PREFERENCE=${JULIA_PKG_SERVER_REGISTRY_PREFERENCE:-eager}" >> ${GITHUB_ENV}
+2026-09-30T23:29:58.6995703Z [36;1mecho "JULIA_PKG_SERVER_REGISTRY_PREFERENCE=${JULIA_PKG_SERVER_REGISTRY_PREFERENCE:-eager}" >> ${GITHUB_ENV}[0m
+2026-09-30T23:29:58.7003210Z shell: C:\Program Files\Git\bin\bash.EXE --noprofile --norc -e -o pipefail {0}
+2026-09-30T23:29:58.7003457Z env:
+2026-09-30T23:29:58.7003574Z   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+2026-09-30T23:29:58.7003720Z ##[endgroup]
+2026-09-30T23:29:58.7291473Z ##[end-action id=__julia-actions_julia-buildpkg.__run;outcome=success;conclusion=success;duration_ms=38]
+2026-09-30T23:29:58.7294429Z ##[start-action display=Run if "false" == "false" && !isdir(DEPOT_PATH[1%5D);id=__julia-actions_julia-buildpkg.__run_2]
+2026-09-30T23:29:58.7374502Z ##[group]Run if "false" == "false" && !isdir(DEPOT_PATH[1])
+2026-09-30T23:29:58.7374869Z [36;1mif "false" == "false" && !isdir(DEPOT_PATH[1])[0m
+2026-09-30T23:29:58.7375691Z [36;1m    println("::notice title=[julia-buildpkg] Caching of the julia depot was not detected ::Consider using `julia-actions/cache` to speed up runs https://github.com/julia-actions/cache To ignore, set input `ignore-no-cache: true` ")[0m
+2026-09-30T23:29:58.7376458Z [36;1mend[0m
+2026-09-30T23:29:58.7376617Z [36;1mimport Pkg[0m
+2026-09-30T23:29:58.7376782Z [36;1m[0m
+2026-09-30T23:29:58.7377022Z [36;1m# Determine if Pkg uses git-cli executable instead of LibGit2[0m
+2026-09-30T23:29:58.7377410Z [36;1mVERSION >= v"1.7-" && (ENV["JULIA_PKG_USE_CLI_GIT"] = false)[0m
+2026-09-30T23:29:58.7377685Z [36;1m[0m
+2026-09-30T23:29:58.7377858Z [36;1mif VERSION < v"1.7-" && false == true[0m
+2026-09-30T23:29:58.7378365Z [36;1m  printstyled("::notice::JULIA_PKG_USE_CLI_GIT requires Julia >= 1.7. Using default LibGit2 git-interface instead! \n"; color = :yellow)[0m
+2026-09-30T23:29:58.7378855Z [36;1mend[0m
+2026-09-30T23:29:58.7379015Z [36;1m[0m
+2026-09-30T23:29:58.7379164Z [36;1m[0m
+2026-09-30T23:29:58.7379308Z [36;1mif VERSION >= v"1.5-"[0m
+2026-09-30T23:29:58.7379510Z [36;1m    if VERSION >= v"1.8-"[0m
+2026-09-30T23:29:58.7379735Z [36;1m        # Install the default registries[0m
+2026-09-30T23:29:58.7379977Z [36;1m        Pkg.Registry.add()[0m
+2026-09-30T23:29:58.7380174Z [36;1m    else[0m
+2026-09-30T23:29:58.7380356Z [36;1m        Pkg.Registry.add("General")[0m
+2026-09-30T23:29:58.7380786Z [36;1m    end[0m
+2026-09-30T23:29:58.7380939Z [36;1m[0m
+2026-09-30T23:29:58.7381295Z [36;1m    # If provided add local registries[0m
+2026-09-30T23:29:58.7381542Z [36;1m    if !isempty("")[0m
+2026-09-30T23:29:58.7381771Z [36;1m      local_repos = split("", "\n") .|> string[0m
+2026-09-30T23:29:58.7382030Z [36;1m      for repo_url in local_repos[0m
+2026-09-30T23:29:58.7382276Z [36;1m        isempty(repo_url) && continue[0m
+2026-09-30T23:29:58.7382582Z [36;1m        Pkg.Registry.add(Pkg.RegistrySpec(; url = repo_url))[0m
+2026-09-30T23:29:58.7382861Z [36;1m      end[0m
+2026-09-30T23:29:58.7383020Z [36;1m    end[0m
+2026-09-30T23:29:58.7383173Z [36;1mend[0m
+2026-09-30T23:29:58.7383322Z [36;1m[0m
+2026-09-30T23:29:58.7383586Z [36;1mVERSION >= v"1.1.0-rc1" ? retry(Pkg.build)(verbose=true) : retry(Pkg.build)()[0m
+2026-09-30T23:29:58.7386097Z shell: C:\hostedtoolcache\windows\julia\1.10.12\x64\bin\julia.EXE --color=yes --project=@. {0}
+2026-09-30T23:29:58.7388293Z env:
+2026-09-30T23:29:58.7388486Z   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+2026-09-30T23:29:58.7388746Z   JULIA_PKG_SERVER_REGISTRY_PREFERENCE: eager
+2026-09-30T23:29:58.7388997Z   JULIA_PKG_PRECOMPILE_AUTO: no
+2026-09-30T23:29:58.7391327Z   GITHUB_TOKEN: ***
+2026-09-30T23:29:58.7391500Z ##[endgroup]
+2026-09-30T23:29:59.5690113Z [32m[1m  Installing[22m[39m known registries into `C:\Users\runneradmin\.julia`
+2026-09-30T23:30:01.1027868Z [32m[1m       Added[22m[39m `General` registry to C:\Users\runneradmin\.julia\registries
+2026-09-30T23:30:01.8041278Z [32m[1m    Updating[22m[39m registry at `C:\Users\runneradmin\.julia\registries\General.toml`
+2026-09-30T23:30:04.3920737Z [32m[1m    Updating[22m[39m `D:\a\HSquared.jl\HSquared.jl\Project.toml`
+2026-09-30T23:30:04.4061631Z [33m⌅[39m [90m[429524aa] [39m[92m+ Optim v1.13.3[39m
+2026-09-30T23:30:04.4062050Z   [90m[ea8e919c] [39m[93m~ SHA ⇒ v0.7.0[39m
+2026-09-30T23:30:04.4062417Z   [90m[2f01184e] [39m[93m~ SparseArrays ⇒ v1.10.0[39m
+2026-09-30T23:30:04.4109886Z [32m[1m    Updating[22m[39m `D:\a\HSquared.jl\HSquared.jl\Manifest.toml`
+2026-09-30T23:30:04.4279625Z   [90m[47edcb42] [39m[92m+ ADTypes v1.24.0[39m
+2026-09-30T23:30:04.4280936Z   [90m[79e6a3ab] [39m[92m+ Adapt v4.7.1[39m
+2026-09-30T23:30:04.4282549Z   [90m[66dad0bd] [39m[92m+ AliasTables v1.1.3[39m
+2026-09-30T23:30:04.4283724Z   [90m[4fba245c] [39m[92m+ ArrayInterface v7.30.2[39m
+2026-09-30T23:30:04.4285071Z   [90m[bbf7d656] [39m[92m+ CommonSubexpressions v0.3.1[39m
+2026-09-30T23:30:04.4286584Z   [90m[34da2185] [39m[92m+ Compat v4.18.1[39m
+2026-09-30T23:30:04.4288097Z   [90m[187b0558] [39m[92m+ ConstructionBase v1.6.0[39m
+2026-09-30T23:30:04.4289534Z   [90m[9a962f9c] [39m[92m+ DataAPI v1.16.0[39m
+2026-09-30T23:30:04.4290943Z   [90m[864edb3b] [39m[92m+ DataStructures v0.19.6[39m
+2026-09-30T23:30:04.4292345Z   [90m[163ba53b] [39m[92m+ DiffResults v1.1.0[39m
+2026-09-30T23:30:04.4293691Z   [90m[b552c78f] [39m[92m+ DiffRules v1.16.0[39m
+2026-09-30T23:30:04.4295034Z   [90m[a0c0ee7d] [39m[92m+ DifferentiationInterface v0.7.21[39m
+2026-09-30T23:30:04.4296369Z   [90m[ffbed154] [39m[92m+ DocStringExtensions v0.9.5[39m
+2026-09-30T23:30:04.4297686Z   [90m[4e289a0a] [39m[92m+ EnumX v1.0.7[39m
+2026-09-30T23:30:04.4298952Z   [90m[1a297f60] [39m[92m+ FillArrays v1.17.1[39m
+2026-09-30T23:30:04.4300277Z   [90m[6a86dc24] [39m[92m+ FiniteDiff v2.33.0[39m
+2026-09-30T23:30:04.4301500Z   [90m[f6369f11] [39m[92m+ ForwardDiff v1.4.6[39m
+2026-09-30T23:30:04.4302832Z   [90m[92d709cd] [39m[92m+ IrrationalConstants v0.2.6[39m
+2026-09-30T23:30:04.4304145Z   [90m[692b3bcd] [39m[92m+ JLLWrappers v1.8.0[39m
+2026-09-30T23:30:04.4305462Z [32m⌃[39m [90m[d3d80556] [39m[92m+ LineSearches v7.5.1[39m
+2026-09-30T23:30:04.4306780Z   [90m[2ab3a3ac] [39m[92m+ LogExpFunctions v1.0.2[39m
+2026-09-30T23:30:04.4308137Z   [90m[1914dd2f] [39m[92m+ MacroTools v0.5.16[39m
+2026-09-30T23:30:04.4309410Z   [90m[e1d29d7a] [39m[92m+ Missings v1.2.0[39m
+2026-09-30T23:30:04.4310937Z [33m⌅[39m [90m[d41bc354] [39m[92m+ NLSolversBase v7.10.0[39m
+2026-09-30T23:30:04.4312185Z   [90m[77ba4419] [39m[92m+ NaNMath v1.1.4[39m
+2026-09-30T23:30:04.4313472Z [33m⌅[39m [90m[429524aa] [39m[92m+ Optim v1.13.3[39m
+2026-09-30T23:30:04.4314792Z   [90m[bac558e1] [39m[92m+ OrderedCollections v2.0.1[39m
+2026-09-30T23:30:04.4316126Z   [90m[85a6dd25] [39m[92m+ PositiveFactorizations v0.2.4[39m
+2026-09-30T23:30:04.4317429Z [33m⌅[39m [90m[aea7be01] [39m[92m+ PrecompileTools v1.2.1[39m
+2026-09-30T23:30:04.4318681Z   [90m[21216c6a] [39m[92m+ Preferences v1.6.0[39m
+2026-09-30T23:30:04.4319929Z   [90m[43287f4e] [39m[92m+ PtrArrays v1.4.0[39m
+2026-09-30T23:30:04.4321230Z   [90m[efcf1570] [39m[92m+ Setfield v1.1.2[39m
+2026-09-30T23:30:04.4322574Z   [90m[a2af1166] [39m[92m+ SortingAlgorithms v1.2.3[39m
+2026-09-30T23:30:04.4324597Z   [90m[276daf66] [39m[92m+ SpecialFunctions v2.9.0[39m
+2026-09-30T23:30:04.4325227Z   [90m[1e83bf80] [39m[92m+ StaticArraysCore v1.4.4[39m
+2026-09-30T23:30:04.4326644Z   [90m[82ae8749] [39m[92m+ StatsAPI v1.8.0[39m
+2026-09-30T23:30:04.4328035Z   [90m[2913bbd2] [39m[92m+ StatsBase v0.34.13[39m
+2026-09-30T23:30:04.4330044Z   [90m[efe28fd5] [39m[92m+ OpenSpecFun_jll v0.5.6+0[39m
+2026-09-30T23:30:04.4331247Z   [90m[56f22d72] [39m[92m+ Artifacts[39m
+2026-09-30T23:30:04.4332449Z   [90m[ade2ca70] [39m[92m+ Dates[39m
+2026-09-30T23:30:04.4333716Z   [90m[8ba89e20] [39m[92m+ Distributed[39m
+2026-09-30T23:30:04.4335128Z   [90m[9fa8497b] [39m[92m+ Future[39m
+2026-09-30T23:30:04.4336229Z   [90m[8f399da3] [39m[92m+ Libdl[39m
+2026-09-30T23:30:04.4337618Z   [90m[37e2e46d] [39m[92m+ LinearAlgebra[39m
+2026-09-30T23:30:04.4339072Z   [90m[de0858da] [39m[92m+ Printf[39m
+2026-09-30T23:30:04.4340408Z   [90m[9a3f8284] [39m[92m+ Random[39m
+2026-09-30T23:30:04.4341793Z   [90m[ea8e919c] [39m[92m+ SHA v0.7.0[39m
+2026-09-30T23:30:04.4343170Z   [90m[9e88b42a] [39m[92m+ Serialization[39m
+2026-09-30T23:30:04.4344501Z   [90m[6462fe0b] [39m[92m+ Sockets[39m
+2026-09-30T23:30:04.4346031Z   [90m[2f01184e] [39m[92m+ SparseArrays v1.10.0[39m
+2026-09-30T23:30:04.4347284Z   [90m[10745b16] [39m[92m+ Statistics v1.10.0[39m
+2026-09-30T23:30:04.4348681Z   [90m[fa267f1f] [39m[92m+ TOML v1.0.3[39m
+2026-09-30T23:30:04.4349949Z   [90m[cf7118a7] [39m[92m+ UUIDs[39m
+2026-09-30T23:30:04.4351277Z   [90m[4ec0a83e] [39m[92m+ Unicode[39m
+2026-09-30T23:30:04.4352606Z   [90m[e66e0078] [39m[92m+ CompilerSupportLibraries_jll v1.1.2+1[39m
+2026-09-30T23:30:04.4353913Z   [90m[4536629a] [39m[92m+ OpenBLAS_jll v0.3.23+5[39m
+2026-09-30T23:30:04.4355262Z   [90m[05823500] [39m[92m+ OpenLibm_jll v0.8.5+0[39m
+2026-09-30T23:30:04.4356514Z   [90m[bea87d4a] [39m[92m+ SuiteSparse_jll v7.2.1+1[39m
+2026-09-30T23:30:04.4357886Z   [90m[8e850b90] [39m[92m+ libblastrampoline_jll v5.11.0+0[39m
+2026-09-30T23:30:04.4359299Z [36m[1m        Info[22m[39m Packages marked with [32m⌃[39m and [33m⌅[39m have new versions available. Those with [32m⌃[39m may be upgradable, but those with [33m⌅[39m are restricted by compatibility constraints from upgrading. To see why use `status --outdated -m`
+2026-09-30T23:30:04.6273112Z ##[end-action id=__julia-actions_julia-buildpkg.__run_2;outcome=success;conclusion=success;duration_ms=5897]
+2026-09-30T23:30:04.6407482Z ##[group]Run julia-actions/julia-runtest@v1
+2026-09-30T23:30:04.6407685Z with:
+2026-09-30T23:30:04.6407793Z   check_bounds: yes
+2026-09-30T23:30:04.6407902Z   coverage: true
+2026-09-30T23:30:04.6408011Z   depwarn: yes
+2026-09-30T23:30:04.6408127Z   force_latest_compatible_version: auto
+2026-09-30T23:30:04.6408267Z   inline: yes
+2026-09-30T23:30:04.6408366Z   project: @.
+2026-09-30T23:30:04.6408463Z   annotate: false
+2026-09-30T23:30:04.6408576Z   compiled_modules: yes
+2026-09-30T23:30:04.6408691Z   allow_reresolve: true
+2026-09-30T23:30:04.6408799Z env:
+2026-09-30T23:30:04.6408909Z   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+2026-09-30T23:30:04.6409242Z   JULIA_PKG_SERVER_REGISTRY_PREFERENCE: eager
+2026-09-30T23:30:04.6409390Z ##[endgroup]
+2026-09-30T23:30:04.6411963Z ##[start-action display=Set and export registry flavor preference;id=__julia-actions_julia-runtest.__run]
+2026-09-30T23:30:04.6487434Z ##[group]Run # Set and export registry flavor preference
+2026-09-30T23:30:04.6487680Z [36;1m# Set and export registry flavor preference[0m
+2026-09-30T23:30:04.6487979Z [36;1mecho "JULIA_PKG_SERVER_REGISTRY_PREFERENCE=${JULIA_PKG_SERVER_REGISTRY_PREFERENCE:-eager}" >> ${GITHUB_ENV}[0m
+2026-09-30T23:30:04.6495370Z shell: C:\Program Files\Git\bin\bash.EXE --noprofile --norc -e -o pipefail {0}
+2026-09-30T23:30:04.6495580Z env:
+2026-09-30T23:30:04.6495695Z   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+2026-09-30T23:30:04.6495863Z   JULIA_PKG_SERVER_REGISTRY_PREFERENCE: eager
+2026-09-30T23:30:04.6496012Z ##[endgroup]
+2026-09-30T23:30:04.6770331Z ##[end-action id=__julia-actions_julia-runtest.__run;outcome=success;conclusion=success;duration_ms=35]
+2026-09-30T23:30:04.6771739Z ##[start-action display=Install dependencies in their own (shared) environment;id=__julia-actions_julia-runtest.__run_2]
+2026-09-30T23:30:04.6774156Z ##[end-action id=__julia-actions_julia-runtest.__run_2;outcome=skipped;conclusion=skipped;duration_ms=0]
+2026-09-30T23:30:04.6775945Z ##[start-action display=Run the package tests;id=__julia-actions_julia-runtest.__run_3]
+2026-09-30T23:30:04.6850480Z ##[group]Run # Run the package tests
+2026-09-30T23:30:04.6850678Z [36;1m# Run the package tests[0m
+2026-09-30T23:30:04.6850821Z [36;1m[0m
+2026-09-30T23:30:04.6850983Z [36;1m# On Windows the executable is julia.exe, elsewhere it is julia[0m
+2026-09-30T23:30:04.6851193Z [36;1mjulia_bin=julia[0m
+2026-09-30T23:30:04.6851363Z [36;1m[[ "Windows" == "Windows" ]] && julia_bin=julia.exe[0m
+2026-09-30T23:30:04.6851534Z [36;1m[0m
+2026-09-30T23:30:04.6851722Z [36;1m# Optionally set the optimization level (empty means use the Julia default)[0m
+2026-09-30T23:30:04.6851959Z [36;1mopt_flag=()[0m
+2026-09-30T23:30:04.6852142Z [36;1m[[ -n "${OPTIMIZE}" ]] && opt_flag=( "--optimize=${OPTIMIZE}" )[0m
+2026-09-30T23:30:04.6852333Z [36;1m[0m
+2026-09-30T23:30:04.6852464Z [36;1m# The Julia command that will be executed[0m
+2026-09-30T23:30:04.6852847Z [36;1mjulia_cmd=( "${julia_bin:?}" --color=yes --inline=yes "${opt_flag[@]}" --project=@. -e 'include(joinpath(ENV["GITHUB_ACTION_PATH"], "test_harness.jl"))' --  )[0m
+2026-09-30T23:30:04.6853201Z [36;1m[0m
+2026-09-30T23:30:04.6853359Z [36;1m# Add the prefix in front of the command if there is one[0m
+2026-09-30T23:30:04.6853547Z [36;1mprefix=(  )[0m
+2026-09-30T23:30:04.6853725Z [36;1m[[ -n ${prefix[*]} ]] && julia_cmd=( "${prefix[@]}" "${julia_cmd[@]}" )[0m
+2026-09-30T23:30:04.6854068Z [36;1m[0m
+2026-09-30T23:30:04.6854213Z [36;1m# Run the Julia command[0m
+2026-09-30T23:30:04.6854387Z [36;1mecho "::debug::Executing Julia: ${julia_cmd[*]}"[0m
+2026-09-30T23:30:04.6854570Z [36;1m"${julia_cmd[@]}"[0m
+2026-09-30T23:30:04.6862144Z shell: C:\Program Files\Git\bin\bash.EXE --noprofile --norc -e -o pipefail {0}
+2026-09-30T23:30:04.6862364Z env:
+2026-09-30T23:30:04.6862492Z   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+2026-09-30T23:30:04.6862672Z   JULIA_PKG_SERVER_REGISTRY_PREFERENCE: eager
+2026-09-30T23:30:04.6863992Z   ANNOTATE: false
+2026-09-30T23:30:04.6864118Z   COVERAGE: true
+2026-09-30T23:30:04.6864247Z   FORCE_LATEST_COMPATIBLE_VERSION: auto
+2026-09-30T23:30:04.6864398Z   CHECK_BOUNDS: yes
+2026-09-30T23:30:04.6864514Z   COMPILED_MODULES: yes
+2026-09-30T23:30:04.6864639Z   ALLOW_RERESOLVE: true
+2026-09-30T23:30:04.6864765Z   DEPWARN: yes
+2026-09-30T23:30:04.6864875Z   OPTIMIZE: 
+2026-09-30T23:30:04.6864982Z ##[endgroup]
+2026-09-30T23:30:05.2740726Z │
+2026-09-30T23:30:05.2741342Z │ To reproduce this CI run locally run the following from the same repository state on julia version 1.10.12:
+2026-09-30T23:30:05.2741738Z │
+2026-09-30T23:30:05.2742374Z │ `import Pkg; Pkg.test(;coverage=true, julia_args=["--check-bounds=yes", "--compiled-modules=yes", "--depwarn=yes"], force_latest_compatible_version=false, allow_reresolve=true)`
+2026-09-30T23:30:05.2743267Z │
+2026-09-30T23:30:06.2028246Z [32m[1m     Testing[22m[39m HSquared
+2026-09-30T23:30:09.6101835Z [32m[1m      Status[22m[39m `C:\Users\runneradmin\AppData\Local\Temp\jl_d7P04V\Project.toml`
+2026-09-30T23:30:09.6173953Z   [90m[4c88cf16] [39mAqua v0.8.18
+2026-09-30T23:30:09.6174934Z   [90m[8bb1440f] [39mDelimitedFiles v1.9.1
+2026-09-30T23:30:09.6176370Z   [90m[31c24e10] [39mDistributions v0.25.131
+2026-09-30T23:30:09.6177933Z   [90m[a0667dea] [39mHSquared v0.9.0 `D:\a\HSquared.jl\HSquared.jl`
+2026-09-30T23:30:09.6179242Z   [90m[0f8b85d8] [39mJSON3 v1.14.3
+2026-09-30T23:30:09.6180632Z [33m⌅[39m [90m[429524aa] [39mOptim v1.13.3
+2026-09-30T23:30:09.6181878Z   [90m[ade2ca70] [39mDates
+2026-09-30T23:30:09.6183129Z   [90m[37e2e46d] [39mLinearAlgebra
+2026-09-30T23:30:09.6184499Z   [90m[de0858da] [39mPrintf
+2026-09-30T23:30:09.6185595Z   [90m[9a3f8284] [39mRandom
+2026-09-30T23:30:09.6186835Z   [90m[ea8e919c] [39mSHA v0.7.0
+2026-09-30T23:30:09.6188051Z   [90m[6462fe0b] [39mSockets
+2026-09-30T23:30:09.6189281Z   [90m[2f01184e] [39mSparseArrays v1.10.0
+2026-09-30T23:30:09.6190515Z   [90m[10745b16] [39mStatistics v1.10.0
+2026-09-30T23:30:09.6191787Z   [90m[fa267f1f] [39mTOML v1.0.3
+2026-09-30T23:30:09.6193248Z   [90m[8dfed614] [39mTest
+2026-09-30T23:30:09.6195794Z [32m[1m      Status[22m[39m `C:\Users\runneradmin\AppData\Local\Temp\jl_d7P04V\Manifest.toml`
+2026-09-30T23:30:09.6507067Z   [90m[47edcb42] [39mADTypes v1.24.0
+2026-09-30T23:30:09.6508124Z   [90m[7d9f7c33] [39mAccessors v0.1.45
+2026-09-30T23:30:09.6509558Z   [90m[79e6a3ab] [39mAdapt v4.7.1
+2026-09-30T23:30:09.6510749Z   [90m[66dad0bd] [39mAliasTables v1.1.3
+2026-09-30T23:30:09.6512063Z   [90m[4c88cf16] [39mAqua v0.8.18
+2026-09-30T23:30:09.6513337Z   [90m[4fba245c] [39mArrayInterface v7.30.2
+2026-09-30T23:30:09.6514638Z   [90m[38540f10] [39mCommonSolve v0.2.14
+2026-09-30T23:30:09.6515919Z   [90m[bbf7d656] [39mCommonSubexpressions v0.3.1
+2026-09-30T23:30:09.6517061Z   [90m[34da2185] [39mCompat v4.18.1
+2026-09-30T23:30:09.6518304Z   [90m[a33af91c] [39mCompositionsBase v0.1.2
+2026-09-30T23:30:09.6519604Z   [90m[187b0558] [39mConstructionBase v1.6.0
+2026-09-30T23:30:09.6521067Z   [90m[9a962f9c] [39mDataAPI v1.16.0
+2026-09-30T23:30:09.6522433Z   [90m[864edb3b] [39mDataStructures v0.19.6
+2026-09-30T23:30:09.6523751Z   [90m[8bb1440f] [39mDelimitedFiles v1.9.1
+2026-09-30T23:30:09.6525000Z   [90m[163ba53b] [39mDiffResults v1.1.0
+2026-09-30T23:30:09.6526212Z   [90m[b552c78f] [39mDiffRules v1.16.0
+2026-09-30T23:30:09.6527596Z   [90m[a0c0ee7d] [39mDifferentiationInterface v0.7.21
+2026-09-30T23:30:09.6528997Z   [90m[31c24e10] [39mDistributions v0.25.131
+2026-09-30T23:30:09.6530241Z   [90m[ffbed154] [39mDocStringExtensions v0.9.5
+2026-09-30T23:30:09.6531466Z   [90m[4e289a0a] [39mEnumX v1.0.7
+2026-09-30T23:30:09.6532715Z   [90m[1a297f60] [39mFillArrays v1.17.1
+2026-09-30T23:30:09.6533925Z   [90m[6a86dc24] [39mFiniteDiff v2.33.0
+2026-09-30T23:30:09.6535179Z   [90m[f6369f11] [39mForwardDiff v1.4.6
+2026-09-30T23:30:09.6536665Z   [90m[a0844989] [39mGamma v1.2.0
+2026-09-30T23:30:09.6539036Z   [90m[a0667dea] [39mHSquared v0.9.0 `D:\a\HSquared.jl\HSquared.jl`
+2026-09-30T23:30:09.6539404Z   [90m[34004b35] [39mHypergeometricFunctions v0.3.30
+2026-09-30T23:30:09.6540356Z   [90m[3587e190] [39mInverseFunctions v0.1.17
+2026-09-30T23:30:09.6541710Z   [90m[92d709cd] [39mIrrationalConstants v0.2.6
+2026-09-30T23:30:09.6543041Z   [90m[692b3bcd] [39mJLLWrappers v1.8.0
+2026-09-30T23:30:09.6544165Z   [90m[0f8b85d8] [39mJSON3 v1.14.3
+2026-09-30T23:30:09.6545538Z [32m⌃[39m [90m[d3d80556] [39mLineSearches v7.5.1
+2026-09-30T23:30:09.6546784Z   [90m[2ab3a3ac] [39mLogExpFunctions v1.0.2
+2026-09-30T23:30:09.6548021Z   [90m[1914dd2f] [39mMacroTools v0.5.16
+2026-09-30T23:30:09.6549271Z   [90m[e1d29d7a] [39mMissings v1.2.0
+2026-09-30T23:30:09.6550592Z [33m⌅[39m [90m[d41bc354] [39mNLSolversBase v7.10.0
+2026-09-30T23:30:09.6551811Z   [90m[77ba4419] [39mNaNMath v1.1.4
+2026-09-30T23:30:09.6553200Z [33m⌅[39m [90m[429524aa] [39mOptim v1.13.3
+2026-09-30T23:30:09.6554581Z   [90m[bac558e1] [39mOrderedCollections v2.0.1
+2026-09-30T23:30:09.6555938Z   [90m[90014a1f] [39mPDMats v0.11.41
+2026-09-30T23:30:09.6557207Z [33m⌅[39m [90m[69de0a69] [39mParsers v2.8.8
+2026-09-30T23:30:09.6558538Z   [90m[85a6dd25] [39mPositiveFactorizations v0.2.4
+2026-09-30T23:30:09.6559800Z [33m⌅[39m [90m[aea7be01] [39mPrecompileTools v1.2.1
+2026-09-30T23:30:09.6561046Z   [90m[21216c6a] [39mPreferences v1.6.0
+2026-09-30T23:30:09.6562260Z   [90m[43287f4e] [39mPtrArrays v1.4.0
+2026-09-30T23:30:09.6563452Z   [90m[1fd47b50] [39mQuadGK v2.11.3
+2026-09-30T23:30:09.6564645Z   [90m[189a3867] [39mReexport v1.2.2
+2026-09-30T23:30:09.6566017Z   [90m[79098fc4] [39mRmath v0.9.0
+2026-09-30T23:30:09.6567228Z   [90m[f2b01f46] [39mRoots v3.0.9
+2026-09-30T23:30:09.6568729Z   [90m[efcf1570] [39mSetfield v1.1.2
+2026-09-30T23:30:09.6569610Z   [90m[a2af1166] [39mSortingAlgorithms v1.2.3
+2026-09-30T23:30:09.6570825Z   [90m[276daf66] [39mSpecialFunctions v2.9.0
+2026-09-30T23:30:09.6572101Z   [90m[1e83bf80] [39mStaticArraysCore v1.4.4
+2026-09-30T23:30:09.6573278Z   [90m[82ae8749] [39mStatsAPI v1.8.0
+2026-09-30T23:30:09.6574715Z   [90m[2913bbd2] [39mStatsBase v0.34.13
+2026-09-30T23:30:09.6575937Z   [90m[4c63d2b9] [39mStatsFuns v2.2.1
+2026-09-30T23:30:09.6577166Z   [90m[856f2bd8] [39mStructTypes v1.11.0
+2026-09-30T23:30:09.6578703Z   [90m[efe28fd5] [39mOpenSpecFun_jll v0.5.6+0
+2026-09-30T23:30:09.6579881Z   [90m[f50d1b31] [39mRmath_jll v0.5.2+0
+2026-09-30T23:30:09.6580928Z   [90m[0dad84c5] [39mArgTools v1.1.1
+2026-09-30T23:30:09.6581756Z   [90m[56f22d72] [39mArtifacts
+2026-09-30T23:30:09.6582745Z   [90m[2a0f44e3] [39mBase64
+2026-09-30T23:30:09.6583739Z   [90m[ade2ca70] [39mDates
+2026-09-30T23:30:09.6585000Z   [90m[8ba89e20] [39mDistributed
+2026-09-30T23:30:09.6586208Z   [90m[f43a241f] [39mDownloads v1.6.0
+2026-09-30T23:30:09.6587473Z   [90m[7b1f6079] [39mFileWatching
+2026-09-30T23:30:09.6588639Z   [90m[9fa8497b] [39mFuture
+2026-09-30T23:30:09.6589948Z   [90m[b77e0a4c] [39mInteractiveUtils
+2026-09-30T23:30:09.6591240Z   [90m[b27032c2] [39mLibCURL v0.6.4
+2026-09-30T23:30:09.6592479Z   [90m[76f85450] [39mLibGit2
+2026-09-30T23:30:09.6593734Z   [90m[8f399da3] [39mLibdl
+2026-09-30T23:30:09.6595078Z   [90m[37e2e46d] [39mLinearAlgebra
+2026-09-30T23:30:09.6596279Z   [90m[56ddb016] [39mLogging
+2026-09-30T23:30:09.6597580Z   [90m[d6f4376e] [39mMarkdown
+2026-09-30T23:30:09.6599032Z   [90m[a63ad114] [39mMmap
+2026-09-30T23:30:09.6600489Z   [90m[ca575930] [39mNetworkOptions v1.2.0
+2026-09-30T23:30:09.6601875Z   [90m[44cfe95a] [39mPkg v1.10.0
+2026-09-30T23:30:09.6603238Z   [90m[de0858da] [39mPrintf
+2026-09-30T23:30:09.6604596Z   [90m[3fa0cd96] [39mREPL
+2026-09-30T23:30:09.6605827Z   [90m[9a3f8284] [39mRandom
+2026-09-30T23:30:09.6607132Z   [90m[ea8e919c] [39mSHA v0.7.0
+2026-09-30T23:30:09.6608422Z   [90m[9e88b42a] [39mSerialization
+2026-09-30T23:30:09.6609629Z   [90m[6462fe0b] [39mSockets
+2026-09-30T23:30:09.6610998Z   [90m[2f01184e] [39mSparseArrays v1.10.0
+2026-09-30T23:30:09.6612497Z   [90m[10745b16] [39mStatistics v1.10.0
+2026-09-30T23:30:09.6613622Z   [90m[4607b0f0] [39mSuiteSparse
+2026-09-30T23:30:09.6614805Z   [90m[fa267f1f] [39mTOML v1.0.3
+2026-09-30T23:30:09.6616214Z   [90m[a4e569a6] [39mTar v1.10.0
+2026-09-30T23:30:09.6617394Z   [90m[8dfed614] [39mTest
+2026-09-30T23:30:09.6618651Z   [90m[cf7118a7] [39mUUIDs
+2026-09-30T23:30:09.6619886Z   [90m[4ec0a83e] [39mUnicode
+2026-09-30T23:30:09.6621317Z   [90m[e66e0078] [39mCompilerSupportLibraries_jll v1.1.2+1
+2026-09-30T23:30:09.6622602Z   [90m[deac9b47] [39mLibCURL_jll v8.4.0+0
+2026-09-30T23:30:09.6623850Z   [90m[e37daf67] [39mLibGit2_jll v1.6.4+0
+2026-09-30T23:30:09.6625050Z   [90m[29816b5a] [39mLibSSH2_jll v1.11.0+1
+2026-09-30T23:30:09.6626428Z   [90m[c8ffd9c3] [39mMbedTLS_jll v2.28.1010+0
+2026-09-30T23:30:09.6627659Z   [90m[14a3606d] [39mMozillaCACerts_jll v2025.12.2
+2026-09-30T23:30:09.6628931Z   [90m[4536629a] [39mOpenBLAS_jll v0.3.23+5
+2026-09-30T23:30:09.6630164Z   [90m[05823500] [39mOpenLibm_jll v0.8.5+0
+2026-09-30T23:30:09.6631381Z   [90m[bea87d4a] [39mSuiteSparse_jll v7.2.1+1
+2026-09-30T23:30:09.6632681Z   [90m[83775a58] [39mZlib_jll v1.2.13+1
+2026-09-30T23:30:09.6633977Z   [90m[8e850b90] [39mlibblastrampoline_jll v5.11.0+0
+2026-09-30T23:30:09.6635224Z   [90m[8e850ede] [39mnghttp2_jll v1.52.0+1
+2026-09-30T23:30:09.6636580Z   [90m[3f19e933] [39mp7zip_jll v17.6.1+0
+2026-09-30T23:30:09.6637902Z [36m[1m        Info[22m[39m Packages marked with [32m⌃[39m and [33m⌅[39m have new versions available. Those with [32m⌃[39m may be upgradable, but those with [33m⌅[39m are restricted by compatibility constraints from upgrading.
+2026-09-30T23:30:11.8347650Z [32m[1mPrecompiling[22m[39m packages...
+2026-09-30T23:30:13.6758734Z    1819.8 ms[32m  ✓ [39m[90mRoots[39m
+2026-09-30T23:30:14.1622806Z     485.6 ms[32m  ✓ [39m[90mRoots → RootsForwardDiffExt[39m
+2026-09-30T23:30:14.4309897Z    2423.0 ms[32m  ✓ [39mHSquared
+2026-09-30T23:30:16.6712211Z    2955.9 ms[32m  ✓ [39mDistributions
+2026-09-30T23:30:17.6642012Z     981.8 ms[32m  ✓ [39mDistributions → DistributionsTestExt
+2026-09-30T23:30:17.6643440Z   5 dependencies successfully precompiled in 7 seconds. 85 already precompiled.
+2026-09-30T23:30:17.6863527Z [32m[1m     Testing[22m[39m Running tests...
+2026-09-30T23:30:21.6915532Z [0m[1mTest Summary:                                           | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+2026-09-30T23:30:21.7014533Z Selected inverse trace validates support and dimensions | [32m  28  [39m[36m   28  [39m[0m0.2s
+2026-09-30T23:30:21.8334612Z [0m[1mTest Summary:                                     | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+2026-09-30T23:30:21.8335375Z Selected inverse rejects a failed Cholesky factor | [32m   2  [39m[36m    2  [39m[0m0.1s
+2026-09-30T23:30:21.8783137Z [0m[1mTest Summary:                                     | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+2026-09-30T23:30:21.8784166Z Selected inverse rejects nonfinite inverse values | [32m   3  [39m[36m    3  [39m[0m0.0s
+2026-09-30T23:30:23.1201617Z [0m[1mTest Summary:                                            | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+2026-09-30T23:30:23.1202416Z one known inbred parent and one unrelated missing parent | [32m  18  [39m[36m   18  [39m[0m0.6s
+2026-09-30T23:30:23.1690534Z [0m[1mTest Summary:                                            | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+2026-09-30T23:30:23.1692130Z Float64 selfing boundary rejects zero Mendelian variance | [32m   2  [39m[36m    2  [39m[0m0.0s
+2026-09-30T23:30:29.9152876Z [0m[1mTest Summary:             | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+2026-09-30T23:30:29.9153863Z Aqua.jl quality assurance | [32m  10  [39m[36m   10  [39m[0m6.7s
+2026-09-30T23:30:33.2078216Z [0m[1mTest Summary:             | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+2026-09-30T23:30:33.2078805Z HSquared Phase 0 scaffold | [32m 446  [39m[36m  446  [39m[0m1.8s
+2026-09-30T23:30:34.5366495Z [0m[1mTest Summary:                       | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+2026-09-30T23:30:34.5367230Z Recovery calibration log summarizer | [32m  21  [39m[36m   21  [39m[0m1.3s
+2026-09-30T23:30:35.1871821Z [0m[1mTest Summary:                          | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+2026-09-30T23:30:35.1873027Z Validation-debt burn-down tracker (I9) | [32m  11  [39m[36m   11  [39m[0m0.6s
+2026-09-30T23:30:35.3023575Z [0m[1mTest Summary:                              | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+2026-09-30T23:30:35.3024251Z nested_lrt helper + chi-bar boundary (C10) | [32m  14  [39m[36m   14  [39m[0m0.1s
+2026-09-30T23:30:42.2803759Z [0m[1mTest Summary:                                         | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+2026-09-30T23:30:42.2804494Z Phase 6 negative-binomial (NB2, log link) family (H1) | [32m  20  [39m[36m   20  [39m[0m7.0s
+2026-09-30T23:30:46.5310141Z [0m[1mTest Summary:                                             | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+2026-09-30T23:30:46.5310786Z Phase 6 beta-binomial (logit, overdispersion) family (H2) | [32m  85  [39m[36m   85  [39m[0m4.2s
+2026-09-30T23:30:47.8800947Z [0m[1mTest Summary:                                              | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+2026-09-30T23:30:47.8801666Z Phase 6 Bernoulli probit (threshold/liability) family (H3) | [32m  66  [39m[36m   66  [39m[0m1.3s
+2026-09-30T23:30:48.3918503Z [0m[1mTest Summary:                                                            | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+2026-09-30T23:30:48.3919273Z Phase 6 ordered-categorical probit (ordinal threshold) family (T1, v0.6) | [32m  62  [39m[36m   62  [39m[0m0.5s
+2026-09-30T23:30:48.6418608Z [0m[1mTest Summary:                                                   | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+2026-09-30T23:30:48.6419526Z Phase 6 ordered-probit JOINT cutpoint estimation (T1 fit, v0.6) | [32m  10  [39m[36m   10  [39m[0m0.2s
+2026-09-30T23:30:48.8475690Z [0m[1mTest Summary:                                                        | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+2026-09-30T23:30:48.8476435Z Phase 6 Gamma (log link, positive continuous) family (T-Gamma, v0.6) | [32m  31  [39m[36m   31  [39m[0m0.2s
+2026-09-30T23:30:49.0563446Z [0m[1mTest Summary:                                                   | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+2026-09-30T23:30:49.0564185Z Phase 6 Gamma JOINT (σ²a, shape) estimation (T-Gamma fit, v0.6) | [32m   6  [39m[36m    6  [39m[0m0.0s
+2026-09-30T23:30:50.2494445Z [0m[1mTest Summary:                                            | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+2026-09-30T23:30:50.2495344Z Phase 6 non-Gaussian interval cross-family contract (H6) | [32m  10  [39m[36m   10  [39m[0m1.2s
+2026-09-30T23:30:51.8801509Z [0m[1mTest Summary:                                                   | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+2026-09-30T23:30:51.8802207Z Phase 6 non-Gaussian latent/observation-scale heritability (H7) | [32m  25  [39m[36m   25  [39m[0m1.6s
+2026-09-30T23:30:52.3678421Z [0m[1mTest Summary:                                                                   | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+2026-09-30T23:30:52.3680627Z Phase 6 probit/ordinal LIABILITY + binary-OBSERVED h² (doc-20 Step 4, V6-NS-H2) | [32m  21  [39m[36m   21  [39m[0m0.5s
+2026-09-30T23:30:52.3893777Z [0m[1mTest Summary:                                                                      | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+2026-09-30T23:30:52.3895006Z Phase 6 Gamma LATENT + DATA-scale h² (trigamma + multiplicative, doc-19, V6-NS-H2) | [32m  16  [39m[36m   16  [39m[0m0.0s
+2026-09-30T23:30:52.5228908Z [0m[1mTest Summary:                           | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+2026-09-30T23:30:52.5229532Z Phase 1 pedigree normalization and Ainv | [32m  22  [39m[36m   22  [39m[0m0.1s
+2026-09-30T23:30:52.8163082Z [0m[1mTest Summary:                                                 | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+2026-09-30T23:30:52.8163899Z F1 Meuwissen-Luo inbreeding avoids dense relationship storage | [32m  13  [39m[36m   13  [39m[0m0.3s
+2026-09-30T23:30:52.9440175Z [0m[1mTest Summary:                                       | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+2026-09-30T23:30:52.9440863Z Phase 3 cytoplasmic (maternal-lineage) relationship | [32m  53  [39m[36m   53  [39m[0m0.1s
+2026-09-30T23:30:52.9571616Z [0m[1mTest Summary:                        | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+2026-09-30T23:30:52.9572613Z Phase 3 selfing (self-fertilization) | [32m  11  [39m[36m   11  [39m[0m0.0s
+2026-09-30T23:30:53.0966863Z [0m[1mTest Summary:                         | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+2026-09-30T23:30:53.0967723Z Phase 3 clonal (asexual) relationship | [32m  15  [39m[36m   15  [39m[0m0.1s
+2026-09-30T23:30:53.1429581Z [0m[1mTest Summary:                  | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+2026-09-30T23:30:53.1430887Z Phase 3 dominance relationship | [32m  22  [39m[36m   22  [39m[0m0.0s
+2026-09-30T23:30:53.1718390Z [0m[1mTest Summary:                                          | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+2026-09-30T23:30:53.1729826Z Phase 1 additive relationship matrix (public accessor) | [32m  10  [39m[36m   10  [39m[0m0.0s
+2026-09-30T23:30:53.2808286Z [0m[1mTest Summary:                        | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+2026-09-30T23:30:53.2808892Z Phase 1 Mendelian sampling variances | [32m  12  [39m[36m   12  [39m[0m0.1s
+2026-09-30T23:30:56.0483477Z [0m[1mTest Summary:                                       | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+2026-09-30T23:30:56.0484349Z Phase 1 finite deep-inbreeding case (V1-DENSE-COND) | [32m  12  [39m[36m   12  [39m[0m2.8s
+2026-09-30T23:30:56.4443712Z [0m[1mTest Summary:                                      | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+2026-09-30T23:30:56.4444870Z Phase 3 epistatic relationship (Hadamard products) | [32m  13  [39m[36m   13  [39m[0m0.4s
+2026-09-30T23:30:57.8014425Z [0m[1mTest Summary:                                                | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+2026-09-30T23:30:57.8015545Z Phase 1 metafounder relationship / inverse (supplied Γ, #53) | [32m  19  [39m[36m   19  [39m[0m1.3s
+2026-09-30T23:30:58.2869019Z [0m[1mTest Summary:                                                | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+2026-09-30T23:30:58.2870014Z Phase 1 metafounder animal-model MME solve (supplied Γ, #53) | [32m   7  [39m[36m    7  [39m[0m0.5s
+2026-09-30T23:31:02.1945442Z [0m[1mTest Summary:               | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+2026-09-30T23:31:02.1946526Z Phase 1 HSData ID container | [32m 114  [39m[36m  114  [39m[0m3.7s
+2026-09-30T23:31:05.3602391Z [0m[1mTest Summary:                         | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+2026-09-30T23:31:05.3603172Z Phase 1 sparse CSC bridge marshalling | [32m  15  [39m[36m   15  [39m[0m3.2s
+2026-09-30T23:31:05.5561439Z [0m[1mTest Summary:                        | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+2026-09-30T23:31:05.5562218Z Phase 1 animal model spec validation | [32m  16  [39m[36m   16  [39m[0m0.2s
+2026-09-30T23:31:06.0743904Z [0m[1mTest Summary:                          | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+2026-09-30T23:31:06.0745092Z Phase 1 Gaussian likelihood evaluation | [32m  25  [39m[36m   25  [39m[0m0.5s
+2026-09-30T23:31:07.4286217Z [0m[1mTest Summary:                            | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+2026-09-30T23:31:07.4286834Z Phase 1 dense variance component fitting | [32m  37  [39m[36m   37  [39m[0m1.3s
+2026-09-30T23:31:09.2109656Z [0m[1mTest Summary:                | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+2026-09-30T23:31:09.2115284Z Phase 1 dense fit extractors | [32m  87  [39m[36m   87  [39m[0m1.7s
+2026-09-30T23:31:09.3096589Z [0m[1mTest Summary:                     | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+2026-09-30T23:31:09.3097322Z Phase 1 bridge payload fit target | [32m  24  [39m[36m   24  [39m[0m0.1s
+2026-09-30T23:31:09.8131466Z [0m[1mTest Summary:                                              | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+2026-09-30T23:31:09.8132241Z Phase 1 Henderson MME supplied-variance validation fixture | [32m  42  [39m[36m   42  [39m[0m0.5s
+2026-09-30T23:31:10.0952368Z [0m[1mTest Summary:                                            | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+2026-09-30T23:31:10.0952958Z Phase 1 Mrode-style supplied-variance validation fixture | [32m  31  [39m[36m   31  [39m[0m0.3s
+2026-09-30T23:31:10.2395863Z [0m[1mTest Summary:                                                 | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+2026-09-30T23:31:10.2396488Z Phase 1 Mrode Example 3.1 published animal-model anchor (#46) | [32m   9  [39m[36m    9  [39m[0m0.1s
+2026-09-30T23:31:10.5091406Z [0m[1mTest Summary:                                     | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+2026-09-30T23:31:10.5092224Z Phase 1 sparse selected-inversion PEV/reliability | [32m  16  [39m[36m   16  [39m[0m0.3s
+2026-09-30T23:31:10.5985331Z [0m[1mTest Summary:                                                         | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+2026-09-30T23:31:10.5986261Z Phase 1 selinv PEV — larger multi-generation pedigree (V1-SELINV-PEV) | [32m   6  [39m[36m    6  [39m[0m0.1s
+2026-09-30T23:31:12.2784130Z [0m[1mTest Summary:                                        | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+2026-09-30T23:31:12.2784892Z Phase 1 PCG MME solver (iterative == direct, V1-PCG) | [32m  42  [39m[36m   42  [39m[0m1.7s
+2026-09-30T23:31:15.7186777Z [0m[1mTest Summary:                                                                     | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+2026-09-30T23:31:15.7187862Z Multi-effect matrix-free PCG (iterative == direct, V1-PCG multi-effect / v0.8-S2) | [32m  29  [39m[36m   29  [39m[0m0.5s
+2026-09-30T23:31:16.6232596Z [0m[1mTest Summary:                                                                  | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+2026-09-30T23:31:16.6233820Z Matrix-free MC REML block traces (Hutchinson == selinv, v0.8-S2 fit primitive) | [32m  18  [39m[36m   18  [39m[0m0.1s
+2026-09-30T23:31:18.0241671Z [0m[1mTest Summary:                                                         | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+2026-09-30T23:31:18.0242964Z Matrix-free REML loglik via stochastic Lanczos quadrature (v0.8 V8.1) | [32m   8  [39m[36m    8  [39m[0m1.4s
+2026-09-30T23:31:20.1013408Z [0m[1mTest Summary:                                            | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+2026-09-30T23:31:20.1014009Z Matrix-free AI information + ratio intervals (v0.8 V8.3) | [32m  12  [39m[36m   12  [39m[0m2.1s
+2026-09-30T23:31:22.3427578Z [0m[1mTest Summary:                                                        | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+2026-09-30T23:31:22.3429750Z fit_multi_effect :auto/:exact/:matrix_free dispatch (v0.8 usability) | [32m  11  [39m[36m   11  [39m[0m1.6s
+2026-09-30T23:31:23.1144893Z [0m[1mTest Summary:                                                              | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+2026-09-30T23:31:23.1145617Z V1-MATFREE-REML opt-in fence (fit_matrix_free_reml reachable only by name) | [32m  21  [39m[36m   21  [39m[0m0.8s
+2026-09-30T23:31:24.1049930Z [0m[1mTest Summary:                                                       | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+2026-09-30T23:31:24.1050725Z V1-MATFREE-REML in-CI pins (fitter path exists; not a covered flip) | [32m  22  [39m[36m   22  [39m[0m1.0s
+2026-09-30T23:31:26.1061665Z [0m[1mTest Summary:                                                  | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+2026-09-30T23:31:26.1062634Z 0.7-S0 genomic GREML identity scaffolding (not a covered flip) | [32m  13  [39m[36m   13  [39m[0m2.0s
+2026-09-30T23:31:52.0486247Z [0m[1mTest Summary:                                                   | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1m Time[22m
+2026-09-30T23:31:52.0487157Z Matrix-free MC-EM-REML fit recovers exact AI-REML (v0.8-S2 fit) | [32m   9  [39m[36m    9  [39m[0m25.9s
+2026-09-30T23:31:52.3759881Z [0m[1mTest Summary:                                             | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+2026-09-30T23:31:52.3760641Z Phase 1 fused AI-REML selinv trace (selinv_trace_against) | [32m   7  [39m[36m    7  [39m[0m0.3s
+2026-09-30T23:31:52.7100979Z [0m[1mTest Summary:                                                   | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+2026-09-30T23:31:52.7102361Z Variance-component forest plot-data (#54 set B, R hs_gg_forest) | [32m  18  [39m[36m   18  [39m[0m0.3s
+2026-09-30T23:31:52.7217927Z [0m[1mTest Summary:                                     | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+2026-09-30T23:31:52.7219286Z Phase 1 REML optimizer recovery (dense vs sparse) | [32m  11  [39m[36m   11  [39m[0m0.0s
+2026-09-30T23:31:52.7661961Z [0m[1mTest Summary:             | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+2026-09-30T23:31:52.7663530Z Phase 1 AI-REML estimator | [32m  16  [39m[36m   16  [39m[0m0.0s
+2026-09-30T23:31:52.8060475Z [0m[1mTest Summary:                                           | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+2026-09-30T23:31:52.8062611Z fit_ai_reml internal optimizer-localization diagnostics | [32m  23  [39m[36m   23  [39m[0m0.0s
+2026-09-30T23:31:54.6464514Z v0.7 genomic closed-boundary resolution (doc 46): [91m[1mTest Failed[22m[39m at [39m[1mD:\a\HSquared.jl\HSquared.jl\test\runtests.jl:4112[22m
+2026-09-30T23:31:54.6465019Z   Expression: lower.boundary.status == "boundary_lower"
+2026-09-30T23:31:54.6465677Z    Evaluated: "boundary_unresolved" == "boundary_lower"
+2026-09-30T23:31:55.1095386Z 
+2026-09-30T23:31:55.1096193Z Stacktrace:
+2026-09-30T23:31:55.1097962Z  [1] [0m[1mmacro expansion[22m
+2026-09-30T23:31:55.1099941Z [90m   @[39m [90mC:\hostedtoolcache\windows\julia\1.10.12\x64\share\julia\stdlib\v1.10\Test\src\[39m[90m[4mTest.jl:673[24m[39m[90m [inlined][39m
+2026-09-30T23:31:55.1101435Z  [2] [0m[1mmacro expansion[22m
+2026-09-30T23:31:55.1103223Z [90m   @[39m [90mD:\a\HSquared.jl\HSquared.jl\test\[39m[90m[4mruntests.jl:4112[24m[39m[90m [inlined][39m
+2026-09-30T23:31:55.1104148Z  [3] [0m[1mmacro expansion[22m
+2026-09-30T23:31:55.1106215Z [90m   @[39m [90mC:\hostedtoolcache\windows\julia\1.10.12\x64\share\julia\stdlib\v1.10\Test\src\[39m[90m[4mTest.jl:1582[24m[39m[90m [inlined][39m
+2026-09-30T23:31:55.1107291Z  [4] top-level scope
+2026-09-30T23:31:55.1108382Z [90m   @[39m [90mD:\a\HSquared.jl\HSquared.jl\test\[39m[90m[4mruntests.jl:4071[24m[39m
+2026-09-30T23:31:55.1183974Z v0.7 genomic closed-boundary resolution (doc 46): [91m[1mTest Failed[22m[39m at [39m[1mD:\a\HSquared.jl\HSquared.jl\test\runtests.jl:4113[22m
+2026-09-30T23:31:55.1184584Z   Expression: lower.boundary.profile_ratio == 0.0
+2026-09-30T23:31:55.1184882Z    Evaluated: nothing == 0.0
+2026-09-30T23:31:55.1243096Z 
+2026-09-30T23:31:55.1243326Z Stacktrace:
+2026-09-30T23:31:55.1245247Z  [1] [0m[1mmacro expansion[22m
+2026-09-30T23:31:55.1247049Z [90m   @[39m [90mC:\hostedtoolcache\windows\julia\1.10.12\x64\share\julia\stdlib\v1.10\Test\src\[39m[90m[4mTest.jl:673[24m[39m[90m [inlined][39m
+2026-09-30T23:31:55.1247719Z  [2] [0m[1mmacro expansion[22m
+2026-09-30T23:31:55.1249294Z [90m   @[39m [90mD:\a\HSquared.jl\HSquared.jl\test\[39m[90m[4mruntests.jl:4113[24m[39m[90m [inlined][39m
+2026-09-30T23:31:55.1250122Z  [3] [0m[1mmacro expansion[22m
+2026-09-30T23:31:55.1251701Z [90m   @[39m [90mC:\hostedtoolcache\windows\julia\1.10.12\x64\share\julia\stdlib\v1.10\Test\src\[39m[90m[4mTest.jl:1582[24m[39m[90m [inlined][39m
+2026-09-30T23:31:55.1252250Z  [4] top-level scope
+2026-09-30T23:31:55.1253166Z [90m   @[39m [90mD:\a\HSquared.jl\HSquared.jl\test\[39m[90m[4mruntests.jl:4071[24m[39m
+2026-09-30T23:31:55.1254871Z v0.7 genomic closed-boundary resolution (doc 46): [91m[1mTest Failed[22m[39m at [39m[1mD:\a\HSquared.jl\HSquared.jl\test\runtests.jl:4114[22m
+2026-09-30T23:31:55.1255446Z   Expression: lower.boundary.numerical_ratio == 1.0e-7
+2026-09-30T23:31:55.1255760Z    Evaluated: nothing == 1.0e-7
+2026-09-30T23:31:55.1304684Z 
+2026-09-30T23:31:55.1304978Z Stacktrace:
+2026-09-30T23:31:55.1306838Z  [1] [0m[1mmacro expansion[22m
+2026-09-30T23:31:55.1308570Z [90m   @[39m [90mC:\hostedtoolcache\windows\julia\1.10.12\x64\share\julia\stdlib\v1.10\Test\src\[39m[90m[4mTest.jl:673[24m[39m[90m [inlined][39m
+2026-09-30T23:31:55.1309308Z  [2] [0m[1mmacro expansion[22m
+2026-09-30T23:31:55.1310869Z [90m   @[39m [90mD:\a\HSquared.jl\HSquared.jl\test\[39m[90m[4mruntests.jl:4114[24m[39m[90m [inlined][39m
+2026-09-30T23:31:55.1311564Z  [3] [0m[1mmacro expansion[22m
+2026-09-30T23:31:55.1313410Z [90m   @[39m [90mC:\hostedtoolcache\windows\julia\1.10.12\x64\share\julia\stdlib\v1.10\Test\src\[39m[90m[4mTest.jl:1582[24m[39m[90m [inlined][39m
+2026-09-30T23:31:55.1313972Z  [4] top-level scope
+2026-09-30T23:31:55.1314784Z [90m   @[39m [90mD:\a\HSquared.jl\HSquared.jl\test\[39m[90m[4mruntests.jl:4071[24m[39m
+2026-09-30T23:31:55.1358509Z v0.7 genomic closed-boundary resolution (doc 46): [91m[1mTest Failed[22m[39m at [39m[1mD:\a\HSquared.jl\HSquared.jl\test\runtests.jl:4115[22m
+2026-09-30T23:31:55.1359026Z   Expression: lower.fit.converged
+2026-09-30T23:31:55.1407423Z 
+2026-09-30T23:31:55.1407626Z Stacktrace:
+2026-09-30T23:31:55.1409424Z  [1] [0m[1mmacro expansion[22m
+2026-09-30T23:31:55.1411520Z [90m   @[39m [90mC:\hostedtoolcache\windows\julia\1.10.12\x64\share\julia\stdlib\v1.10\Test\src\[39m[90m[4mTest.jl:673[24m[39m[90m [inlined][39m
+2026-09-30T23:31:55.1413741Z  [2] [0m[1mmacro expansion[22m
+2026-09-30T23:31:55.1414380Z [90m   @[39m [90mD:\a\HSquared.jl\HSquared.jl\test\[39m[90m[4mruntests.jl:4115[24m[39m[90m [inlined][39m
+2026-09-30T23:31:55.1415835Z  [3] [0m[1mmacro expansion[22m
+2026-09-30T23:31:55.1417842Z [90m   @[39m [90mC:\hostedtoolcache\windows\julia\1.10.12\x64\share\julia\stdlib\v1.10\Test\src\[39m[90m[4mTest.jl:1582[24m[39m[90m [inlined][39m
+2026-09-30T23:31:55.1418970Z  [4] top-level scope
+2026-09-30T23:31:55.1420710Z [90m   @[39m [90mD:\a\HSquared.jl\HSquared.jl\test\[39m[90m[4mruntests.jl:4071[24m[39m
+2026-09-30T23:31:55.1422683Z v0.7 genomic closed-boundary resolution (doc 46): [91m[1mTest Failed[22m[39m at [39m[1mD:\a\HSquared.jl\HSquared.jl\test\runtests.jl:4116[22m
+2026-09-30T23:31:55.1423636Z   Expression: lower.fit.optimizer_status == "boundary_lower"
+2026-09-30T23:31:55.1424360Z    Evaluated: "boundary_unresolved" == "boundary_lower"
+2026-09-30T23:31:55.1470271Z 
+2026-09-30T23:31:55.1470520Z Stacktrace:
+2026-09-30T23:31:55.1472169Z  [1] [0m[1mmacro expansion[22m
+2026-09-30T23:31:55.1474175Z [90m   @[39m [90mC:\hostedtoolcache\windows\julia\1.10.12\x64\share\julia\stdlib\v1.10\Test\src\[39m[90m[4mTest.jl:673[24m[39m[90m [inlined][39m
+2026-09-30T23:31:55.1475385Z  [2] [0m[1mmacro expansion[22m
+2026-09-30T23:31:55.1477245Z [90m   @[39m [90mD:\a\HSquared.jl\HSquared.jl\test\[39m[90m[4mruntests.jl:4116[24m[39m[90m [inlined][39m
+2026-09-30T23:31:55.1478618Z  [3] [0m[1mmacro expansion[22m
+2026-09-30T23:31:55.1480420Z [90m   @[39m [90mC:\hostedtoolcache\windows\julia\1.10.12\x64\share\julia\stdlib\v1.10\Test\src\[39m[90m[4mTest.jl:1582[24m[39m[90m [inlined][39m
+2026-09-30T23:31:55.1481463Z  [4] top-level scope
+2026-09-30T23:31:55.1483213Z [90m   @[39m [90mD:\a\HSquared.jl\HSquared.jl\test\[39m[90m[4mruntests.jl:4071[24m[39m
+2026-09-30T23:31:56.0200809Z v0.7 genomic closed-boundary resolution (doc 46): [91m[1mError During Test[22m[39m at [39m[1mD:\a\HSquared.jl\HSquared.jl\test\runtests.jl:4119[22m
+2026-09-30T23:31:56.0220879Z   Test threw exception
+2026-09-30T23:31:56.0336868Z   Expression: abs(lower.fit.likelihood.loglik - lower.boundary.profile_loglik) / length(lower_fixture.spec.y) <= 1.0e-8
+2026-09-30T23:31:56.0410940Z   MethodError: no method matching -(::Float64, ::Nothing)
+2026-09-30T23:31:56.0411217Z   
+2026-09-30T23:31:56.0411507Z   [0mClosest candidates are:
+2026-09-30T23:31:56.0412110Z   [0m  -(::Real, [91m::Complex{Bool}[39m)
+2026-09-30T23:31:56.0412423Z   [0m[90m   @[39m [90mBase[39m [90m[4mcomplex.jl:321[24m[39m
+2026-09-30T23:31:56.0412815Z   [0m  -(::AbstractFloat, [91m::ForwardDiff.Dual{Ty}[39m) where Ty
+2026-09-30T23:31:56.0413443Z   [0m[90m   @[39m [35mForwardDiff[39m [90mC:\Users\runneradmin\.julia\packages\ForwardDiff\wp23H\src\[39m[90m[4mdual.jl:159[24m[39m
+2026-09-30T23:31:56.0413841Z   [0m  -(::Real, [91m::ForwardDiff.Dual{Ty}[39m) where Ty
+2026-09-30T23:31:56.0414198Z   [0m[90m   @[39m [35mForwardDiff[39m [90mC:\Users\runneradmin\.julia\packages\ForwardDiff\wp23H\src\[39m[90m[4mdual.jl:159[24m[39m
+2026-09-30T23:31:56.0414493Z   [0m  ...
+2026-09-30T23:31:56.0414590Z   
+2026-09-30T23:31:56.0414686Z   Stacktrace:
+2026-09-30T23:31:56.0414830Z    [1] [0m[1mmacro expansion[22m
+2026-09-30T23:31:56.0415204Z   [90m   @[39m [90mC:\hostedtoolcache\windows\julia\1.10.12\x64\share\julia\stdlib\v1.10\Test\src\[39m[90m[4mTest.jl:670[24m[39m[90m [inlined][39m
+2026-09-30T23:31:56.0415528Z    [2] [0m[1mmacro expansion[22m
+2026-09-30T23:31:56.0415813Z   [90m   @[39m [90mD:\a\HSquared.jl\HSquared.jl\test\[39m[90m[4mruntests.jl:4119[24m[39m[90m [inlined][39m
+2026-09-30T23:31:56.0416071Z    [3] [0m[1mmacro expansion[22m
+2026-09-30T23:31:56.0416420Z   [90m   @[39m [90mC:\hostedtoolcache\windows\julia\1.10.12\x64\share\julia\stdlib\v1.10\Test\src\[39m[90m[4mTest.jl:1582[24m[39m[90m [inlined][39m
+2026-09-30T23:31:56.0416717Z    [4] top-level scope
+2026-09-30T23:31:56.0417153Z   [90m   @[39m [90mD:\a\HSquared.jl\HSquared.jl\test\[39m[90m[4mruntests.jl:4071[24m[39m
+2026-09-30T23:31:56.1096489Z v0.7 genomic closed-boundary resolution (doc 46): [91m[1mError During Test[22m[39m at [39m[1mD:\a\HSquared.jl\HSquared.jl\test\runtests.jl:4121[22m
+2026-09-30T23:31:56.1097011Z   Test threw exception
+2026-09-30T23:31:56.1097227Z   Expression: lower.boundary.lower_derivative_per_observation <= 1.0e-8
+2026-09-30T23:31:56.1097598Z   MethodError: no method matching isless(::Nothing, ::Float64)
+2026-09-30T23:31:56.1097863Z   
+2026-09-30T23:31:56.1098072Z   [0mClosest candidates are:
+2026-09-30T23:31:56.1098419Z   [0m  isless([91m::Missing[39m, ::Any)
+2026-09-30T23:31:56.1098995Z   [0m[90m   @[39m [90mBase[39m [90m[4mmissing.jl:87[24m[39m
+2026-09-30T23:31:56.1099334Z   [0m  isless(::Any, [91m::Missing[39m)
+2026-09-30T23:31:56.1099618Z   [0m[90m   @[39m [90mBase[39m [90m[4mmissing.jl:88[24m[39m
+2026-09-30T23:31:56.1100033Z   [0m  isless([91m::ForwardDiff.Dual{Tx}[39m, ::AbstractFloat) where Tx
+2026-09-30T23:31:56.1100695Z   [0m[90m   @[39m [35mForwardDiff[39m [90mC:\Users\runneradmin\.julia\packages\ForwardDiff\wp23H\src\[39m[90m[4mdual.jl:158[24m[39m
+2026-09-30T23:31:56.1101175Z   [0m  ...
+2026-09-30T23:31:56.1101305Z   
+2026-09-30T23:31:56.1101446Z   Stacktrace:
+2026-09-30T23:31:56.1101797Z    [1] [0m[1m<[22m[0m[1m([22m[90mx[39m::[0mNothing, [90my[39m::[0mFloat64[0m[1m)[22m
+2026-09-30T23:31:56.1102247Z   [90m   @[39m [90mBase[39m [90m.\[39m[90m[4moperators.jl:352[24m[39m
+2026-09-30T23:31:56.1102720Z    [2] [0m[1m<=[22m[0m[1m([22m[90mx[39m::[0mNothing, [90my[39m::[0mFloat64[0m[1m)[22m
+2026-09-30T23:31:56.1103146Z   [90m   @[39m [90mBase[39m [90m.\[39m[90m[4moperators.jl:401[24m[39m
+2026-09-30T23:31:56.1103853Z    [3] [0m[1meval_test[22m[0m[1m([22m[90mevaluated[39m::[0mExpr, [90mquoted[39m::[0mExpr, [90msource[39m::[0mLineNumberNode, [90mnegate[39m::[0mBool[0m[1m)[22m
+2026-09-30T23:31:56.1104706Z   [90m   @[39m [33mTest[39m [90mC:\hostedtoolcache\windows\julia\1.10.12\x64\share\julia\stdlib\v1.10\Test\src\[39m[90m[4mTest.jl:356[24m[39m
+2026-09-30T23:31:56.1105194Z    [4] [0m[1mmacro expansion[22m
+2026-09-30T23:31:56.1105626Z   [90m   @[39m [90mC:\hostedtoolcache\windows\julia\1.10.12\x64\share\julia\stdlib\v1.10\Test\src\[39m[90m[4mTest.jl:670[24m[39m[90m [inlined][39m
+2026-09-30T23:31:56.1105945Z    [5] [0m[1mmacro expansion[22m
+2026-09-30T23:31:56.1106229Z   [90m   @[39m [90mD:\a\HSquared.jl\HSquared.jl\test\[39m[90m[4mruntests.jl:4121[24m[39m[90m [inlined][39m
+2026-09-30T23:31:56.1106496Z    [6] [0m[1mmacro expansion[22m
+2026-09-30T23:31:56.1106842Z   [90m   @[39m [90mC:\hostedtoolcache\windows\julia\1.10.12\x64\share\julia\stdlib\v1.10\Test\src\[39m[90m[4mTest.jl:1582[24m[39m[90m [inlined][39m
+2026-09-30T23:31:56.1107135Z    [7] top-level scope
+2026-09-30T23:31:56.1107364Z   [90m   @[39m [90mD:\a\HSquared.jl\HSquared.jl\test\[39m[90m[4mruntests.jl:4071[24m[39m
+2026-09-30T23:31:57.5204712Z [0m[1mTest Summary:                                    | [22m[32m[1mPass  [22m[39m[91m[1mFail  [22m[39m[91m[1mError  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
+2026-09-30T23:31:57.5206102Z v0.7 genomic closed-boundary resolution (doc 46) | [32m  64  [39m[91m   5  [39m[91m    2  [39m[36m   71  [39m[0m4.6s
+2026-09-30T23:31:57.7140127Z [91m[1mERROR: [22m[39mLoadError: [91mSome tests did not pass: 64 passed, 5 failed, 2 errored, 0 broken.[39m
+2026-09-30T23:31:57.7140510Z in expression starting at D:\a\HSquared.jl\HSquared.jl\test\runtests.jl:4070
+2026-09-30T23:31:58.1351580Z Package HSquared errored during testing
+2026-09-30T23:31:58.1370838Z ##[error]Process completed with exit code 1.
+2026-09-30T23:31:58.1377331Z ##[end-action id=__julia-actions_julia-runtest.__run_3;outcome=failure;conclusion=failure;duration_ms=113458]
+2026-09-30T23:31:58.1567748Z Post job cleanup.
+2026-09-30T23:31:58.1571558Z ##[start-action display=Run pyTooling/Actions/with-post-step@42e17fae05f224e5ac3d79d021a4e3577878efe5;id=__deb5f0e7-7b1a-4ba2-99df-ce6775aafadb.__pyTooling_Actions_2]
+2026-09-30T23:31:58.1661059Z Post job cleanup.
+2026-09-30T23:31:58.9297542Z       Active manifest files: 1 found
+2026-09-30T23:31:58.9379199Z       Active artifact files: 2 found
+2026-09-30T23:31:58.9385806Z       Active scratchspaces: 0 found
+2026-09-30T23:31:58.9550520Z      Deleted no artifacts, repos, packages or scratchspaces
+2026-09-30T23:32:03.7574695Z X Failed to delete cache: HTTP 403: Resource not accessible by integration (https://api.github.com/repos/itchyshin/HSquared.jl/actions/caches/8195433966)
+2026-09-30T23:32:04.2197778Z ┌ Error: ProcessFailedException(Base.Process[Process(`gh cache delete 8195433966 --repo itchyshin/HSquared.jl`, ProcessExited(1))])
+2026-09-30T23:32:04.2198719Z └ @ Main D:\a\_actions\julia-actions\cache\v2\handle_caches.jl:42
+2026-09-30T23:32:04.4868731Z X Failed to delete cache: HTTP 403: Resource not accessible by integration (https://api.github.com/repos/itchyshin/HSquared.jl/actions/caches/8191542038)
+2026-09-30T23:32:04.4924166Z ┌ Error: ProcessFailedException(Base.Process[Process(`gh cache delete 8191542038 --repo itchyshin/HSquared.jl`, ProcessExited(1))])
+2026-09-30T23:32:04.4924592Z └ @ Main D:\a\_actions\julia-actions\cache\v2\handle_caches.jl:42
+2026-09-30T23:32:04.7364691Z X Failed to delete cache: HTTP 403: Resource not accessible by integration (https://api.github.com/repos/itchyshin/HSquared.jl/actions/caches/8188537396)
+2026-09-30T23:32:04.7421080Z ┌ Error: ProcessFailedException(Base.Process[Process(`gh cache delete 8188537396 --repo itchyshin/HSquared.jl`, ProcessExited(1))])
+2026-09-30T23:32:04.7421543Z └ @ Main D:\a\_actions\julia-actions\cache\v2\handle_caches.jl:42
+2026-09-30T23:32:04.7486542Z Failed to delete 3 existing caches on ref `refs/pull/401/merge` matching restore key `julia-cache;workflow=CI;job=test;os=Windows;version=1.10;os=windows-latest;`
+2026-09-30T23:32:04.7487206Z 8195433966
+2026-09-30T23:32:04.7487392Z 8191542038
+2026-09-30T23:32:04.7487598Z 8188537396
+2026-09-30T23:32:04.7496388Z ┌ Info: To delete caches you need to grant the following to the default `GITHUB_TOKEN` by adding
+2026-09-30T23:32:04.7496773Z │ this to your workflow:
+2026-09-30T23:32:04.7496971Z │ ```
+2026-09-30T23:32:04.7497134Z │ permissions:
+2026-09-30T23:32:04.7497305Z │   actions: write
+2026-09-30T23:32:04.7497483Z │   contents: read
+2026-09-30T23:32:04.7497649Z │ ```
+2026-09-30T23:32:04.7497878Z │ (Note this won't work for fork PRs but should once merged)
+2026-09-30T23:32:04.7498250Z │ Or provide a token with `repo` scope via the `token` input option.
+2026-09-30T23:32:04.7498637Z └ See https://cli.github.com/manual/gh_cache_delete
+2026-09-30T23:32:04.7852645Z ##[end-action id=__deb5f0e7-7b1a-4ba2-99df-ce6775aafadb.__pyTooling_Actions_2;outcome=success;conclusion=success;duration_ms=6627]
+2026-09-30T23:32:04.7854432Z ##[start-action display=Run actions/cache@5a3ec84eff668545956fd18022155c47e93e2684;id=__deb5f0e7-7b1a-4ba2-99df-ce6775aafadb.cache]
+2026-09-30T23:32:04.7856169Z ##[end-action id=__deb5f0e7-7b1a-4ba2-99df-ce6775aafadb.cache;outcome=skipped;conclusion=skipped;duration_ms=0]
+2026-09-30T23:32:04.7970630Z Post job cleanup.
+2026-09-30T23:32:04.8945924Z [command]"C:\Program Files\Git\bin\git.exe" version
+2026-09-30T23:32:04.9123124Z git version 2.55.0.windows.5
+2026-09-30T23:32:04.9162111Z Temporarily overriding HOME='D:\a\_temp\915ca885-4047-4f0e-8be2-a0a41750134a' before making global git config changes
+2026-09-30T23:32:04.9162665Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-30T23:32:04.9168555Z [command]"C:\Program Files\Git\bin\git.exe" config --global --add safe.directory D:\a\HSquared.jl\HSquared.jl
+2026-09-30T23:32:04.9348380Z Removing SSH command configuration
+2026-09-30T23:32:04.9354823Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp core\.sshCommand
+2026-09-30T23:32:04.9535981Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :\""
+2026-09-30T23:32:05.3082859Z Removing HTTP extra header
+2026-09-30T23:32:05.3090589Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-30T23:32:05.3280257Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :\""
+2026-09-30T23:32:05.6789130Z Removing includeIf entries pointing to credentials config files
+2026-09-30T23:32:05.6798056Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-30T23:32:05.6961417Z includeif.gitdir:D:/a/HSquared.jl/HSquared.jl/.git.path
+2026-09-30T23:32:05.6961786Z includeif.gitdir:D:/a/HSquared.jl/HSquared.jl/.git/worktrees/*.path
+2026-09-30T23:32:05.6961999Z includeif.gitdir:/github/workspace/.git.path
+2026-09-30T23:32:05.6962221Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-09-30T23:32:05.6986950Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:D:/a/HSquared.jl/HSquared.jl/.git.path
+2026-09-30T23:32:05.7144294Z D:\a\_temp\git-credentials-7cad2523-f930-44ab-b4e8-5f5f64f3d3ac.config
+2026-09-30T23:32:05.7172460Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:D:/a/HSquared.jl/HSquared.jl/.git.path D:\a\_temp\git-credentials-7cad2523-f930-44ab-b4e8-5f5f64f3d3ac.config
+2026-09-30T23:32:05.7394539Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:D:/a/HSquared.jl/HSquared.jl/.git/worktrees/*.path
+2026-09-30T23:32:05.7605213Z D:\a\_temp\git-credentials-7cad2523-f930-44ab-b4e8-5f5f64f3d3ac.config
+2026-09-30T23:32:05.7637053Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:D:/a/HSquared.jl/HSquared.jl/.git/worktrees/*.path D:\a\_temp\git-credentials-7cad2523-f930-44ab-b4e8-5f5f64f3d3ac.config
+2026-09-30T23:32:05.7842576Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:/github/workspace/.git.path
+2026-09-30T23:32:05.7992044Z /github/runner_temp/git-credentials-7cad2523-f930-44ab-b4e8-5f5f64f3d3ac.config
+2026-09-30T23:32:05.8014444Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-7cad2523-f930-44ab-b4e8-5f5f64f3d3ac.config
+2026-09-30T23:32:05.8272660Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-09-30T23:32:05.8430186Z /github/runner_temp/git-credentials-7cad2523-f930-44ab-b4e8-5f5f64f3d3ac.config
+2026-09-30T23:32:05.8454170Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-7cad2523-f930-44ab-b4e8-5f5f64f3d3ac.config
+2026-09-30T23:32:05.8640188Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "git config --local --show-origin --name-only --get-regexp remote.origin.url"
+2026-09-30T23:32:06.3865701Z Removing credentials config 'D:\a\_temp\git-credentials-7cad2523-f930-44ab-b4e8-5f5f64f3d3ac.config'
+2026-09-30T23:32:06.4021368Z Cleaning up orphan processes
+2026-09-30T23:32:06.4046811Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684, pyTooling/Actions/with-post-step@42e17fae05f224e5ac3d79d021a4e3577878efe5. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/

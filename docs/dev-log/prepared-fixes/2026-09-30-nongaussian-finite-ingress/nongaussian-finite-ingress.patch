@@ -1,0 +1,213 @@
+--- a/src/nongaussian.jl
++++ b/src/nongaussian.jl
+@@ -31,7 +31,11 @@
+     sigma_e2::Float64
+     function GaussianResponse(sigma_e2::Real)
+         sigma_e2 > 0 || throw(ArgumentError("sigma_e2 must be positive"))
+-        return new(Float64(sigma_e2))
++        isfinite(sigma_e2) || throw(ArgumentError("sigma_e2 must be finite"))
++        value = Float64(sigma_e2)
++        isfinite(value) && value > 0 || throw(ArgumentError(
++            "sigma_e2 must be finite and positive after Float64 conversion"))
++        return new(value)
+     end
+ end
+ 
+@@ -84,7 +88,11 @@
+     theta::Float64
+     function NegativeBinomialResponse(theta::Real)
+         theta > 0 || throw(ArgumentError("theta (overdispersion) must be positive"))
+-        return new(Float64(theta))
++        isfinite(theta) || throw(ArgumentError("theta (overdispersion) must be finite"))
++        value = Float64(theta)
++        isfinite(value) && value > 0 || throw(ArgumentError(
++            "theta (overdispersion) must be finite and positive after Float64 conversion"))
++        return new(value)
+     end
+ end
+ 
+@@ -153,7 +161,14 @@
+             throw(ArgumentError("OrderedProbitResponse needs >= 1 threshold (K >= 2 categories)"))
+         all(i -> thresholds[i] < thresholds[i + 1], 1:(length(thresholds) - 1)) ||
+             throw(ArgumentError("OrderedProbitResponse thresholds must be strictly increasing"))
+-        return new(Float64.(thresholds))
++        all(isfinite, thresholds) || throw(ArgumentError(
++            "OrderedProbitResponse thresholds must be finite"))
++        values = Float64.(thresholds)
++        all(isfinite, values) || throw(ArgumentError(
++            "OrderedProbitResponse thresholds must be finite after Float64 conversion"))
++        all(i -> values[i] < values[i + 1], 1:(length(values) - 1)) || throw(ArgumentError(
++            "OrderedProbitResponse thresholds must be strictly increasing after Float64 conversion"))
++        return new(values)
+     end
+ end
+ 
+@@ -171,7 +186,11 @@
+     shape::Float64
+     function GammaResponse(shape::Real)
+         shape > 0 || throw(ArgumentError("GammaResponse shape must be positive, got $shape"))
+-        return new(Float64(shape))
++        isfinite(shape) || throw(ArgumentError("GammaResponse shape must be finite"))
++        value = Float64(shape)
++        isfinite(value) && value > 0 || throw(ArgumentError(
++            "GammaResponse shape must be finite and positive after Float64 conversion"))
++        return new(value)
+     end
+ end
+ 
+@@ -556,18 +575,25 @@
+ # Validate the response data against the family. Poisson (log link) requires
+ # non-negative integer counts; the per-record kernels would otherwise mix a
+ # raw-y score with a round(y) log-factorial and silently misreport the loglik.
+-_check_counts(::ResponseFamily, yv) = nothing
++function _check_finite_responses(yv)
++    all(isfinite, yv) || throw(ArgumentError("responses must contain only finite values"))
++    return nothing
++end
++_check_counts(::ResponseFamily, yv) = _check_finite_responses(yv)
+ function _check_counts(::PoissonResponse, yv)
++    _check_finite_responses(yv)
+     all(y -> isinteger(y) && y >= 0, yv) ||
+         throw(ArgumentError("PoissonResponse requires non-negative integer counts"))
+     return nothing
+ end
+ function _check_counts(::BernoulliResponse, yv)
++    _check_finite_responses(yv)
+     all(y -> y == 0 || y == 1, yv) ||
+         throw(ArgumentError("BernoulliResponse requires binary 0/1 responses"))
+     return nothing
+ end
+ function _check_counts(f::BinomialResponse, yv)
++    _check_finite_responses(yv)
+     all(y -> isinteger(y) && 0 <= y <= f.n_trials, yv) ||
+         throw(ArgumentError("BinomialResponse requires integer counts in 0:n_trials"))
+     return nothing
+@@ -575,32 +601,38 @@
+ function _check_counts(f::BinomialVectorResponse, yv)
+     length(f.n_trials) == length(yv) ||
+         throw(ArgumentError("n_trials must have one entry per record (length(n_trials) == length(y))"))
++    _check_finite_responses(yv)
+     all(i -> isinteger(yv[i]) && 0 <= yv[i] <= f.n_trials[i], eachindex(yv)) ||
+         throw(ArgumentError("BinomialVectorResponse requires integer counts with 0 <= y[i] <= n_trials[i]"))
+     return nothing
+ end
+ function _check_counts(::NegativeBinomialResponse, yv)
++    _check_finite_responses(yv)
+     all(y -> isinteger(y) && y >= 0, yv) ||
+         throw(ArgumentError("NegativeBinomialResponse requires non-negative integer counts"))
+     return nothing
+ end
+ function _check_counts(f::BetaBinomialResponse, yv)
++    _check_finite_responses(yv)
+     all(y -> isinteger(y) && 0 <= y <= f.n_trials, yv) ||
+         throw(ArgumentError("BetaBinomialResponse requires integer counts in 0:n_trials"))
+     return nothing
+ end
+ function _check_counts(::BernoulliProbitResponse, yv)
++    _check_finite_responses(yv)
+     all(y -> y == 0 || y == 1, yv) ||
+         throw(ArgumentError("BernoulliProbitResponse requires binary 0/1 responses"))
+     return nothing
+ end
+ function _check_counts(f::OrderedProbitResponse, yv)
++    _check_finite_responses(yv)
+     K = length(f.thresholds) + 1
+     all(y -> isinteger(y) && 1 <= y <= K, yv) ||
+         throw(ArgumentError("OrderedProbitResponse requires integer category codes in 1:$(K)"))
+     return nothing
+ end
+ function _check_counts(::GammaResponse, yv)
++    _check_finite_responses(yv)
+     all(y -> y > 0, yv) ||
+         throw(ArgumentError("GammaResponse requires strictly positive responses"))
+     return nothing
+--- /dev/null
++++ b/test/nongaussian_finite_ingress_regression.jl
+@@ -0,0 +1,87 @@
++using Test, LinearAlgebra, HSquared
++const H = HSquared
++@testset "non-Gaussian finite ingress" begin
++    @testset "strict positive family fields before and after conversion" begin
++        for constructor in (H.GaussianResponse, H.NegativeBinomialResponse, H.GammaResponse)
++            for bad in (Inf, -Inf, NaN, 0.0, -1.0, BigFloat("1e400"), BigFloat("1e-400"))
++                @test_throws ArgumentError constructor(bad)
++            end
++            for good in (1.0, 3, big"0.5", floatmin(Float64), nextfloat(0.0))
++                f = constructor(good)
++                @test isfinite(getfield(f, 1)) && getfield(f, 1) > 0
++                @test getfield(f, 1) == Float64(good)
++            end
++        end
++    end
++    @testset "ordered thresholds retain ordering and finite conversion" begin
++        for bad in ([NaN], [Inf], [-Inf], [0.0, Inf], [-Inf, 0.0],
++                    [NaN, 0.0], Float64[], [1.0, 0.0], [0.0, 0.0],
++                    [BigFloat("1e400")], [big"1.0", big"1.0" + big(2.0)^(-200)])
++            @test_throws ArgumentError H.OrderedProbitResponse(bad)
++        end
++        for good in ([0.0], [-1.0, 0.0, 1.0], [big"-0.5", big"0.5"], [BigFloat("1e-400")])
++            f = H.OrderedProbitResponse(good)
++            @test f.thresholds == Float64.(good)
++            @test all(isfinite, f.thresholds)
++        end
++    end
++    @testset "finite response checks retain each family domain" begin
++        cases = ((H.GaussianResponse(1.0), [-2.0, 0.5]),
++                 (H.PoissonResponse(), [0.0, 2.0]),
++                 (H.BernoulliResponse(), [0.0, 1.0]),
++                 (H.BinomialResponse(3), [0.0, 3.0]),
++                 (H.BinomialVectorResponse([2, 3]), [0.0, 3.0]),
++                 (H.NegativeBinomialResponse(2.0), [0.0, 3.0]),
++                 (H.BetaBinomialResponse(3, 0.2), [0.0, 3.0]),
++                 (H.BernoulliProbitResponse(), [0.0, 1.0]),
++                 (H.OrderedProbitResponse([0.0]), [1.0, 2.0]),
++                 (H.GammaResponse(2.0), [0.5, 1.0]))
++        for (family, y) in cases
++            @test H._check_counts(family, y) === nothing
++            for bad in (Inf, -Inf, NaN, Float64(BigFloat("1e400")))
++                @test_throws ArgumentError H._check_counts(family, [y[1], bad])
++            end
++        end
++        @test_throws ArgumentError H._check_counts(H.PoissonResponse(), [-1.0, 2.0])
++        @test_throws ArgumentError H._check_counts(H.PoissonResponse(), [0.5, 2.0])
++        @test_throws ArgumentError H._check_counts(H.BernoulliResponse(), [0.0, 2.0])
++        @test_throws ArgumentError H._check_counts(H.BinomialResponse(3), [0.0, 4.0])
++        @test_throws ArgumentError H._check_counts(H.BinomialVectorResponse([2, 3]), [0.0])
++        @test_throws ArgumentError H._check_counts(H.OrderedProbitResponse([0.0]), [0.0, 2.0])
++        @test_throws ArgumentError H._check_counts(H.GammaResponse(2.0), [0.0, 1.0])
++        for bad in (0, -1)
++            @test_throws ArgumentError H.BetaBinomialResponse(bad, 0.2)
++        end
++        for bad in (0.0, 1.0, Inf, NaN)
++            @test_throws ArgumentError H.BetaBinomialResponse(3, bad)
++        end
++        @test H.BetaBinomialResponse(3, 0.2).rho == 0.2
++    end
++
++    # In a regressed ingress path, stop after the actual proper-integral guard;
++    # this prevents the regression test from executing any statistical mode work.
++    struct FiniteIngressGuardPassed <: Exception end
++    function H._check_flat_effect_integral(f::H.ResponseFamily,
++                                         y::AbstractVector{Float64}, X::AbstractMatrix{Float64})
++        invoke(H._check_flat_effect_integral, Tuple{H.ResponseFamily, Any, Any}, f, y, X)
++        throw(FiniteIngressGuardPassed())
++    end
++    probe_method = which(H._check_flat_effect_integral,
++        Tuple{H.ResponseFamily, AbstractVector{Float64}, AbstractMatrix{Float64}})
++    try
++        @testset "kernel ingress rejects before mode work" begin
++            X = zeros(2, 0)
++            Ai = Matrix{Float64}(I, 2, 2)
++            for family in (H.GaussianResponse(1.0), H.GammaResponse(1.0))
++                @test_throws ArgumentError H.laplace_marginal_loglik([1.0, Inf], X, Ai, Ai, 1.0, family)
++                @test_throws ArgumentError H.gllvm_laplace_marginal_loglik(reshape([1.0, Inf], 2, 1), Ai, ones(1, 1), family; X=X)
++            end
++            @test_throws ArgumentError H.variational_marginal_loglik([1.0, Inf], X, Ai, Ai, 1.0, H.GaussianResponse(1.0))
++            @test_throws FiniteIngressGuardPassed H.laplace_marginal_loglik([1.0, 2.0], X, Ai, Ai, 1.0, H.GaussianResponse(1.0))
++        end
++    finally
++        Base.delete_method(probe_method)
++    end
++    @test which(H._check_flat_effect_integral, Tuple{H.ResponseFamily, Vector{Float64}, Matrix{Float64}}) ===
++          which(H._check_flat_effect_integral, Tuple{H.ResponseFamily, Any, Any})
++end

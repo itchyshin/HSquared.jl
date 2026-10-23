@@ -1,0 +1,7 @@
+{
+  "verified_pin_count": 16,
+  "pins_sha256": "210120f0bd69669e7570821018dfc147dc00fdac905f3d2cdb8ebae7856a01e2",
+  "replay": "exact",
+  "takahashi_recursion_unchanged": true,
+  "evolvability_validation_normalization_conditional_autonomy_pca_unchanged": true
+}

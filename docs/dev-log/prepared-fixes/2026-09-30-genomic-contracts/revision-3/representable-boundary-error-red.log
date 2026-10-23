@@ -1,0 +1,96 @@
+ERROR: LoadError: Some tests did not pass: 8 passed, 0 failed, 4 errored, 0 broken.
+in expression starting at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_variance_boundary.jl:3
+representable weighted contributions near Float64 maximum: Error During Test at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_variance_boundary.jl:10
+  Test threw exception
+  Expression: (marker_variance_explained((marker_ids = ["m"], effects = [effect], p = [p]))).marker_variances[1] == reference
+  ArgumentError: marker variances exceed the finite Float64 range
+  Stacktrace:
+   [1] _marker_variance_contributions(allele_variances::Vector{Float64}, effects::Vector{Float64})
+     @ HSquared /private/tmp/hsq-genomic-contracts-fix-20260930/src/genomic.jl:2159
+   [2] _marker_variance_explained(scan::@NamedTuple{marker_ids::Vector{String}, effects::Vector{Float64}, p::Vector{Float64}}, chromosomes::Nothing, positions::Nothing; total_variance::Nothing, sort_by::Symbol, top_n::Nothing, decreasing::Nothing)
+     @ HSquared /private/tmp/hsq-genomic-contracts-fix-20260930/src/genomic.jl:2101
+   [3] _marker_variance_explained
+     @ HSquared /private/tmp/hsq-genomic-contracts-fix-20260930/src/genomic.jl:2086 [inlined]
+   [4] #marker_variance_explained#190
+     @ HSquared /private/tmp/hsq-genomic-contracts-fix-20260930/src/genomic.jl:2034 [inlined]
+   [5] marker_variance_explained(scan::@NamedTuple{marker_ids::Vector{String}, effects::Vector{Float64}, p::Vector{Float64}})
+     @ HSquared /private/tmp/hsq-genomic-contracts-fix-20260930/src/genomic.jl:2027
+   [6] macro expansion
+     @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:669 [inlined]
+   [7] macro expansion
+     @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_variance_boundary.jl:10 [inlined]
+   [8] macro expansion
+     @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+   [9] top-level scope
+     @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_variance_boundary.jl:4
+representable weighted contributions near Float64 maximum: Error During Test at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_variance_boundary.jl:14
+  Test threw exception
+  Expression: (marker_scan_table(table_scan)).marker_variances[1] == reference
+  ArgumentError: marker variances exceed the finite Float64 range
+  Stacktrace:
+   [1] _marker_variance_contributions(allele_variances::Vector{Float64}, effects::Vector{Float64})
+     @ HSquared /private/tmp/hsq-genomic-contracts-fix-20260930/src/genomic.jl:2159
+   [2] _marker_scan_table(scan::@NamedTuple{marker_ids::Vector{String}, effects::Vector{Float64}, p::Vector{Float64}, standard_errors::Vector{Float64}, z_scores::Vector{Float64}, chisq::Vector{Float64}, p_values::Vector{Float64}, bonferroni_p_values::Vector{Float64}, bh_q_values::Vector{Float64}, lod_scores::Vector{Float64}, denominators::Vector{Float64}}, chromosomes::Nothing, positions::Nothing; total_variance::Nothing)
+     @ HSquared /private/tmp/hsq-genomic-contracts-fix-20260930/src/genomic.jl:1726
+   [3] _marker_scan_table
+     @ HSquared /private/tmp/hsq-genomic-contracts-fix-20260930/src/genomic.jl:1711 [inlined]
+   [4] #marker_scan_table#173
+     @ HSquared /private/tmp/hsq-genomic-contracts-fix-20260930/src/genomic.jl:1683 [inlined]
+   [5] marker_scan_table(scan::@NamedTuple{marker_ids::Vector{String}, effects::Vector{Float64}, p::Vector{Float64}, standard_errors::Vector{Float64}, z_scores::Vector{Float64}, chisq::Vector{Float64}, p_values::Vector{Float64}, bonferroni_p_values::Vector{Float64}, bh_q_values::Vector{Float64}, lod_scores::Vector{Float64}, denominators::Vector{Float64}})
+     @ HSquared /private/tmp/hsq-genomic-contracts-fix-20260930/src/genomic.jl:1682
+   [6] macro expansion
+     @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:669 [inlined]
+   [7] macro expansion
+     @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_variance_boundary.jl:14 [inlined]
+   [8] macro expansion
+     @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+   [9] top-level scope
+     @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_variance_boundary.jl:4
+representable weighted contributions near Float64 maximum: Error During Test at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_variance_boundary.jl:10
+  Test threw exception
+  Expression: (marker_variance_explained((marker_ids = ["m"], effects = [effect], p = [p]))).marker_variances[1] == reference
+  ArgumentError: marker variances exceed the finite Float64 range
+  Stacktrace:
+   [1] _marker_variance_contributions(allele_variances::Vector{Float64}, effects::Vector{Float64})
+     @ HSquared /private/tmp/hsq-genomic-contracts-fix-20260930/src/genomic.jl:2159
+   [2] _marker_variance_explained(scan::@NamedTuple{marker_ids::Vector{String}, effects::Vector{Float64}, p::Vector{Float64}}, chromosomes::Nothing, positions::Nothing; total_variance::Nothing, sort_by::Symbol, top_n::Nothing, decreasing::Nothing)
+     @ HSquared /private/tmp/hsq-genomic-contracts-fix-20260930/src/genomic.jl:2101
+   [3] _marker_variance_explained
+     @ HSquared /private/tmp/hsq-genomic-contracts-fix-20260930/src/genomic.jl:2086 [inlined]
+   [4] #marker_variance_explained#190
+     @ HSquared /private/tmp/hsq-genomic-contracts-fix-20260930/src/genomic.jl:2034 [inlined]
+   [5] marker_variance_explained(scan::@NamedTuple{marker_ids::Vector{String}, effects::Vector{Float64}, p::Vector{Float64}})
+     @ HSquared /private/tmp/hsq-genomic-contracts-fix-20260930/src/genomic.jl:2027
+   [6] macro expansion
+     @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:669 [inlined]
+   [7] macro expansion
+     @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_variance_boundary.jl:10 [inlined]
+   [8] macro expansion
+     @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+   [9] top-level scope
+     @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_variance_boundary.jl:4
+representable weighted contributions near Float64 maximum: Error During Test at /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_variance_boundary.jl:14
+  Test threw exception
+  Expression: (marker_scan_table(table_scan)).marker_variances[1] == reference
+  ArgumentError: marker variances exceed the finite Float64 range
+  Stacktrace:
+   [1] _marker_variance_contributions(allele_variances::Vector{Float64}, effects::Vector{Float64})
+     @ HSquared /private/tmp/hsq-genomic-contracts-fix-20260930/src/genomic.jl:2159
+   [2] _marker_scan_table(scan::@NamedTuple{marker_ids::Vector{String}, effects::Vector{Float64}, p::Vector{Float64}, standard_errors::Vector{Float64}, z_scores::Vector{Float64}, chisq::Vector{Float64}, p_values::Vector{Float64}, bonferroni_p_values::Vector{Float64}, bh_q_values::Vector{Float64}, lod_scores::Vector{Float64}, denominators::Vector{Float64}}, chromosomes::Nothing, positions::Nothing; total_variance::Nothing)
+     @ HSquared /private/tmp/hsq-genomic-contracts-fix-20260930/src/genomic.jl:1726
+   [3] _marker_scan_table
+     @ HSquared /private/tmp/hsq-genomic-contracts-fix-20260930/src/genomic.jl:1711 [inlined]
+   [4] #marker_scan_table#173
+     @ HSquared /private/tmp/hsq-genomic-contracts-fix-20260930/src/genomic.jl:1683 [inlined]
+   [5] marker_scan_table(scan::@NamedTuple{marker_ids::Vector{String}, effects::Vector{Float64}, p::Vector{Float64}, standard_errors::Vector{Float64}, z_scores::Vector{Float64}, chisq::Vector{Float64}, p_values::Vector{Float64}, bonferroni_p_values::Vector{Float64}, bh_q_values::Vector{Float64}, lod_scores::Vector{Float64}, denominators::Vector{Float64}})
+     @ HSquared /private/tmp/hsq-genomic-contracts-fix-20260930/src/genomic.jl:1682
+   [6] macro expansion
+     @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:669 [inlined]
+   [7] macro expansion
+     @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_variance_boundary.jl:14 [inlined]
+   [8] macro expansion
+     @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+   [9] top-level scope
+     @ /private/tmp/hsq-genomic-contracts-fix-20260930/test/test_genomic_variance_boundary.jl:4
+Test Summary:                                             | Pass  Error  Total  Time
+representable weighted contributions near Float64 maximum |    8      4     12  1.5s

@@ -1,0 +1,13 @@
+Julia=1.10.0 JuliaThreads=1 BLASThreads=1
+Test Summary:                                  | Pass  Total  Time
+Pedigree clonal and lineage residual contracts |   30     30  2.4s
+Test Summary:                                       | Pass  Total  Time
+Phase 3 cytoplasmic (maternal-lineage) relationship |   53     53  0.1s
+Test Summary:                         | Pass  Total  Time
+Phase 3 clonal (asexual) relationship |   15     15  0.1s
+Test Summary:                  | Pass  Total  Time
+Phase 3 dominance relationship |   22     22  0.0s
+Test Summary:                                      | Pass  Total  Time
+Phase 3 epistatic relationship (Hadamard products) |   13     13  0.1s
+Test Summary:                                                | Pass  Total  Time
+Phase 1 metafounder relationship / inverse (supplied Γ, #53) |   19     19  0.9s

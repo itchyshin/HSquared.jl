@@ -73,8 +73,11 @@ not commit the parallel session's uncommitted file.
 | opened `forest.png` / `caterpillar.png` | flag now at the crossed end, right-aligned, unclipped |
 | `python3 -c "yaml.safe_load(...)"` on `CI.yml` | parses; `plotting.if = ${{ inputs.run_plotting }}`; `timeout-minutes: 45` |
 | `Rscript tools/rose-pattern-scan.R` × 4 roots | violation→1, clean→0, nonexistent→1, typo'd→1 |
-| `Rscript tools/check-after-task.R <this file>` | see below |
+| `Rscript tools/check-after-task.R <this file>` | passed, exit 0 (against the *committed* validator; also passes the parallel session's in-flight §12 validator) |
 | `python3 tools/memory_delta_check.py` | `OK — no 'memory/*.md' file shrank > 25%` |
+| PR #264 checks | `Julia 1` ✓, `Julia 1.10` ✓, `docs` ✓, `documenter/deploy` ✓, `plotting` **skipping** (off by default, as designed) |
+| `gh pr merge 264 --merge` | MERGED → `main` @ `50131e69` |
+| `gh workflow run CI.yml --ref main -f run_plotting=true` | run `28960736583` **green**; artifact `live-draw-figures` 116,138 bytes; downloaded and inspected; byte-identical to the macOS renders |
 
 ## 6. Tests of the Tests
 
@@ -182,16 +185,23 @@ h² row of every `:variance_components` payload.
 **B. The opt-in `plotting` CI job — `.github/workflows/CI.yml`.** A control switch on the whole
 drawing layer's CI posture.
 
-- **covers ✓** `workflow_dispatch` with `run_plotting = true` → job runs the driver, uploads PNGs.
-  `pull_request` → `inputs` is empty → falsy → skipped, so the dependency-free `test` job and the
-  default posture are unchanged (verified: `Pkg.test()` green, `test` job unconditioned). Red runs
-  still upload figures (driver rasterizes before asserting; verified — 78,618 / 63,496 bytes).
-- **does NOT cover ✗** the job has **never been executed on GitHub** — validated locally by YAML
-  parse + schema inspection only. Ubuntu/CairoMakie headless rendering, the `upload-artifact@v4`
-  glob outside the workspace, and the `julia-actions/cache@v2` miss on `RUNNER_TEMP` are all
-  *unexercised*. **✗** it does not run on `push`, nor automatically on PRs touching
-  `ext/HSquaredMakieExt.jl` — a human must remember to dispatch it. **✗** no cross-OS or
-  cross-Julia-version matrix.
+- **covers ✓** `pull_request` → `inputs` empty → falsy → **skipped**; confirmed empirically on PR #264,
+  where the check reported `skipping` while both `test` jobs passed. So the dependency-free default
+  posture is unchanged. **✓ Executed for real** on `main` (run
+  [28960736583](https://github.com/itchyshin/HSquared.jl/actions/runs/28960736583), `workflow_dispatch`
+  with `run_plotting = true`): job **green** on `ubuntu-latest`, headless CairoMakie rendered, artifact
+  `live-draw-figures` uploaded (116,138 bytes). The downloaded `forest.png` was inspected and is
+  correct. Bonus: both PNGs are **byte-identical** to the macOS/arm64 renders
+  (`forest 89d15dfdd47f`, `caterpillar 99a7382b92f1`) — the raster is reproducible across
+  ubuntu-x86_64 and macOS-arm64 on this version set. Red runs still upload figures (driver rasterizes
+  before asserting; verified locally — 78,618 / 63,496 bytes).
+- **does NOT cover ✗** the *failing*-run artifact upload has been exercised **locally only**; no red
+  run has been observed on GitHub, so `if-no-files-found: error` has never been put in the position it
+  was written for. **✗** the job does not run on `push`, nor automatically on PRs touching
+  `ext/HSquaredMakieExt.jl` — a human must remember to dispatch it, which is exactly the failure mode
+  the stub test already has. **✗** no cross-OS or cross-Julia-version matrix (one ubuntu run, Julia
+  1.10). **✗** `julia-actions/cache@v2` keys off the workspace project, not the scratch env in
+  `RUNNER_TEMP`, so Makie/AoG re-download every run (~most of the job's wall clock).
 
 **C. `useBytes = TRUE` in `rose-pattern-scan.R` — `shinichi-brain`.** Applies to all four patterns
 and every file the scanner reads.

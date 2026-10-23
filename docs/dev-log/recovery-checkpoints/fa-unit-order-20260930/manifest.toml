@@ -1,0 +1,105 @@
+runtime_estimate_seconds = 3600
+solve_atol = 1.0e-9
+blas_config = "LBTConfig([ILP64] libopenblas64_.so)"
+fixture_artifact_sha256 = "ac3d425ebf90ca24674436e05bc02bc3763e5164ee5b19213c9b9856c0287abd"
+iterations_per_start = 10000
+git_branch = "main"
+fixed_trait_metric = [1.9390719429665315, 1.5524174696260025, 1.4966629547095764, 1.3601470508735443]
+word_size = 64
+estimate_basis = "Parent's bounded estimate from same-fixture evidence; launch owner must confirm it before execution"
+"Project.toml_sha256" = "37f0e6aaa6492c76519ed7771b226972cea531a7104866e5753890e31e163033"
+generator_span = "test/test_multivariate_fa_multistart.jl:181-203"
+solve_rtol = 1.0e-9
+repo = "/home/snakagaw/hsq_work/hsquared-fa-current-candidate-20260930"
+julia_version = "1.10.0"
+source_tree_sha256 = "d3c2de8d7f0a1a86918f15938264bbdc892a7303b5ddd488553ac923f073ad0a"
+git_head = "unavailable"
+git_status_porcelain = "?? .Renviron\n?? .Xauthority\n?? .antigravity-ide-server/\n?? .antigravity-server/\n?? .bash_history\n?? .bash_logout\n?? .bashrc\n?? .cache/\n?? .claude.json\n?? .claude/\n?? .config/\n?? .cursor-server/\n?? .cursor/\n?? .dotnet/\n?? .face\n?? .face.icon\n?? .gemini/\n?? .gitconfig\n?? .gtkrc-2.0\n?? .julia/\n?? .juliaup/\n?? .local/\n?? .npm/\n?? .parallel/\n?? .profile\n?? .sonarlint/\n?? .ssh/\n?? .sudo_as_admin_successful\n?? .unlazy/\n?? .vscode-R/\n?? .vscode-server/\n?? .wget-hsts\n?? .x2go/\n?? .xsession-x2go-totoro-errors\n?? .xsession-x2go-totoro-errors.old\n?? Desktop/\n?? Documents/\n?? GLLVM.jl-campaign/\n?? GLLVM.jl-lane/\n?? GLLVM.jl-mopup/\n?? GLLVM.jl-pin-00a2d7b7/\n?? GLLVModels.jl-grouped-analytic-reverify-20260923/\n?? GLLVModels.jl-latte-kernel-20260923/\n?? GLLVModels.jl-speed-board-20260923.bak/\n?? GLLVModels.jl-speed-board-20260923/\n?? GLLVModels.jl-speed-diversity-20260923/\n?? R/\n?? Rlib/\n?? Rlibs/\n?? autod-recovery/\n?? b1-consolidated/\n?? b124-lookup.R\n?? betachk.R\n?? bin/\n?? campaign-scp-backup/\n?? campaign.tgz\n?? clamp_repro.R\n?? claude-twin748/\n?? core070-aghq-20260830/\n?? cov119-campaign/\n?? cursor-skills-unlazy/\n?? curv_results.tgz\n?? d117_100k/\n?? d117_reml/\n?? delta-suite.sh\n?? delta.R\n?? dep-spatial-corrected-scale-56ab381ae.log\n?? dep-spatial-corrected-scale-56ab381ae.sh\n?? dgpaudit.R\n?? diag.log\n?? drm07/\n?? drm07c2/\n?? drmTMB-md0809/\n?? drmTMB_0.7.0.tar.gz\n?? drmTMB_0.7.0_cand2.tar.gz\n?? drmTMB_0.7.0_cand3_302ac2579.tar.gz\n?? drm_497_rescue/\n?? drm_497_verify/\n?? drm_499_verify/\n?? drm_coverage/\n?? drm_mainsrc/\n?? drm_parity_20260830_f67eeb80/\n?? drm_parity_blas_c0675b16_001/\n?? drm_parity_finite_a5a01f74_20260830_001/\n?? drm_parity_finite_a5a01f74_20260830_002/\n?? drm_parity_integration_567fec06_001/\n?? drm_work/\n?? drmtmb-beta-phylo-q1/\n?? drmtmb-campaigns/\n?? drmtmb-temporal-homtoep-b3a117edec97-totoro/\n?? drmtmb-temporal-homtoep-b3a117edec97/\n?? drmtmb-valgrind-302ac2579/\n?? drmtmb_arc1a/\n?? drmtmb_beta_phylo_ad1ebe9b/\n?? drmtmb_interval_arc1_c8e04258/\n?? drmtmb_mesh_v3_1e48e8d80/\n?? drmtmb_mesh_v3_50770c579/\n?? drmtmb_se_cal/\n?? extract_fl.R\n?? f1_jobs.txt\n?? f1_launch.sh\n?? f1_out/\n?? f1_runner.R\n?? f1_src/\n?? f2_jobs.txt\n?? f2_launch.sh\n?? f2_out/\n?? f2_runner.R\n?? f2b_jobs.txt\n?? f2b_launch.sh\n?? f2b_out/\n?? f2b_runner.R\n?? ff_totoro.csv\n?? fisher_recompute.R\n?? fisher_recompute2.R\n?? fisher_recompute3.R\n?? fix-897-base/\n?? fix-897-rng/\n?? fix-h2-dbg/\n?? fix-h2-linesearch/\n?? fixh2_env_1.10.10/\n?? fixh2_env_1.13/\n?? fixh2_inst.log\n?? fixh2_results.txt\n?? fixh2_runner.log\n?? fixh2_runtests.sh\n?? fixh2_setup.sh\n?? fixh2_setup_1.10.10.log\n?? fixh2_setup_1.13.log\n?? fixh2_t_1.10.10_test_coupled_ml_bound.jl.log\n?? fixh2_t_1.10.10_test_cox_reid_characterization.jl.log\n?? fixh2_t_1.10.10_test_gaussian_locscale_phylo.jl.log\n?? fixh2_t_1.10.10_test_gaussian_locscale_phylo_boundary.jl.log\n?? fixh2_t_1.10.10_test_locscale_phylo_e2e.jl.log\n?? fixh2_t_1.10.10_test_locscale_profile.jl.log\n?? fixh2_t_1.10.10_test_ls_inv2x2_chol.jl.log\n?? fixh2_t_1.10.10_test_niterations.jl.log\n?? fixh2_t_1.10.10_test_phylo_locscale.jl.log\n?? fixh2_t_1.10.10_test_reml_newton_sigma_phylo.jl.log\n?? fixh2_t_1.10.10_test_reml_sigma_phylo.jl.log\n?? fixh2_t_1.10.10_test_reml_sigma_phylo_joint.jl.log\n?? fixh2_t_1.10.10_test_reml_vcov_curvature.jl.log\n?? fixh2_t_1.13_test_coupled_ml_bound.jl.log\n?? fixh2_t_1.13_test_cox_reid_characterization.jl.log\n?? fixh2_t_1.13_test_gaussian_locscale_phylo.jl.log\n?? fixh2_t_1.13_test_gaussian_locscale_phylo_boundary.jl.log\n?? fixh2_t_1.13_test_locscale_phylo_e2e.jl.log\n?? fixh2_t_1.13_test_locscale_profile.jl.log\n?? fixh2_t_1.13_test_ls_inv2x2_chol.jl.log\n?? fixh2_t_1.13_test_niterations.jl.log\n?? fixh2_t_1.13_test_phylo_locscale.jl.log\n?? fixh2_t_1.13_test_reml_newton_sigma_phylo.jl.log\n?? fixh2_t_1.13_test_reml_sigma_phylo.jl.log\n?? fixh2_t_1.13_test_reml_sigma_phylo_joint.jl.log\n?? fixh2_t_1.13_test_reml_vcov_curvature.jl.log\n?? fixh2_t__.log\n?? fixh2_test_1.10.10/\n?? fixh2_test_1.13/\n?? fixh2_time.log\n?? fl_totoro.csv\n?? flip-suite.sh\n?? frontier-prerun/\n?? g1_work/\n?? g1b_work/\n?? g2_work/\n?? g3_work/\n?? g4-conforming-v1.rds\n?? g4-conforming-v2.rds\n?? g4-conforming.R\n?? g5-beta-rerun.R\n?? g5-chain.sh\n?? g5-v2-driver.R\n?? g5-v2-reconcile.R\n?? g5v2/\n?? gllvm-campaign.log\n?? gllvm-campaign2.log\n?? gllvm-delta-suite.log\n?? gllvm-fixes-1443/\n?? gllvm-flip-suite.log\n?? gllvm-integration-jae-bootstrap-4c7c343.bundle\n?? gllvm-integration-jae-bootstrap-78c8aab.bundle\n?? gllvm-mopup-suite.log\n?? gllvm-overnight-suite.log\n?? gllvm-parity-suite.log\n?? gllvm-pkgtest.log\n?? gllvm-portability-1424/\n?? gllvm-s7-estep-repro.log\n?? gllvm-setup.log\n?? gllvm-tw.log\n?? gllvm-tw2.log\n?? gllvmTMB-interval-calibration/\n?? gllvm_integration-jae-available-response-20260921-v2/\n?? gllvm_integration-jae-available-response-20260921-v3/\n?? gllvm_integration-jae-available-response-20260921-v4/\n?? gllvm_integration-jae-available-response-20260921-v5/\n?? gllvm_integration-jae-available-response-20260921/\n?? gllvm_integration-jae-bootstrap-20260908/\n?? gllvm_integration-jae-bootstrap-r45-20260908/\n?? gllvm_work/\n?? gllvmodels-a05-20260925/\n?? gllvmodels-native10-20260924/\n?? gllvmodels-native12-20260924/\n?? gllvmodels-nb2final-20260924/\n?? gllvmodels-nb2finite-20260924/\n?? gllvmodels-owed24-20260924/\n?? gllvmodels-track-a-20260924/\n?? gllvmtmb-872-mapped-point-prevalence/\n?? gllvmtmb-872-two-tier-flatness-admission/\n?? gllvmtmb-aghq-20260731/\n?? gllvmtmb-arcF-recovery/\n?? gllvmtmb-arcG-coverage/\n?? gllvmtmb-b1-repair-02b32324/\n?? gllvmtmb-check-20260816-isdm-final/\n?? gllvmtmb-check-20260816-isdm-public-door/\n?? gllvmtmb-check-20260816-model2/\n?? gllvmtmb-check-20260816-testguards/\n?? gllvmtmb-e1-campaign-20260818/\n?? gllvmtmb-isdm-intervals-20260818/\n?? gllvmtmb-local-artifacts/\n?? gllvmtmb-model2-campaign/\n?? gllvmtmb-mspl-forkB-t1-20260818/\n?? gllvmtmb-performance-audit-20260724/\n?? gllvmtmb-performance-r-lib/\n?? gllvmtmb-performance-results-20260724/\n?? gllvmtmb-src/\n?? gllvmtmb-temporal-68d828da6.tgz\n?? gllvmtmb-temporal-c8070797/\n?? gllvmtmb-temporal-corrected-scale-56ab381aea18/\n?? gllvmtmb-temporal-dep-kernel-160-20a583f77f59/\n?? gllvmtmb-temporal-dep-kernel-160-2ba63ad76699/\n?? gllvmtmb-temporal-dep-kernel-160-2ba63ad76c09/\n?? gllvmtmb-temporal-dep-kernel-160-2eb0b4586a92/\n?? gllvmtmb-temporal-dep-kernel-160-843c7c3f1fec/\n?? gllvmtmb-temporal-dep-kernel-160-8cfc1c43b7be/\n?? gllvmtmb-temporal-dep-kernel-160-8d003b09acd3/\n?? gllvmtmb-temporal-dep-kernel-160-c505dcf84869/\n?? gllvmtmb-temporal-dep-kernel-scaled-8d68950921c4/\n?? gllvmtmb-temporal-information-ebfa86979f00/\n?? gllvmtmb-temporal-newton-1dabd4a6c-results/\n?? gllvmtmb-temporal-newton-1dabd4a6c/\n?? gllvmtmb-temporal-phylo-newton-c8070797/\n?? gllvmtmb-temporal-phylo/\n?? gllvmtmb-zi-recovery/\n?? gllvmtmb_cran07_pilot_v2_20260808/\n?? gllvmtmb_cran07_pilot_v3_20260808/\n?? gllvmtmb_cran07_production_v3_20260808/\n?? gllvmtmb_design90/\n?? gllvmtmb_design91/\n?? gllvmtmb_lane_b_20260808_v1/\n?? gllvmtmb_lane_b_b0_exact_20260808_v2/\n?? gllvmtmb_lane_b_b2_20260808_v1/\n?? gllvmtmb_lane_b_finalizer_20260809_v1/\n?? gllvmtmb_lane_b_finalizer_20260809_v2/\n?? gllvmtmb_lane_b_quasi_20260808_v1/\n?? gllvmtmb_mspl_hessian_1000_confirm_20260813/\n?? gllvmtmb_mspl_hessian_3a905b4f/\n?? gllvmtmb_mspl_hessian_500_20260813/\n?? gllvmtmb_mspl_hessian_confirm_a0f26cb1/\n?? gllvmtmb_mspl_hessian_smoke_20260813/\n?? gllvmtmb_mspl_hessian_summary_3d588297/\n?? gllvmtmb_mspl_uncertainty_62e94a6e/\n?? gllvmtmb_mspl_uncertainty_pilot_20260813/\n?? gllvmtmb_tau847_54d6f366/\n?? gnn-off/\n?? grouped-analytic-reverify-20260923.log\n?? h2bisect.bundle\n?? h2bisect/\n?? h2cnt2_new.log\n?? h2cnt2_old.log\n?? h2cnt2_old2.log\n?? h2cnt3_new.log\n?? h2cnt3_old.log\n?? h2cnt_new.log\n?? h2cnt_old.log\n?? h2commits.txt\n?? h2exp_new/\n?? h2exp_old/\n?? h2exp_old2/\n?? h2out_0a7d542.log\n?? h2out_156b226.log\n?? h2out_1c29d7a.log\n?? h2out_1de9c02.log\n?? h2out_27b59fa.log\n?? h2out_2867f70.log\n?? h2out_28a4cc4.log\n?? h2out_32a766b.log\n?? h2out_34287c8.log\n?? h2out_3aefd79.log\n?? h2out_3cd6077.log\n?? h2out_42210b25c.log\n?? h2out_55753bd.log\n?? h2out_574fd1f.log\n?? h2out_696f03c.log\n?? h2out_6e6055f.log\n?? h2out_842cf62.log\n?? h2out_8f45edd.log\n?? h2out_95d84aa.log\n?? h2out_96e6499.log\n?? h2out_a098ee5.log\n?? h2out_ac2c204.log\n?? h2out_b463fa1.log\n?? h2out_b9b407a.log\n?? h2out_ba3a5fd.log\n?? h2out_beb18e0.log\n?? h2out_bfc7bc0fa.log\n?? h2out_c6c62c5.log\n?? h2out_c7bddac.log\n?? h2out_d4e6781.log\n?? h2out_d62ed83.log\n?? h2out_d7eecb8.log\n?? h2out_e02017a.log\n?? h2out_e211278.log\n?? h2out_ef8ece6.log\n?? h2out_f204611.log\n?? h2out_f60f5f3.log\n?? h2out_fe8bcd6.log\n?? h2patch.py\n?? h2patch2.py\n?? h2patch3.py\n?? h2runone.sh\n?? h2time.jl\n?? h2time_cnt.jl\n?? h2wt_0a7d542/\n?? h2wt_156b226/\n?? h2wt_1c29d7a/\n?? h2wt_1de9c02/\n?? h2wt_27b59fa/\n?? h2wt_2867f70/\n?? h2wt_28a4cc4/\n?? h2wt_32a766b/\n?? h2wt_34287c8/\n?? h2wt_3aefd79/\n?? h2wt_3cd6077/\n?? h2wt_42210b25c/\n?? h2wt_55753bd/\n?? h2wt_574fd1f/\n?? h2wt_696f03c/\n?? h2wt_6e6055f/\n?? h2wt_842cf62/\n?? h2wt_8f45edd/\n?? h2wt_95d84aa/\n?? h2wt_96e6499/\n?? h2wt_a098ee5/\n?? h2wt_ac2c204/\n?? h2wt_b463fa1/\n?? h2wt_b9b407a/\n?? h2wt_ba3a5fd/\n?? h2wt_beb18e0/\n?? h2wt_bfc7bc0fa/\n?? h2wt_c6c62c5/\n?? h2wt_c7bddac/\n?? h2wt_d4e6781/\n?? h2wt_d62ed83/\n?? h2wt_d7eecb8/\n?? h2wt_e02017a/\n?? h2wt_e211278/\n?? h2wt_ef8ece6/\n?? h2wt_f204611/\n?? h2wt_f60f5f3/\n?? h2wt_fe8bcd6/\n?? h4_work/\n?? hsq_work/\n?? inv883/\n?? jae-bootstrap-pilot-r45-20260908-backup/\n?? jcall-diag-depot/\n?? jcall-fix.log\n?? jcall-fix.sh\n?? jcall-fix2.sh\n?? jcall-gdb.sh\n?? jcall-lddebug.sh\n?? jcall-min.R\n?? jcall-min.sh\n?? julia-time-verify/\n?? lane-b-finalizer-source-v1.tar.gz\n?? lane-b-finalizer-source-v2.tar.gz\n?? lane_b_b2_totoro_resume_20260811/\n?? lanes/\n?? lncvr-corrigendum-d579bfe.tar.gz\n?? lncvr-corrigendum/\n?? local-scratch/\n?? locscale-profile-boundary-base/\n?? locscale-profile-boundary-diag.jl\n?? locscale-profile-boundary-repro.jl\n?? locscale-profile-boundary-wi.jl\n?? locscale-profile-boundary/\n?? logs/\n?? lsvcov-condition/\n?? lsvcov-depot/\n?? mopup-suite.sh\n?? mspl-b1-totoro-launch.sh\n?? mspl-forkB-t1-totoro-deploy.sh\n?? mspl-s0/\n?? ordchk.R\n?? overnight-suite.sh\n?? parity-joint/\n?? parity-suite.sh\n?? parity_joint/\n?? partial.R\n?? pigauto-active-recovery-20260818/\n?? pigauto-active-recovery-results/\n?? pigauto-stageb-provenance-0c412f8/\n?? pigauto-stageb-provenance-7a2ac02/\n?? pigauto-stageb-provenance-cb47a9b/\n?? pigauto-stageb-provenance-df7845a/\n?? pigauto-stageb-timing-69f0fa5/\n?? pigauto-stagec-pilot-results/\n?? pigauto-stagec-pilot/\n?? pigauto_0.11.0.9000.tar.gz\n?? pigauto_c655d75.tar.gz\n?? pigauto_gnn_evidence_campaign/\n?? pigauto_gnn_evidence_phase_b/\n?? pigauto_gnn_evidence_phase_b_mnar/\n?? pigauto_gnn_sentinel_prerun/\n?? pigauto_lambda_src/\n?? pigauto_mi_posterior/\n?? pigauto_mondrian_realdata/\n?? pigauto_regime_map/\n?? pigauto_rubin/\n?? pigauto_sim/\n?? pigauto_v010/\n?? pin-setup.log\n?? pin-setup.sh\n?? pmm_repro.R\n?? post-log.txt\n?? prog.R\n?? rcond_test/\n?? repro_base.log\n?? repro_new.log\n?? repro_new2.log\n?? reproduce-b124.R\n?? rose_bias.R\n?? rose_independent.R\n?? route-val.R\n?? route-val.sh\n?? run-1.10.12-1.pid\n?? run-1.10.12-2.pid\n?? run-1.10.12-3.pid\n?? run-1.10.12-4.pid\n?? run-1.13-1.pid\n?? run-1.13-2.pid\n?? run-1.13-3.pid\n?? run-1.13-4.pid\n?? run_prof.sh\n?? runtests_lsb.sh\n?? s7b_pilot/\n?? s7b_work/\n?? scratch/\n?? setup_arm.jl\n?? sim-archive/\n?? skewchk.R\n?? skewdgp.R\n?? spatial-rho-full-a32726b19-compact.tar.gz\n?? spatial-rho-pilot-9c6746cb5-compact.tar.gz\n?? spatial-rho-recovery-5600c7515.tar.gz\n?? spatial-rho-recovery-5600c7515/\n?? spatial-rho-recovery-8c1f884ef.tar.gz\n?? spatial-rho-recovery-8c1f884ef/\n?? spatial-rho-recovery-9c6746cb5.tar.gz\n?? spatial-rho-recovery-9c6746cb5/\n?? spatial-rho-recovery-9eb6018c2.tar.gz\n?? spatial-rho-recovery-9eb6018c2/\n?? spatial-rho-recovery-a32726b19.tar.gz\n?? spatial-rho-recovery-a32726b19/\n?? spatial-rho-recovery-c034201fe.tar.gz\n?? spatial-rho-recovery-c034201fe/\n?? spatial-rho-recovery-e40470b3c.tar.gz\n?? spatial-rho-recovery-e40470b3c/\n?? spatial-rho-recovery-e461d79ff.tar.gz\n?? spatial-rho-recovery-e461d79ff/\n?? staged-eta-20260725/\n?? structured-rho-87fa-027610316/\n?? t_fast_1.10.12_test_locscale_profile_status.jl.log\n?? t_fast_1.10.12_test_locscale_profile_threads.jl.log\n?? t_fast_1.10.12_test_ls_inv2x2_chol.jl.log\n?? t_fast_1.10.12_test_profile_nuisance_status.jl.log\n?? t_fast_1.13_test_locscale_profile_status.jl.log\n?? t_fast_1.13_test_locscale_profile_threads.jl.log\n?? t_fast_1.13_test_ls_inv2x2_chol.jl.log\n?? t_fast_1.13_test_profile_nuisance_status.jl.log\n?? t_slow_base_1.10.log\n?? t_slow_new_1.10.log\n?? taskA_497/\n?? taskB_test/\n?? tgb5-110-inst.log\n?? tgb5-113-inst.log\n?? tgb5-logs/\n?? tmb-speedup-s1/\n?? tmb-speedup-s4/\n?? totoro-campaign.sh\n?? totoro-fittest.R\n?? totoro-setup.sh\n?? twin-gap-batch-5-110/\n?? twin-gap-batch-5-113/\n?? vcov_armA/\n?? vcov_armB/\n?? verify577/\n?? verify_raw.R\n?? verify_seeds.R\n?? wi_base.log\n?? wi_new.log\n?? ~gllvmtmb-arcG-coverage/"
+git_metadata_status = "partial"
+readme_sha256 = "41dbe7888f95dbe30e6d0cc85e9bb8a35f1d53898f1e2f4e2866c8f79944f45e"
+expected_fit_denominator = 5
+blas_threads = 1
+"Manifest.toml_sha256" = "c5940f2be0347f7ff987468aed67f17070f556a0aa99e0e5ec5317898cfa0fad"
+starts_per_fit = 2
+scope = "diagnostic completion only; not A2 acceptance, population recovery, intervals, or covered promotion"
+initial_keyword_supplied = false
+created_utc = "2026-09-30T16:15:08.224"
+generator_span_sha256 = "e26dbcc8a9e766c76c5eb0bcde2fc6c3dca3fc27732cc043c161f31b9dcdd93e"
+julia_threads = 4
+script_sha256 = "026c3d5ad3a192e26626d3bb38d146266b24b397e981d244d88c960be15f267e"
+host = "totoro"
+fixture_file_sha256 = "e621d60892c9ec9ceab6a1b06d051495d2aa1b9d6c70346023129a993b2d9085"
+oracle_atol = 1.0e-8
+julia_executable = "/home/snakagaw/hsq_work/julia-1.10.0/bin/julia"
+seed = 20260929
+endian_bom = "67305985"
+data_hash_schema = "array dimensions/NUL/native-endian Float64 column-major bytes; IDs comma-separated; labels NUL-separated"
+
+[comparison_targets]
+interior_screen = 0.01
+prediction_rtol = 0.002
+fixed_metric_covariance_relative = 0.002
+prediction_atol = 1.0e-5
+loglik_atol = 0.002
+
+[source_files]
+"src/model_spec.jl" = "d49de74e3990e18e73db37bab9b3019f46dcaa29c4f7102fc3f53fe60fa9f5fb"
+"src/data.jl" = "39efaac183375e0f735836e5c3d398a1b8f59fffb5b7e7f3b616678b01d727b8"
+"src/control.jl" = "c466b4cf9e33fcafe8b4821791af54cc559a2dab78755fa759f387f6601e6b3f"
+"src/postfit.jl" = "d065d525ccdca8c8d881432f3c312141929571d52629f38bf72cfc513bdbf71f"
+"src/sparse_bridge.jl" = "f8a681b7491a002577747775fef26f486d53ab2b4b8def6f6071e7a5eb4c2427"
+"src/genomic.jl" = "76c4053d00ed3f35db133089c5f0bfb979c1da70503a4697054bf9fa002d4b9f"
+"src/takahashi_selinv.jl" = "38a07e2e34da2f4a295e52e25b1f1d067a0b7e1b2893bdef8c73f1f78c704782"
+"src/planned_terms.jl" = "a47d953d72565f347db805b5d0c7bdc86d5440dedaa6454c674f6e48c9607d5c"
+"src/random_regression.jl" = "761151eb0297bece4c859db8a504a244a26510d320f123f85a9a9295621e7a5c"
+"src/pedigree.jl" = "522741349ecfca48afc29d06f04bf4f6a0206fbc84648606e1ebf9f5444267d4"
+"src/multivariate.jl" = "fc41aefefb61b2cc915d4f802b0017dc4daea5daa795a9d3421854e9c4958670"
+"src/genetic_gllvm.jl" = "0727459d2f163835519ae8cf8481d2439b90ba5065cfc8d74ad2c0c08736d2ca"
+"src/validation_status.jl" = "95f90c3a166f7ead65afc4205d5139155f86c002c697045388a1b2d383d14010"
+"src/iterative_solve.jl" = "a4adfe04fe736fd55039b329d9d1d1fa4083b02478dc33c60181c7c453c42132"
+"src/gpu_ext.jl" = "b5bfbe73e12363cb7c9d518841006554c220d93038294a1826faefc1a1b2767f"
+"src/likelihood.jl" = "90cc76897c2b977f4bebc456d1e6c8d8f2647a7bb7ec6e8c9135884da0f17e30"
+"src/nongaussian.jl" = "24a31752319a1c51dbded522d8e20d066227d208e71be970cb94891beb87da00"
+"src/placeholders.jl" = "e95f47efb13018fa8fc2fb7cbf6b08d4c4a1add8ca3b9c95b43ead259bf9955b"
+"src/HSquared.jl" = "5c6c4c84e372e9adb75dd43d326e7603243286313c788cd3c98a599d1468eaf0"
+"src/errors.jl" = "6ebb3635c308097213b1581fae26e94089969f34a07cbf5b735a5ee945d44fba"
+"src/backends.jl" = "b22f118ea8aeba5dceb80918ee40a3f7d698211c69e91ee6c7e6c5b718b10cf9"
+"src/bridge_payload_v2.jl" = "3f1c5eed39414860953898ec23e6a8cec622d90d7009f107519892b22b63a7e0"
+"src/evolvability.jl" = "fd49987ee69c1f9b6e3335bdb6e4f8c73b6f0cdab3da4b7263cf4e87b6577ff3"
+"src/plotting_ext.jl" = "e38c4d436d59bce93315eebc0296e6227fdd71990b25f2b4f608f302c458a569"
+
+[data_array_sha256]
+Y = "bd9a65f5dcd68ce53897f813e435f959445b9b6d859ea5d8bbd27002ce26d58e"
+Z = "b2c50a1e951463ca34ccf07e44b8d03f094373cdd9892cc6f1d90f81648ee37e"
+ids = "b6a72fb6f35efb6f78cb29b2abcafff800ccac6beac4531d8f81a3fbc8105798"
+X = "8ca5a409f9da3e3ed3e1cee12a8b319c6453f207436c243827754ba43801827b"
+traits = "c532409567affd13f4c089b18e55ce181115381e27873a3ff7e121ea25607e70"
+G = "242418b62d547b2d8d6aa56c10d7b5073ae13f61fb05fd2800d6ddb4960c71a5"
+R = "e191936b6de85cdbde4d7feb171fcc5565097c489f30c0036c2b3f7b06ec7f36"
+loadings = "7daa76c3dfe2a6d97555b68cfc778776baadb7bc5c9ffd6edc50445854754ac9"
+Ainv = "c1602e2413f4003ee479948435d98d1090c802fe61422e862d4732892fa738d7"
+uniqueness = "fd5a89713124452d7cec0b10506273fc2fc50d01274c463f438e646befcb3643"
+
+[git_metadata_errors]
+git_head = "failed process: Process(`git -C /home/snakagaw/hsq_work/hsquared-fa-current-candidate-20260930 rev-parse HEAD`, ProcessExited(128)) [128]\n"
+
+[[cases]]
+name = "baseline"
+map_rows = [[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]]
+permutation = [1, 2, 3, 4]
+[[cases]]
+name = "units_D1"
+map_rows = [[2.0, 0.0, 0.0, 0.0], [0.0, 0.5, 0.0, 0.0], [0.0, 0.0, 1.5, 0.0], [0.0, 0.0, 0.0, 0.8]]
+permutation = [1, 2, 3, 4]
+[[cases]]
+name = "units_inverse_D1"
+map_rows = [[0.5, 0.0, 0.0, 0.0], [0.0, 2.0, 0.0, 0.0], [0.0, 0.0, 0.6666666666666666, 0.0], [0.0, 0.0, 0.0, 1.25]]
+permutation = [1, 2, 3, 4]
+[[cases]]
+name = "order_3142"
+map_rows = [[0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 0.0, 1.0], [1.0, 0.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0]]
+permutation = [3, 1, 4, 2]
+[[cases]]
+name = "order_4321"
+map_rows = [[0.0, 0.0, 0.0, 1.0], [0.0, 0.0, 1.0, 0.0], [0.0, 1.0, 0.0, 0.0], [1.0, 0.0, 0.0, 0.0]]
+permutation = [4, 3, 2, 1]

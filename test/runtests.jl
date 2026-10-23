@@ -2,11 +2,30 @@ using HSquared
 using LinearAlgebra
 using SparseArrays
 using Test
+using REPL  # Julia >= 1.11 loads the Docs.doc rendering API through this stdlib.
 using TOML
+using Statistics  # means used by post-fit contract fixtures
 using Random  # seeded fixtures only (e.g. the repeatability-interval test); deterministic/reproducible
 using JSON3   # P0.5 payload-v2 cross-lane parity testset
 
 include(joinpath(@__DIR__, "..", "comparator", "prepare_blupf90_multitrait.jl"))
+include("test_selinv_trace_contracts.jl")
+include("test_pedigree_inbred_known_parent.jl")
+include("test_ordered_probit_cutpoint_rails.jl")
+include("test_ai_reml_em_warmup_posdef.jl")
+include("test_issue_404_readme_install.jl")
+include("test_issue_405_quickstart_docs.jl")
+include("test_issue_406_quickstart_h2_caveat.jl")
+include("test_issue_414_heritability_docs.jl")
+include("test_issue_417_api_reference_docs.jl")
+include("test_issue_418_changelog_claims.jl")
+include("test_issue_419_docs_fragment.jl")
+include("test_issue_430_laplace_caveat_docs.jl")
+include("test_issue_421_sparse_laplace.jl")
+include("test_issue_357_henderson_mme_cholesky.jl")
+include("test_issue_357_result_payload_reuse.jl")
+include("test_issue_413_two_effect_scale_warning.jl")
+include("test_issue_416_weak_identifiability_warning.jl")
 
 # dense NRM helper lives in src now: HSquared._numerator_relationship (src/pedigree.jl)
 
@@ -73,8 +92,15 @@ function _mme_inverse_random_block_for_test(X, Z, Ainv, sigma_a2, sigma_e2)
     return inverse_lhs[(p + 1):end, (p + 1):end]
 end
 
+# Julia General-registry hygiene (Aqua.jl): deps_compat, stale deps, exports.
+# Sister pattern: DRM.jl `test/test_aqua.jl`. A19 — not a covered-flip gate.
+include("test_aqua.jl")
+
 @testset "HSquared Phase 0 scaffold" begin
     control = HSControl()
+    placeholder_message = sprint(showerror, Phase0NotImplementedError("unwired target"))
+    @test occursin("not implemented on this route", placeholder_message)
+    @test !occursin("Model fitting is planned but not implemented", placeholder_message)
 
     @test control.backend isa AutoBackend
     @test control.accelerator == :auto
@@ -158,32 +184,61 @@ end
 
     grammar = formula_status()
     @test grammar isa FormulaStatus
+    # Julia exposes an engine-local diagnostic, not the broader R formula
+    # inventory. Equal columns do not imply equal rows or parser behavior.
     @test length(grammar) == 20
     @test [row.term for row in grammar][1] == "animal(1 | id, pedigree = ped)"
     @test grammar[end].term == "animal(trait | id, pedigree = ped, cov = fa(K = 2))"
-    @test [row.syntax_status for row in grammar][1] == "parsed"
-    @test [row.fitting_status for row in grammar][1] == "experimental tiny bridge only"
-    @test all(row.fitting_status == "not available" for row in grammar if row.syntax_status != "parsed")
+    @test [row.syntax_status for row in grammar][1] == "engine bridge"
+    @test [row.fitting_status for row in grammar][1] == "experimental Julia engine route only"
+    @test all(row.fitting_status == "not available" for row in grammar if row.syntax_status in ("reserved", "planned"))
     @test "permanent(1 | id)" in [row.term for row in grammar]
     @test "precision(1 | id, Q = Q)" in [row.term for row in grammar]
     @test "genomic(1 | id, Ginv = Ginv)" in [row.term for row in grammar]
     @test any(row.syntax_status == "planned" for row in grammar)
-    @test Set(row.syntax_status for row in grammar) == Set(["parsed", "reserved", "planned"])
+    @test Set(row.syntax_status for row in grammar) == Set(["engine bridge", "reserved", "planned"])
+    @test occursin("R owns and parses", grammar[1].current_behavior)
+    @test occursin("R cov = fa() formula syntax remains reserved", grammar[end].current_behavior)
+    @test occursin("expert-control route", grammar[end].current_behavior)
+    @test !any(occursin("GLLVM", row.term) for row in grammar)
 
     validation = validation_status()
     @test validation isa ValidationStatus
-    @test length(validation) == 55
+    @test length(validation) == 56
+    # A18: Documenter status table must stay generated from validation_status().
+    status_page = read(joinpath(@__DIR__, "..", "docs", "src", "validation-status.md"), String)
+    @test occursin("BEGIN GENERATED validation-status-table", status_page)
+    @test occursin("END GENERATED validation-status-table", status_page)
+    @test all(occursin("`$(row.id)`", status_page) for row in validation)
+    # A25 Grace: id-only checks miss prose drift (Rose F3 — C8 cite present in
+    # validation_status() but absent from the generated page). Mirror the writer
+    # cell escape and require each claim_boundary on the page.
+    _status_page_cell(s) = begin
+        t = replace(string(s), "|" => "\\|", "\n" => " ")
+        replace(t, r"\s+" => " ")
+    end
+    @test all(occursin(_status_page_cell(row.claim_boundary), status_page) for row in validation)
     @test "V3-NEFFECT-REML" in [row.id for row in validation]
     @test "V2-APY" in [row.id for row in validation]
     @test "V3-NEFFECT-SPARSE" in [row.id for row in validation]
     @test "V3-NEFFECT-MATFREE-FIT" in [row.id for row in validation]
     @test "V4-DIRECT-MATERNAL" in [row.id for row in validation]
+    # The S5 tail-scale gate and the G10 S3 dossier both cite V1-MATFREE-REML; the row must
+    # exist for that evidence to be auditable, and must stay `partial` until S6/S4/S7 close.
+    matfree = only(r for r in validation if r.id == "V1-MATFREE-REML")
+    @test matfree.status == "partial"
+    @test occursin("25,000", matfree.evidence)
+    @test occursin("public_covered_count", matfree.claim_boundary)
     @test validation[begin].id == "V0-LOAD"
-    @test validation[end].id == "V6-GGLLVM-REML"
+    @test validation[end].id == "V6-GGLLVM-LAPLACE"
     @test "V4-EVOLVE" in [row.id for row in validation]
     @test "V6-GGLLVM-DESC" in [row.id for row in validation]
     @test "V6-GGLLVM-MARGINAL" in [row.id for row in validation]
-    @test "V6-GGLLVM-REML" in [row.id for row in validation]
+    @test "V6-GGLLVM-LAPLACE" in [row.id for row in validation]
+    gllvm_row = only(row for row in validation if row.id == "V6-GGLLVM-LAPLACE")
+    @test occursin("fixed-and-genetic-effect integrated Laplace", gllvm_row.evidence)
+    @test occursin("not ordinary non-Gaussian ML or REML", gllvm_row.claim_boundary)
+    @test occursin("Gaussian reduction", gllvm_row.claim_boundary)
     @test "V5-MARKER-THRESHOLD" in [row.id for row in validation]
     @test "V3-RR-REML" in [row.id for row in validation]
     @test "V1-METAFOUNDER" in [row.id for row in validation]
@@ -208,6 +263,24 @@ end
     @test occursin("reported-not-gated", lowercase(nbinom_row.evidence)) ||
           occursin("REPORTED-NOT-GATED", nbinom_row.evidence)
     @test occursin("not a covered claim", nbinom_row.claim_boundary)
+    legacy_v6_ids = ("V6-NBINOM", "V6-BETABINOMIAL", "V6-PROBIT", "V6-ORDINAL", "V6-GAMMA")
+    @test all(
+        occursin(
+            "outside the 0.9 three-field delivery",
+            only(row for row in validation if row.id == id).claim_boundary,
+        ) for id in legacy_v6_ids
+    )
+    @test all(
+        occursin(
+            "not conventional profiled-fixed-effect Laplace-ML, REML, or AI-REML",
+            only(row for row in validation if row.id == id).claim_boundary,
+        ) for id in legacy_v6_ids
+    )
+    @test all(
+        occursin("exact REML applies to its Gaussian reduction", only(row for row in validation if row.id == id).claim_boundary) &&
+        occursin("joint observed-curvature Hessian", only(row for row in validation if row.id == id).claim_boundary)
+        for id in legacy_v6_ids
+    )
     # H2: beta-binomial overdispersed-logit family row.
     betabin_row = only(row for row in validation if row.id == "V6-BETABINOMIAL")
     @test betabin_row.status == "partial"
@@ -230,11 +303,13 @@ end
     @test occursin("OrderedProbitResponse", ordinal_row.evidence)
     @test occursin("REDUCTION to", ordinal_row.evidence)
     @test occursin("public default", ordinal_row.claim_boundary)
+    @test !occursin("ML-vs-REML", ordinal_row.evidence)
     # T-Gamma: Gamma (log-link) family row.
     gamma_row = only(row for row in validation if row.id == "V6-GAMMA")
     @test gamma_row.status == "covered"
     @test occursin("GammaResponse", gamma_row.evidence)
     @test occursin("EXPONENTIAL", gamma_row.evidence)
+    @test !occursin("REML leg", gamma_row.evidence)
     @test occursin("public default", gamma_row.claim_boundary)
     @test Set(row.status for row in validation) == Set(["covered", "covered_external", "partial", "planned"])
     @test "V1-AINV-MRODE9" in [row.id for row in validation]
@@ -280,6 +355,58 @@ end
     @test occursin("hsquared PR #84", snpblup_row.evidence)
     @test occursin("Julia-native/R-consumed comparator target", snpblup_row.claim_boundary)
     @test occursin("comparator parity against the serialized target", snpblup_row.missing)
+    ss_row = only(row for row in validation if row.id == "V2-SSHINV")
+    @test ss_row.status == "covered"
+    @test occursin("NO-ANCHOR", ss_row.evidence)
+    @test occursin("0b03d67e", ss_row.evidence)
+    @test occursin("8e6e038b", ss_row.evidence) || occursin("0533e9da", ss_row.evidence)
+    @test occursin("e6d0573d", ss_row.evidence) || occursin("recovery-substitution", ss_row.evidence)
+    @test occursin("e9676014", ss_row.evidence) || occursin("reported, not claim-gated", ss_row.evidence)
+    @test occursin("2ca6cdaf", ss_row.evidence)
+    @test occursin("82c0b4f5", ss_row.evidence) || occursin("RATIFIED", ss_row.evidence)
+    @test occursin("reported, not claim-gated", ss_row.claim_boundary)
+    @test occursin("NO-ANCHOR", ss_row.claim_boundary)
+    @test occursin("opt-in partial", ss_row.claim_boundary)
+    @test occursin("public_covered_count` stays 7", ss_row.claim_boundary)
+    @test occursin("0.8.0", ss_row.claim_boundary)
+
+    # Gate B candidate: public wording must retain the explicit genomic target
+    # and must not call a non-Gaussian Laplace objective REML.
+    index_page = read(joinpath(@__DIR__, "..", "docs", "src", "index.md"), String)
+    grammar_page = read(joinpath(@__DIR__, "..", "docs", "src", "model-spec-grammar.md"), String)
+    bridge_page = read(joinpath(@__DIR__, "..", "docs", "design", "12-bridge-compatibility.md"), String)
+    gllvm_source = read(joinpath(@__DIR__, "..", "src", "genetic_gllvm.jl"), String)
+    @test occursin("the explicit", index_page)
+    @test occursin("`target = \"genomic\"`", index_page)
+    @test !occursin("genomic GREML default-route", index_page)
+    @test !occursin("default-routed and covered", status_page)
+    @test !occursin("default-routed and covered", grammar_page)
+    @test !occursin("R-public default route", bridge_page)
+    gllvm_source_normalized = replace(gllvm_source, "\r\n" => "\n")
+    @test occursin("fixed-and-genetic-effect integrated objective", gllvm_source_normalized)
+    @test occursin("not ordinary non-Gaussian ML", gllvm_source_normalized)
+    @test !occursin("structured non-Gaussian REML recovery", gllvm_source)
+    @test !occursin("at the REML optimum", gllvm_source)
+
+    # FA/SS engine coverage must remain separate from R-public coverage in
+    # both status ledgers; this locks claim boundaries without changing rows.
+    capability_page = read(joinpath(@__DIR__, "..", "docs", "design", "capability-status.md"), String)
+    debt_page = read(joinpath(@__DIR__, "..", "docs", "design", "validation-debt-register.md"), String)
+    capability_lines = split(capability_page, '\n')
+    capability_intro = join(capability_lines[1:min(length(capability_lines), 25)], "\n")
+    @test occursin("public_covered_count", capability_intro)
+    @test occursin("**7**", capability_intro)
+    @test occursin("V4-FA", capability_page)
+    @test occursin("V2-SSHINV", capability_page)
+    @test occursin("not R-public", capability_page)
+    @test occursin("V4-FA", debt_page)
+    @test occursin("V2-SSHINV", debt_page)
+    @test occursin("bounded R FA expert-control route is experimental/partial", debt_page)
+    @test occursin("R `single_step()` stays opt-in partial", debt_page)
+    @test !occursin("Fitted non-Gaussian (Laplace/VA REML)", capability_page)
+    @test !occursin("Fitted non-Gaussian (Laplace/VA REML)", debt_page)
+    @test !occursin("REML-style", capability_page)
+
     mv_row = only(row for row in validation if row.id == "V4-MULTIVARIATE")
     @test mv_row.phase == "Phase 4"
     @test mv_row.status == "partial"
@@ -343,7 +470,7 @@ end
     @test !occursin("likelihood-ratio tests for the covariances", mvreml_row.missing)
     fa_row = only(row for row in validation if row.id == "V4-FA")
     @test fa_row.phase == "Phase 4B"
-    @test fa_row.status == "partial"
+    @test fa_row.status == "covered"
     @test occursin("factor_analytic_covariance", fa_row.evidence)
     @test occursin("sign-canonicalization", fa_row.evidence)
     @test occursin("genetic_loadings", fa_row.evidence)
@@ -356,12 +483,23 @@ end
     @test occursin("failure-mode triage", fa_row.evidence)
     @test occursin("R-only failure", fa_row.evidence)
     @test occursin("structured-metadata accessors", fa_row.claim_boundary)
-    @test occursin("no R-facing", fa_row.claim_boundary)
+    @test occursin("R-facing `cov=fa` syntax", fa_row.claim_boundary)
     @test occursin("not rotation-identified", fa_row.claim_boundary)
+    # design-55: textbook no-anchor is on evidence (claim_boundary left
+    # unchanged so the generated docs/src page stays in sync under the g5 lease)
+    @test occursin("NO-ANCHOR DISCLOSURE", fa_row.evidence)
+    @test occursin("no Mrode factor-analytic pin table", fa_row.evidence)
+    @test occursin("55-v08-fa-no-anchor-disclosure", fa_row.evidence)
+    @test fa_row.status == "covered"
+    @test occursin("d8148a3a", fa_row.evidence) || occursin("ok_recovery", fa_row.evidence)
+    @test occursin("d3e9ca09", fa_row.evidence) || occursin("recovery-substitution", fa_row.evidence)
+    @test occursin("2ca6cdaf", fa_row.evidence) ||
+          occursin("2026-09-03-v08-fa-darwin-sign", fa_row.evidence)
+    @test occursin("54-fa-grammar-freeze", fa_row.evidence) || occursin("RATIFIED", fa_row.evidence)
     # #47 closeout: the boundary-aware LRT applies to structured fits; structured
     # SEs stay honestly absent (rotation-nonidentified loadings)
     @test occursin("covariance_structure_lrt", fa_row.evidence)
-    @test occursin("rotation-nonidentified", fa_row.evidence)
+    @test occursin("rotation-nonidentified", fa_row.missing)
     @test !occursin("covariance SEs or LRTs", fa_row.missing)
     @test occursin("standard errors for the rotation-nonidentified structured loadings", fa_row.missing)
     # #42 scoped: the diagonal/unstructured bridge payload row
@@ -447,7 +585,13 @@ end
     @test occursin("coverage calibration", threshold_row.missing)
     @test occursin("STANDING DEBT", threshold_row.missing)        # covered does not retire owed work
     @test occursin("SCOPED", threshold_row.claim_boundary)        # scoped covered claim
-    @test occursin("FITTING = 1", threshold_row.claim_boundary)   # public default unchanged
+    @test occursin("per-dataset add-one permutation rule", threshold_row.claim_boundary)
+    @test occursin("FIXED-EFFECT/intercept-only single-marker scan", threshold_row.claim_boundary)
+    @test occursin("type-I-CONTROL", threshold_row.claim_boundary)
+    @test occursin("broader-LD/covariate-adjusted calibration", threshold_row.claim_boundary)
+    @test occursin("NOT the public default", threshold_row.claim_boundary)
+    @test occursin("R-public covered count stays 7", threshold_row.claim_boundary)
+    @test !occursin("FITTING = 1", threshold_row.claim_boundary)
     marker_recovery_script = normpath(joinpath(@__DIR__, "..", "sim", "phase5_marker_scan_recovery.jl"))
     @test isfile(marker_recovery_script)
     marker_recovery_source = read(marker_recovery_script, String)
@@ -500,9 +644,9 @@ end
         end
 
         @test err isa ArgumentError
-        @test occursin("`$(name)()` is planned, not implemented.", sprint(showerror, err))
-        @test occursin("no standard quantitative-genetic extension", sprint(showerror, err))
-        @test occursin("genomic prediction", sprint(showerror, err))
+        @test occursin("`$(name)()` is a reserved formula term", sprint(showerror, err))
+        @test occursin("formula-term route is not implemented", sprint(showerror, err))
+        @test !occursin("no genomic prediction", sprint(showerror, err))
     end
 
     @test_throws Phase0NotImplementedError hsquared(nothing)
@@ -1069,9 +1213,9 @@ end
     yp = [3.0, 5.0, 8.0, 4.0, 6.0, 2.0, 5.0, 7.0]
     yb = [1.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0]
     ym = [7.0, 2.0, 6.0, 8.0, 3.0, 1.0, 7.0, 9.0]
+    @test_throws ArgumentError HSquared.laplace_reml_interval(yp, X, Z, Ainv; family = :poisson)
+    @test_throws ArgumentError HSquared.laplace_reml_interval(yb, X, Z, Ainv; family = :bernoulli)
     cis = (
-        HSquared.laplace_reml_interval(yp, X, Z, Ainv; family = :poisson),
-        HSquared.laplace_reml_interval(yb, X, Z, Ainv; family = :bernoulli),
         HSquared.laplace_reml_interval(ym, X, Z, Ainv; family = :binomial, n_trials = 10),
         HSquared.laplace_reml_interval(yb, X, Z, Ainv; family = :bernoulli_probit),
     )
@@ -1172,7 +1316,7 @@ end
     @test_throws ArgumentError HSquared.nongaussian_heritability(fp2)            # ambiguous μ
     @test HSquared.nongaussian_heritability(fp2; mu = 0.0).family === :bernoulli # works with μ
     nf = HSquared.NonGaussianFit((sigma_a2 = 1.0,), -3.0, [0.0], zeros(8), collect(1:8),
-                                 false, :poisson, :laplace, nothing, nothing)
+                                 false, :poisson, :laplace, nothing, nothing, false, nothing)
     @test_throws ArgumentError HSquared.nongaussian_heritability(nf)             # non-converged refused
     @test_throws ArgumentError HSquared.nongaussian_heritability(1.0, 0.0, HSquared.NegativeBinomialResponse(2.0))
 
@@ -1316,13 +1460,26 @@ end
     @test_throws ArgumentError normalize_pedigree(["a"], ["a"], ["0"])
     @test_throws ArgumentError normalize_pedigree(["a", "b"], ["b", "a"], ["0", "0"])
     @test_throws ArgumentError normalize_pedigree(["a", "b"], ["0", "a"], ["0", "a"])
-    # F1: inbreeding now uses Meuwissen-Luo (O(n)); max_relationship_cache no longer
-    # bounds it (it previously threw). The kwarg is ignored and the result is unchanged.
+    # A maximally deep, reverse-listed chain exercises the recursion depth in
+    # topological sorting. The existing large-pedigree fixture is broad but shallow.
+    chain_n = 12_000
+    chain_ids = collect(chain_n:-1:1)
+    chain_sire = [id == 1 ? 0 : id - 1 for id in chain_ids]
+    deep_chain = normalize_pedigree(chain_ids, chain_sire, zeros(Int, chain_n))
+    @test deep_chain.ids == collect(1:chain_n)
+    @test deep_chain.original_order == collect(chain_n:-1:1)
+    @test all(parent == 0 || parent < child for (child, parent) in pairs(deep_chain.sire))
+    deep_chain_Ainv = pedigree_inverse(deep_chain)
+    @test size(deep_chain_Ainv) == (chain_n, chain_n)
+    @test all(isfinite, nonzeros(deep_chain_Ainv))
+
+    # F1: inbreeding uses the Meuwissen-Luo ancestry traversal without forming a
+    # dense relationship matrix; max_relationship_cache does not bound this route.
     @test inbreeding_coefficients(ped; max_relationship_cache = 2) ≈
           [HSquared._numerator_relationship(ped)[i, i] - 1.0 for i in 1:length(ped)]
 end
 
-@testset "F1 Meuwissen-Luo inbreeding (O(n), no dense cap)" begin
+@testset "F1 Meuwissen-Luo inbreeding avoids dense relationship storage" begin
     oracleF(p) = (A = HSquared._numerator_relationship(p); [A[i, i] - 1.0 for i in 1:length(p)])
     # deterministic well-mixed mating (multiplicative hash) so two parents share
     # ancestry -> GENUINE bounded inbreeding (no RNG; q=2000 -> ~1870/2000 inbred,
@@ -1572,12 +1729,9 @@ end
           mendelian_sampling_variances(normalize_pedigree(["s", "d", "o"], ["0", "0", "s"], ["0", "0", "d"]))
 end
 
-@testset "Phase 1 deep-inbreeding dense-inverse conditioning (V1-DENSE-COND)" begin
-    # A selfing chain drives inbreeding to F_k = 1 − (1/2)^k, which makes the
-    # relationship matrix increasingly ill-conditioned. This pins the documented
-    # V1-DENSE-COND caveat: `pedigree_inverse` is a DIRECT Henderson construction,
-    # so it stays exact regardless of conditioning — the caveat is about the
-    # downstream dense-`inv(Ainv)` estimators, not the sparse Ainv itself.
+@testset "Phase 1 finite deep-inbreeding case (V1-DENSE-COND)" begin
+    # This seven-animal selfing chain checks one finite conditioning level. It
+    # does not establish accuracy for all conditioning levels or sparse paths.
     ids = ["g0", "g1", "g2", "g3", "g4", "g5", "g6"]
     sire = ["0", "g0", "g1", "g2", "g3", "g4", "g5"]
     dam = ["0", "g0", "g1", "g2", "g3", "g4", "g5"]
@@ -1592,7 +1746,7 @@ end
     Ainv = Matrix(pedigree_inverse(ped))
     # conditioning genuinely grows with inbreeding (documents the caveat)
     @test cond(A) > 1.0e3
-    # the DIRECT Henderson inverse is exact despite the conditioning
+    # The direct construction agrees with the dense oracle at this finite case.
     @test maximum(abs.(Ainv * A - I)) < 1e-9
     @test maximum(abs.(Ainv .- inv(A))) < 1e-6
 
@@ -2013,13 +2167,23 @@ end
     @test [row.value for row in data_status(genotype_status_data).genotype_status] ==
           ["2", "2", "2", "2", "0", "0", "1", "table"]
 
+    custom_id_marker_status = data_status(
+        HSData(
+            (id = ["a", "b"], y = [1.0, 2.0]);
+            genotypes = (sample = ["a", "b"], m1 = [0, 1]),
+            genotype_id = :sample,
+        ),
+    ).marker_status
+    @test [row.value for row in custom_id_marker_status] ==
+          ["0", "1", "0", "not_available", "not_available", "not_available", "not_checked_no_marker_map"]
+
     duplicate_genotypes = Dict(
         :id => ["a", "b"],
         :m1 => [0, 1],
         "m1" => [2, 3],
     )
     @test [row.value for row in data_status(HSData((id = ["a", "b"], y = [1.0, 2.0]); genotypes = duplicate_genotypes)).genotype_status] ==
-          ["not_available", "2", "2", "2", "0", "1", "0", "table"]
+          ["2", "2", "2", "2", "0", "1", "0", "table"]
 
     matrix_expression_status = data_status(
         HSData(
@@ -2440,7 +2604,7 @@ end
     @test payload.nobs == 3
     @test payload.predictions ≈ [1.5, 2.0, 2.5]
     # #43: PEV/reliability are now standard payload fields, computed via the
-    # O(nnz(L)) (sparse-scalable) Takahashi selected inverse (:selinv), shaped
+    # sparse Takahashi selected inverse (:selinv, cost Θ(Σⱼ|L[:,j]|²)), shaped
     # (ids, values) to match the R bridge's hs_julia_id_values() unpack (hsquared#21).
     # (Non-trivial off-diagonal-Ainv / nfixed>1 parity is in the selinv testset.)
     @test payload.prediction_error_variance.ids == ["a", "b", "c"]
@@ -2950,14 +3114,15 @@ end
     spec = animal_model_spec(y, X, Z, Ainv; ids = ped.ids, method = :REML)
     mme = henderson_mme(spec, 1.2, 0.8)
 
-    pev_dense = prediction_error_variance(mme)
+    pev_dense = prediction_error_variance(mme; method = :dense)
     pev_selinv = prediction_error_variance(mme; method = :selinv)
     @test pev_selinv.ids == pev_dense.ids
     @test pev_selinv.values ≈ pev_dense.values rtol = 1e-10
-    @test reliability(mme; method = :selinv).values ≈ reliability(mme).values rtol = 1e-10
+    @test reliability(mme; method = :selinv).values ≈ reliability(mme; method = :dense).values rtol = 1e-10
 
-    # default stays :dense (contract unchanged)
-    @test prediction_error_variance(mme).values == pev_dense.values
+    # default is :selinv since #350 (:dense stays the explicit oracle)
+    @test prediction_error_variance(mme).values == pev_selinv.values
+    @test reliability(mme).values == reliability(mme; method = :selinv).values
 
     # AnimalModelFit path also supports :selinv
     fit = fit_variance_components(
@@ -2966,9 +3131,9 @@ end
         method = :REML,
     )
     @test prediction_error_variance(fit; method = :selinv).values ≈
-          prediction_error_variance(fit).values rtol = 1e-9
+          prediction_error_variance(fit; method = :dense).values rtol = 1e-9
     @test reliability(fit; method = :selinv).values ≈
-          reliability(fit).values rtol = 1e-9 atol = 1e-8
+          reliability(fit; method = :dense).values rtol = 1e-9 atol = 1e-8
 
     # Non-trivial fixture: 8-animal Mrode9-shaped pedigree (genuinely off-diagonal
     # Ainv that exercises the :selinv recursion) and nfixed = 2 (intercept +
@@ -3487,6 +3652,104 @@ end
     @test_throws ArgumentError fit_multi_effect(y, X, effects; method = :bogus)
 end
 
+@testset "V1-MATFREE-REML opt-in fence (fit_matrix_free_reml reachable only by name)" begin
+    # The `V1-MATFREE-REML` ledger row records this fitter as OPT-IN ONLY: no router may select
+    # it on a user's behalf, because the regime a route would serve is largely the one in which
+    # it has not been measured. On this branch the fence held STRUCTURALLY but nothing PINNED it
+    # -- `f261165e` ported the fitter body from the v0.7 lineage without the v0.7 in-CI fence
+    # tests, so re-wiring a route in would not have failed loudly. This testset is that pin.
+    #
+    # SCOPE, stated because the wider claim is false: this is the two-component ANIMAL-MODEL
+    # target router only. `fit_multi_effect(method = :auto)` is a DIFFERENT estimator
+    # (`V3-NEFFECT-MATFREE-FIT`) whose `:auto` router DOES deliberately route to a matrix-free
+    # engine -- see the dispatch testset immediately above. "`:auto` never selects matrix-free"
+    # holds here and nowhere else.
+    #
+    # NOT A PORT of the v0.7 fence testset, because the API differs and the v0.7 assertions would
+    # be WRONG here: v0.7 ACCEPTED `fit_animal_model(spec; target = :matrix_free)` and fenced only
+    # its `_auto_reml_route`, whereas this branch refuses the target outright. The debt is
+    # therefore discharged in a different form. A future porter must not "repair" (1) by
+    # re-admitting `:matrix_free` as a target -- that would widen the surface, not restore parity.
+    ped = normalize_pedigree(["a1","a2","a3","a4","a5","a6","a7","a8"],
+        ["0","0","a1","a1","a2","a2","a3","a5"], ["0","0","a2","a2","0","0","a4","a6"])
+    n = 8; X = ones(n, 1); Z = sparse(1.0I, n, 8); Ainv = pedigree_inverse(ped)
+    y = [2.0, 3.0, 2.5, 3.5, 4.0, 1.5, 3.0, 4.5]
+    spec = animal_model_spec(y, X, Z, Ainv; ids = ped.ids)
+
+    # (1) fit_animal_model refuses every matrix-free spelling, and :auto, as Symbol or String.
+    for bad in (:matrix_free, :matrix_free_reml, :matrix_free_mc_em_reml, :auto,
+                "matrix_free", "matrix_free_reml", "auto")
+        @test_throws ArgumentError fit_animal_model(spec; target = bad)
+    end
+
+    # (2) The accepted target surface is exactly four canonical targets and their aliases.
+    #     Adding a matrix-free target to `_coerce_fit_target` is what (1) exists to catch; this
+    #     pins the complement, so a silent WIDENING of the surface also goes red.
+    accepted = Dict(:variance_components => :variance_components,
+                    :dense_validation => :variance_components,
+                    :sparse_reml => :sparse_reml,
+                    :sparse_reml_validation => :sparse_reml,
+                    :ai_reml => :ai_reml,
+                    :ai_reml_validation => :ai_reml,
+                    :henderson_mme => :henderson_mme)
+    for (alias, canonical) in accepted
+        @test HSquared._coerce_fit_target(alias) === canonical
+    end
+    @test Set(values(accepted)) ==
+          Set([:variance_components, :sparse_reml, :ai_reml, :henderson_mme])
+
+    # (3) There is no `:auto` REML router on this branch at all. The v0.7 lineage had
+    #     `_auto_reml_route`; if one is reintroduced, this goes red and the fence is revisited.
+    @test !isdefined(HSquared, :_auto_reml_route)
+
+    # (4) No other engine module reaches the fitter. The only `src/` files that name it are its
+    #     own definition, the export list, and the ledger prose -- so wiring a call into
+    #     `likelihood.jl` or `bridge_payload_v2.jl` grows this set and goes red.
+    #     The walk is recursive (`walkdir`, not a top-level `readdir`): a call planted
+    #     under a future `src/` subdirectory still grows this set (JL-8).
+    srcdir = joinpath(@__DIR__, "..", "src")
+    src_jl_files_containing = function (rootdir, needle)
+        sort(String[
+            replace(relpath(joinpath(dir, f), rootdir), '\\' => '/')
+            for (dir, _, files) in walkdir(rootdir)
+            for f in files
+            if endswith(f, ".jl") && occursin(needle, read(joinpath(dir, f), String))
+        ])
+    end
+    naming = src_jl_files_containing(srcdir, "fit_matrix_free_reml")
+    @test naming == ["HSquared.jl", "iterative_solve.jl", "validation_status.jl"]
+
+    # Recursion pin: the same walker must see a nested file. Switching it to
+    # `readdir` would miss `nested/hidden.jl` and this goes red.
+    probe_root = mktempdir()
+    try
+        mkpath(joinpath(probe_root, "nested"))
+        write(joinpath(probe_root, "nested", "hidden.jl"), "fit_matrix_free_reml\n")
+        write(joinpath(probe_root, "top.jl"), "unrelated\n")
+        @test src_jl_files_containing(probe_root, "fit_matrix_free_reml") ==
+              ["nested/hidden.jl"]
+    finally
+        rm(probe_root; recursive = true, force = true)
+    end
+
+    # (5) Opt-in, not banned: calling it by name works and the fit self-labels. ONE EM step,
+    #     with no convergence or accuracy assertion -- the accuracy claim belongs to the frozen
+    #     S5 gate (opt-in, at q = 25,000 on a cluster), never to CI.
+    fit = fit_matrix_free_reml(spec; nprobe = 8, iterations = 1, seed = 1, compute_loglik = false)
+    @test fit.target === :matrix_free_reml
+    @test fit.variance_components_source === :estimated_matrix_free_mc_reml
+
+    # (6) REML-only, per the row: an ML spec is refused before any numerics run.
+    ml_spec = animal_model_spec(y, X, Z, Ainv; ids = ped.ids, method = :ml)
+    @test_throws ArgumentError fit_matrix_free_reml(ml_spec)
+end
+
+# v0.7 in-CI deterministic NUMERIC pins for fit_matrix_free_reml (path exists /
+# identities hold). Dedicated file so the fence testset above stays a fence.
+# NOT a covered flip. See the file header for what was deliberately not ported.
+include(joinpath(@__DIR__, "test_matfree_reml_inci_pins.jl"))
+include(joinpath(@__DIR__, "test_genomic_greml_s0_identity.jl"))
+
 @testset "Matrix-free MC-EM-REML fit recovers exact AI-REML (v0.8-S2 fit)" begin
     # fit_multi_effect_mc_reml is the matrix-free Monte-Carlo EM-REML FIT: every EM step is a
     # matrix-free PCG solve + the Hutchinson trace (C never assembled/factorized). It must
@@ -3602,7 +3865,8 @@ end
     @test pd.supplied === false                                   # ESTIMATED, not supplied
     @test pd.level == 0.95
     @test propertynames(pd) ==
-          (:term, :estimate, :lo, :hi, :panel, :level, :interval_method, :interval_status, :supplied)
+          (:term, :estimate, :lo, :hi, :panel, :level, :interval_method, :interval_status,
+           :interval_reason, :supplied)
     # interval consistency: matches the extractors when available, else NaN / "none"
     local h2ci
     try
@@ -3766,6 +4030,293 @@ end
     )
 end
 
+@testset "fit_ai_reml internal optimizer-localization diagnostics" begin
+    ids = ["d1", "d2", "d3", "d4", "d5", "d6", "d7", "d8"]
+    ped = normalize_pedigree(
+        ids,
+        ["0", "0", "d1", "d1", "d2", "d2", "d3", "d5"],
+        ["0", "0", "d2", "d2", "0", "0", "d4", "d6"],
+    )
+    spec = animal_model_spec(
+        [2.0, 3.0, 2.5, 3.5, 4.0, 1.5, 3.0, 4.5],
+        ones(8, 1),
+        sparse(1.0I, 8, 8),
+        pedigree_inverse(ped);
+        ids = ped.ids,
+        method = :REML,
+    )
+
+    # The public wrapper remains the exact fit half of the internal path.
+    public_fit = fit_ai_reml(spec; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0))
+    internal = HSquared._fit_ai_reml_diagnostics(
+        spec;
+        initial = (sigma_a2 = 1.0, sigma_e2 = 1.0),
+    )
+    @test internal.fit.spec === public_fit.spec
+    @test internal.fit.likelihood.loglik == public_fit.likelihood.loglik
+    @test internal.fit.likelihood.beta == public_fit.likelihood.beta
+    @test internal.fit.variance_components == public_fit.variance_components
+    @test internal.fit.converged == public_fit.converged
+    @test internal.fit.optimizer_status == public_fit.optimizer_status
+    @test internal.fit.iterations == public_fit.iterations
+    @test internal.fit.target == public_fit.target
+    @test internal.fit.dense_validation_path == public_fit.dense_validation_path
+    @test internal.fit.sparse_mme_path == public_fit.sparse_mme_path
+    @test internal.fit.variance_components_source == public_fit.variance_components_source
+    @test internal.diagnostics.termination_reason in
+          ("score_tolerance", "relative_change_tolerance")
+    @test internal.diagnostics.factorizations ==
+          internal.fit.iterations + internal.diagnostics.em_steps
+    @test internal.diagnostics.step_halvings >= 0
+    @test isfinite(internal.diagnostics.ai_score_norm)
+    @test all(isfinite, (internal.diagnostics.ai_score_a, internal.diagnostics.ai_score_e))
+
+    capped = HSquared._fit_ai_reml_diagnostics(spec; iterations = 1)
+    @test !capped.fit.converged
+    @test capped.diagnostics.termination_reason == "iteration_limit"
+    @test capped.diagnostics.factorizations == 1
+    @test capped.diagnostics.em_steps == 0
+    @test isfinite(capped.diagnostics.last_relative_change)
+
+    warmed = HSquared._fit_ai_reml_diagnostics(spec; iterations = 1, em_warmup = 5)
+    @test 0 <= warmed.diagnostics.em_steps <= 5
+    @test warmed.diagnostics.factorizations ==
+          warmed.fit.iterations + warmed.diagnostics.em_steps
+end
+
+@testset "v0.7 genomic closed-boundary resolution (doc 46)" begin
+    function boundary_fixture(mode)
+        # Deliberately construct strong lower/interior/upper profile targets.
+        # Do not regenerate endpoint expectations from a stdlib RNG: randn's
+        # seeded stream changed between Julia 1.10 and 1.12.
+        values = repeat(collect(range(0.25, 4.0; length = 20)), inner = 2)
+        n = length(values)
+        exponent = mode == :lower ? 0.0 : mode == :interior ? 0.3 :
+                   mode == :upper ? 0.75 : error("unknown boundary fixture mode")
+        signs = repeat([1.0, -1.0], n ÷ 2)
+        y = signs .* values .^ exponent
+        K = Matrix(Diagonal(values))
+        Q = Matrix(Diagonal(1 ./ values))
+        ids = ["id$(i)" for i in 1:n]
+        provenance = (
+            relationship_source = "markers",
+            relationship_method = "deterministic_test_kernel",
+            allele_frequency_source = "deterministic_test",
+            ridge = 0.0,
+            scale_denominator = 1.0,
+            relationship_scale = "K_test",
+            id_order_fingerprint = HSquared._genomic_id_order_fingerprint(ids),
+            marker_content_fingerprint = repeat("0", 64),
+            kernel_fingerprint = HSquared._genomic_matrix_fingerprint("K_lambda", K, ids),
+            precision_fingerprint = HSquared._genomic_matrix_fingerprint("Q_lambda", Q, ids),
+        )
+        spec = animal_model_spec(y, ones(n, 1), sparse(1.0I, n, n), Q;
+                                 ids = ids, method = :REML)
+        return (spec = spec, provenance = provenance, K = K)
+    end
+
+    @test HSquared._GENOMIC_BOUNDARY_EPSILON == 1e-7
+    @test HSquared._GENOMIC_BOUNDARY_GRID_STEP == 0.0025
+    @test HSquared._GENOMIC_BOUNDARY_DELTA == 1e-6
+    @test HSquared._GENOMIC_BOUNDARY_KKT_TOL == 1e-8
+    @test HSquared._GENOMIC_BOUNDARY_DOC46_COMMIT == "fe96a147"
+    @test HSquared._GENOMIC_BOUNDARY_DOC46_SHA256 ==
+          "283ab00bab3da925f0ac2916959efacaa7fb711c5da4dce09dd49ea568eef030"
+
+    lower_fixture = boundary_fixture(:lower)
+    lower = HSquared._fit_ai_reml_genomic_boundary(lower_fixture.spec;
+        provenance = lower_fixture.provenance, kernel = lower_fixture.K)
+    @test lower.boundary.status == "boundary_lower"
+    @test lower.boundary.profile_ratio == 0.0
+    @test lower.boundary.numerical_ratio == 1e-7
+    @test lower.fit.converged
+    @test lower.fit.optimizer_status == "boundary_lower"
+    @test lower.fit.variance_components.sigma_a2 > 0
+    @test lower.fit.variance_components.sigma_e2 > 0
+    @test abs(lower.fit.likelihood.loglik - lower.boundary.profile_loglik) /
+          length(lower_fixture.spec.y) <= 1e-8
+    @test lower.boundary.lower_derivative_per_observation <= 1e-8
+
+    upper_fixture = boundary_fixture(:upper)
+    upper = HSquared._fit_ai_reml_genomic_boundary(upper_fixture.spec;
+        provenance = upper_fixture.provenance, kernel = upper_fixture.K)
+    @test upper.boundary.status == "boundary_upper"
+    @test upper.boundary.profile_ratio == 1.0
+    @test upper.boundary.numerical_ratio == 1 - 1e-7
+    @test upper.fit.converged
+    @test upper.fit.optimizer_status == "boundary_upper"
+    # This compares the epsilon representation (r = 1 - 1e-7) with the exact
+    # r = 1 profile. Its first-order gap is about 1e-8 per observation; Julia
+    # 1.12 BLAS/LAPACK variation raises the observed gap to 1.09e-8.
+    @test abs(upper.fit.likelihood.loglik - upper.boundary.profile_loglik) /
+          length(upper_fixture.spec.y) <= 2e-8
+    @test upper.boundary.upper_derivative_per_observation >= -1e-8
+
+    interior_fixture = boundary_fixture(:interior)
+    interior_spec = interior_fixture.spec
+    ordinary = fit_ai_reml(interior_spec)
+    interior = HSquared._fit_ai_reml_genomic_boundary(interior_spec;
+        provenance = interior_fixture.provenance, kernel = interior_fixture.K)
+    @test interior.boundary.status == "interior"
+    @test interior.fit.variance_components == ordinary.variance_components
+    @test interior.fit.likelihood.loglik == ordinary.likelihood.loglik
+    @test interior.fit.optimizer_status == ordinary.optimizer_status
+    @test 1e-7 < interior.boundary.profile_ratio < 1 - 1e-7
+    @test all(isfinite, (interior.boundary.profile_loglik,
+                         interior.boundary.lower_derivative_per_observation,
+                         interior.boundary.upper_derivative_per_observation))
+
+    # The eigen-rotated evaluator is a performance rewrite of the frozen dense-H
+    # formula, so compare the two directly at both endpoints and an interior r.
+    precheck = HSquared._genomic_boundary_precheck(
+        interior_spec, interior_fixture.provenance, interior_fixture.K)
+    context = HSquared._genomic_profile_context(precheck)
+    n_boundary = length(interior_spec.y)
+    K_reconstructed = Matrix(precheck.qfactor \ Matrix{Float64}(I, n_boundary, n_boundary))
+    function dense_profile(r)
+        H = Symmetric(r .* K_reconstructed .+
+                      (1-r) .* Matrix{Float64}(I, n_boundary, n_boundary))
+        F = cholesky(H)
+        hi_x = F \ Matrix(interior_spec.X)
+        hi_y = F \ Vector(interior_spec.y)
+        fixed = cholesky(Symmetric(transpose(interior_spec.X) * hi_x))
+        rhs = transpose(interior_spec.X) * hi_y
+        quad = dot(interior_spec.y, hi_y) - dot(rhs, fixed \ rhs)
+        df = n_boundary - size(interior_spec.X, 2)
+        t_hat = quad / df
+        ll = -0.5 * (df * (1 + log(2pi*t_hat)) +
+            2sum(log, diag(F.U)) + 2sum(log, diag(fixed.U)))
+        (loglik=ll, t_hat=t_hat)
+    end
+    for r in (0.0, 0.37, 1.0)
+        fast = HSquared._genomic_profile_reml(context, r)
+        dense = dense_profile(r)
+        @test fast.loglik ≈ dense.loglik atol=1e-10 rtol=0
+        @test fast.t_hat ≈ dense.t_hat atol=1e-10 rtol=0
+    end
+
+    supplied_provenance = HSquared._genomic_precision_provenance(
+        Matrix(interior_spec.Ainv), interior_spec.ids)
+    supplied_route = HSquared._fit_ai_reml_genomic_boundary(interior_spec;
+        provenance = supplied_provenance)
+    @test supplied_route.boundary.profile_ratio == interior.boundary.profile_ratio
+    @test supplied_route.boundary.profile_loglik == interior.boundary.profile_loglik
+
+    bad_z = animal_model_spec(interior_spec.y, interior_spec.X,
+        sparse(circshift(Matrix{Float64}(I, n_boundary, n_boundary), (0, 1))), interior_spec.Ainv;
+        ids = interior_spec.ids, method = :REML)
+    unresolved = HSquared._fit_ai_reml_genomic_boundary(bad_z;
+        provenance = interior_fixture.provenance, kernel = interior_fixture.K)
+    @test unresolved.boundary.status == "boundary_unresolved"
+    @test unresolved.boundary.reason == "nonidentity_Z"
+    @test unresolved.fit === nothing
+    @test unresolved.boundary.profile_ratio === nothing
+    @test unresolved.boundary.numerical_ratio === nothing
+
+    rescued = HSquared._fit_ai_reml_genomic_boundary(interior_spec;
+        provenance = interior_fixture.provenance, kernel = interior_fixture.K,
+        iterations = 1)
+    @test rescued.boundary.status == "interior_rescued"
+    @test rescued.fit.converged
+    @test rescued.fit.optimizer_status == "interior_rescued"
+    @test abs(rescued.fit.likelihood.loglik - rescued.boundary.profile_loglik) /
+          n_boundary <= 1e-8
+
+    Q = Matrix(interior_spec.Ainv)
+    asymmetric = copy(Q); asymmetric[1, 2] += 0.1
+    asymmetric_spec = animal_model_spec(interior_spec.y, interior_spec.X,
+        interior_spec.Z, asymmetric; ids = interior_spec.ids, method = :REML)
+    asymmetric_result = HSquared._fit_ai_reml_genomic_boundary(asymmetric_spec;
+        provenance = interior_fixture.provenance, kernel = interior_fixture.K)
+    @test asymmetric_result.fit === nothing
+    @test asymmetric_result.boundary.reason == "asymmetric_precision"
+
+    nonfinite_y = copy(interior_spec.y); nonfinite_y[1] = NaN
+    nonfinite_y_spec = animal_model_spec(nonfinite_y, interior_spec.X,
+        interior_spec.Z, interior_spec.Ainv; ids = interior_spec.ids, method = :REML)
+    @test HSquared._fit_ai_reml_genomic_boundary(nonfinite_y_spec;
+        provenance = interior_fixture.provenance, kernel = interior_fixture.K).boundary.reason == "nonfinite_y"
+
+    nonfinite_q = copy(Q); nonfinite_q[1, 1] = NaN
+    nonfinite_q_spec = animal_model_spec(interior_spec.y, interior_spec.X,
+        interior_spec.Z, nonfinite_q; ids = interior_spec.ids, method = :REML)
+    @test HSquared._fit_ai_reml_genomic_boundary(nonfinite_q_spec;
+        provenance = interior_fixture.provenance, kernel = interior_fixture.K).boundary.reason == "nonfinite_precision"
+
+    indefinite_q = copy(Q); indefinite_q[1, 1] = -1
+    indefinite_q_spec = animal_model_spec(interior_spec.y, interior_spec.X,
+        interior_spec.Z, indefinite_q; ids = interior_spec.ids, method = :REML)
+    @test HSquared._fit_ai_reml_genomic_boundary(indefinite_q_spec;
+        provenance = interior_fixture.provenance, kernel = interior_fixture.K).boundary.reason == "nonpositive_precision"
+
+    rank_bad_X = hcat(interior_spec.X, interior_spec.X)
+    rank_bad_spec = animal_model_spec(interior_spec.y, rank_bad_X,
+        interior_spec.Z, interior_spec.Ainv; ids = interior_spec.ids, method = :REML)
+    @test HSquared._fit_ai_reml_genomic_boundary(rank_bad_spec;
+        provenance = interior_fixture.provenance, kernel = interior_fixture.K).boundary.reason == "rank_deficient_X"
+
+    ml_spec = animal_model_spec(interior_spec.y, interior_spec.X,
+        interior_spec.Z, interior_spec.Ainv; ids = interior_spec.ids, method = :ML)
+    ml_result = HSquared._fit_ai_reml_genomic_boundary(ml_spec;
+        provenance = interior_fixture.provenance, kernel = interior_fixture.K)
+    @test ml_result.fit === nothing
+    @test ml_result.boundary.reason == "non_reml_method"
+
+    malformed_kernel = fill("not-a-number", size(interior_fixture.K))
+    malformed_kernel_result = HSquared._fit_ai_reml_genomic_boundary(interior_spec;
+        provenance = interior_fixture.provenance, kernel = malformed_kernel)
+    @test malformed_kernel_result.fit === nothing
+    @test malformed_kernel_result.boundary.reason == "nonnumeric_marker_kernel"
+
+    @test HSquared._genomic_refinement_accepted(true, 0.4, -10.0, 0.3, 0.5, 10.0, 120)
+    @test !HSquared._genomic_refinement_accepted(false, 0.4, -10.0, 0.3, 0.5, 10.0, 120)
+    @test !HSquared._genomic_refinement_accepted(true, NaN, -10.0, 0.3, 0.5, 10.0, 120)
+    @test !HSquared._genomic_refinement_accepted(true, 0.6, -10.0, 0.3, 0.5, 10.0, 120)
+
+    wrong_provenance = merge(interior_fixture.provenance,
+        (precision_fingerprint = repeat("0", 64),))
+    @test HSquared._fit_ai_reml_genomic_boundary(interior_spec;
+        provenance = wrong_provenance, kernel = interior_fixture.K).boundary.reason == "precision_fingerprint_mismatch"
+    nongeno_provenance = merge(interior_fixture.provenance,
+        (relationship_source = "pedigree",))
+    @test HSquared._fit_ai_reml_genomic_boundary(interior_spec;
+        provenance = nongeno_provenance, kernel = interior_fixture.K).boundary.reason == "non_genomic_provenance"
+
+    tie_ids = ["t$(i)" for i in 1:8]
+    tie_Q = Matrix{Float64}(I, 8, 8)
+    tie_spec = animal_model_spec(collect(1.0:8.0), ones(8, 1),
+        sparse(1.0I, 8, 8), tie_Q; ids = tie_ids, method = :REML)
+    tie_provenance = HSquared._genomic_precision_provenance(tie_Q, tie_ids)
+    tie_result = HSquared._fit_ai_reml_genomic_boundary(tie_spec;
+        provenance = tie_provenance, iterations = 1)
+    @test tie_result.boundary.status == "boundary_unresolved"
+    @test tie_result.boundary.reason == "endpoint_pair_tie"
+    @test tie_result.fit !== nothing && !tie_result.fit.converged
+    @test tie_result.fit.optimizer_status == "boundary_unresolved"
+
+    endpoint_interior_tie = HSquared._genomic_boundary_classify_candidates(
+        10.0, 10.0, 9.0, true, -0.1, -0.1, 120)
+    @test endpoint_interior_tie.status == "boundary_unresolved"
+    @test endpoint_interior_tie.reason == "endpoint_interior_tie"
+    reversed_lower_kkt = HSquared._genomic_boundary_classify_candidates(
+        10.0, 9.0, 8.0, true, 0.1, -0.1, 120)
+    @test reversed_lower_kkt.status == "boundary_unresolved"
+    @test reversed_lower_kkt.reason == "classification_disagreement"
+
+    big_n = 2001
+    big_ids = ["big$(i)" for i in 1:big_n]
+    big_spec = animal_model_spec(ones(big_n), ones(big_n, 1),
+        sparse(1.0I, big_n, big_n), sparse(1.0I, big_n, big_n);
+        ids = big_ids, method = :REML)
+    big_result = HSquared._fit_ai_reml_genomic_boundary(big_spec;
+        provenance = (relationship_source = "supplied_Ginv",
+            id_order_fingerprint = "not-read", precision_fingerprint = "not-read"))
+    @test big_result.fit === nothing
+    @test big_result.boundary.reason == "dense_limit"
+end
+
+include("wave4_genomic_boundary_near_endpoint.jl")
+
 @testset "fit_ai_reml graceful σ²→0 boundary (no throw on degenerate spec)" begin
     # A degenerate spec (constant y → no genetic signal → the REML optimum sits at the
     # σ²a→0 boundary) drives AI-REML toward σ²→0, where the finite Newton step grows large
@@ -3885,7 +4436,7 @@ end
     @test fixed_effects(fit) ≈ hm.beta atol = 1e-8
     @test breeding_values(fit).values ≈ hm.animal_effects.values atol = 1e-7
 
-    # the O(nnz(L)) Takahashi selected-inverse PEV/reliability matches the dense MME-inverse
+    # the Takahashi selected-inverse PEV/reliability matches the dense MME-inverse
     # diagonal at 420 animals (extends V1-SELINV-PEV from a 110-animal pedigree to 420)
     @test prediction_error_variance(fit; method = :selinv).values ≈
           prediction_error_variance(fit; method = :dense).values atol = 1e-8
@@ -4243,12 +4794,12 @@ end
     @test scan.k ≈ 0.98 atol = 1e-12
     @test scan.denominators ≈ [2.8, 4.0] atol = 1e-12
     @test scan.effects ≈ [17 / 14, 0.5] atol = 1e-12
-    @test scan.standard_errors ≈ [sqrt(1 / 2.8), 0.5] atol = 1e-12
-    @test scan.z_scores ≈ [(17 / 14) / sqrt(1 / 2.8), 1.0] atol = 1e-12
+    @test scan.standard_errors ≈ [sqrt(1.3 / 2.8), sqrt(1.3 / 4.0)] atol = 1e-12
+    @test scan.z_scores ≈ [(17 / 14) / sqrt(1.3 / 2.8), 0.5 / sqrt(1.3 / 4.0)] atol = 1e-12
     @test scan.chisq ≈ scan.z_scores .^ 2 atol = 1e-12
-    @test scan.p_values ≈ [0.042164931253363, 0.3173105078629141] atol = 1e-6
-    @test scan.bonferroni_p_values ≈ [0.084329862506726, 0.6346210157258282] atol = 1e-6
-    @test scan.bh_q_values ≈ [0.084329862506726, 0.3173105078629141] atol = 1e-6
+    @test scan.p_values ≈ [0.07473539790247391, 0.3804550407754143] atol = 1e-6
+    @test scan.bonferroni_p_values ≈ [0.14947079580494782, 0.7609100815508286] atol = 1e-6
+    @test scan.bh_q_values ≈ [0.14947079580494782, 0.3804550407754143] atol = 1e-6
     @test scan.lod_scores ≈ scan.chisq ./ (2 * log(10)) atol = 1e-12
     scan_table = marker_scan_table(scan)
     @test scan_table.target == :direct_marker_scan
@@ -4288,17 +4839,17 @@ end
     @test significance.adjusted_p_threshold == 0.1
     @test significance.bh_q_threshold == 0.1
     @test significance.raw_significant == [true, false]
-    @test significance.bonferroni_significant == [true, false]
-    @test significance.bh_significant == [true, false]
+    @test significance.bonferroni_significant == [false, false]
+    @test significance.bh_significant == [false, false]
     @test significance.n_raw_significant == 1
-    @test significance.n_bonferroni_significant == 1
-    @test significance.n_bh_significant == 1
+    @test significance.n_bonferroni_significant == 0
+    @test significance.n_bh_significant == 0
     @test significance.raw_marker_ids == ["m1"]
-    @test significance.bonferroni_marker_ids == ["m1"]
-    @test significance.bh_marker_ids == ["m1"]
+    @test significance.bonferroni_marker_ids == String[]
+    @test significance.bh_marker_ids == String[]
     @test significance.raw_scan_indices == [1]
-    @test significance.bonferroni_scan_indices == [1]
-    @test significance.bh_scan_indices == [1]
+    @test significance.bonferroni_scan_indices == Int[]
+    @test significance.bh_scan_indices == Int[]
     @test significance.min_p_value ≈ minimum(scan.p_values) atol = 1e-12
     @test significance.min_bonferroni_p_value ≈ minimum(scan.bonferroni_p_values) atol = 1e-12
     @test significance.min_bh_q_value ≈ minimum(scan.bh_q_values) atol = 1e-12
@@ -4402,11 +4953,11 @@ end
         Matrix{Float64}(I, 1, 1),
         M,
         2.0,
-        1.0;
+        1.3;
         marker_ids = ["m1", "m2"],
     )
     @test fixed_reduction.target == :mixed_model_marker_scan
-    @test fixed_reduction.variance_components == (sigma_a2 = 2.0, sigma_e2 = 1.0)
+    @test fixed_reduction.variance_components == (sigma_a2 = 2.0, sigma_e2 = 1.3)
     @test fixed_reduction.marker_ids == scan.marker_ids
     @test fixed_reduction.effects ≈ scan.effects atol = 1e-12
     @test fixed_reduction.standard_errors ≈ scan.standard_errors atol = 1e-12
@@ -5077,6 +5628,61 @@ end
     # the fixed-effect screen ignores Z/Ainv: same y/X/σ²e ⇒ identical regardless of Z
     @test single_marker_scan(fitP, markers; marker_ids = mids) ==
           single_marker_scan(fit, markers; marker_ids = mids)
+
+    # Fitted convenience routes fail closed before delegating when convergence
+    # was not reported, even though their six-argument fixture constructor is valid.
+    unresolved = AnimalModelFit(spec, lik, (sigma_a2 = 1.2, sigma_e2 = 0.8), false, "supplied", 0)
+    for scan in (mixed_model_marker_scan, single_marker_scan)
+        err = try
+            scan(unresolved, markers)
+            nothing
+        catch e
+            e
+        end
+        @test err isa ArgumentError
+        @test occursin("fit must have converged", sprint(showerror, err))
+    end
+
+    # At sigma_a2 = 0 the mixed GLS covariance is sigma_e2*I. Compare its
+    # coefficients and Wald errors to an independent residualized OLS calculation.
+    sigma_e2_zero_additive = 0.8
+    W = markers .- mean(markers; dims = 1)
+    XtX = transpose(X) * X
+    y_resid = y - X * (XtX \ (transpose(X) * y))
+    oracle_effects = Float64[]
+    oracle_ses = Float64[]
+    oracle_denominators = Float64[]
+    for j in axes(W, 2)
+        w = W[:, j]
+        w_resid = w - X * (XtX \ (transpose(X) * w))
+        d = dot(w_resid, w_resid)
+        push!(oracle_denominators, d)
+        push!(oracle_effects, dot(w_resid, y_resid) / d)
+        push!(oracle_ses, sqrt(sigma_e2_zero_additive / d))
+    end
+    zero_mixed = mixed_model_marker_scan(y, X, Z, Ainv, markers, 0.0, sigma_e2_zero_additive)
+    zero_loco = loco_mixed_model_marker_scan(
+        y, X, Z, Dict("chr1" => Matrix{Float64}(I, length(y), length(y))),
+        fill("chr1", size(markers, 2)), markers, 0.0, sigma_e2_zero_additive,
+    )
+    for scan in (zero_mixed, zero_loco)
+        @test scan.effects ≈ oracle_effects rtol = 1e-12 atol = 1e-12
+        @test scan.standard_errors ≈ oracle_ses rtol = 1e-12 atol = 1e-12
+        @test scan.z_scores ≈ oracle_effects ./ oracle_ses rtol = 1e-12 atol = 1e-12
+        @test scan.denominators .* sigma_e2_zero_additive ≈ oracle_denominators rtol = 1e-12 atol = 1e-12
+    end
+    @test zero_mixed.variance_components == (sigma_a2 = 0.0, sigma_e2 = sigma_e2_zero_additive)
+    @test_throws ArgumentError mixed_model_marker_scan(y, X, Z, Ainv, markers, -eps(), 1.0)
+    @test_throws ArgumentError mixed_model_marker_scan(y, X, Z, Ainv, markers, NaN, 1.0)
+    @test_throws ArgumentError mixed_model_marker_scan(y, X, Z, Ainv, markers, Inf, 1.0)
+    negative_tiny = -BigFloat(10)^(-1000)
+    @test negative_tiny < 0
+    @test iszero(Float64(negative_tiny)) && signbit(Float64(negative_tiny))
+    @test_throws ArgumentError mixed_model_marker_scan(y, X, Z, Ainv, markers, negative_tiny, 1.0)
+    @test_throws ArgumentError loco_mixed_model_marker_scan(
+        y, X, Z, Dict("chr1" => Matrix{Float64}(I, length(y), length(y))),
+        fill("chr1", size(markers, 2)), markers, negative_tiny, 1.0,
+    )
 end
 
 @testset "Phase 5 marker-scan parity fixture (#45)" begin
@@ -5386,6 +5992,7 @@ end
     @test ph[end] == "genome_wide_p_value"
     sf = genome_wide_marker_scan(yf, ones(length(yf), 1), Mf;
                                  n_permutations = 300, alpha = 0.05,
+                                 sigma_e2 = 1.0,
                                  marker_ids = fmids, rng = MersenneTwister(20264200))
     @test sf.marker_ids == vec(pr[:, 1])
     @test sf.chisq ≈ parse.(Float64, pr[:, 5]) rtol = 1e-8          # deterministic
@@ -5450,6 +6057,235 @@ end
 
     # selinv carries over to a genomic Ginv (correctness only; dense Ginv gives no speedup)
     @test prediction_error_variance(res; method = :selinv).values ≈ pev.values atol = 1e-8
+
+    # reliability(:selinv)'s A_ii denominator (now via _relationship_diag(Ginv, :selinv),
+    # not the unconditional dense inv(Ainv) this replaced) still matches the INDEPENDENT
+    # genomic reliability on this dense Ginv fixture, and accuracy(:selinv) forwards
+    # method through
+    @test reliability(res; method = :selinv).values ≈ rel_indep atol = 1e-8
+    @test accuracy(res; method = :selinv).values ≈ sqrt.(rel_indep) atol = 1e-8
+end
+
+@testset "_relationship_diag(:selinv) matches dense diag(inv(Ainv)) directly (pedigree + genomic)" begin
+    # Direct pin of the selected-inverse helper against an independent dense reference, so a
+    # future regression in _relationship_diag itself (not just its downstream reliability()
+    # callers) is caught even if the dense-vs-selinv parity tests above happened to compare
+    # two equally-wrong values. Ported from PR #355's `_selinv_ainv_diag` pin (Szymek
+    # Drobniak, `6bb10c97`) onto our own `_relationship_diag(Ainv, :selinv)`, which forces
+    # the selected-inverse route regardless of Ainv's storage/density (same behavior his
+    # standalone helper had) -- the #350 rebase (Szymek's #355 comment) took `reliability`/
+    # `_relationship_diag`/`_resolve_pev_method`/the `:auto` default from this branch
+    # wholesale and dropped his `_selinv_ainv_diag` as a duplicate of this.
+    ped = normalize_pedigree([1, 2, 3, 4, 5], [0, 0, 1, 1, 3], [0, 0, 2, 2, 4])
+    Ainv = pedigree_inverse(ped)
+    @test HSquared._relationship_diag(Ainv, :selinv) ≈ diag(inv(Symmetric(Matrix(Ainv)))) atol = 1e-8
+
+    M = [0.0 1 2 1 0 2; 2 1 0 1 2 0; 1 0 1 2 1 1; 0 2 1 0 2 1]
+    Ginv = genomic_relationship_inverse(genomic_relationship_matrix(M); ridge = 0.05)
+    @test HSquared._relationship_diag(Ginv, :selinv) ≈ diag(inv(Symmetric(Matrix(Ginv)))) atol = 1e-8
+
+    # non-positive-definite Ainv: :selinv throws a named ArgumentError (wrapping the
+    # cholesky check=true PosDefException), unlike :dense's general LDLᵀ inv(), which
+    # would return a finite-but-meaningless value instead
+    non_pd = [1.0 2.0; 2.0 1.0]  # eigenvalues -1, 3: indefinite, not PD
+    @test_throws ArgumentError HSquared._relationship_diag(non_pd, :selinv)
+
+    # PR #355's density-gate assertions (`_effectively_sparse`, a standalone nnz/n^2 ratio
+    # check) are NOT ported: that helper was dropped entirely in the #350 rebase in favor of
+    # `:auto`'s simpler storage-type gate (`_resolve_pev_method`'s `issparse` check, which
+    # Szymek's own #355 comment endorsed as "the more complete piece of work" and "a better
+    # interface than my hard gate"). That routing decision -- a dense genomic Ginv stays on
+    # :dense under :auto, a sparse pedigree Ainv routes to :selinv -- is pinned directly on
+    # `_resolve_pev_method` in test/test_selinv_defaults_350.jl, testset "350 (iii)".
+end
+
+@testset "_sparse_mme_from_cross_products matches _sparse_mme_system bit-for-bit" begin
+    # Gauss review: confirms the fit_ai_reml loop's cross-product caching (this slice) is not
+    # merely algebraically equal to the old per-iteration rebuild but bitwise identical, at
+    # several representative (sigma_a2, sigma_e2) pairs including extreme ratios. A future edit
+    # to either builder that silently changes lhs/rhs would fail this immediately.
+    ids = [1, 2, 3, 4, 5, 6, 7, 8]
+    sire = [0, 0, 1, 1, 3, 3, 5, 6]
+    dam = [0, 0, 2, 2, 4, 4, 4, 7]
+    ped = normalize_pedigree(ids, sire, dam)
+    Ainv = pedigree_inverse(ped)
+    q = length(ped.ids)
+    y = [2.0, 4, 3, 5, 2, 6, 3, 4]
+    X = [ones(q, 1) collect(1.0:q)]
+    Z = sparse(1.0I, q, q)
+    spec = animal_model_spec(y, X, Z, Ainv; ids = ped.ids, method = :REML)
+
+    Xs = sparse(Float64.(spec.X))
+    Zs = sparse(Float64.(spec.Z))
+    Ainvs = sparse(Float64.(spec.Ainv))
+    cp = HSquared._sparse_mme_cross_products(Xs, Zs, Ainvs, Float64.(spec.y))
+
+    for (sa, se) in ((1.0, 1.0), (0.3, 0.7), (1e-10, 1.0), (1e10, 1e-10), (0.123, 9.88))
+        lhs1, rhs1, ypy1 = HSquared._sparse_mme_system(spec, sa, se)
+        lhs2, rhs2, ypy2 = HSquared._sparse_mme_from_cross_products(cp, sa, se)
+        @test lhs1.colptr == lhs2.colptr
+        @test lhs1.rowval == lhs2.rowval
+        @test reinterpret(UInt64, lhs1.nzval) == reinterpret(UInt64, lhs2.nzval)
+        @test reinterpret(UInt64, rhs1) == reinterpret(UInt64, rhs2)
+        @test reinterpret(UInt64, [ypy1]) == reinterpret(UInt64, [ypy2])
+    end
+end
+
+@testset "_selinv_zvals clique-scatter path == per-pair reference, bitwise" begin
+    # The selected-inverse recursion walks each clique member's column once and scatters
+    # both symmetric contributions into a length-m accumulator (no search, no m×m block,
+    # no clique-width cap). Every accumulator receives its terms in the same ascending
+    # order as the original per-pair binary-search recursion, so the agreement must be
+    # BITWISE, not approximate. `per_pair = true` runs that original recursion.
+    #
+    # The DEFAULT path additionally vectorises the aligned clique tail, which reassociates
+    # one reduction, so the bitwise claim is on `strict_order = true`; the default is pinned
+    # against it at rtol in the "aligned-tail SIMD path" testset below.
+    zbits(ch; kw...) = reinterpret(UInt64, HSquared._selinv_zvals(ch; strict_order = true, kw...)[1])
+    rng = Random.MersenneTwister(20260919)
+    for (n, p) in ((40, 0.12), (150, 0.05), (300, 0.2))
+        B = sprandn(rng, n, n, p)
+        A = sparse(B * B' + (n * 0.1) * I)
+        ch = cholesky(Symmetric(A); check = true)
+        @test zbits(ch) == zbits(ch; per_pair = true)
+    end
+
+    # same check on a real pedigree Ainv and on a full Henderson MME coefficient matrix
+    ped = normalize_pedigree([1, 2, 3, 4, 5, 6, 7, 8], [0, 0, 1, 1, 3, 3, 5, 6],
+                             [0, 0, 2, 2, 4, 4, 4, 7])
+    Ainv = pedigree_inverse(ped)
+    q = length(ped.ids)
+    ch_a = cholesky(Symmetric(sparse(Ainv)); check = true)
+    @test zbits(ch_a) == zbits(ch_a; per_pair = true)
+
+    spec = animal_model_spec([2.0, 4, 3, 5, 2, 6, 3, 4], hcat(ones(q), collect(1.0:q)),
+                             sparse(1.0I, q, q), Ainv; ids = ped.ids, method = :REML)
+    lhs, = HSquared._sparse_mme_system(spec, 1.3, 0.9)
+    ch_m = cholesky(Symmetric(lhs); check = true)
+    @test zbits(ch_m) == zbits(ch_m; per_pair = true)
+
+    # fully random mating from 4 founders: the factor has wide cliques and long columns,
+    # so both the merge and the per-entry-search branches of the scatter run
+    rq = 600
+    rsire = zeros(Int, rq); rdam = zeros(Int, rq)
+    for i in 5:rq
+        rsire[i] = rand(rng, 1:(i - 1))
+        rdam[i] = rand(rng, 1:(i - 1))
+        while rdam[i] == rsire[i]
+            rdam[i] = rand(rng, 1:(i - 1))
+        end
+    end
+    rped = normalize_pedigree(collect(1:rq), rsire, rdam)
+    rAinv = pedigree_inverse(rped)
+    rspec = animal_model_spec(randn(rng, rq), ones(rq, 1), sparse(1.0I, rq, rq), rAinv;
+                              ids = rped.ids, method = :REML)
+    rlhs, = HSquared._sparse_mme_system(rspec, 1.0, 1.0)
+    ch_r = cholesky(Symmetric(rlhs); check = true)
+    widest = maximum(diff(sparse(ch_r.L).colptr)) - 1
+    @test widest > 100
+    @test zbits(ch_r) == zbits(ch_r; per_pair = true)
+    ch_ra = cholesky(Symmetric(sparse(rAinv)); check = true)
+    @test zbits(ch_ra) == zbits(ch_ra; per_pair = true)
+end
+
+@testset "_selinv_zvals aligned-tail SIMD path: fill-path property, rtol, fit-level equality" begin
+    # The aligned-tail fast path takes column i_p's first `ntail` rows as the clique tail
+    # after three cheap tests. That is exact ONLY because the tail is a subset of column
+    # i_p's pattern -- the Cholesky fill-path property. Assert the property itself on
+    # CHOLMOD's patterns (supernodal amalgamation pads columns with explicit zeros, so this
+    # is worth pinning rather than assuming), then pin the path's numerics at a stated rtol
+    # (it reassociates one reduction, so it is NOT bitwise) and the fit-level estimates.
+    function fillpath_holds(ch)
+        L = sparse(ch.L); cp = L.colptr; rv = L.rowval
+        for j in 1:size(L, 1)
+            rows = @view rv[(cp[j] + 1):(cp[j + 1] - 1)]
+            for (a, ip) in enumerate(rows)
+                own = @view rv[(cp[ip] + 1):(cp[ip + 1] - 1)]
+                for iq in @view rows[(a + 1):end]
+                    insorted(iq, own) || return false
+                end
+            end
+        end
+        return true
+    end
+
+    rng = Random.MersenneTwister(20260920)
+    ped = normalize_pedigree([1, 2, 3, 4, 5, 6, 7, 8], [0, 0, 1, 1, 3, 3, 5, 6],
+                             [0, 0, 2, 2, 4, 4, 4, 7])
+    Ainv = pedigree_inverse(ped)
+    q8 = length(ped.ids)
+    spec8 = animal_model_spec([2.0, 4, 3, 5, 2, 6, 3, 4], hcat(ones(q8), collect(1.0:q8)),
+                              sparse(1.0I, q8, q8), Ainv; ids = ped.ids, method = :REML)
+    lhs8, = HSquared._sparse_mme_system(spec8, 1.3, 0.9)
+
+    # a wider, higher-fill factor: 400-animal fully random mating
+    rq = 400
+    rsire = zeros(Int, rq); rdam = zeros(Int, rq)
+    for i in 5:rq
+        rsire[i] = rand(rng, 1:(i - 1)); rdam[i] = rand(rng, 1:(i - 1))
+        while rdam[i] == rsire[i]; rdam[i] = rand(rng, 1:(i - 1)); end
+    end
+    rped = normalize_pedigree(collect(1:rq), rsire, rdam)
+    rAinv = pedigree_inverse(rped)
+    # additive signal, not pure noise: a noise-only y sits on the REML boundary and
+    # `converged` is false, which would test the fixture rather than the kernel
+    ra = zeros(rq)
+    for i in 1:rq
+        si, di = rped.sire[i], rped.dam[i]
+        ra[i] = (si == 0 && di == 0) ? randn(rng) : 0.5 * (ra[si] + ra[di]) + sqrt(0.5) * randn(rng)
+    end
+    ry = ra .+ 0.5 .* randn(rng, rq)
+    rspec = animal_model_spec(ry, ones(rq, 1), sparse(1.0I, rq, rq), rAinv;
+                              ids = rped.ids, method = :REML)
+    rlhs, = HSquared._sparse_mme_system(rspec, 1.0, 1.0)
+
+    for A in (sparse(Symmetric(lhs8)), sparse(Symmetric(rlhs)), sparse(Ainv), sparse(rAinv))
+        ch = cholesky(Symmetric(A); check = true)
+        @test fillpath_holds(ch)
+        strict, = HSquared._selinv_zvals(ch; strict_order = true)
+        simd, = HSquared._selinv_zvals(ch)
+        @test reinterpret(UInt64, strict) == reinterpret(UInt64, HSquared._selinv_zvals(ch; per_pair = true)[1])
+        @test maximum(abs.(simd .- strict)) <= 1e-12 * maximum(abs.(strict))
+    end
+
+    # fit level: the reassociation must not move the REML optimum beyond rtol 1e-10
+    fit_simd = HSquared.fit_ai_reml(rspec)
+    pev_simd = HSquared.prediction_error_variance(fit_simd; method = :selinv).values
+    @test fit_simd.converged
+    @test isapprox(HSquared.selinv_trace_against(cholesky(Symmetric(sparse(Symmetric(rlhs)))), rAinv, 1),
+                   sum(rAinv .* HSquared.takahashi_selinv(cholesky(Symmetric(sparse(Symmetric(rlhs)))))[2:end, 2:end]);
+                   rtol = 1e-10)
+    @test all(isfinite, pev_simd) && all(>(0), pev_simd)
+end
+
+@testset "_relationship_diag(:selinv) matches the analytic 1+F oracle beyond dense-feasible scale" begin
+    # Gauss review: diag(inv(Ainv)) == 1 .+ F is an exact analytic identity for ANY pedigree
+    # size, independent of the dense reference's own O(n^2)/O(n^3) feasibility limit. This
+    # validates _relationship_diag(:selinv)'s correctness at a scale the dense-vs-selinv
+    # parity tests elsewhere in this file cannot reach (they are capped by needing a dense
+    # comparison). Ported from PR #355's `_selinv_ainv_diag` pin onto our own
+    # `_relationship_diag(Ainv, :selinv)` -- see the testset above for why.
+    rng = Random.MersenneTwister(20260917)
+    n = 3000
+    founders = 30
+    window = 300
+    ids = collect(1:n)
+    sire = zeros(Int, n)
+    dam = zeros(Int, n)
+    for i in (founders + 1):n
+        lo = max(1, i - window)
+        s = rand(rng, lo:(i - 1))
+        d = rand(rng, lo:(i - 1))
+        while d == s
+            d = rand(rng, lo:(i - 1))
+        end
+        sire[i] = s
+        dam[i] = d
+    end
+    ped = normalize_pedigree(ids, sire, dam)
+    Ainv = pedigree_inverse(ped)
+    F = inbreeding_coefficients(ped)
+    @test HSquared._relationship_diag(Ainv, :selinv) ≈ 1 .+ F atol = 1e-8
 end
 
 @testset "Phase 2 single-step H-inverse construction" begin
@@ -6929,6 +7765,89 @@ end
     @test_throws ArgumentError fit_multivariate_reml(hcat(y1, fill(NaN, 8)), X, Z, Ainv)  # empty trait 2
 end
 
+@testset "Phase 4 derived-estimand identities on the REML fit path" begin
+    # docs/design/04-validation-canon.md § Locked Derived-Estimand Identities:
+    #   h²_k = diag(G0) ./ (diag(G0) .+ diag(R0))
+    #   r_g  = D⁻¹ G0 D⁻¹,  D = diag(sqrt.(diag(G0)))   (R's cov2cor)
+    # Both are built by construction inside fit_multivariate_reml, and the suite
+    # otherwise pins only their ranges plus the supplied-covariance
+    # multivariate_mme cov2cor identity — so a refactor that recomputed h² from
+    # a different source would not turn anything red. These assertions pin the
+    # definitions on the ESTIMATED path, against references written out here
+    # rather than obtained from genetic_correlation (which would be circular).
+    ped = normalize_pedigree(["a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8"],
+        ["0", "0", "a1", "a1", "a2", "a2", "a3", "a5"],
+        ["0", "0", "a2", "a2", "0", "0", "a4", "a6"])
+    Ainv = pedigree_inverse(ped)
+    y1 = [2.0, 3.0, 2.5, 3.5, 4.0, 1.5, 3.0, 4.5]
+    Y2 = hcat(y1, reverse(y1))
+    X = ones(8, 1)
+    Z = Matrix(1.0I, 8, 8)
+    Ymiss = copy(Y2); Ymiss[2, 2] = NaN; Ymiss[5, 1] = NaN
+
+    h2_ref(G0, R0) = [G0[k, k] / (G0[k, k] + R0[k, k]) for k in axes(G0, 1)]
+    function corr_ref(C)
+        D = Diagonal(sqrt.(diag(C)))
+        M = Matrix(D \ Matrix(C) / D)
+        for i in axes(M, 1)
+            M[i, i] = 1.0
+        end
+        return M
+    end
+
+    fits = (
+        unstructured = fit_multivariate_reml(Y2, X, Z, Ainv),
+        diagonal = fit_multivariate_reml(Y2, X, Z, Ainv; genetic_structure = :diagonal),
+        lowrank = fit_multivariate_reml(Y2, X, Z, Ainv; genetic_structure = :lowrank,
+            rank = 1,
+            initial = (loadings = reshape([0.7, -0.4], 2, 1), R0 = [1.0 0.0; 0.0 1.0])),
+        trait_reduction = fit_multivariate_reml(reshape(y1, 8, 1), X, Z, Ainv),
+        missing_records = fit_multivariate_reml(Ymiss, X, Z, Ainv),
+    )
+
+    for (name, fit) in pairs(fits)
+        @testset "$name" begin
+            G0 = fit.genetic_covariance
+            R0 = fit.residual_covariance
+            @test fit.converged
+            @test all(>(0), diag(G0))            # both identities need a positive diagonal
+            @test all(>(0), diag(R0))
+
+            # h²: the extractor AND the stored field equal the defining ratio,
+            # trait by trait (not merely inside [0, 1])
+            @test heritability(fit) ≈ h2_ref(G0, R0) rtol = 1e-12
+            @test collect(fit.heritability) ≈ h2_ref(G0, R0) rtol = 1e-12
+            for k in axes(G0, 1)
+                @test heritability(fit)[k] ≈ G0[k, k] / (G0[k, k] + R0[k, k]) rtol = 1e-12
+            end
+
+            # r_g and r_e: D⁻¹ C D⁻¹, unit diagonal, symmetric — on the fitted
+            # path, not only the supplied-covariance MME path
+            @test fit.genetic_correlation ≈ corr_ref(G0) rtol = 1e-12
+            @test genetic_correlation(fit) ≈ corr_ref(G0) rtol = 1e-12
+            @test fit.residual_correlation ≈ corr_ref(R0) rtol = 1e-12
+            @test diag(fit.genetic_correlation) == ones(size(G0, 1))
+            @test diag(fit.residual_correlation) == ones(size(R0, 1))
+            @test fit.genetic_correlation ≈ transpose(fit.genetic_correlation)
+        end
+    end
+
+    # the identities are discriminating, not vacuous: this fixture has clearly
+    # distinct per-trait h², a non-zero genetic covariance, and the two maps
+    # respond differently to dropping that covariance (h² ignores it, r_g does
+    # not) — so h² and r_g are pinned as different functions of the same G0
+    unstr = fits.unstructured
+    h2 = heritability(unstr)
+    G0u = unstr.genetic_covariance
+    R0u = unstr.residual_covariance
+    @test G0u[1, 2] != 0
+    @test !isapprox(h2[1], h2[2]; rtol = 1e-6)
+    @test !isapprox(h2, reverse(h2_ref(G0u, R0u)); rtol = 1e-6)   # trait order matters
+    G0diag = Matrix(Diagonal(diag(G0u)))
+    @test h2_ref(G0diag, R0u) ≈ h2 rtol = 1e-12
+    @test !isapprox(corr_ref(G0diag), unstr.genetic_correlation; rtol = 1e-6)
+end
+
 @testset "Phase 4 shared multi-trait parity fixture" begin
     fixture_dir = joinpath(@__DIR__, "fixtures", "phase4_multitrait_parity")
 
@@ -7132,6 +8051,225 @@ end
     @test maximum(abs.(breeding_values(gblup).values .- corrupted_gebv)) > 0.05
 end
 
+@testset "v0.7 genomic public-activation construction and provenance" begin
+    # Independent Python struct.pack('<Q', ...) + hashlib.sha256 golden for the canonical
+    # id-order byte stream. This pins framing and byte order, not merely digest shape.
+    golden_bytes = "48537175617265642d70726f76656e616e63652d76310069645f6f7264657200" *
+                   "02000000000000000500000000000000616c7068610300000000000000696432"
+    golden_digest = "e91221fde844edffa91e7d4701b28ecbfe2176eacb2eb341d062597726e2c4dc"
+    io = HSquared._provenance_buffer("id_order")
+    HSquared._provenance_write_strings(io, ["alpha", "id2"])
+    @test bytes2hex(take!(io)) == golden_bytes
+    @test HSquared._genomic_id_order_fingerprint(["alpha", "id2"]) == golden_digest
+
+    # Independently generated with Python struct.pack('<Q'/'<d') + hashlib.sha256.
+    # This pins dimensions, row/column ID framing, Float64 byte order, column-major
+    # semantic order, negative non-integers, and -0.0 -> +0.0 canonicalization.
+    numeric_golden_bytes =
+        "48537175617265642d70726f76656e616e63652d7631004b5f6c616d62646100" *
+        "020000000000000002000000000000000200000000000000010000000000000061" *
+        "01000000000000006202000000000000000100000000000000610100000000000000" *
+        "62000000000000f03f00000000000004c000000000000000000000000000000000"
+    numeric_golden_digest = "2c21985923be46408dd7d1c9387a9faac9c167b75e677bd952dfef6e7fc7221e"
+    numeric_matrix = [1.0 -0.0; -2.5 0.0]
+    numeric_io = HSquared._provenance_buffer("K_lambda")
+    HSquared._provenance_write_u64(numeric_io, 2)
+    HSquared._provenance_write_u64(numeric_io, 2)
+    HSquared._provenance_write_strings(numeric_io, ["a", "b"])
+    HSquared._provenance_write_strings(numeric_io, ["a", "b"])
+    for value in numeric_matrix
+        HSquared._provenance_write_float64(numeric_io, value)
+    end
+    @test bytes2hex(take!(numeric_io)) == numeric_golden_bytes
+    @test HSquared._genomic_matrix_fingerprint("K_lambda", numeric_matrix, ["a", "b"]) ==
+          numeric_golden_digest
+
+    tiny_ids = ["a", "b", "c", "d"]
+    tiny_markers = [0.0 1.0 2.0; 2.0 1.0 0.0; 1.0 0.0 1.0; 0.0 2.0 1.0]
+    tiny_names = ["m1", "m2", "m3"]
+    tiny = HSquared._genomic_activation_construction(
+        tiny_markers, tiny_ids; marker_names = tiny_names,
+    )
+    @test tiny.p ≈ vec(sum(tiny_markers, dims = 1)) ./ (2 * length(tiny_ids))
+    @test tiny.W ≈ tiny_markers .- 2 .* transpose(tiny.p)
+    @test tiny.k ≈ 2 * sum(tiny.p .* (1 .- tiny.p))
+    @test tiny.G ≈ tiny.W * transpose(tiny.W) / tiny.k
+    @test tiny.K ≈ tiny.G + 0.01I
+    @test tiny.K * tiny.Q ≈ I(4)
+
+    # Tests of the tests: each frozen estimand choice changes the construction.
+    half_p = fill(0.5, size(tiny_markers, 2))
+    half_p_G = genomic_relationship_matrix(tiny_markers; allele_frequencies = half_p)
+    @test maximum(abs.(half_p_G .- tiny.G)) > 1e-6
+    wrong_denominator_G = tiny.W * transpose(tiny.W) / (tiny.k + 1.0)
+    @test maximum(abs.(wrong_denominator_G .- tiny.G)) > 1e-6
+    zero_ridge = HSquared._genomic_activation_construction(
+        tiny_markers, tiny_ids; marker_names = tiny_names, ridge = 0.0,
+    )
+    @test zero_ridge.provenance.kernel_fingerprint != tiny.provenance.kernel_fingerprint
+    @test zero_ridge.provenance.precision_fingerprint != tiny.provenance.precision_fingerprint
+    @test tiny.provenance.relationship_source == "markers"
+    @test tiny.provenance.relationship_method == "vanraden1"
+    @test tiny.provenance.allele_frequency_source == "sample"
+    @test tiny.provenance.relationship_scale == "K_lambda"
+    @test tiny.provenance.ridge == 0.01
+    @test tiny.provenance.scale_denominator == tiny.k
+    for name in (:id_order_fingerprint, :marker_content_fingerprint,
+                 :kernel_fingerprint, :precision_fingerprint)
+        digest = getproperty(tiny.provenance, name)
+        @test occursin(r"^[0-9a-f]{64}$", digest)
+    end
+
+    # +0.0 and -0.0 have one semantic fingerprint. Every other declared mutation is visible.
+    signed_zero = copy(tiny_markers)
+    signed_zero[1, 1] = -0.0
+    zero_twin = HSquared._genomic_activation_construction(
+        signed_zero, tiny_ids; marker_names = tiny_names,
+    )
+    @test zero_twin.provenance.marker_content_fingerprint ==
+          tiny.provenance.marker_content_fingerprint
+    @test HSquared._genomic_activation_construction(
+        tiny_markers[:, 1:2], tiny_ids; marker_names = tiny_names[1:2],
+    ).provenance.marker_content_fingerprint != tiny.provenance.marker_content_fingerprint
+    @test HSquared._genomic_activation_construction(
+        tiny_markers, reverse(tiny_ids); marker_names = tiny_names,
+    ).provenance.marker_content_fingerprint != tiny.provenance.marker_content_fingerprint
+    @test HSquared._genomic_activation_construction(
+        tiny_markers, tiny_ids; marker_names = reverse(tiny_names),
+    ).provenance.marker_content_fingerprint != tiny.provenance.marker_content_fingerprint
+    changed_value = copy(tiny_markers); changed_value[1, 1] = 0.25
+    @test HSquared._genomic_activation_construction(
+        changed_value, tiny_ids; marker_names = tiny_names,
+    ).provenance.marker_content_fingerprint != tiny.provenance.marker_content_fingerprint
+    ridge_twin = HSquared._genomic_activation_construction(
+        tiny_markers, tiny_ids; marker_names = tiny_names, ridge = 0.02,
+    )
+    @test ridge_twin.provenance.kernel_fingerprint != tiny.provenance.kernel_fingerprint
+    @test ridge_twin.provenance.precision_fingerprint != tiny.provenance.precision_fingerprint
+
+    supplied = HSquared._genomic_precision_provenance(tiny.Q, tiny_ids)
+    @test supplied.relationship_source == "supplied_Ginv"
+    @test supplied.relationship_method === nothing
+    @test supplied.allele_frequency_source === nothing
+    @test supplied.ridge === nothing
+    @test supplied.scale_denominator === nothing
+    @test supplied.relationship_scale == "inverse_of_supplied_precision"
+    @test supplied.id_order_fingerprint == tiny.provenance.id_order_fingerprint
+    @test supplied.precision_fingerprint == tiny.provenance.precision_fingerprint
+    @test supplied.marker_content_fingerprint === nothing
+    @test supplied.kernel_fingerprint === nothing
+
+    @test_throws ArgumentError HSquared._genomic_activation_construction(
+        tiny_markers, ["a", "a", "c", "d"]; marker_names = tiny_names,
+    )
+    @test_throws ArgumentError HSquared._genomic_activation_construction(
+        tiny_markers, Any["a", missing, "c", "d"]; marker_names = tiny_names,
+    )
+    @test_throws ArgumentError HSquared._genomic_activation_construction(
+        tiny_markers, Any["a", nothing, "c", "d"]; marker_names = tiny_names,
+    )
+    @test_throws ArgumentError HSquared._genomic_activation_construction(
+        tiny_markers, tiny_ids; marker_names = ["m1", "m1", "m3"],
+    )
+    @test_throws ArgumentError HSquared._genomic_activation_construction(
+        tiny_markers, tiny_ids; marker_names = Any["m1", missing, "m3"],
+    )
+    @test_throws ArgumentError HSquared._genomic_activation_construction(
+        tiny_markers, tiny_ids; marker_names = tiny_names, ridge = Inf,
+    )
+    @test_throws ArgumentError HSquared._genomic_precision_provenance(
+        [1.0 NaN; NaN 1.0], ["a", "b"],
+    )
+
+    fixture_dir = joinpath(@__DIR__, "fixtures", "genomic_public_activation_target")
+    marker_header, marker_rows = _csv_strings_for_test(joinpath(fixture_dir, "markers.csv"))
+    ids = vec(marker_rows[:, 1])
+    marker_names = marker_header[2:end]
+    markers = parse.(Float64, marker_rows[:, 2:end])
+    construction = HSquared._genomic_activation_construction(
+        markers, ids; marker_names = marker_names,
+    )
+
+    # Stream the large long-form target so the test never duplicates all matrices in strings.
+    max_construction_diff = 0.0
+    open(joinpath(fixture_dir, "expected_construction.csv"), "r") do fixture
+        readline(fixture) == "quantity,row,column,value" || error("bad construction fixture header")
+        for line in eachline(fixture)
+            quantity, row, column, stored = split(line, ",")
+            i = parse(Int, row); j = parse(Int, column); expected = parse(Float64, stored)
+            observed = if quantity == "k"
+                construction.k
+            elseif quantity == "p"
+                construction.p[i]
+            else
+                getproperty(construction, Symbol(quantity))[i, j]
+            end
+            max_construction_diff = max(max_construction_diff, abs(observed - expected))
+        end
+    end
+    @test max_construction_diff <= 1e-10
+
+    _, phenotype_rows = _csv_strings_for_test(joinpath(fixture_dir, "phenotypes.csv"))
+    record_ids = vec(phenotype_rows[:, 2])
+    x = parse.(Float64, phenotype_rows[:, 3])
+    y = parse.(Float64, phenotype_rows[:, 4])
+    id_to_row = Dict(id => i for (i, id) in enumerate(ids))
+    record_rows = [id_to_row[id] for id in record_ids]
+    X = hcat(ones(length(y)), x)
+    Z = sparse(1:length(y), record_rows, 1.0, length(y), length(ids))
+    marker_fit = fit_gblup_reml(y, X, Z, construction.Q; ids = ids)
+    supplied_Q = genomic_relationship_inverse(
+        genomic_relationship_matrix(markers); ridge = 0.01,
+    )
+    supplied_fit = fit_gblup_reml(y, X, Z, supplied_Q; ids = ids)
+    @test marker_fit.converged && supplied_fit.converged
+    @test breeding_values(marker_fit).ids == ids
+    @test breeding_values(supplied_fit).ids == ids
+    @test marker_fit.variance_components.sigma_a2 ≈
+          supplied_fit.variance_components.sigma_a2 atol = 1e-10
+    @test marker_fit.variance_components.sigma_e2 ≈
+          supplied_fit.variance_components.sigma_e2 atol = 1e-10
+    @test marker_fit.likelihood.beta ≈ supplied_fit.likelihood.beta atol = 1e-10
+    @test breeding_values(marker_fit).values ≈ breeding_values(supplied_fit).values atol = 1e-10
+    @test HSquared._genomic_precision_provenance(supplied_Q, ids).precision_fingerprint ==
+          construction.provenance.precision_fingerprint
+
+    _, fit_rows = _csv_strings_for_test(joinpath(fixture_dir, "expected_fit.csv"))
+    scalar = Dict(fit_rows[i, 1] => fit_rows[i, 3]
+                  for i in axes(fit_rows, 1) if isempty(fit_rows[i, 2]))
+    @test parse(Int, scalar["seed"]) == 20270701
+    @test parse(Int, scalar["n_genotyped"]) == 120
+    @test parse(Int, scalar["n_markers"]) == 600
+    @test parse(Int, scalar["n_records"]) == 120
+    @test parse(Float64, scalar["sigma_g2"]) ≈ marker_fit.variance_components.sigma_a2 atol = 1e-8
+    @test parse(Float64, scalar["sigma_e2"]) ≈ marker_fit.variance_components.sigma_e2 atol = 1e-8
+    @test parse(Float64, scalar["genomic_variance_ratio"]) ≈ heritability(marker_fit) atol = 1e-8
+    @test scalar["id_order_fingerprint"] == construction.provenance.id_order_fingerprint
+    @test scalar["marker_content_fingerprint"] == construction.provenance.marker_content_fingerprint
+    # The stored matrix hashes record the generator run. BLAS/LAPACK-last-bit differences can
+    # change exact Float64 fingerprints across processes even when the serialized numeric target
+    # agrees to tolerance; route identity is therefore pinned above within one engine run.
+    @test occursin(r"^[0-9a-f]{64}$", scalar["kernel_fingerprint"])
+    @test occursin(r"^[0-9a-f]{64}$", scalar["precision_fingerprint"])
+    expected_gebv = Dict(fit_rows[i, 2] => parse(Float64, fit_rows[i, 3])
+                         for i in axes(fit_rows, 1) if fit_rows[i, 1] == "gebv")
+    expected_beta = Dict(parse(Int, fit_rows[i, 2]) => parse(Float64, fit_rows[i, 3])
+                         for i in axes(fit_rows, 1) if fit_rows[i, 1] == "beta")
+    @test maximum(abs.(marker_fit.likelihood.beta .-
+                       [expected_beta[j] for j in eachindex(marker_fit.likelihood.beta)])) <= 1e-8
+    @test maximum(abs.(breeding_values(marker_fit).values .-
+                       [expected_gebv[id] for id in ids])) <= 1e-8
+
+    # The old unregularized SNP-BLUP identity is not an identity for K = G + 0.01I.
+    y_one = 1.0 .+ construction.W[:, 1] .+ collect(range(-0.2, 0.2; length = length(ids)))
+    X_one = ones(length(ids), 1)
+    Z_one = sparse(1.0I, length(ids), length(ids))
+    ridged_gblup = fit_gblup(y_one, X_one, Z_one, construction.Q, 0.5, 0.5; ids = ids)
+    unregularized_snp = fit_snp_blup(y_one, X_one, markers, 0.5, 0.5;
+                                    ids = marker_names)
+    @test maximum(abs.(breeding_values(ridged_gblup).values .- unregularized_snp.gebv)) > 1e-6
+end
+
 @testset "Sire-model fitted target fixture (#16)" begin
     fixture_dir = joinpath(@__DIR__, "fixtures", "sire_model_fitted_target")
     _, ped_rows = _csv_strings_for_test(joinpath(fixture_dir, "pedigree.csv"))
@@ -7258,6 +8396,251 @@ end
           occursin("not", lowercase(sire_target["boundary"]))
 end
 
+# Loaded into its own module so the harness's own `include` of the BLUPF90
+# packet does not replace the copy this file already loaded at line 9.
+module ComparatorHarnessUnderTest
+include(joinpath(@__DIR__, "..", "comparator", "run_targets.jl"))
+end
+
+@testset "Unified comparator harness (A11 validate-only)" begin
+    H = ComparatorHarnessUnderTest
+
+    manifest = TOML.parsefile(joinpath(@__DIR__, "fixtures", "comparator_targets.toml"))
+    toml_ids = Set(target["id"] for target in manifest["target"])
+
+    @testset "target accounting" begin
+        @test H.TARGET_COUNT == length(toml_ids)
+        @test Set(keys(H.ADAPTERS)) == toml_ids
+        for target in manifest["target"]
+            @test haskey(H.EXTERNAL_TIER, target["evidence_type"])
+        end
+        # No evidence_type may claim a completed external comparator. If one
+        # ever does, that is a covered-flip decision, not a harness edit.
+        @test !any(==("complete"), values(H.EXTERNAL_TIER))
+    end
+
+    @testset "CLI refuses to imply an external run" begin
+        @test H.parse_cli(String[]).strict == false
+        @test H.parse_cli(["--validate-only"]).write_manifest_file == true
+        @test H.parse_cli(["--strict"]).strict == true
+        @test H.parse_cli(["--no-write"]).write_manifest_file == false
+        @test_throws ErrorException H.parse_cli(["--run"])
+        @test_throws ErrorException H.parse_cli(["--nonsense"])
+    end
+
+    @testset "CSV validation catches rot, not just absence" begin
+        mktempdir() do dir
+            good = joinpath(dir, "good.csv")
+            write(good, "name,value\nsigma_a2,1.5\nsigma_e2,0.5\n")
+            @test H.validate_csv(good) === nothing
+
+            ragged = joinpath(dir, "ragged.csv")
+            write(ragged, "name,value\nsigma_a2,1.5\nsigma_e2\n")
+            @test occursin("cell", H.validate_csv(ragged))
+
+            nonfinite = joinpath(dir, "nonfinite.csv")
+            write(nonfinite, "name,value\nsigma_a2,NaN\n")
+            @test occursin("non-finite", H.validate_csv(nonfinite))
+
+            headeronly = joinpath(dir, "headeronly.csv")
+            write(headeronly, "name,value\n")
+            @test occursin("fewer than 2", H.validate_csv(headeronly))
+
+            # A non-finite value written as Inf is caught the same way.
+            infinite = joinpath(dir, "inf.csv")
+            write(infinite, "name,value\nsigma_a2,Inf\n")
+            @test occursin("non-finite", H.validate_csv(infinite))
+        end
+    end
+
+    @testset "validate-only run over all targets" begin
+        out = H.run_harness(; write_manifest_file = false, verbose = false)
+        entries = out.entries
+
+        @test length(entries) == H.TARGET_COUNT
+        @test Set(entry.id for entry in entries) == toml_ids
+        @test all(entry.status in H.ALLOWED_STATUSES for entry in entries)
+        @test all(entry.r_mirror in ("agree", "drift", "absent", "uncheckable") for entry in entries)
+        @test all(entry.external_comparator in ("none", "one_leg", "complete") for entry in entries)
+
+        # Every fixture in the repo validates, so every target carries a
+        # SHA-256 rollup digest over its required files.
+        @test all(length(entry.fixture_digest) == 64 for entry in entries)
+        @test all(!isempty(entry.file_digests) for entry in entries)
+        @test all(!isempty(entry.capability_rows) for entry in entries)
+
+        text = out.manifest_text
+        @test occursin("\"schema_version\": 2", text)
+        @test occursin("\"mode\": \"validate-only\"", text)
+        @test !occursin("\"mode\": \"run\"", text)
+        @test occursin("no external comparator was run", text)
+        @test occursin("\"external_comparator_complete\": 0", text)
+    end
+
+    @testset "cross-lane mirror parity is reported, not assumed" begin
+        out = H.run_harness(; write_manifest_file = false, verbose = false)
+        entries = out.entries
+
+        # Byte drift between the two lanes must never read as validated: two
+        # lanes comparing different data would agree about the wrong thing.
+        for entry in entries
+            entry.r_mirror == "drift" && @test entry.status == "gap"
+        end
+
+        if H.R_LANE !== nothing && H.R_FROZEN !== nothing
+            @test !any(entry.r_mirror == "drift" for entry in entries)
+            # The sire target is the one fixture the R lane has never mirrored.
+            sire = only(entry for entry in entries if entry.id == "sire_model_fitted_target")
+            @test sire.r_mirror == "absent"
+            @test sire.status == "gap"
+        end
+    end
+end
+
+@testset "Real-data validation manifest (A13 three-tier ladder)" begin
+    manifest_path = joinpath(@__DIR__, "..", "docs", "design", "real-data-validation-manifest.toml")
+    manifest = TOML.parsefile(manifest_path)
+    @test manifest["schema_version"] == 1
+    @test manifest["lane"] == "HSquared.jl"
+    @test occursin("does not promote any capability to covered", lowercase(manifest["claim_boundary"]))
+    @test occursin("does not claim field-empirical", lowercase(manifest["claim_boundary"]))
+
+    tier_summary = manifest["tier_summary"]
+    @test occursin("Not empirical validation", tier_summary["tier_1"])
+    @test occursin("Not field empirical", tier_summary["tier_2"])
+    @test occursin("NOT STARTED", tier_summary["tier_4"])
+
+    arcs = manifest["arc"]
+    ids = [arc["id"] for arc in arcs]
+    @test length(ids) == length(unique(ids))
+
+    tiers_present = sort(unique(arc["tier"] for arc in arcs))
+    @test tiers_present == [1, 2, 3, 4]
+
+    tier_counts = Dict(t => count(arc -> arc["tier"] == t, arcs) for t in tiers_present)
+    @test tier_counts[1] >= 5
+    @test tier_counts[2] >= 4
+    @test tier_counts[3] >= 3
+    @test tier_counts[4] == 1
+
+    allowed_origins = Set([
+        "synthetic",
+        "teaching-simulated",
+        "published-textbook",
+        "generated-comparator",
+        "field-empirical",
+    ])
+    allowed_darwin = Set(["pending", "signed", "blocked"])
+    allowed_ci = Set(["in-CI", "skip-guarded", "opt-in"])
+
+    for arc in arcs
+        @test arc["data_origin"] in allowed_origins
+        @test arc["darwin_review"] in allowed_darwin
+        @test arc["ci_policy"] in allowed_ci
+        @test !isempty(strip(arc["claim_boundary"]))
+        if arc["tier"] < 4
+            boundary = lowercase(arc["claim_boundary"])
+            @test occursin("not", boundary) ||
+                  occursin("no", boundary) ||
+                  occursin("only", boundary) ||
+                  occursin("open", boundary) ||
+                  occursin("internal", boundary) ||
+                  occursin("test-of-test", boundary) ||
+                  occursin("frozen", boundary)
+        end
+        if arc["tier"] < 4
+            @test arc["data_origin"] != "field-empirical"
+        end
+    end
+
+    gryphon = only(arc for arc in arcs if arc["id"] == "gryphon_bwt_reml")
+    @test gryphon["tier"] == 2
+    @test gryphon["data_origin"] == "teaching-simulated"
+    @test occursin("Not field empirical", gryphon["claim_boundary"])
+
+    placeholder = only(arc for arc in arcs if arc["id"] == "field_empirical_placeholder")
+    @test placeholder["tier"] == 4
+    @test placeholder["darwin_review"] == "blocked"
+    @test occursin("NOT STARTED", placeholder["claim_boundary"])
+
+    review = manifest["darwin_review"]
+    @test review["status"] == "pending"
+    @test review["signed_date"] == ""
+    @test review["reviewer"] == ""
+    @test length(review["questions"]) >= 3
+    @test length(review["checklist"]) >= 3
+    @test all(item -> item["status"] == "pending", review["checklist"])
+    @test any(q -> "gryphon_bwt_reml" in q["arc_ids"], review["questions"])
+end
+
+@testset "FA t=4 K=1 local rank, uniqueness, and variance units" begin
+    # Differential of vech(λλ' + diag(ψ)) with respect to (λ, ψ).
+    function fa_jacobian(λ)
+        J = zeros(10, 8)
+        row = 0
+        for i in 1:4, j in i:4
+            row += 1
+            J[row, i] += λ[j]
+            J[row, j] += λ[i]
+            if i == j
+                J[row, 4 + i] = 1.0
+            end
+        end
+        return J
+    end
+
+    λ = [0.9, 0.55, -0.35, 0.4]
+    ψ = [0.35, 0.45, 0.55, 0.5]
+    G = factor_analytic_covariance(reshape(λ, 4, 1), ψ)
+    @test ledermann_slack(4, 1) == 4
+    @test rank(fa_jacobian(λ)) == 8
+    @test factor_analytic_covariance(reshape(-λ, 4, 1), ψ) ≈ G
+    trait_order = [3, 1, 4, 2]
+    @test factor_analytic_covariance(reshape(λ[trait_order], 4, 1), ψ[trait_order]) ≈
+          G[trait_order, trait_order]
+    # Three nonzero off-diagonal products recover each loading square,
+    # hence ψ_i = G_ii - λ_i², up to the single global loading sign.
+    pairs = ((2, 3), (1, 3), (1, 2), (1, 2))
+    ψ_recovered = [G[i, i] - G[i, j] * G[i, k] / G[j, k]
+                   for (i, (j, k)) in enumerate(pairs)]
+    @test ψ_recovered ≈ ψ
+
+    # Positive Ledermann slack alone does not identify ψ: with only two
+    # nonzero loadings, their product is fixed while their squares can move.
+    λ_sparse = [1.0, 1.0, 0.0, 0.0]
+    ψ_sparse = ones(4)
+    c = 1.1
+    λ_alternative = [c, inv(c), 0.0, 0.0]
+    ψ_alternative = [2 - c^2, 2 - inv(c)^2, 1.0, 1.0]
+    @test minimum(ψ_alternative) > FA_UNIQUENESS_FLOOR
+    @test rank(fa_jacobian(λ_sparse)) == 7
+    @test ψ_alternative != ψ_sparse
+    @test factor_analytic_covariance(reshape(λ_sparse, 4, 1), ψ_sparse) ≈
+          factor_analytic_covariance(reshape(λ_alternative, 4, 1), ψ_alternative)
+    # The LRT still computes a nominal tail for this singular FA point; its
+    # note must not certify regularity from the rotation-adjusted df alone.
+    G_sparse = factor_analytic_covariance(reshape(λ_sparse, 4, 1), ψ_sparse)
+    fa_null = (genetic_covariance = G_sparse, genetic_structure = :factor_analytic,
+               genetic_rank = 1, loglik = -100.0, converged = true)
+    unrestricted = (genetic_covariance = G_sparse, genetic_structure = :unstructured,
+                    genetic_rank = nothing, loglik = -95.0, converged = true)
+    lrt = covariance_structure_lrt(fa_null, unrestricted)
+    @test lrt.df == 2
+    @test lrt.reference == :chisq
+    @test occursin("nominal", lrt.note)
+    @test !occursin("exact", lrt.note)
+
+    # ψ is a variance: multiplying trait values by c multiplies λ by c and
+    # ψ by c². The frozen 1e-4 fitter floor stays absolute, so its admissible
+    # start region changes near the floor even though the covariance scales.
+    near_floor = fill(2 * FA_UNIQUENESS_FLOOR, 4)
+    scale = 0.5
+    @test factor_analytic_covariance(reshape(scale .* λ, 4, 1), scale^2 .* near_floor) ≈
+          scale^2 .* factor_analytic_covariance(reshape(λ, 4, 1), near_floor)
+    @test all(isfinite, HSquared._fa_uniqueness_to_unconstrained(near_floor))
+    @test_throws ArgumentError HSquared._fa_uniqueness_to_unconstrained(scale^2 .* near_floor)
+end
+
 @testset "Phase 4B structured genetic covariance (diag/lowrank/fa)" begin
     @test diagonal_covariance([1.0, 2.0, 3.0]) == Matrix(Diagonal([1.0, 2.0, 3.0]))
     Λ = reshape([1.0, -2.0], 2, 1)
@@ -7334,7 +8717,7 @@ end
     @test fa.genetic_structure == :factor_analytic
     @test fa.genetic_rank == 1
     @test genetic_structure(fa) == (structure = :factor_analytic, rank = 1)
-    @test all(fa.genetic_uniqueness .> 0)
+    @test all(fa.genetic_uniqueness .>= FA_UNIQUENESS_FLOOR)
     @test fa.genetic_covariance ≈ factor_analytic_covariance(fa.genetic_loadings, fa.genetic_uniqueness) atol = 1e-8
     @test fa.genetic_loadings[argmax(abs.(fa.genetic_loadings[:, 1])), 1] >= 0
     fa_loadings = genetic_loadings(fa)
@@ -7397,6 +8780,10 @@ end
         @test sp.genetic_structure == sname
         @test sp.genetic_rank == 1
         @test sp.rotation_invariant && sp.loadings_excluded
+        @test sp.traits == collect(sfit.traits)
+        @test sp.genetic_uniqueness == sfit.genetic_uniqueness
+        @test sp.genetic_uniqueness_identification ==
+              (sname == "factor_analytic" ? :not_assessed_by_fit : nothing)
         @test !(:genetic_loadings in keys(sp))              # hard contract: no raw loadings
         @test sp.genetic_covariance ≈ Matrix(sfit.genetic_covariance) atol = 1e-10
         @test sp.genetic_variances ≈ diag(sfit.genetic_covariance)
@@ -7589,11 +8976,16 @@ end
     @test fg.converged
     @test fg.marginal_loglik ≈ sr.likelihood.loglik rtol = 1e-6
 
-    # Poisson fit + the exported profile interval
-    yp = [3.0, 5.0, 8.0, 4.0, 6.0, 2.0, 5.0, 7.0]
-    fp = fit_laplace_reml(yp, X, Z, Ainv; family = :poisson, initial = (sigma_a2 = 1.0,))
+    # Poisson fit + the exported profile interval. Repeated records give this
+    # fixture an interior variance estimate, so the point-fit boundary guard
+    # does not prevent endpoint checks.
+    groups = repeat(1:8, inner = 8)
+    Zp = sparse(1:length(groups), groups, ones(length(groups)), length(groups), 8)
+    yp = Float64.(repeat([1, 1, 1, 2, 2, 15, 16, 17], inner = 8))
+    Xp = ones(length(yp), 1)
+    fp = fit_laplace_reml(yp, Xp, Zp, Ainv; family = :poisson, initial = (sigma_a2 = 1.0,))
     @test fp.family === :poisson && fp.converged
-    ci = laplace_reml_interval(yp, X, Z, Ainv; family = :poisson, level = 0.95)
+    ci = laplace_reml_interval(yp, Xp, Zp, Ainv; family = :poisson, level = 0.95)
     @test ci.lower < ci.sigma_a2 < ci.upper
     @test ci.level == 0.95
 
@@ -7817,7 +9209,7 @@ end
     end
 end
 
-@testset "Phase 6 fitted non-Gaussian (Laplace/VA REML over variance components)" begin
+@testset "Phase 6 fitted non-Gaussian (Laplace/VA marginal fitting)" begin
     # 8-animal interior fixture (where the REML optimum is interior)
     ids = ["a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8"]
     ped = normalize_pedigree(ids,
@@ -7859,17 +9251,17 @@ end
 
 @testset "Phase 6 Poisson variance-component profile interval" begin
     # Profile LRT interval for the Poisson animal-model sigma_a2, by inverting
-    # 2·(ℓ̂ − ℓ(σ²a)) = χ²₁,level. For this 8-animal count fixture the estimate
-    # is near zero with a flat lower profile (the lower endpoint clamps), while
-    # the upper endpoint is an interior LRT root.
+    # 2·(ℓ̂ − ℓ(σ²a)) = χ²₁,level. Repeated records provide within-animal
+    # information, so this fixture supports interior endpoint checks.
     ids = ["a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8"]
     ped = normalize_pedigree(ids,
         ["0", "0", "a1", "a1", "a2", "a2", "a3", "a5"],
         ["0", "0", "a2", "a2", "0", "0", "a4", "a6"])
     Ainv = pedigree_inverse(ped)
-    yp = [3.0, 5.0, 8.0, 4.0, 6.0, 2.0, 5.0, 7.0]
-    X = ones(8, 1)
-    Z = sparse(1.0I, 8, 8)
+    groups = repeat(1:8, inner = 8)
+    Z = sparse(1:length(groups), groups, ones(length(groups)), length(groups), 8)
+    yp = Float64.(repeat([1, 1, 1, 2, 2, 15, 16, 17], inner = 8))
+    X = ones(length(yp), 1)
 
     fp = HSquared.fit_laplace_reml(yp, X, Z, Ainv; family = :poisson, initial = (sigma_a2 = 1.0,))
     sa2hat = fp.variance_components.sigma_a2
@@ -7944,15 +9336,14 @@ end
     @test 0 < civ.lower < civ.sigma_a2 < civ.upper
     @test civ.lower_clamped && !civ.upper_clamped        # lower clamps, upper interior
 
-    # Bernoulli is supported but binary data is uninformative — the profile is flat so
-    # BOTH endpoints clamp (the `*_clamped` flags make the degeneracy machine-readable,
-    # not a silent finite CI). The converged flag does NOT catch this; the clamps do.
+    # This binary fixture puts the point fit at the search boundary. The interval
+    # API refuses it rather than returning finite-looking endpoints for an
+    # uninformative profile.
     yb01 = [1.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0]
-    cib = HSquared.laplace_reml_interval(yb01, X, Z, Ainv; family = :bernoulli, level = 0.95)
-    @test cib.level == 0.95
-    @test cib.lower_clamped && cib.upper_clamped         # degenerate: both endpoints are bounds
+    @test_throws ArgumentError HSquared.laplace_reml_interval(
+        yb01, X, Z, Ainv; family = :bernoulli, level = 0.95)
 
-    # marginal = :variational is REJECTED (the ELBO is a lower bound, not a χ²₁ LRT).
+    # The variational objective does not supply a calibrated χ²₁ likelihood-ratio test.
     @test_throws ArgumentError HSquared.laplace_reml_interval(yb, X, Z, Ainv;
                                     family = :binomial, n_trials = m, marginal = :variational)
 
@@ -8347,13 +9738,25 @@ end
     mv2_lr = fit_multivariate_reml(Yr, Xr, Zr, Ainv; genetic_structure = :lowrank, rank = 1)
     lrt_lr = covariance_structure_lrt(mv2_lr, mv2)
     @test lrt_lr.df == 1
-    @test lrt_lr.boundary == true           # rank/PSD-boundary null → conservative
+    @test lrt_lr.boundary == true           # rank/PSD-boundary null; naive χ² tail, direction unknown (#331)
+    @test lrt_lr.reference == :chisq_naive_boundary
+    @test lrt_lr.pvalue ≈ HSquared._chisq_sf(max(lrt_lr.statistic, 0.0), 1) atol = 1e-12   # was 0.5x this before #331
 
     # (6) honest small-n limitation: at n=8 single-record the unstructured optimum
-    # is on the genetic-correlation boundary, so the observed information is not PD
-    # and standard errors are unavailable (the function says so rather than guessing)
+    # is on the genetic-correlation boundary, so standard errors are unavailable
+    # (the function says so rather than guessing). Pin the throw on |r_g|≈1 as
+    # well as a non-PD FD Hessian: the Hessian alone can look PD on some
+    # Julia/BLAS builds (CI flake on 1.10 at this site). Keep the check.
     mv2_bnd = fit_multivariate_reml(hcat(y1, y2), X, Z, Ainv)
+    @test abs(mv2_bnd.genetic_correlation[1, 2]) >= 1 - 1e-6
     @test_throws ArgumentError multivariate_covariance_standard_errors(mv2_bnd, hcat(y1, y2), X, Z, Ainv)
+    # Contract lock: |r_g|=1 is a boundary even if a later Hessian would look PD.
+    fake_bnd = (
+        genetic_structure = :unstructured,
+        genetic_covariance = [1.0 1.0; 1.0 1.0],
+        residual_covariance = [1.0 0.0; 0.0 1.0],
+    )
+    @test_throws ArgumentError multivariate_covariance_standard_errors(fake_bnd, hcat(y1, y2), X, Z, Ainv)
 
     # (7) guards
     @test_throws ArgumentError covariance_structure_lrt(mv2, mv2_diag)        # df <= 0 (wrong order)
@@ -8413,7 +9816,7 @@ end
     @test_throws ArgumentError genetic_correlation_interval(mv2_diag, Yr, Xr, Zr, Ainv)  # structured rejected
 
     # boundary: n=8 single-record → rg on the boundary → SE path throws → :delta throws
-    # (a clear ArgumentError, never a fabricated whisker)
+    # (a clear ArgumentError, never a fabricated whisker). Same |r_g| pin as (6).
     X = ones(8, 1); Z = Matrix(1.0I, 8, 8)
     mv_bnd = fit_multivariate_reml(hcat(y1, y2), X, Z, Ainv)
     @test_throws ArgumentError genetic_correlation_interval(mv_bnd, hcat(y1, y2), X, Z, Ainv)
@@ -9106,7 +10509,7 @@ end
     @test gr2.converged
     @test gr2.loglik ≥ gl(Yp2, Ainv, Λ0, HSquared.PoissonResponse(); X = X).loglik - 1e-6
     @test size(gr2.genetic_covariance) == (2, 2)
-    @test size(gr2.breeding_values) == (q, 1)
+    @test size(gr2.breeding_values) == size(Yp2)
     @test haskey(gr2.latent_structure, :communality)
 
     # --- Gaussian self-consistency: the marginal at the optimum equals the multivariate
@@ -9195,7 +10598,7 @@ end
     @test fit_mix.converged
     @test isfinite(fit_mix.loglik)
     @test size(fit_mix.genetic_covariance) == (2, 2)
-    @test size(fit_mix.breeding_values) == (q, 1)
+    @test size(fit_mix.breeding_values) == size(Ymix)
 
     # (b) Uniform-vector family gives the SAME genetic_covariance as the scalar fit (exact).
     Yp2 = Float64[2 4; 1 3; 3 5; 0 2; 4 6; 2 1; 1 7; 5 0]
@@ -9211,10 +10614,10 @@ end
     @test G isa Matrix{Float64}
     @test size(G) == (2, 2)
     @test all(eigvals(Symmetric(G)) .>= -1e-12)      # PSD (rank-1 low-rank, smallest ≈ 0)
-    #   breeding_values: q × K matrix
+    #   breeding_values: q × T trait genetic conditional modes
     bv = HSquared.breeding_values(fit_scalar)
     @test bv isa Matrix{Float64}
-    @test size(bv) == (q, 1)
+    @test size(bv) == size(Yp2)
     #   latent_structure: NamedTuple with communality field
     ls = HSquared.latent_structure(fit_scalar)
     @test haskey(ls, :communality)
@@ -9624,9 +11027,12 @@ end
         @test hasproperty(vb[1], :direct_variance)
         @test hasproperty(vb[1], :partner_variance)
         @test hasproperty(vb[1], :covariance)
-        @test length(res.random_effects) == 2   # direct + partner
-        @test res.random_effects[1].name == "animal"
-        @test res.random_effects[2].name == "maternal"
+        @test length(res.random_effects) == 1
+        @test res.random_effects[1].name == "maternal"
+        @test res.random_effects[1].ids == fit_v2.direct_effects.ids
+        @test res.random_effects[1].direct ≈ fit_v2.direct_effects.values
+        @test res.random_effects[1].partner ≈ fit_v2.maternal_effects.values
+        @test !hasproperty(res.random_effects[1], :values)
     end
 
     # -----------------------------------------------------------------------
@@ -9646,6 +11052,15 @@ end
             "payload_version" => 2,
             "y" => y_obs, "X" => X_int,
             "random_effects" => [Dict("name" => "a", "type" => "iid",
+                                      "relmat_status" => "identity")],
+        ))
+
+        # Missing required block envelope key: do not silently default ids.
+        @test_throws ArgumentError parse_payload_v2(Dict(
+            "payload_version" => 2,
+            "y" => y_obs, "X" => X_int,
+            "random_effects" => [Dict("name" => "a", "type" => "iid",
+                                      "Z" => Z_animal,
                                       "relmat_status" => "identity")],
         ))
 
@@ -9705,8 +11120,238 @@ end
                      "partner_incidence" => Zm2),
             ],
         ))
+
+        # A single coefcov block parses, but its fit route is not wired. Keep
+        # the error accurate for this one-block case as well as multi-blocks.
+        coefcov_payload = Dict(
+            "payload_version" => 2,
+            "y" => y_obs,
+            "X" => X_int,
+            "random_effects" => [Dict(
+                "name" => "slope",
+                "type" => "coefcov",
+                "Z" => Z_animal,
+                "relmat_status" => "identity",
+                "ids" => ped_ids,
+                "basis" => "raw",
+                "order" => 2,
+                "Phi" => hcat(ones(length(y_obs)), collect(1.0:length(y_obs))),
+                "covariate" => "time",
+                "cov_structure" => "unstructured",
+            )],
+        )
+        parsed_coefcov = parse_payload_v2(coefcov_payload)
+        @test parsed_coefcov.dispatch == :coefcov
+        coefcov_error = try
+            fit_payload_v2(coefcov_payload)
+            nothing
+        catch err
+            err
+        end
+        @test coefcov_error isa Phase0NotImplementedError
+        coefcov_message = sprint(showerror, coefcov_error)
+        @test occursin("no coefcov payload fitting route is currently wired", coefcov_message)
+        @test !occursin("multi-block", coefcov_message)
+        coefcov_doc = string(Base.Docs.doc(fit_payload_v2))
+        @test occursin("no coefcov payload fitting route is currently wired", coefcov_doc)
     end
 end
 
+# Frozen coefficient-covariance payload field validation; no fitting route.
+include(joinpath(@__DIR__, "test_coefcov_fields.jl"))
+
+# 0.8 S3 FA uniqueness-interior bound + Ledermann covered-flip refuse (not a flip).
+include(joinpath(@__DIR__, "test_fa_uniqueness_interior.jl"))
+
+# #331 — covariance_structure_lrt / _mv_nparams FA/low-rank rotational-indeterminacy df fix.
+include(joinpath(@__DIR__, "test_331_structured_lrt_df.jl"))
+
 # P0.5 cross-lane payload-v2 round-trip parity (fixtures emitted by R, read by Julia).
 include(joinpath(@__DIR__, "test_payload_v2_parity.jl"))
+
+# #436: payload-v2 arms must error when they ignore fit kwargs.
+include(joinpath(@__DIR__, "test_payload_v2_ignored_kwargs.jl"))
+
+# hsquared#212 (engine half): initial/iterations threading through payload-v2
+# multi_effect/direct_maternal dispatch and single-step/metafounder-single-step fitters.
+include(joinpath(@__DIR__, "test_212_engine_controls.jl"))
+
+# #343 (follow-on to hsquared#212 / #337): initial/iterations threading through
+# payload-v2 multi_effect dispatch on the opt-in scale_method = :auto route.
+include(joinpath(@__DIR__, "test_343_auto_forwarding.jl"))
+
+# A3 ratified non-Gaussian three-field transport contract (private Julia envelope).
+include(joinpath(@__DIR__, "a3_three_field.jl"))
+
+# A4-1 scalar Binomial-logit observation scale and varying-trial sentinel.
+include(joinpath(@__DIR__, "a4_binomial_observation_scale.jl"))
+
+# #327 NonGaussianFit.boundary honesty flag + three-field payload refusal.
+include(joinpath(@__DIR__, "test_327_boundary_flag.jl"))
+
+# Pure-logic kernel for the post-hoc, no-fit repeatability ratio-bias decomposition.
+include(joinpath(@__DIR__, "..", "sim", "repeatability_ratio_bias_analysis.jl"))
+@testset "Repeatability ratio-bias decomposition kernel" begin
+    @test_nowarn RepeatabilityRatioBiasAnalysis._self_test()
+end
+
+# max_dense_cells kwarg on the dense-validation fitters (engine half of
+# hsquared#214, #217): generalized guard + fit_repeatability_reml now guarded.
+include("test_214_217_dense_cells.jl")
+include("test_352_multi_effect_se.jl")
+include("test_multivariate_repeatability.jl")
+include("test_multivariate_fa_multistart.jl")
+include("test_fa_weak_direction.jl")
+include("test_fa_ordinary_start_driver.jl")
+include("test_365_loglik_convention.jl")
+include("test_post_fit_uncertainty_reuse.jl")
+include("test_issue_432_bootstrap_interval.jl")
+include("test_issue_422_ridge_se_refused.jl")
+include("test_issue_433_plot_interval_errors.jl")
+include("test_issue_434_repeatability_interval.jl")
+include("test_issue_425_fd_step_scale.jl")
+include("test_issue_428_heritability_profile_clamping.jl")
+include("test_issue_437_nonconverged_uncertainty.jl")
+include("test_issue_415_two_effect_sparse_route.jl")
+include("test_issue_438_marker_scan_sigma_e2.jl")
+include("test_issue_427_mc_reml_status.jl")
+include("test_api_docstrings.jl")
+include("test_aireml_workspace_reuse.jl")
+
+# #334: docs/make.jl must not dirty docs/src/validation-status.md on a
+# no-content-change rebuild (regeneration must be idempotent, no timestamp).
+include(joinpath(@__DIR__, "test_334_status_page_idempotent.jl"))
+
+# #350: sparse (Takahashi selected-inverse) defaults for prediction_error_variance
+# and the reliability denominator; result_payload / breeding_values_plot_data budget.
+include(joinpath(@__DIR__, "test_selinv_defaults_350.jl"))
+
+# 1 + F: the reliability denominator from the inbreeding coefficients pedigree_inverse
+# already computes, carried on the spec (Szymek Drobniak, #350 follow-up).
+include(joinpath(@__DIR__, "test_relationship_diag_1pF.jl"))
+
+include(joinpath(@__DIR__, "genetic_gllvm_trait_effects.jl"))
+
+include(joinpath(@__DIR__, "fa_independent_dense_reml.jl"))
+include(joinpath(@__DIR__, "bootstrap_convergence_contract.jl"))
+include(joinpath(@__DIR__, "wave1_numerical_contracts.jl"))
+include(joinpath(@__DIR__, "wave1_stationarity_contracts.jl"))
+include(joinpath(@__DIR__, "wave1_boundary_score_contracts.jl"))
+include(joinpath(@__DIR__, "test_issue_441_keffect_boundary_cap.jl"))
+include(joinpath(@__DIR__, "wave1_simd_fit_parity.jl"))
+include(joinpath(@__DIR__, "wave1_workspace_pattern_contracts.jl"))
+include(joinpath(@__DIR__, "wave2_nongaussian_contracts.jl"))
+include(joinpath(@__DIR__, "test_sweep_dense_and_newton.jl"))
+# #439: fit_laplace_reml must error when a family does not use a supplied control.
+include(joinpath(@__DIR__, "test_laplace_reml_unused_controls.jl"))
+# #435: fit_multi_effect must error when the :exact route is given a dropped keyword.
+include(joinpath(@__DIR__, "test_fit_multi_effect_exact_unused_keywords.jl"))
+include(joinpath(@__DIR__, "wave2_precision_contracts.jl"))
+include(joinpath(@__DIR__, "wave3_payload_pedigree_order.jl"))
+include(joinpath(@__DIR__, "wave4_covariance_contracts.jl"))
+include(joinpath(@__DIR__, "wave4_planned_term_wording.jl"))
+include(joinpath(@__DIR__, "test_data_empty_marker_status.jl"))
+include(joinpath(@__DIR__, "test_data_dict_id_lengths.jl"))
+include(joinpath(@__DIR__, "test_sparse_reml_finite_variances.jl"))
+include(joinpath(@__DIR__, "test_evolvability_stability.jl"))
+include(joinpath(@__DIR__, "test_fit_snp_blup_reml_options.jl"))
+include(joinpath(@__DIR__, "test_pedigree_constructor_contract.jl"))
+include(joinpath(@__DIR__, "test_sparse_aireml_input_contracts.jl"))
+
+# Exact-current E1 repairs: keep standalone test scopes independent.
+module E1GLLVMInputGuards
+    include(joinpath(@__DIR__, "gllvm_input_guard_regression.jl"))
+end
+
+module E1GLLVMDescriptorRecord
+    include(joinpath(@__DIR__, "gllvm_descriptor_record_regression.jl"))
+end
+
+module E1RRDescriptors
+    include(joinpath(@__DIR__, "rr_descriptor_scale_regression.jl"))
+end
+
+module E1DataDictMissingCount
+    include(joinpath(@__DIR__, "data_dict_missing_count_regression.jl"))
+end
+
+module E1FlatIntegralEndpoints
+    include(joinpath(@__DIR__, "flat_integral_endpoint_regression.jl"))
+end
+
+module E1NonGaussianFiniteIngress
+    include(joinpath(@__DIR__, "nongaussian_finite_ingress_regression.jl"))
+end
+
+
+module E1NonGaussianH2Descriptors
+    include(joinpath(@__DIR__, "nongaussian_h2_descriptor_regression.jl"))
+end
+
+module E1GenomicContracts
+    include(joinpath(@__DIR__, "test_genomic_summary_contracts.jl"))
+    include(joinpath(@__DIR__, "test_genomic_doc_bindings.jl"))
+    include(joinpath(@__DIR__, "test_genomic_variance_boundary.jl"))
+end
+
+module E1Issue420SpectralGreml
+    include(joinpath(@__DIR__, "test_issue_420_spectral_greml.jl"))
+end
+
+module E1MultivariateContracts
+    include(joinpath(@__DIR__, "multivariate_contract_regression.jl"))
+end
+
+module E1LikelihoodInput
+    include(joinpath(@__DIR__, "likelihood_input_guard_regression.jl"))
+end
+
+module E1LikelihoodUncertainty
+    include(joinpath(@__DIR__, "likelihood_uncertainty_contract_regression.jl"))
+end
+
+module E1LikelihoodProfilePEV
+    include(joinpath(@__DIR__, "likelihood_profile_pev_contracts.jl"))
+    include(joinpath(@__DIR__, "likelihood_profile_pev_analytic_controls.jl"))
+end
+
+module E1IterativeFinite
+    include(joinpath(@__DIR__, "iterative_finite_contracts.jl"))
+    include(joinpath(@__DIR__, "iterative_summary_controls.jl"))
+end
+
+module E1PedigreeResidual
+    include(joinpath(@__DIR__, "pedigree_residual_contracts.jl"))
+end
+
+module E1SelinvTraceFinite
+    using HSquared
+    include(joinpath(@__DIR__, "selinv_trace_finite_regression.jl"))
+end
+
+module E1EvolvabilityFinite
+    using HSquared
+    include(joinpath(@__DIR__, "evolvability_finite_output_regression.jl"))
+end
+
+include("test_issue_410_mv_se_hoist.jl")
+
+# Preserve original specification identity while computing validated buffers.
+include("likelihood_original_spec_regression.jl")
+
+# Preserve original specification identity while computing validated buffers.
+include("likelihood_helper_identity_regression.jl")
+
+# Hosted rounding regression, isolated from existing fixture namespaces.
+module HostedGenomicEndpointRoundoff
+include("wave4_genomic_endpoint_roundoff.jl")
+end
+
+# Hosted true-residual regression, isolated from existing fixture namespaces.
+module HostedPCGTrueResidual
+include("pcg_true_residual_regression.jl")
+end
+
+include("test_metafounder_animal_model_guards.jl")
+include("test_genetic_gllvm_mme_options.jl")
+include(joinpath(@__DIR__, "test_fit_metafounder_single_step_kwargs.jl"))

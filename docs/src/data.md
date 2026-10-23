@@ -46,8 +46,15 @@ engine pedigree representation.
 
 Raw pedigree tables are allowed to carry warning conditions such as duplicate
 IDs, missing known parent IDs, self-parent rows, or same-known-parent rows so
-`data_status()` can report them. A normalized `Pedigree` cannot contain those
-conditions because `normalize_pedigree()` rejects them before engine use.
+`data_status()` can report them. `normalize_pedigree()` rejects duplicate IDs,
+missing known parent IDs, and self-parent rows. It rejects a same-known-parent
+row by default, but `allow_selfing = true` permits self-fertilization; the
+already-indexed `Pedigree` constructor also permits the same earlier parent in
+both parent slots.
+For a raw table, `data_status()` recognizes `sire`/`father` and `dam`/`mother`
+column names independently, so a single recognized parent column is retained
+in its correct diagnostic count. If neither alias is present, the existing
+three-column positional convention is used.
 
 ## R Parser Integration
 

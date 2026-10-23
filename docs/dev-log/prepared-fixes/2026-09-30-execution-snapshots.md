@@ -1,0 +1,5 @@
+# Retained execution snapshots, 2026-09-30
+
+The review packets include repeated execution copies of the engine, dependencies and fixtures. Their exact bytes are retained in `2026-09-30-execution-snapshots.tar.gz`, with a complete repository-relative SHA256 inventory in `2026-09-30-execution-snapshots-index.json`. Every archived file was extracted in memory and its digest verified. Original copies remain in the owned local worktree; none was deleted or edited.
+
+Patches, reviews, inventories, results and runtime logs remain individually readable in Git. Repeated source/environment files are stored in the archive to reduce review noise. To inspect them, list with `python3 -m tarfile -l docs/dev-log/prepared-fixes/2026-09-30-execution-snapshots.tar.gz`; extract into a fresh scratch directory with `python3 -m tarfile -e docs/dev-log/prepared-fixes/2026-09-30-execution-snapshots.tar.gz /tmp/hsq-review-snapshots`. Paths under that directory reproduce the recorded packet paths. Verify the index before executing any restored code. This is evidence packaging, with no numerical-source, test, campaign or capability change.

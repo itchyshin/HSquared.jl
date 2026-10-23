@@ -1,0 +1,16 @@
+cell	host	route	N	fit_ok	fit_converged	se_ok	target	n_eval	n_cover	coverage	mcse	n_refuse	refusal_rate	claim_class
+low_pe	DRAC	sparse_auto	2000	2000	1404	1398	Va	1398	1233	0.881974	0.008629	602	0.301000	directional-conservative-bank
+low_pe	DRAC	sparse_auto	2000	2000	1404	1398	Vpe	1398	1340	0.958512	0.005333	602	0.301000	directional-conservative-bank
+low_pe	DRAC	sparse_auto	2000	2000	1404	1398	Ve	1398	1308	0.935622	0.006564	602	0.301000	directional-conservative-bank
+low_pe	DRAC	sparse_auto	2000	2000	1404	1398	h2	1398	1396	0.998569	0.001011	602	0.301000	directional-conservative-bank
+low_pe	DRAC	sparse_auto	2000	2000	1404	1398	t	1398	1348	0.964235	0.004967	602	0.301000	directional-conservative-bank
+near_pe	DRAC	sparse_auto	2000	2000	1112	1101	Va	1101	929	0.843778	0.010942	899	0.449500	directional-conservative-bank
+near_pe	DRAC	sparse_auto	2000	2000	1112	1101	Vpe	1101	1038	0.942779	0.007000	899	0.449500	directional-conservative-bank
+near_pe	DRAC	sparse_auto	2000	2000	1112	1101	Ve	1101	1023	0.929155	0.007732	899	0.449500	directional-conservative-bank
+near_pe	DRAC	sparse_auto	2000	2000	1112	1101	h2	1101	1098	0.997275	0.001571	899	0.449500	directional-conservative-bank
+near_pe	DRAC	sparse_auto	2000	2000	1112	1101	t	1101	1060	0.962761	0.005706	899	0.449500	directional-conservative-bank
+near_va	DRAC	sparse_auto	2000	2000	1111	1108	Va	1108	1108	1.000000	0.000000	892	0.446000	directional-conservative-bank
+near_va	DRAC	sparse_auto	2000	2000	1111	1108	Vpe	1108	1054	0.951264	0.006469	892	0.446000	directional-conservative-bank
+near_va	DRAC	sparse_auto	2000	2000	1111	1108	Ve	1108	1042	0.940433	0.007110	892	0.446000	directional-conservative-bank
+near_va	DRAC	sparse_auto	2000	2000	1111	1108	h2	1108	858	0.774368	0.012558	892	0.446000	directional-conservative-bank
+near_va	DRAC	sparse_auto	2000	2000	1111	1108	t	1108	1063	0.959386	0.005930	892	0.446000	directional-conservative-bank
