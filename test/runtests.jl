@@ -25,6 +25,7 @@ include("test_issue_421_sparse_laplace.jl")
 include("test_issue_357_henderson_mme_cholesky.jl")
 include("test_issue_357_result_payload_reuse.jl")
 include("test_issue_413_two_effect_scale_warning.jl")
+include("test_issue_429_false_residual_boundary.jl")
 include("test_issue_416_weak_identifiability_warning.jl")
 
 # dense NRM helper lives in src now: HSquared._numerator_relationship (src/pedigree.jl)

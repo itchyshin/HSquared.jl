@@ -349,6 +349,39 @@ function _sparse_reml_loglik(
     )
 end
 
+# HSquared.jl #429: on log-variances the objective goes flat as a variance goes
+# to zero, even when the linear-scale score points back into the interior. The
+# NelderMead simplex spread then falls below g_tol and Optim reports
+# convergence at a false boundary, many log-likelihood units below the interior
+# optimum. When a fit ends with a variance share at or below this, refit once
+# from a start on the scale of y and keep the better objective.
+const _NELDER_MEAD_BOUNDARY_SHARE = 1e-6
+
+# Log of (v / 2, v / 2), with v the residual variance of y after the fixed
+# effects; `nothing` when no positive finite v exists.
+function _residual_scale_log_start(spec::AnimalModelSpec)
+    df = length(spec.y) - size(spec.X, 2)
+    df > 0 || return nothing
+    residual = spec.y - spec.X * (spec.X \ spec.y)
+    v = dot(residual, residual) / df
+    (isfinite(v) && v > 0) || return nothing
+    return log.([v / 2, v / 2])
+end
+
+function _optimize_two_variances(objective, logstart, spec::AnimalModelSpec, iterations::Integer)
+    options = Optim.Options(iterations = iterations)
+    result = optimize(objective, logstart, NelderMead(), options)
+    theta = exp.(Optim.minimizer(result))
+    minimum(theta) / sum(theta) <= _NELDER_MEAD_BOUNDARY_SHARE ||
+        return result, Optim.iterations(result)
+    rescue_start = _residual_scale_log_start(spec)
+    rescue_start === nothing && return result, Optim.iterations(result)
+    rescue = optimize(objective, rescue_start, NelderMead(), options)
+    total_iterations = Optim.iterations(result) + Optim.iterations(rescue)
+    Optim.minimum(rescue) < Optim.minimum(result) && return rescue, total_iterations
+    return result, total_iterations
+end
+
 """
     fit_variance_components(spec; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0),
                             method = spec.method, iterations = 1_000,
@@ -364,6 +397,13 @@ dense path (hsquared#214): if `nobs^2 + nanimals^2` exceeds it, this throws an
 `ArgumentError` naming the observed cell count and the effective cap. This is
 also the path the R default `animal()` route reaches, via
 `fit_animal_model(...; kwargs...)` forwarding `max_dense_cells` here.
+
+If the fit ends with a variance share at or below `1e-6`, it refits once from
+`(v/2, v/2)`, with `v` the residual variance of `y` after the fixed effects,
+and keeps the higher log-likelihood. From the unit-scale default start, a
+response with variance far below 1 can otherwise stop at a false `σ²e → 0`
+boundary with `converged = true` (HSquared.jl #429). `iterations` caps each
+run; the reported count is the sum over both runs.
 """
 function fit_variance_components(
     spec::AnimalModelSpec;
@@ -395,11 +435,11 @@ function fit_variance_components(
         end
     end
 
-    result = optimize(
+    result, optimizer_iterations = _optimize_two_variances(
         objective,
         log.([sigma_a2_start, sigma_e2_start]),
-        NelderMead(),
-        Optim.Options(iterations = iterations),
+        spec,
+        iterations,
     )
 
     isfinite(Optim.minimum(result)) || throw(ArgumentError("dense optimizer did not find a finite objective"))
@@ -422,7 +462,7 @@ function fit_variance_components(
         (sigma_a2 = sigma_a2, sigma_e2 = sigma_e2),
         converged,
         status,
-        Optim.iterations(result),
+        optimizer_iterations,
     )
 end
 
@@ -442,6 +482,11 @@ fitting path, and not a production sparse solver.
 not certify score stationarity or a closed-boundary optimum. Exact zero
 components are unavailable in this positive log-variance parameterization;
 nonfinite proposals are rejected and nonfinite final results raise an error.
+
+If the fit ends with a variance share at or below `1e-6`, it refits once from
+`(v/2, v/2)`, with `v` the residual variance of `y` after the fixed effects,
+and keeps the higher REML log-likelihood (HSquared.jl #429). `iterations` caps
+each run; the reported count is the sum over both runs.
 """
 function fit_sparse_reml(
     spec::AnimalModelSpec;
@@ -481,11 +526,11 @@ function fit_sparse_reml(
         end
     end
 
-    result = optimize(
+    result, optimizer_iterations = _optimize_two_variances(
         objective,
         log.([sigma_a2_start, sigma_e2_start]),
-        NelderMead(),
-        Optim.Options(iterations = iterations),
+        spec,
+        iterations,
     )
 
     isfinite(Optim.minimum(result)) || throw(ArgumentError("sparse optimizer did not find a finite objective"))
@@ -504,7 +549,7 @@ function fit_sparse_reml(
         (sigma_a2 = sigma_a2, sigma_e2 = sigma_e2),
         converged,
         status,
-        Optim.iterations(result),
+        optimizer_iterations,
         :sparse_reml,
         false,
         true,
