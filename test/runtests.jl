@@ -11290,6 +11290,10 @@ module E1GenomicContracts
     include(joinpath(@__DIR__, "test_genomic_variance_boundary.jl"))
 end
 
+module E1Issue420SpectralGreml
+    include(joinpath(@__DIR__, "test_issue_420_spectral_greml.jl"))
+end
+
 module E1MultivariateContracts
     include(joinpath(@__DIR__, "multivariate_contract_regression.jl"))
 end
