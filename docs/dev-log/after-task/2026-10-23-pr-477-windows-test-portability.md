@@ -49,7 +49,7 @@ Julia was unavailable locally, so the revised test must be validated by hosted C
 
 ## 10. Known Residuals
 
-The revised test has not yet run on Julia. The updated PR head must pass its full CI matrix and documentation check before merge. The PR remains draft until that evidence is available. Updating the PR description was attempted through the GitHub connector but was rejected with HTTP 403, so its existing test description still needs correction.
+The revised test has not yet run on Julia. The updated PR head must pass its full CI matrix and documentation check before merge. The PR remains draft until that evidence is available. Updating the PR description through the GitHub connector returned HTTP 403; the same description correction was then applied successfully with the authenticated GitHub CLI.
 
 ## 11. Team Learning
 
