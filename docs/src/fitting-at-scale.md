@@ -36,6 +36,16 @@ memory and time (measured: the direct multi-effect path is already ~quadratic by
 METIS reordering did **not** fix it). The matrix-free engine never forms or factorizes `C`, so it
 has no fill wall — it has stayed feasible fitting `K = 3` models to 200 000 individuals in testing (the matrix-free *solve* it is built on reaches a million) — but it uses stochastic trace estimates. Their MCSE is not a variance-component standard error and excludes PCG solve error.
 
+!!! note "Single-effect AI-REML limit: more than 512 animals (q > 512)"
+    "Scales to very large pedigrees" describes the sparse factorization, not a guarantee that
+    default AI-REML converges. When the selected-inverse score is cancellation-dominated (typically
+    when the animal variance is at or near zero) and the pedigree has more than 512 animals
+    (q > 512), [`fit_ai_reml`](@ref) stops with `optimizer_status = "boundary_score_unresolved"`
+    and `converged = false`, and returns the iterate it had reached. That iterate is not a
+    certified REML optimum and can depend on the starting values. Re-fit the same spec with
+    [`fit_sparse_reml`](@ref) (in `hsquared()`, `engine_control = list(target = "sparse_reml")`), or raise
+    `em_warmup`. HSquared.jl #407.
+
 This is the same accuracy-for-feasibility trade a variational approximation makes: you reach for
 the approximate engine **only** where the exact one cannot run.
 
