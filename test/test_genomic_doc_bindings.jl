@@ -7,6 +7,20 @@ using Test, HSquared
     end
 end
 
+@testset "single-step genetic-base caveat is documented (issue 53)" begin
+    doc_text(f) = join(string.(
+        [d.text for d in values(Docs.meta(HSquared)[Docs.Binding(HSquared, f)].docs)]), "")
+    for name in (:single_step_inverse, :_single_step_Hinv)
+        txt = doc_text(name)
+        @test occursin("genetic base", txt)
+        @test occursin("metafounder_single_step_inverse", txt)
+    end
+    d56 = read(joinpath(@__DIR__, "..", "docs", "design",
+                        "56-single-step-grammar-freeze.md"), String)
+    @test occursin("genetic base", d56)
+    @test occursin("metafounder_single_step_inverse", d56)
+end
+
 @testset "finite median extremes and label metadata neighbours" begin
     @test HSquared._median_float([-1e308,1e308]) == 0.0
     @test HSquared._median_float([-1e308,-1e308]) == -1e308

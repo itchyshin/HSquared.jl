@@ -64,6 +64,8 @@ At the frozen ordinary defaults (`τ = ω = 1`, `blend_weight = ridge = 0`)
 this is `G_w = G` and `H⁻¹ = A⁻¹ + scatter(G⁻¹ − A₂₂⁻¹)`.
 `A₂₂⁻¹` is `inv(A[g, g])`, **not** `(A⁻¹)[g, g]`.
 
+**Genetic base (documentation note, issue 53).** `G` and `A₂₂` are assumed to share a genetic base. The default sample-frequency `G` (no `allele_frequencies` argument, `blend_weight = ridge = 0`, `tau = omega = 1`) is not guaranteed to, and no scaling step is applied here; `metafounder_single_step_inverse` is the route that handles the base through a supplied `Gamma`. This is a documentation note only: no scaling step or default changes, and which side is right is not adjudicated here (the underlying theory is AGENT-INFERRED; see issue 53).
+
 Pass objects were σ²a and σ²e (`docs/dev-log/recovery-checkpoints/2026-09-03-v08-ss-n-recovery-gate-predeclaration.md`).
 Derived h² = σ²a / (σ²a+σ²e) was **reported, not gated**.
 

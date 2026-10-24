@@ -2620,6 +2620,8 @@ optionally blended/ridged genomic relationship among them.
 Critically, `A₂₂⁻¹` is the inverse of the *submatrix* `A[g, g]`, **not** the
 submatrix `(A⁻¹)[g, g]` — the two differ.
 
+`G` and `A₂₂` are assumed to share a genetic base. The default sample-frequency `G` (no `allele_frequencies` argument, `blend_weight = ridge = 0`, `tau = omega = 1`) is not guaranteed to, and no scaling step is applied here; `metafounder_single_step_inverse` is the route that handles the base through a supplied `Gamma`. This is a documentation note only: no scaling step or default changes, and which side is right is not adjudicated here (the underlying theory is AGENT-INFERRED; see issue 53).
+
 Internal validation-only construction utility: dense, not exported, and **not**
 wired into fitting. The `blend_weight` / `tau` / `omega` / `ridge` knobs are not
 comparator-validated; defaults are `blend_weight = ridge = 0`, `tau = omega = 1`.
@@ -2718,6 +2720,8 @@ must also be positive definite.
 Experimental, dense/validation-scale. The `blend_weight`/`tau`/`omega`/`ridge`
 knobs are not comparator-validated (defaults `blend_weight = ridge = 0`,
 `tau = omega = 1`); a singular raw `G` requires blending/ridging.
+
+`G` and `A₂₂` are assumed to share a genetic base. The default sample-frequency `G` (no `allele_frequencies` argument, `blend_weight = ridge = 0`, `tau = omega = 1`) is not guaranteed to, and no scaling step is applied here; [`metafounder_single_step_inverse`](@ref) is the route that handles the base through a supplied `Gamma`. This is a documentation note only: no scaling step or default changes, and which side is right is not adjudicated here (the underlying theory is AGENT-INFERRED; see issue 53).
 """
 single_step_inverse(Ainv::AbstractMatrix, A::AbstractMatrix, G::AbstractMatrix,
                     genotyped_rows::AbstractVector{<:Integer}; kwargs...) =
