@@ -1,5 +1,9 @@
 # Check Log
 
+## 2026-10-23 PR 477 Windows test portability
+
+Removed hard-coded numeric snapshots from the simulated direct-maternal interval test after PR #477's Julia 1.10 Windows CI showed material point-estimate differences from the recorded values. Same-run model consistency, interval ordering/width checks, and deterministic comparison of the upper-triangle Hessian to the former full loop remain. `git diff --check` passed. Local Julia was unavailable, so the revised test still requires current-head hosted CI. No production code, public claim, capability status, Arc 1 gate, or release state changed. Report: [`after-task/2026-10-23-pr-477-windows-test-portability.md`](after-task/2026-10-23-pr-477-windows-test-portability.md).
+
 ## 2026-10-23 issue 408 single information-matrix test instrumentation
 
 Removed the production `_REML_INFO_CALLS` mutable global and replaced the call-count assertion with a test-local covariance-builder closure passed to a private plotting-data helper. The public plotting-data method still builds the covariance once and preserves output behavior. Focused test passed 7/7; full Julia `Pkg.test()` exited 0 (`Testing HSquared tests passed`), including this testset 7/7; `git diff --check` passed. The after-task report structure check passed, but the complete canonical checker exited 1 on pre-existing UNMET gates in `GATES.md`; the absolute-path prose checker exited 0 with `FINDINGS: 0`. No public API or claim change; no capability or validation-debt status change. No commit, push, or merge. Report: [`after-task/2026-10-23-issue-408-single-information-matrix.md`](after-task/2026-10-23-issue-408-single-information-matrix.md).

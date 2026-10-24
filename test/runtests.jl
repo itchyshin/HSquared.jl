@@ -7471,12 +7471,38 @@ end
     hi = direct_maternal_interval(y, X, Zd, Zm, Ainv; level = 0.99).variance_components.sigma_ad
     @test (hi.upper - hi.lower) > (lo.upper - lo.lower)
 
+    # This generated fit varies across supported platforms, so check its internal
+    # point/interval relationships above rather than pinning one platform's values.
+    # The deterministic Hessian test below compares the new fill with the old full loop.
+
     # argument guard: level ∈ (0, 1)
     @test_throws ArgumentError direct_maternal_interval(y, X, Zd, Zm, Ainv; level = 0.0)
     @test_throws ArgumentError direct_maternal_interval(y, X, Zd, Zm, Ainv; level = 1.0)
     # boundary/flat-surface guard: tiny uninformative data → information not PD
     @test_throws ArgumentError direct_maternal_interval([1.0, 2.0, 1.5, 2.5], ones(4, 1),
         Matrix(1.0I, 4, 4), Matrix(1.0I, 4, 4), Matrix(1.0I, 4, 4))
+end
+
+@testset "direct_maternal FD information fills the upper triangle only (#411)" begin
+    # A smooth non-quadratic surface with off-diagonal curvature; calls are counted.
+    ncalls = Ref(0)
+    f(t) = (ncalls[] += 1; -0.5 * (t[1]^2 + 2t[2]^2 + 3t[3]^2 + 4t[4]^2) +
+            0.3 * t[1] * t[2] - 0.2 * t[2] * t[3] + 0.1 * t[3] * t[4] + 0.05 * t[1]^2 * t[4])
+    theta = [1.5, 0.7, -0.6, 0.8]
+    h = HSquared._uncertainty_component_steps(theta, 1e-4)
+    H = HSquared._direct_maternal_fd_hessian(f, theta, h)
+    # 10 upper-triangle cells x 4 evaluations, not 16 x 4
+    @test ncalls[] == 40
+    @test H == transpose(H)
+    # agrees with the full d x d central-difference loop it replaces
+    Hfull = zeros(4, 4)
+    for i in 1:4, j in 1:4
+        ei = zeros(4); ei[i] = h[i]
+        ej = zeros(4); ej[j] = h[j]
+        Hfull[i, j] = (f(theta + ei + ej) - f(theta + ei - ej) -
+                       f(theta - ei + ej) + f(theta - ei - ej)) / (4 * h[i] * h[j])
+    end
+    @test H ≈ Hfull rtol = 1e-8
 end
 
 @testset "Phase 4 multivariate (multi-trait) animal model (supplied covariance)" begin

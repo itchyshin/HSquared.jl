@@ -3579,6 +3579,21 @@ function fit_direct_maternal_reml(
     )
 end
 
+# Central-difference Hessian of `f` at `theta` with per-coordinate steps `h`. Fills the upper
+# triangle only and mirrors it (10 cells x 4 evaluations = 40 for d = 4, not 64; #411).
+function _direct_maternal_fd_hessian(f, theta::AbstractVector, h::AbstractVector)
+    d = length(theta)
+    H = zeros(d, d)
+    for i in 1:d, j in i:d
+        ei = zeros(d); ei[i] = h[i]
+        ej = zeros(d); ej[j] = h[j]
+        H[i, j] = (f(theta + ei + ej) - f(theta + ei - ej) -
+                   f(theta - ei + ej) + f(theta - ei - ej)) / (4 * h[i] * h[j])
+        H[j, i] = H[i, j]
+    end
+    return H
+end
+
 """
     direct_maternal_interval(y, X, Zd, Zm, Ainv; level = 0.95, initial = nothing,
                              iterations = 200, ids = nothing, fd_step = 1e-4,
@@ -3645,13 +3660,7 @@ function direct_maternal_interval(
 
     # observed information = −Hessian of the REML loglik (central finite differences)
     h = _uncertainty_component_steps(theta, fd_step)
-    H = zeros(4, 4)
-    for i in 1:4, j in 1:4
-        ei = zeros(4); ei[i] = h[i]
-        ej = zeros(4); ej[j] = h[j]
-        H[i, j] = (loglik(theta + ei + ej) - loglik(theta + ei - ej) -
-                   loglik(theta - ei + ej) + loglik(theta - ei - ej)) / (4 * h[i] * h[j])
-    end
+    H = _direct_maternal_fd_hessian(loglik, theta, h)
     all(isfinite, H) ||
         throw(ArgumentError("direct–maternal interval undefined: the REML surface is not " *
             "finite under perturbation (boundary optimum / non-PD G_dm; e.g. |r_am| → 1)"))
