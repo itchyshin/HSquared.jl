@@ -52,7 +52,11 @@ function _likelihood_block_ids(ids, qs)
             for i in eachindex(qs)]
 end
 
+# Counts validations so tests can assert hoisting (e.g. profile intervals).
+const _VALIDATED_SPEC_CALLS = Ref(0)
+
 function _likelihood_validated_spec(spec::AnimalModelSpec; method = spec.method, supplied::Bool = false)
+    _VALIDATED_SPEC_CALLS[] += 1
     spec.family isa GaussianFamily || throw(ArgumentError("family must be GaussianFamily()"))
     normalized_method = _coerce_method(method)
     normalized_method in (:ML, :REML) || throw(ArgumentError("method must be :ML or :REML"))
@@ -345,6 +349,39 @@ function _sparse_reml_loglik(
     )
 end
 
+# HSquared.jl #429: on log-variances the objective goes flat as a variance goes
+# to zero, even when the linear-scale score points back into the interior. The
+# NelderMead simplex spread then falls below g_tol and Optim reports
+# convergence at a false boundary, many log-likelihood units below the interior
+# optimum. When a fit ends with a variance share at or below this, refit once
+# from a start on the scale of y and keep the better objective.
+const _NELDER_MEAD_BOUNDARY_SHARE = 1e-6
+
+# Log of (v / 2, v / 2), with v the residual variance of y after the fixed
+# effects; `nothing` when no positive finite v exists.
+function _residual_scale_log_start(spec::AnimalModelSpec)
+    df = length(spec.y) - size(spec.X, 2)
+    df > 0 || return nothing
+    residual = spec.y - spec.X * (spec.X \ spec.y)
+    v = dot(residual, residual) / df
+    (isfinite(v) && v > 0) || return nothing
+    return log.([v / 2, v / 2])
+end
+
+function _optimize_two_variances(objective, logstart, spec::AnimalModelSpec, iterations::Integer)
+    options = Optim.Options(iterations = iterations)
+    result = optimize(objective, logstart, NelderMead(), options)
+    theta = exp.(Optim.minimizer(result))
+    minimum(theta) / sum(theta) <= _NELDER_MEAD_BOUNDARY_SHARE ||
+        return result, Optim.iterations(result)
+    rescue_start = _residual_scale_log_start(spec)
+    rescue_start === nothing && return result, Optim.iterations(result)
+    rescue = optimize(objective, rescue_start, NelderMead(), options)
+    total_iterations = Optim.iterations(result) + Optim.iterations(rescue)
+    Optim.minimum(rescue) < Optim.minimum(result) && return rescue, total_iterations
+    return result, total_iterations
+end
+
 """
     fit_variance_components(spec; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0),
                             method = spec.method, iterations = 1_000,
@@ -360,6 +397,13 @@ dense path (hsquared#214): if `nobs^2 + nanimals^2` exceeds it, this throws an
 `ArgumentError` naming the observed cell count and the effective cap. This is
 also the path the R default `animal()` route reaches, via
 `fit_animal_model(...; kwargs...)` forwarding `max_dense_cells` here.
+
+If the fit ends with a variance share at or below `1e-6`, it refits once from
+`(v/2, v/2)`, with `v` the residual variance of `y` after the fixed effects,
+and keeps the higher log-likelihood. From the unit-scale default start, a
+response with variance far below 1 can otherwise stop at a false `σ²e → 0`
+boundary with `converged = true` (HSquared.jl #429). `iterations` caps each
+run; the reported count is the sum over both runs.
 """
 function fit_variance_components(
     spec::AnimalModelSpec;
@@ -391,11 +435,11 @@ function fit_variance_components(
         end
     end
 
-    result = optimize(
+    result, optimizer_iterations = _optimize_two_variances(
         objective,
         log.([sigma_a2_start, sigma_e2_start]),
-        NelderMead(),
-        Optim.Options(iterations = iterations),
+        spec,
+        iterations,
     )
 
     isfinite(Optim.minimum(result)) || throw(ArgumentError("dense optimizer did not find a finite objective"))
@@ -418,7 +462,7 @@ function fit_variance_components(
         (sigma_a2 = sigma_a2, sigma_e2 = sigma_e2),
         converged,
         status,
-        Optim.iterations(result),
+        optimizer_iterations,
     )
 end
 
@@ -438,6 +482,11 @@ fitting path, and not a production sparse solver.
 not certify score stationarity or a closed-boundary optimum. Exact zero
 components are unavailable in this positive log-variance parameterization;
 nonfinite proposals are rejected and nonfinite final results raise an error.
+
+If the fit ends with a variance share at or below `1e-6`, it refits once from
+`(v/2, v/2)`, with `v` the residual variance of `y` after the fixed effects,
+and keeps the higher REML log-likelihood (HSquared.jl #429). `iterations` caps
+each run; the reported count is the sum over both runs.
 """
 function fit_sparse_reml(
     spec::AnimalModelSpec;
@@ -477,11 +526,11 @@ function fit_sparse_reml(
         end
     end
 
-    result = optimize(
+    result, optimizer_iterations = _optimize_two_variances(
         objective,
         log.([sigma_a2_start, sigma_e2_start]),
-        NelderMead(),
-        Optim.Options(iterations = iterations),
+        spec,
+        iterations,
     )
 
     isfinite(Optim.minimum(result)) || throw(ArgumentError("sparse optimizer did not find a finite objective"))
@@ -500,7 +549,7 @@ function fit_sparse_reml(
         (sigma_a2 = sigma_a2, sigma_e2 = sigma_e2),
         converged,
         status,
-        Optim.iterations(result),
+        optimizer_iterations,
         :sparse_reml,
         false,
         true,
@@ -4386,9 +4435,12 @@ caveats there.
 """
 function heritability_standard_error(fit::AnimalModelFit)
     _require_converged_univariate_uncertainty(fit, "heritability_standard_error")
+    return _heritability_se_from_cov(fit, variance_component_covariance(fit))
+end
+
+function _heritability_se_from_cov(fit::AnimalModelFit, cov)
     sigma_a2 = fit.variance_components.sigma_a2
     sigma_e2 = fit.variance_components.sigma_e2
-    cov = variance_component_covariance(fit)
     denom = (sigma_a2 + sigma_e2)^2
     g = [sigma_e2 / denom, -sigma_a2 / denom]
     return sqrt(max(0.0, dot(g, cov * g)))
@@ -4400,7 +4452,29 @@ end
 # `sparse_reml_loglik`; the search bracket is anchored on the phenotypic-variance
 # scale of `y`. `h2` must be strictly interior to `(0, 1)`. Used by the
 # profile-likelihood heritability interval.
-function _profile_reml_loglik(spec::AnimalModelSpec, h2::Real)
+# Validate the spec once per interval and reuse the validated spec, Ainv and
+# log|Ainv| across every profile evaluation (mirrors the hoist in `fit_sparse_reml`).
+function _profile_reml_context(spec::AnimalModelSpec)
+    p = size(spec.X, 2)
+    p < length(spec.y) ||
+        throw(ArgumentError("REML requires fewer fixed-effect columns than observations"))
+    validated, factor = _likelihood_validated_spec(spec)
+    Ainv = sparse(Float64.(validated.Ainv))
+    return (spec = validated, Ainv = Ainv, logdet_Ainv = logdet(factor))
+end
+
+# Same numerics as the public `sparse_reml_loglik`, minus the per-call validation.
+function _profile_reml_eval(ctx, sigma_a2::Real, sigma_e2::Real)
+    sigma_a2 = _likelihood_positive("sigma_a2", sigma_a2; precision = true)
+    sigma_e2 = _likelihood_positive("sigma_e2", sigma_e2; precision = true)
+    return _sparse_reml_loglik(ctx.spec, sigma_a2, sigma_e2, ctx.Ainv, ctx.logdet_Ainv)
+end
+
+_profile_reml_loglik(spec::AnimalModelSpec, h2::Real) =
+    _profile_reml_loglik(_profile_reml_context(spec), h2)
+
+function _profile_reml_loglik(ctx::NamedTuple, h2::Real)
+    spec = ctx.spec
     0 < h2 < 1 || throw(ArgumentError("h2 must be in (0, 1)"))
     y = Float64.(spec.y)
     n = length(y)
@@ -4409,7 +4483,7 @@ function _profile_reml_loglik(spec::AnimalModelSpec, h2::Real)
     function objective(logV)
         V = exp(logV)
         try
-            return -sparse_reml_loglik(spec, h2 * V, (1 - h2) * V).loglik
+            return -_profile_reml_eval(ctx, h2 * V, (1 - h2) * V).loglik
         catch err
             err isa PosDefException && return Inf
             rethrow()
@@ -4424,7 +4498,11 @@ end
 # `_profile_reml_loglik` (which profiles total variance at fixed h²); a 1-D
 # maximization reusing `sparse_reml_loglik`, bracketed on the phenotypic variance
 # of `y`. Used by `variance_component_interval`.
-function _profile_reml_loglik_sigma_a2(spec::AnimalModelSpec, sigma_a2::Real)
+_profile_reml_loglik_sigma_a2(spec::AnimalModelSpec, sigma_a2::Real) =
+    _profile_reml_loglik_sigma_a2(_profile_reml_context(spec), sigma_a2)
+
+function _profile_reml_loglik_sigma_a2(ctx::NamedTuple, sigma_a2::Real)
+    spec = ctx.spec
     sigma_a2 > 0 || throw(ArgumentError("sigma_a2 must be positive"))
     y = Float64.(spec.y)
     n = length(y)
@@ -4433,7 +4511,7 @@ function _profile_reml_loglik_sigma_a2(spec::AnimalModelSpec, sigma_a2::Real)
     function objective(logE)
         sigma_e2 = exp(logE)
         try
-            return -sparse_reml_loglik(spec, sigma_a2, sigma_e2).loglik
+            return -_profile_reml_eval(ctx, sigma_a2, sigma_e2).loglik
         catch err
             err isa PosDefException && return Inf
             rethrow()
@@ -4470,6 +4548,13 @@ function _profile_root(target, bound::Real, anchor::Real)
     throw(ArgumentError("profile root did not resolve within the bisection budget"))
 end
 
+# Memoize a profile target so the bound/anchor values `_profile_root` already
+# evaluated are not recomputed for the clamped flags.
+function _memoized_profile_target(f)
+    cache = Dict{Float64,Float64}()
+    return x -> get!(() -> Float64(f(x)), cache, Float64(x))
+end
+
 function _heritability_interval_profile(fit::AnimalModelFit; level::Real)
     fit.spec.method == :REML ||
         throw(ArgumentError("profile heritability interval requires a REML fit"))
@@ -4477,10 +4562,11 @@ function _heritability_interval_profile(fit::AnimalModelFit; level::Real)
     0 < h2 < 1 ||
         throw(ArgumentError("heritability estimate is on the (0, 1) boundary; interval undefined"))
     spec = fit.spec
-    llmax = _profile_reml_loglik(spec, h2)
+    ctx = _profile_reml_context(spec)
+    llmax = fit.likelihood.loglik
     z = _standard_normal_quantile((1 + level) / 2)
     q = z * z
-    target(h) = 2 * (llmax - _profile_reml_loglik(spec, h)) - q
+    target = _memoized_profile_target(h -> 2 * (llmax - _profile_reml_loglik(ctx, h)) - q)
     lo_bound = 1e-6
     up_bound = 1 - 1e-6
     lower = _profile_root(target, lo_bound, h2)
@@ -4523,10 +4609,18 @@ function heritability_interval(fit::AnimalModelFit; level::Real = 0.95, method::
     end
     method === :delta ||
         throw(ArgumentError("method must be :delta or :profile"))
+    return _heritability_interval_delta(
+        fit, level, () -> variance_component_covariance(fit))
+end
+
+# Delta-method interval with the covariance supplied lazily, so a caller that
+# already holds it (variance_components_plot_data) does not rebuild the
+# information matrix. The boundary check still runs before the covariance is read.
+function _heritability_interval_delta(fit::AnimalModelFit, level::Real, covfun)
     h2 = heritability(fit)
     0 < h2 < 1 ||
         throw(ArgumentError("heritability estimate is on the (0, 1) boundary; interval undefined"))
-    se = heritability_standard_error(fit)
+    se = _heritability_se_from_cov(fit, covfun())
     z = _standard_normal_quantile((1 + level) / 2)
     eta = log(h2 / (1 - h2))
     se_eta = se / (h2 * (1 - h2))
@@ -4544,10 +4638,11 @@ function _variance_component_interval_profile(fit::AnimalModelFit; level::Real)
     sigma_a2 > 0 ||
         throw(ArgumentError("sigma_a2 estimate is on the boundary; interval undefined"))
     spec = fit.spec
-    llmax = _profile_reml_loglik_sigma_a2(spec, sigma_a2)
+    ctx = _profile_reml_context(spec)
+    llmax = fit.likelihood.loglik
     z = _standard_normal_quantile((1 + level) / 2)
     q = z * z
-    target(v) = 2 * (llmax - _profile_reml_loglik_sigma_a2(spec, v)) - q
+    target = _memoized_profile_target(v -> 2 * (llmax - _profile_reml_loglik_sigma_a2(ctx, v)) - q)
     lo_bound = sigma_a2 * 1e-4
     up_bound = sigma_a2 * 1e4
     lower = _profile_root(target, lo_bound, sigma_a2)
@@ -4631,6 +4726,10 @@ fit degrades gracefully to points-only (`lo`/`hi` all `NaN`, `interval_status =
 "none"`).
 """
 function variance_components_plot_data(fit::AnimalModelFit; level::Real = 0.95)
+    return _variance_components_plot_data(fit, level, variance_component_covariance)
+end
+
+function _variance_components_plot_data(fit::AnimalModelFit, level, covariance_builder)
     _require_converged_univariate_uncertainty(fit, "variance_components_plot_data")
     0 < level < 1 || throw(ArgumentError("level must be in (0, 1)"))
     vc = variance_components(fit)
@@ -4639,8 +4738,13 @@ function variance_components_plot_data(fit::AnimalModelFit; level::Real = 0.95)
     vc_lo = [NaN, NaN]
     vc_hi = [NaN, NaN]
     vc_reason = "ok"
+    # One information matrix feeds both the variance-component and h2 intervals (#408);
+    # a failure is kept and re-thrown at each use so the per-panel reasons are unchanged.
+    cov_result = try covariance_builder(fit) catch err; err end
+    cov_get() = cov_result isa Exception ? throw(cov_result) : cov_result
     try
-        se = variance_component_standard_errors(fit)
+        cov = cov_get()
+        se = (sigma_a2 = sqrt(cov[1, 1]), sigma_e2 = sqrt(cov[2, 2]))
         vc_lo = [vc.sigma_a2 - z * se.sigma_a2, vc.sigma_e2 - z * se.sigma_e2]
         vc_hi = [vc.sigma_a2 + z * se.sigma_a2, vc.sigma_e2 + z * se.sigma_e2]
     catch err
@@ -4650,7 +4754,7 @@ function variance_components_plot_data(fit::AnimalModelFit; level::Real = 0.95)
     h2_hi = NaN
     h2_reason = "ok"
     try
-        ci = heritability_interval(fit; level = level)
+        ci = _heritability_interval_delta(fit, level, cov_get)
         h2_lo = ci.lower
         h2_hi = ci.upper
     catch err

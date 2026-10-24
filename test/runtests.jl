@@ -25,6 +25,7 @@ include("test_issue_421_sparse_laplace.jl")
 include("test_issue_357_henderson_mme_cholesky.jl")
 include("test_issue_357_result_payload_reuse.jl")
 include("test_issue_413_two_effect_scale_warning.jl")
+include("test_issue_429_false_residual_boundary.jl")
 include("test_issue_416_weak_identifiability_warning.jl")
 
 # dense NRM helper lives in src now: HSquared._numerator_relationship (src/pedigree.jl)
@@ -9072,7 +9073,7 @@ end
     @test pp.breeding_values.ids == ped.ids
     @test pp.breeding_values.values == fp.breeding_values
     @test pp.loglik == fp.marginal_loglik
-    @test pp.converged == fp.converged
+    @test pp.converged == (fp.converged && !fp.boundary)   # #345: boundary fits report converged = false
     # HONESTY: NO heritability field (the payload shape is family-uniform)
     @test !hasproperty(pp, :heritability)
 
@@ -11377,9 +11378,15 @@ end
 module HostedPCGTrueResidual
 include("pcg_true_residual_regression.jl")
 end
+include(joinpath(@__DIR__, "test_issue_345_payload_boundary_converged.jl"))
+
+# qtl_table marker_spec / HSData / total_variance / trait paths, isolated namespace.
+include("test_qtl_table_marker_paths.jl")
 include("test_hsdata_idmap_specs_status_rows.jl")
 
+include("test_issue_409_profile_interval_hoist.jl")
 include("test_issue_340_lowrank_rotation.jl")
+include("test_issue_408_plot_data_single_information.jl")
 # Thin-coverage pins: g_max (repeated eigenvalue), legendre_design, diagonal_covariance.
 include("test_builders_gmax_legendre.jl")
 include("test_metafounder_animal_model_guards.jl")
