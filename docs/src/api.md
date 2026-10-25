@@ -195,6 +195,7 @@ HSquared.fit_variance_components
 HSquared.variance_components
 HSquared.variance_component_covariance
 HSquared.variance_component_standard_errors
+HSquared.variance_component_uncertainty
 HSquared.fixed_effects
 HSquared.fit_diagnostics
 HSquared.breeding_values

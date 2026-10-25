@@ -12,6 +12,12 @@ package version. `public_covered_count` stays **7**, and no entry below touches
 `Project.toml`. The package version is `0.9.0`; its released section is recorded
 below.
 
+- Part of #408: new `variance_component_uncertainty(fit; level = 0.95)` returns the
+  variance-component covariance, its standard errors, the `h²` standard error and the
+  logit-delta `h²` interval of a converged REML `AnimalModelFit` from one average-information
+  matrix. Every field is bit-identical to the standalone call, which each build and factorise
+  their own matrix, so the bundle saves two of three factorisations. The R bridge does not
+  call it yet. No estimand, interval or coverage claim changes.
 - `reliability`'s denominator `diag(inv(Ainv))` comes from `1 .+ F` when Julia builds `Ainv`
   from pedigree rows: `pedigree_inverse` already computes the inbreeding coefficients `F`
   (Meuwissen & Luo) for Henderson's rules, so the spec now carries them

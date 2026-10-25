@@ -4438,6 +4438,37 @@ function heritability_standard_error(fit::AnimalModelFit)
     return _heritability_se_from_cov(fit, variance_component_covariance(fit))
 end
 
+"""
+    variance_component_uncertainty(fit; level = 0.95)
+
+All four delta-method uncertainty products of a converged REML
+[`AnimalModelFit`](@ref) from ONE average-information matrix, as a `NamedTuple`
+`(covariance, standard_errors, heritability_standard_error, heritability_interval)`.
+Each field is bit-identical to the standalone call
+([`variance_component_covariance`](@ref), [`variance_component_standard_errors`](@ref),
+[`heritability_standard_error`](@ref), [`heritability_interval`](@ref) with
+`method = :delta`), which each build and factorise their own matrix; calling them in a
+row costs three factorisations where this costs one. The guards are theirs as well: a
+non-converged or non-REML fit, a singular information matrix, or an `h²` estimate on
+the `(0, 1)` boundary throws an `ArgumentError`, so a caller that needs each product to
+fail independently should keep the standalone calls. Experimental; asymptotic, see
+[`variance_component_covariance`](@ref) for the caveats.
+"""
+function variance_component_uncertainty(fit::AnimalModelFit; level::Real = 0.95)
+    return _variance_component_uncertainty(fit, level, variance_component_covariance)
+end
+
+function _variance_component_uncertainty(fit::AnimalModelFit, level::Real, covariance_builder)
+    _require_converged_univariate_uncertainty(fit, "variance_component_uncertainty")
+    0 < level < 1 || throw(ArgumentError("level must be in (0, 1)"))
+    cov = covariance_builder(fit)
+    interval = _heritability_interval_delta(fit, level, () -> cov)
+    return (covariance = cov,
+            standard_errors = (sigma_a2 = sqrt(cov[1, 1]), sigma_e2 = sqrt(cov[2, 2])),
+            heritability_standard_error = _heritability_se_from_cov(fit, cov),
+            heritability_interval = interval)
+end
+
 function _heritability_se_from_cov(fit::AnimalModelFit, cov)
     sigma_a2 = fit.variance_components.sigma_a2
     sigma_e2 = fit.variance_components.sigma_e2
