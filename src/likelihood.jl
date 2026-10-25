@@ -1751,7 +1751,8 @@ function _two_effect_dense(y, X, Z1, A1, Z2, A2, sigma1, sigma2, sigma_e2)
 end
 
 const _TWO_EFFECT_UNIT_START_OFF_SCALE_MSG =
-    "two-effect default starts are (sigma1, sigma2, sigma_e2) = (1, 1, 1). " *
+    "two-effect starts are (sigma1, sigma2, sigma_e2) = (1, 1, 1) (passed explicitly; " *
+    "the default start is scale-aware). " *
     "NelderMead from that unit-scale start can stop at a wrong near-zero-h2 " *
     "point when the response variance is far from 1, still with converged = true. " *
     "Pass initial on the scale of y, or rescale y. REML itself is " *
@@ -1773,6 +1774,32 @@ function _two_effect_unit_start_off_scale(y, sigma1, sigma2, sigma_e2)
     end
     v = ss / (n - 1)
     return isfinite(v) && (v >= 100.0 || (v > 0 && v <= 1e-4))
+end
+
+# Scale-aware default start for the dense two-effect and repeatability fitters
+# (HSquared.jl #413): half of the response variance to the residual, the other half
+# split evenly over the `K` random effects, the same rule as
+# `fit_sparse_multi_effect_aireml(...; initial = :auto)`. REML is scale-equivariant,
+# so a start that scales with `var(y)` makes the whole NelderMead path scale
+# equivariant (the start moves by exactly `log(c^2)` when `y` is multiplied by `c`).
+# A constant, non-finite or single-record response has no usable variance and falls
+# back to the unit start, so the fitter's own validation reports the real problem.
+function _scale_aware_start(y, K::Integer)
+    n = length(y)
+    n >= 2 || return ones(Float64, K + 1)
+    μ = 0.0
+    for yi in y
+        μ += Float64(yi)
+    end
+    μ /= n
+    ss = 0.0
+    for yi in y
+        d = Float64(yi) - μ
+        ss += d * d
+    end
+    v = ss / (n - 1)
+    (isfinite(v) && v > 0) || return ones(Float64, K + 1)
+    return vcat(fill(0.5 * v / K, K), 0.5 * v)
 end
 
 """
@@ -1804,13 +1831,14 @@ Different starts can then return different h2 values at the same log-likelihood.
 Read `ratio1` as one point on that ridge, not a unique heritability
 (HSquared.jl #416).
 
-Default starts are `(sigma1, sigma2, sigma_e2) = (1, 1, 1)`. REML is
-scale-equivariant, but NelderMead from that unit-scale start can stop at a
-wrong near-zero-h2 point when `var(y)` is far from 1, still with
-`converged = true` (HSquared.jl #413). The fitter warns in that case; pass
-an `initial` on the scale of the response (or rescale `y`) rather than
-reading the green flag as an identified optimum. Recorded recovery evidence
-used the unit-scale start, so the default is unchanged.
+Default start (`initial = nothing`) is scale-aware: `sigma_e2 = var(y) / 2` and
+`sigma1 = sigma2 = var(y) / 4`. REML is scale-equivariant, but NelderMead from a
+fixed unit-scale start `(1, 1, 1)` can stop at a wrong near-zero-h2 point when
+`var(y)` is far from 1, still with `converged = true` (HSquared.jl #413); the
+scale-aware start removes that. A constant response falls back to `(1, 1, 1)`.
+An explicit `initial` is used as given, and the fitter still warns when
+`(1, 1, 1)` is passed with `var(y)` far from 1. Recorded recovery evidence used
+the unit-scale start; the `sim/` harnesses pass it explicitly.
 """
 function fit_two_effect_reml(
     y::AbstractVector,
@@ -1819,11 +1847,15 @@ function fit_two_effect_reml(
     Ainv1::AbstractMatrix,
     Z2::AbstractMatrix,
     Ainv2::AbstractMatrix;
-    initial = (sigma1 = 1.0, sigma2 = 1.0, sigma_e2 = 1.0),
+    initial = nothing,
     iterations::Integer = 200,
     ids1 = nothing,
     ids2 = nothing,
 )
+    if initial === nothing
+        s0 = _scale_aware_start(y, 2)
+        initial = (sigma1 = s0[1], sigma2 = s0[2], sigma_e2 = s0[3])
+    end
     starts = [_likelihood_positive("initial sigma1", initial.sigma1), _likelihood_positive("initial sigma2", initial.sigma2), _likelihood_positive("initial sigma_e2", initial.sigma_e2)]
     iterations >= 1 || throw(ArgumentError("iterations must be at least 1"))
     if _two_effect_unit_start_off_scale(y, starts[1], starts[2], starts[3])
@@ -2082,7 +2114,7 @@ function two_effect_ratio_interval(
     y::AbstractVector, X::AbstractMatrix, Z1::AbstractMatrix, Ainv1::AbstractMatrix,
     Z2::AbstractMatrix, Ainv2::AbstractMatrix;
     level::Real = 0.95, which::Symbol = :both,
-    initial = (sigma1 = 1.0, sigma2 = 1.0, sigma_e2 = 1.0),
+    initial = nothing,
     iterations::Integer = 200, ids1 = nothing, ids2 = nothing,
     fd_step::Real = 1e-4, boundary_tol::Real = 1e-6,
 )
@@ -3764,11 +3796,15 @@ function fit_repeatability_reml(
     X::AbstractMatrix,
     Z::AbstractMatrix,
     Ainv::AbstractMatrix;
-    initial = (sigma_a2 = 1.0, sigma_pe2 = 1.0, sigma_e2 = 1.0),
+    initial = nothing,
     iterations::Integer = 200,
     ids = nothing,
     max_dense_cells::Integer = DEFAULT_MAX_DENSE_CELLS,
 )
+    if initial === nothing
+        s0 = _scale_aware_start(y, 2)
+        initial = (sigma_a2 = s0[1], sigma_pe2 = s0[2], sigma_e2 = s0[3])
+    end
     starts = [_likelihood_positive("initial sigma_a2", initial.sigma_a2), _likelihood_positive("initial sigma_pe2", initial.sigma_pe2), _likelihood_positive("initial sigma_e2", initial.sigma_e2)]
     iterations >= 1 || throw(ArgumentError("iterations must be at least 1"))
     n = length(y)
@@ -3917,7 +3953,7 @@ outside the parameter space.
 function repeatability_interval(
     y::AbstractVector, X::AbstractMatrix, Z::AbstractMatrix, Ainv::AbstractMatrix;
     level::Real = 0.95,
-    initial = (sigma_a2 = 1.0, sigma_pe2 = 1.0, sigma_e2 = 1.0),
+    initial = nothing,
     iterations::Integer = 200, ids = nothing, fd_step::Real = 1e-4,
     boundary_tol::Real = 1e-6,
 )

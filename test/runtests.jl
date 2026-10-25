@@ -25,6 +25,7 @@ include("test_issue_421_sparse_laplace.jl")
 include("test_issue_357_henderson_mme_cholesky.jl")
 include("test_issue_357_result_payload_reuse.jl")
 include("test_issue_413_two_effect_scale_warning.jl")
+include("test_issue_413_scale_aware_start.jl")
 include("test_issue_429_false_residual_boundary.jl")
 include("test_issue_416_weak_identifiability_warning.jl")
 include("test_issue_407_docs_note.jl")
@@ -6822,8 +6823,12 @@ end
     fit = fit_repeatability_reml(y, X, Z, Ainv; initial = (sigma_a2 = 1.0, sigma_pe2 = 1.0, sigma_e2 = 1.0))
     @test ci.repeatability ≈ fit.repeatability               # point estimate matches the fit
     # higher confidence ⇒ wider interval
-    ci90 = repeatability_interval(y, X, Z, Ainv; level = 0.90)
-    ci99 = repeatability_interval(y, X, Z, Ainv; level = 0.99)
+    # (same explicit start as `ci`: the REML surface is flat in the sigma_a2/sigma_pe2
+    # split, so a different start (the scale-aware default, #413) stops at a different
+    # point and the widths would not be comparable)
+    unit = (sigma_a2 = 1.0, sigma_pe2 = 1.0, sigma_e2 = 1.0)
+    ci90 = repeatability_interval(y, X, Z, Ainv; level = 0.90, initial = unit)
+    ci99 = repeatability_interval(y, X, Z, Ainv; level = 0.99, initial = unit)
     @test ci99.lower < ci90.lower && ci99.upper > ci90.upper
     # guard
     @test_throws ArgumentError repeatability_interval(y, X, Z, Ainv; level = 1.5)
@@ -7088,7 +7093,10 @@ end
 
     # K=2 REML byte-identical to fit_two_effect_reml on identified data
     gen2 = fit_multi_effect_reml(yf, Xf, [(Zf, Ainv), (Z2f, Matrix(1.0I, 2, 2))])
-    two = fit_two_effect_reml(yf, Xf, Zf, Ainv, Z2f, Matrix(1.0I, 2, 2))
+    # (explicit unit start: `fit_multi_effect_reml` starts at (1, ..., 1); the two-effect
+    # default is scale-aware since #413, so the same start is passed to compare optima)
+    two = fit_two_effect_reml(yf, Xf, Zf, Ainv, Z2f, Matrix(1.0I, 2, 2);
+                              initial = (sigma1 = 1.0, sigma2 = 1.0, sigma_e2 = 1.0))
     @test gen2.variance_components.sigmas[1] ≈ two.variance_components.sigma1 atol = 1e-10
     @test gen2.variance_components.sigmas[2] ≈ two.variance_components.sigma2 atol = 1e-10
     @test gen2.variance_components.sigma_e2 ≈ two.variance_components.sigma_e2 atol = 1e-10
@@ -7185,7 +7193,10 @@ end
     # information, same estimand — only iteration path differs).
     eff2 = [(sparse(Z1), Ainv), (sparse(Z2), I2)]
     m2 = multi_effect_ratio_interval(y, X, eff2)
-    t2 = two_effect_ratio_interval(y, X, sparse(Z1), Ainv, sparse(Z2), I2)
+    # (explicit unit start: `multi_effect_ratio_interval` starts at (1, ..., 1); the
+    # two-effect default is scale-aware since #413)
+    t2 = two_effect_ratio_interval(y, X, sparse(Z1), Ainv, sparse(Z2), I2;
+                                   initial = (sigma1 = 1.0, sigma2 = 1.0, sigma_e2 = 1.0))
     @test m2.ratios[1].estimate ≈ t2.ratio1.estimate rtol = 1e-6
     @test m2.ratios[2].estimate ≈ t2.ratio2.estimate rtol = 1e-6
     @test m2.ratios[1].lower ≈ t2.ratio1.lower rtol = 1e-4
