@@ -497,12 +497,13 @@ end
 # accessor methods can dispatch on it (avoiding collision with the multivariate
 # NamedTuple extractors in multivariate.jl and the AnimalModelFit extractors in
 # likelihood.jl). All original field names remain accessible via the struct
-# fields. INTERNAL — not exported, mirroring `fit_gllvm_laplace_reml` itself.
+# fields. EXPERIMENTAL and partial; exported (with `fit_gllvm_laplace_reml` and
+# `genetic_gllvm_result_payload`) so the R lane can bridge it (#50 decision, 25 Oct 2026).
 
 """
     GeneticGLLVMFit
 
-Internal fitted-object wrapper for [`fit_gllvm_laplace_reml`](@ref). Stores
+Fitted-object wrapper for [`fit_gllvm_laplace_reml`](@ref) (exported, partial, experimental). Stores
 the fitted trait covariance and effects, outer optimizer status, and final inner
 mode diagnostics, and exposes typed extractor methods:
 
@@ -515,7 +516,8 @@ mode diagnostics, and exposes typed extractor methods:
 mode converge. `iterations` remains the outer optimizer iteration count.
 `optimizer_converged`, `mode_converged`, `mode_gradient_norm`,
 `mode_iterations`, `mode_stop_reason`, and `mode_backtracks` expose the two
-levels separately. INTERNAL (not exported).
+levels separately. `families` records the per-trait response family names.
+EXPERIMENTAL and partial.
 EXPERIMENTAL — dense/validation-scale, supplied Gaussian/non-Gaussian families,
 balanced/fully-observed `Y`. The R twin exposes only a bounded Poisson-log
 three-trait, two-factor pedigree route through expert controls.
@@ -537,6 +539,7 @@ struct GeneticGLLVMFit
     mode_iterations::Int
     mode_stop_reason::Symbol
     mode_backtracks::Int
+    families::Vector{String}
 end
 
 function _validate_gllvm_trait_names(trait_names, n_traits::Integer)
@@ -565,7 +568,7 @@ end
     genetic_covariance(fit::GeneticGLLVMFit)
 
 Return the estimated rotation-invariant among-trait genetic covariance `G_lat`
-from a `GeneticGLLVMFit` (internal struct).
+from a `GeneticGLLVMFit`.
 """
 genetic_covariance(fit::GeneticGLLVMFit) = fit.genetic_covariance
 
@@ -573,7 +576,7 @@ genetic_covariance(fit::GeneticGLLVMFit) = fit.genetic_covariance
     breeding_values(fit::GeneticGLLVMFit)
 
 Return the `q × T` trait genetic conditional modes on the link scale from a
-`GeneticGLLVMFit` (internal struct). These combine common factors and, for
+`GeneticGLLVMFit`. These combine common factors and, for
 factor-analytic fits, trait-specific genetic modes. They are invariant to an
 orthogonal rotation of the common factors; they are not posterior means.
 """
@@ -584,7 +587,7 @@ breeding_values(fit::GeneticGLLVMFit) = fit.breeding_values
 
 Return the `genetic_gllvm_descriptors` NamedTuple (rotation-invariant latent-
 structure descriptors including `communality`, `genetic_pca`, `g_max`, etc.)
-from a `GeneticGLLVMFit` (internal struct).
+from a `GeneticGLLVMFit`.
 """
 latent_structure(fit::GeneticGLLVMFit) = fit.latent_structure
 
@@ -632,7 +635,7 @@ the loadings only through `G_lat`, so it is ROTATION-INVARIANT; the returned
 rotation of the common factors. Rotation invariance does not by itself identify
 the FA decomposition or `Ψ`; the raw `Λ̂` is an arbitrary point on the rotation
 manifold and is not reported as an identified biological axis. Returns a
-`GeneticGLLVMFit` (internal struct) with fields `loglik`,
+`GeneticGLLVMFit` with fields `loglik`,
 `genetic_covariance`, `latent_structure`, `uniqueness`, `beta (p×T)`,
 `breeding_values (q×T trait conditional modes)`, optional `trait_names` in the
 input-column order, `n_latent_factors`, `converged`,
@@ -651,7 +654,7 @@ mismatch is detected at the marginal call.
 For a `GaussianResponse(σ²e)` the residual is the FIXED scalar `σ²e` (not estimated);
 the non-Gaussian families have no residual. The `K = 1, T = 1` Poisson `:lowrank` case
 reduces to the single-factor [`fit_laplace_reml`](@ref) (`σ²a = λ̂²`). EXPERIMENTAL,
-dense/validation-scale, balanced/fully-observed `Y`; INTERNAL (not exported). NOT a
+dense/validation-scale, balanced/fully-observed `Y`; exported as partial and experimental. NOT a
 general recovery or calibration claim (the opt-in study covers particular complete-data
 cells, and the multivariate Gaussian FA gate covers one T=4,K=1 cell). The R
 twin's bounded Poisson bridge does not extend this Julia fitter to other public
@@ -746,5 +749,67 @@ function fit_gllvm_laplace_reml(Y::AbstractMatrix, Ainv::AbstractMatrix,
         mhat.iterations,
         mhat.stop_reason,
         mhat.backtracks,
+        _gllvm_family_names(family, T),
+    )
+end
+
+# Short family tokens, matching the strings `nongaussian_result_payload` uses.
+function _gllvm_family_name(f::ResponseFamily)
+    f isa GaussianResponse && return "gaussian"
+    f isa PoissonResponse && return "poisson"
+    f isa BernoulliResponse && return "bernoulli"
+    f isa BinomialResponse && return "binomial"
+    f isa NegativeBinomialResponse && return "nbinom"
+    f isa BetaBinomialResponse && return "beta_binomial"
+    f isa BernoulliProbitResponse && return "bernoulli_probit"
+    f isa OrderedProbitResponse && return "ordered_probit"
+    f isa GammaResponse && return "gamma"
+    return lowercase(String(nameof(typeof(f))))
+end
+
+_gllvm_family_names(family::ResponseFamily, T::Integer) = fill(_gllvm_family_name(family), T)
+_gllvm_family_names(family::AbstractVector, T::Integer) = String[_gllvm_family_name(f) for f in family]
+
+"""
+    genetic_gllvm_result_payload(fit::GeneticGLLVMFit)
+
+Bridge-ready, "boring" result payload (a `NamedTuple` of strings, scalars, arrays and
+nested `NamedTuple`s; Julia structs stay Julia-side) for a genetic-GLLVM fit from
+[`fit_gllvm_laplace_reml`](@ref), mirroring the top-level shape of
+[`nongaussian_result_payload`](@ref). Arrays are copied, so the payload does not
+alias the fit.
+
+Fields: `engine`, `target = "genetic_gllvm_laplace"`, `families` (one token per trait,
+in column order of `Y`, e.g. `"poisson"`, `"gaussian"`), `marginal = "laplace"`,
+`status = "partial"`, `experimental = true`, `scale = "latent"`, `trait_names`
+(`nothing` when not supplied), `n_latent_factors`, `latent_structure` (the
+rotation-invariant [`genetic_gllvm_descriptors`](@ref) `NamedTuple` for `G_lat`),
+`fixed_effects` (`p × T`), `breeding_values = (values,)` (`q × T` link-scale
+conditional modes, rows in the order of the supplied `Ainv`; the fit carries no animal
+ids), `loglik`, and `converged`.
+
+Only rotation-invariant functionals of `G_lat` are reported: the raw loadings are
+rotation-nonidentified and are never part of the payload. There is NO `heritability`
+field: the latent-scale genetic covariance has no single heritability here, and the
+Laplace objective is REML only in its Gaussian reduction. EXPERIMENTAL and partial:
+dense/validation-scale, balanced and fully observed `Y`, no external same-objective
+comparator, no calibration claim, not a covered capability.
+"""
+function genetic_gllvm_result_payload(fit::GeneticGLLVMFit)
+    return (
+        engine = "HSquared.jl",
+        target = "genetic_gllvm_laplace",
+        families = copy(fit.families),
+        marginal = "laplace",
+        status = "partial",
+        experimental = true,
+        scale = "latent",
+        trait_names = fit.trait_names === nothing ? nothing : copy(fit.trait_names),
+        n_latent_factors = fit.n_latent_factors,
+        latent_structure = fit.latent_structure,
+        fixed_effects = copy(fit.beta),
+        breeding_values = (values = copy(fit.breeding_values),),
+        loglik = fit.loglik,
+        converged = fit.converged,
     )
 end

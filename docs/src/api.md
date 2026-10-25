@@ -170,6 +170,9 @@ HSquared.g_max
 HSquared.mean_evolvability
 HSquared.genetic_gllvm_descriptors
 HSquared.genetic_gllvm_gaussian_mme
+HSquared.fit_gllvm_laplace_reml
+HSquared.GeneticGLLVMFit
+HSquared.genetic_gllvm_result_payload
 HSquared.genetic_pca_plot_data
 HSquared.genetic_correlation_plot_data
 HSquared.variance_components_plot_data

@@ -7,6 +7,14 @@
   and Documenter `authors`; Shinichi Nakagawa remains primary contact. No
   version or capability change.
 
+- Genetic GLLVM (#50, owner decision 25 Oct 2026): `fit_gllvm_laplace_reml`, the
+  `GeneticGLLVMFit` fit object and a new `genetic_gllvm_result_payload(fit)` are now
+  exported so the R lane can bridge them. Both are labelled partial and experimental
+  (the payload carries `status = "partial"`, `experimental = true`, `scale = "latent"`).
+  The payload reports only rotation-invariant functionals of `G_lat` (never raw
+  loadings) and no heritability. `GeneticGLLVMFit` gains a trailing `families` field
+  (per-trait response family tokens). No capability status, row count or version changes.
+
 None of the entries below change any capability status, row count, or
 package version. `public_covered_count` stays **7**, and no entry below touches
 `Project.toml`. The package version is `0.9.0`; its released section is recorded
