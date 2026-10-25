@@ -609,9 +609,11 @@ share is at or near zero, the fitter warns and still returns the iterate with
 
 A founders-only pedigree (`A = I`) with one record per animal does not identify
 `σ²a` separately from `σ²e`. The REML surface is then a ridge in `σ²a + σ²e`,
-and the reported `h²` follows the start ratio. The fitter warns and still
-returns the iterate; `converged = true` is not an identified heritability
-(HSquared.jl #422).
+and the reported `h²` follows the start ratio. The fitter warns and returns the
+iterate with `converged = false` and `optimizer_status = "unidentified_ridge"`.
+[`heritability`](@ref) is then `NaN`, and so are the heritability standard error
+and interval (the interval carries a `reason`). The total `σ²a + σ²e` is
+identified and stays in `variance_components` (HSquared.jl #422).
 """
 function fit_ai_reml(
     spec::AnimalModelSpec;
@@ -674,6 +676,13 @@ const _ANIMAL_RESIDUAL_UNIDENTIFIABLE_MSG =
     "converged as a stationary point on that ridge, not as an identified " *
     "heritability."
 
+const _UNIDENTIFIED_RIDGE_STATUS = "unidentified_ridge"
+
+# The ridge fit is not certified: heritability, its standard error and its
+# interval are NaN (HSquared.jl #422).
+_is_unidentified_ridge(fit::AnimalModelFit) =
+    fit.optimizer_status == _UNIDENTIFIED_RIDGE_STATUS
+
 const _BOUNDARY_SCORE_UNRESOLVED_MSG =
     "AI-REML stopped with boundary_score_unresolved: the selected-inverse " *
     "score became cancellation-dominated and the pedigree has more than " *
@@ -719,7 +728,8 @@ function _fit_ai_reml_diagnostics(
     nfixed = size(X, 2)
     nrandom = size(Z, 2)
     nobs = length(y)
-    if _animal_residual_split_unidentifiable(Z, Ainv)
+    ridge = _animal_residual_split_unidentifiable(Z, Ainv)
+    if ridge
         @warn _ANIMAL_RESIDUAL_UNIDENTIFIABLE_MSG
     end
     cp = _sparse_mme_cross_products(sparse(X), Z, Ainv, y)
@@ -891,6 +901,12 @@ function _fit_ai_reml_diagnostics(
     likelihood = sparse_reml_loglik(spec, sigma_a2, sigma_e2)
     status = termination_reason in ("boundary_score_unresolved", "non_positive_definite") ? termination_reason :
              (converged ? "converged" : "not_converged")
+    if ridge
+        # A = I with one record per animal: the REML surface is flat in the
+        # split, so a stationary point is not an identified optimum.
+        converged = false
+        status = _UNIDENTIFIED_RIDGE_STATUS
+    end
     fit = AnimalModelFit(
         result_spec,
         likelihood,
@@ -4155,6 +4171,7 @@ Components must be finite and nonnegative, with at least one positive. The
 ratio is scaled before summation to avoid overflow in the total variance.
 """
 function heritability(fit::AnimalModelFit)
+    _is_unidentified_ridge(fit) && return NaN
     vc = fit.variance_components
     return _gaussian_variance_fraction(vc.sigma_a2, vc.sigma_e2)
 end
@@ -4434,6 +4451,7 @@ for a REML fit, from [`variance_component_covariance`](@ref). Asymptotic; see th
 caveats there.
 """
 function heritability_standard_error(fit::AnimalModelFit)
+    _is_unidentified_ridge(fit) && return NaN
     _require_converged_univariate_uncertainty(fit, "heritability_standard_error")
     return _heritability_se_from_cov(fit, variance_component_covariance(fit))
 end
@@ -4602,8 +4620,18 @@ Both are large-sample approximations: on small samples the REML surface is flat,
 so the intervals are wide.
 """
 function heritability_interval(fit::AnimalModelFit; level::Real = 0.95, method::Symbol = :delta)
-    _require_converged_univariate_uncertainty(fit, "heritability_interval")
     0 < level < 1 || throw(ArgumentError("level must be in (0, 1)"))
+    method in (:delta, :profile) ||
+        throw(ArgumentError("method must be :delta or :profile"))
+    if _is_unidentified_ridge(fit)
+        base = (heritability = NaN, lower = NaN, upper = NaN, level = level)
+        return method === :delta ?
+               (; base..., se = NaN, lower_clamped = false, upper_clamped = false,
+                  method = method, reason = _ANIMAL_RESIDUAL_UNIDENTIFIABLE_MSG) :
+               (; base..., lower_clamped = false, upper_clamped = false,
+                  method = method, reason = _ANIMAL_RESIDUAL_UNIDENTIFIABLE_MSG)
+    end
+    _require_converged_univariate_uncertainty(fit, "heritability_interval")
     if method === :profile
         return _heritability_interval_profile(fit; level = level)
     end
