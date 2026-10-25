@@ -1,4 +1,4 @@
-# HSquared.jl #413 — the two-effect and repeatability dense fitters default to a
+# HSquared.jl #413: the two-effect and repeatability dense fitters default to a
 # scale-aware start (set from var(y)), so the REML optimum no longer depends on the
 # unit of the response. Standalone:
 # julia --project=. -e 'include("test/test_issue_413_scale_aware_start.jl")'
