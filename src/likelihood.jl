@@ -599,12 +599,19 @@ That iterate is not a certified REML optimum. Use [`fit_sparse_reml`](@ref) or
 raise `em_warmup` on the same spec when the optimum is at or near `σ²a = 0`
 (HSquared.jl #407).
 
-When the REML optimum is on the residual boundary (`σ²e → 0`), AI-REML often
-does not converge. The iterate can sit at a start-dependent point and the REML
-log-likelihood can get worse with more iterations. If the returned residual
-share is at or near zero, the fitter warns and still returns the iterate with
-`converged = false`. Use [`fit_sparse_reml`](@ref) on the same spec
-(HSquared.jl #412). This is a different failure from the q > 512
+Each AI/Newton step is checked against the REML objective: a step that lowers
+the log-likelihood is halved, then replaced by a step in `σ²a` alone with `σ²e`
+held (the residual boundary face), then by the monotone EM-REML update. The REML
+log-likelihood therefore does not decrease with more iterations, and a residual-
+boundary optimum is reached from different starts (HSquared.jl #412). If the
+step cannot be made to ascend, the fit stops at the current point with
+`termination_reason = "no_ascent_step"`.
+
+When the REML optimum is on the residual boundary (`σ²e → 0`), the `σ²e` score
+never vanishes, so AI-REML still returns `converged = false`. If the returned
+residual share is at or near zero, the fitter warns and still returns the
+iterate. Use [`fit_sparse_reml`](@ref) on the same spec for a certified
+optimum. This is a different failure from the q > 512
 `boundary_score_unresolved` abort (#407).
 
 A founders-only pedigree (`A = I`) with one record per animal does not identify
@@ -688,9 +695,41 @@ const _AI_REML_RESIDUAL_BOUNDARY_SHARE = 1e-6
 const _RESIDUAL_BOUNDARY_UNRESOLVED_MSG =
     "AI-REML did not converge with residual variance at or near zero. The " *
     "returned variances and log-likelihood are the last iterate, not a " *
-    "certified REML optimum; more iterations can make the log-likelihood " *
-    "worse. Use fit_sparse_reml on the same spec when the REML optimum is " *
+    "certified REML optimum. Use fit_sparse_reml on the same spec when the REML optimum is " *
     "on the residual boundary (Ve -> 0)."
+
+const _AI_REML_OBJECTIVE_TOL = 1e-12
+const _AI_REML_OBJECTIVE_MAX_HALVINGS = 30
+
+# REML objective used for step control; a variance pair whose mixed-model system
+# cannot be factored scores -Inf so the step is halved rather than thrown.
+function _ai_reml_objective(spec, sigma_a2, sigma_e2, Ainv, logdet_Ainv)
+    try
+        return _sparse_reml_loglik(spec, sigma_a2, sigma_e2, Ainv, logdet_Ainv).loglik
+    catch err
+        (err isa LinearAlgebra.PosDefException || err isa ArgumentError) && return -Inf
+        rethrow(err)
+    end
+end
+
+# Halve a proposed variance move (from the current point) until the REML
+# objective is at least `floor_loglik` or the halving budget is spent. Returns the
+# last candidate, its objective, and the number of halvings used.
+function _ai_reml_ascent_step(spec, Ainv, logdet_Ainv, a0, e0, target, floor_loglik)
+    a_try, e_try = target
+    da, de = a_try - a0, e_try - e0
+    halvings = 0
+    ll = (a_try > 0 && e_try > 0) ? _ai_reml_objective(spec, a_try, e_try, Ainv, logdet_Ainv) : -Inf
+    while !(ll >= floor_loglik) && halvings < _AI_REML_OBJECTIVE_MAX_HALVINGS
+        da /= 2
+        de /= 2
+        a_try = a0 + da
+        e_try = e0 + de
+        halvings += 1
+        ll = (a_try > 0 && e_try > 0) ? _ai_reml_objective(spec, a_try, e_try, Ainv, logdet_Ainv) : -Inf
+    end
+    return a_try, e_try, ll, halvings
+end
 
 function _fit_ai_reml_diagnostics(
     spec::AnimalModelSpec;
@@ -709,7 +748,7 @@ function _fit_ai_reml_diagnostics(
     sigma_a2 = _finite_positive_variance_float64("initial sigma_a2", sigma_a2)
     sigma_e2 = _finite_positive_variance_float64("initial sigma_e2", sigma_e2)
     original_spec = spec
-    spec, _ = _likelihood_validated_spec(spec)
+    spec, Ainv_factor = _likelihood_validated_spec(spec)
     result_spec = _likelihood_result_spec(original_spec, spec)
 
     X = Float64.(spec.X)
@@ -719,6 +758,7 @@ function _fit_ai_reml_diagnostics(
     nfixed = size(X, 2)
     nrandom = size(Z, 2)
     nobs = length(y)
+    logdet_Ainv = logdet(Ainv_factor)
     if _animal_residual_split_unidentifiable(Z, Ainv)
         @warn _ANIMAL_RESIDUAL_UNIDENTIFIABLE_MSG
     end
@@ -727,6 +767,9 @@ function _fit_ai_reml_diagnostics(
     em_steps = 0
     step_halvings = 0
     last_relative_change = NaN
+    current_loglik = NaN
+    fallback_em_steps = 0
+    boundary_face_steps = 0
     ai_score_a = NaN
     ai_score_e = NaN
     ai_score_norm = NaN
@@ -867,11 +910,58 @@ function _fit_ai_reml_diagnostics(
         # at the current finite, positive σ with converged=false — the V1-REML boundary
         # contract ("finite positive ... never NaN") — rather than throwing, which was an
         # intermittent CI failure on degenerate single-step fixtures.
-        if !_finite_positive_variance_update((a_new,), e_new)
-            termination_reason = (a_new <= 0 || e_new <= 0) ?
-                                 "step_halving_exhausted" : "nonrepresentable_variance_update"
+        positivity_exhausted = a_new <= 0 || e_new <= 0
+        if !positivity_exhausted && !_finite_positive_variance_update((a_new,), e_new)
+            termination_reason = "nonrepresentable_variance_update"
             break
         end
+        # Monotone REML objective (HSquared.jl #412): a Newton step that keeps the
+        # variances positive can still lower the REML log-likelihood, most visibly
+        # when the optimum sits on the residual boundary. Try, in order, the halved
+        # AI/Newton step, a halved step in sigma_a2 alone with sigma_e2 held (the
+        # boundary-face step), and the EM-REML update (monotone and interior). The
+        # first that does not lower the objective is taken. The current objective is
+        # computed once and then carried forward from the accepted candidate.
+        if isnan(current_loglik)
+            current_loglik = _ai_reml_objective(spec, sigma_a2, sigma_e2, Ainv, logdet_Ainv)
+        end
+        floor_loglik = current_loglik - _AI_REML_OBJECTIVE_TOL * max(1.0, abs(current_loglik))
+        # When positivity halving was exhausted the Newton direction is unusable
+        # (a huge step against a tiny variance); go straight to the fallbacks.
+        candidate_loglik = -Inf
+        objective_halvings = 0
+        if !positivity_exhausted
+            a_new, e_new, candidate_loglik, objective_halvings = _ai_reml_ascent_step(
+                spec, Ainv, logdet_Ainv, sigma_a2, sigma_e2, (a_new, e_new), floor_loglik)
+        end
+        if !(candidate_loglik >= floor_loglik) && information[1, 1] > 0
+            face_step = score_a / information[1, 1]
+            if isfinite(face_step)
+                a_new, e_new, candidate_loglik, face_halvings = _ai_reml_ascent_step(
+                    spec, Ainv, logdet_Ainv, sigma_a2, sigma_e2,
+                    (sigma_a2 + face_step, sigma_e2), floor_loglik)
+                objective_halvings += face_halvings
+                boundary_face_steps += candidate_loglik >= floor_loglik
+            end
+        end
+        if !(candidate_loglik >= floor_loglik)
+            a_em = (uAu + trace_AC) / nrandom
+            e_em = dot(e, e) / (nobs - nfixed - nrandom + trace_AC / sigma_a2)
+            candidate_loglik = (isfinite(a_em) && isfinite(e_em) && a_em > 0 && e_em > 0) ?
+                               _ai_reml_objective(spec, a_em, e_em, Ainv, logdet_Ainv) : -Inf
+            if candidate_loglik >= floor_loglik
+                a_new, e_new = a_em, e_em
+                fallback_em_steps += 1
+            end
+        end
+        step_halvings += objective_halvings
+        if !(candidate_loglik >= floor_loglik)
+            # No candidate raises the REML objective: stop at the current point
+            # rather than return an iterate with a lower log-likelihood.
+            termination_reason = positivity_exhausted ? "step_halving_exhausted" : "no_ascent_step"
+            break
+        end
+        current_loglik = candidate_loglik
         # A small step can reflect damping or regularization, not stationarity.
         # Record its size, then evaluate the score at the new point on the next
         # iteration. Only that evaluated point can be returned as converged.
@@ -910,6 +1000,8 @@ function _fit_ai_reml_diagnostics(
             em_steps = em_steps,
             factorizations = factorizations,
             step_halvings = step_halvings,
+            boundary_face_steps = boundary_face_steps,
+            fallback_em_steps = fallback_em_steps,
             last_relative_change = last_relative_change,
             ai_score_a = ai_score_a,
             ai_score_e = ai_score_e,
