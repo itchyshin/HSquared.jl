@@ -2060,6 +2060,8 @@ end
                               which = :both, initial = ..., iterations = 200,
                               ids1 = nothing, ids2 = nothing, fd_step = 1e-4,
                               boundary_tol = 1e-6)
+    two_effect_ratio_interval(fit, y, X, Z1, Ainv1, Z2, Ainv2; level = 0.95,
+                              which = :both, fd_step = 1e-4, boundary_tol = 1e-6)
 
 Asymptotic delta-method confidence interval(s) for the variance ratios of the
 general two-effect REML model ([`fit_two_effect_reml`](@ref)):
@@ -2088,6 +2090,13 @@ The reported ratio and its gradient retain the full denominator, so e.g. `ratio1
 `σ2² → 0`; in that reduction it recovers [`heritability_interval`](@ref) on the
 underlying animal model. `converged` is carried from the REML fit.
 
+The second form takes an ALREADY-FITTED [`fit_two_effect_reml`](@ref) result
+(`fit`) with the same `y, X, Z1, Ainv1, Z2, Ainv2` it was fitted on and does NOT
+refit; only the finite-difference information at `fit.variance_components` is
+computed. The first form repeats the whole dense Nelder-Mead fit (#411), so a
+caller that has just fitted should use the second. The fit must come from these
+inputs; this is not checked.
+
 Experimental, asymptotic, delta-method, REML only; the interval is a large-sample
 approximation and is NOT coverage-calibrated — on small samples the REML surface
 is flat and the interval is unreliable (the parametric bootstrap,
@@ -2110,6 +2119,31 @@ function two_effect_ratio_interval(
     fit = fit_two_effect_reml(y, X, Z1, Ainv1, Z2, Ainv2;
                               initial = initial, iterations = iterations,
                               ids1 = ids1, ids2 = ids2)
+    return _two_effect_ratio_interval_from_fit(fit, y, X, Z1, Ainv1, Z2, Ainv2;
+        level = level, which = which, fd_step = fd_step, boundary_tol = boundary_tol)
+end
+
+function two_effect_ratio_interval(
+    fit::NamedTuple,
+    y::AbstractVector, X::AbstractMatrix, Z1::AbstractMatrix, Ainv1::AbstractMatrix,
+    Z2::AbstractMatrix, Ainv2::AbstractMatrix;
+    level::Real = 0.95, which::Symbol = :both,
+    fd_step::Real = 1e-4, boundary_tol::Real = 1e-6,
+)
+    0 < level < 1 || throw(ArgumentError("level must be in (0, 1)"))
+    boundary_tol = _validate_boundary_tol(boundary_tol)
+    fd_step = _validate_uncertainty_fd_step(fd_step)
+    which in (:both, :ratio1, :ratio2) ||
+        throw(ArgumentError("which must be :both, :ratio1, or :ratio2"))
+    return _two_effect_ratio_interval_from_fit(fit, y, X, Z1, Ainv1, Z2, Ainv2;
+        level = level, which = which, fd_step = fd_step, boundary_tol = boundary_tol)
+end
+
+# Interval from an already-fitted two-effect REML result (no refit); arguments are
+# validated by the two public methods.
+function _two_effect_ratio_interval_from_fit(
+    fit, y, X, Z1, Ainv1, Z2, Ainv2; level, which, fd_step, boundary_tol,
+)
     vc = fit.variance_components
     theta = [vc.sigma1, vc.sigma2, vc.sigma_e2]
 
@@ -3614,6 +3648,8 @@ end
     direct_maternal_interval(y, X, Zd, Zm, Ainv; level = 0.95, initial = nothing,
                              iterations = 200, ids = nothing, fd_step = 1e-4,
                              max_dense_cells = 1_000_000)
+    direct_maternal_interval(fit, y, X, Zd, Zm, Ainv; level = 0.95, fd_step = 1e-4,
+                             max_dense_cells = 1_000_000)
 
 Asymptotic delta-method standard errors and confidence intervals for the
 direct–maternal REML model ([`fit_direct_maternal_reml`](@ref)). Fits the model,
@@ -3631,6 +3667,12 @@ direct–maternal genetic correlation `r_am` (Fisher-`z` interval, so it stays i
 (`h²_T = (σ²_ad + 1.5·σ_dm + 0.5·σ²_am)/σ²_P`, Willham (1972), with
 `σ²_P = σ²_ad + σ²_am + σ_dm + σ²e` — the SAME convention as the R
 `total_heritability()` surface).
+
+The second form takes an ALREADY-FITTED [`fit_direct_maternal_reml`](@ref) result
+(`fit`) with the same `y, X, Zd, Zm, Ainv` it was fitted on and does NOT refit;
+only the finite-difference Hessian at `fit.variance_components` is computed. The
+first form repeats the whole dense fit (#411), which is the dominant cost. The fit
+must come from these inputs; this is not checked beyond the dense-size guard.
 
 INTERVALS ARE ASYMPTOTIC / UNCALIBRATED (normal-`z` Wald / delta on the observed
 REML information; Fisher-`z` for `r_am`), NOT coverage-calibrated — the same house
@@ -3655,6 +3697,31 @@ function direct_maternal_interval(
     fit = fit_direct_maternal_reml(y, X, Zd, Zm, Ainv; initial = initial,
                                    iterations = iterations, ids = ids,
                                    max_dense_cells = max_dense_cells)
+    return _direct_maternal_interval_from_fit(fit, y, X, Zd, Zm, Ainv;
+        level = level, fd_step = fd_step)
+end
+
+function direct_maternal_interval(
+    fit::NamedTuple,
+    y::AbstractVector, X::AbstractMatrix, Zd::AbstractMatrix, Zm::AbstractMatrix,
+    Ainv::AbstractMatrix;
+    level::Real = 0.95,
+    fd_step::Real = 1e-4,
+    max_dense_cells::Integer = DEFAULT_MAX_DENSE_CELLS,
+)
+    0 < level < 1 || throw(ArgumentError("level must be in (0, 1)"))
+    n = length(y)
+    max_dense_cells > 0 ||
+        throw(ArgumentError("max_dense_cells must be a positive integer"))
+    n * n <= max_dense_cells ||
+        throw(ArgumentError("dense direct-maternal REML would form an $(n)×$(n) covariance " *
+            "($(n * n) cells) exceeding max_dense_cells=$(max_dense_cells)"))
+    return _direct_maternal_interval_from_fit(fit, y, X, Zd, Zm, Ainv;
+        level = level, fd_step = fd_step)
+end
+
+# Interval from an already-fitted direct-maternal REML result (no refit).
+function _direct_maternal_interval_from_fit(fit, y, X, Zd, Zm, Ainv; level, fd_step)
     vc = fit.variance_components
     theta = [vc.sigma_ad, vc.sigma_am, vc.sigma_dm, vc.sigma_e2]
 
@@ -3913,7 +3980,10 @@ end
 
 """
     repeatability_interval(y, X, Z, Ainv; level = 0.95, initial = ..., iterations = 200,
-                           ids = nothing, fd_step = 1e-4, boundary_tol = 1e-6)
+                           ids = nothing, fd_step = 1e-4, boundary_tol = 1e-6,
+                           max_dense_cells = $(DEFAULT_MAX_DENSE_CELLS))
+    repeatability_interval(fit, y, X, Z, Ainv; level = 0.95, fd_step = 1e-4,
+                           boundary_tol = 1e-6, max_dense_cells = $(DEFAULT_MAX_DENSE_CELLS))
 
 Asymptotic delta-method confidence interval for the repeatability
 `t = (σ²a + σ²pe) / (σ²a + σ²pe + σ²e)` of the repeatability / permanent-environment
@@ -3922,6 +3992,19 @@ information as the central finite-difference Hessian of the REML log-likelihood 
 the optimum, and applies the delta method to `t` on the logit scale (so the
 interval lies in `(0, 1)`). Returns
 `(repeatability, lower, upper, level, se, converged, boundary, lower_clamped, upper_clamped)`.
+
+The second form takes an ALREADY-FITTED [`fit_repeatability_reml`](@ref) result
+(`fit`) together with the same `y, X, Z, Ainv` it was fitted on, and does NOT
+refit: only the finite-difference information at `fit.variance_components` is
+computed. A caller that has just fitted (for example the R bridge) should use it,
+because the first form repeats the whole dense Nelder-Mead fit (#411). The fit
+must come from these inputs; this is not checked beyond the dense-size guard.
+
+`max_dense_cells` is the same dense validation-size guard as
+[`fit_repeatability_reml`](@ref). Both forms form a dense `A = inv(Ainv)` and
+refuse, before doing so, a model with `nobs² + nanimals² > max_dense_cells`; the
+refitting form forwards the cap to its fit, so a cap raised for the fit is honoured
+by the interval too.
 
 Experimental, asymptotic. `t` is the well-identified summary of this model (the
 `σ²a`/`σ²pe` split is weakly identified, so a per-component SE is unreliable, but
@@ -3936,11 +4019,29 @@ function repeatability_interval(
     initial = (sigma_a2 = 1.0, sigma_pe2 = 1.0, sigma_e2 = 1.0),
     iterations::Integer = 200, ids = nothing, fd_step::Real = 1e-4,
     boundary_tol::Real = 1e-6,
+    max_dense_cells::Integer = DEFAULT_MAX_DENSE_CELLS,
 )
     0 < level < 1 || throw(ArgumentError("level must be in (0, 1)"))
     fd_step = _validate_uncertainty_fd_step(fd_step)
     boundary_tol = _validate_boundary_tol(boundary_tol)
-    fit = fit_repeatability_reml(y, X, Z, Ainv; initial = initial, iterations = iterations, ids = ids)
+    fit = fit_repeatability_reml(y, X, Z, Ainv; initial = initial, iterations = iterations,
+                                 ids = ids, max_dense_cells = max_dense_cells)
+    return _repeatability_interval_from_fit(
+        fit, y, X, Z, Ainv;
+        level = level, fd_step = fd_step, boundary_tol = boundary_tol,
+    )
+end
+
+function repeatability_interval(
+    fit::NamedTuple,
+    y::AbstractVector, X::AbstractMatrix, Z::AbstractMatrix, Ainv::AbstractMatrix;
+    level::Real = 0.95, fd_step::Real = 1e-4, boundary_tol::Real = 1e-6,
+    max_dense_cells::Integer = DEFAULT_MAX_DENSE_CELLS,
+)
+    0 < level < 1 || throw(ArgumentError("level must be in (0, 1)"))
+    fd_step = _validate_uncertainty_fd_step(fd_step)
+    boundary_tol = _validate_boundary_tol(boundary_tol)
+    _check_dense_validation_size(length(y), size(Ainv, 1), max_dense_cells)
     return _repeatability_interval_from_fit(
         fit, y, X, Z, Ainv;
         level = level, fd_step = fd_step, boundary_tol = boundary_tol,

@@ -12,6 +12,18 @@ package version. `public_covered_count` stays **7**, and no entry below touches
 `Project.toml`. The package version is `0.9.0`; its released section is recorded
 below.
 
+- Part of #411: `repeatability_interval`, `two_effect_ratio_interval` and
+  `direct_maternal_interval` each gain a method that takes an already-fitted result
+  (`repeatability_interval(fit, y, X, Z, Ainv; ...)`, and likewise for the other two) and
+  computes only the finite-difference information at `fit.variance_components`, so a caller
+  that has just fitted no longer repeats the whole dense Nelder-Mead fit inside the interval.
+  The existing refitting methods now call the same code and return identical values.
+  `repeatability_interval` also accepts `max_dense_cells` and forwards it to its fit; before,
+  a cap raised for `fit_repeatability_reml` was ignored by the interval, which refused any
+  model over the default 1,000,000 cells. Still open: the R bridge calls these functions
+  with the refitting form, the sparse `multi_effect_*` route is not yet used for the
+  repeatability and direct-maternal bridge targets, and each interval still forms one dense
+  `inv(Ainv)`.
 - `reliability`'s denominator `diag(inv(Ainv))` comes from `1 .+ F` when Julia builds `Ainv`
   from pedigree rows: `pedigree_inverse` already computes the inbreeding coefficients `F`
   (Meuwissen & Luo) for Henderson's rules, so the spec now carries them
