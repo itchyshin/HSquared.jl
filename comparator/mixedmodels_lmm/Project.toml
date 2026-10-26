@@ -1,0 +1,17 @@
+# Opt-in MixedModels.jl comparator environment (HSquared.jl #275). SEPARATE from the
+# HSquared.jl package Project.toml: MixedModels is NEVER a package dependency and is never
+# imported by the engine or its test suite. `[sources]` needs Julia >= 1.11 (use 1.12).
+#     julia +1.12 --project=comparator/mixedmodels_lmm -e 'using Pkg; Pkg.instantiate()'
+[deps]
+DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
+HSquared = "a0667dea-0f38-44e8-9150-4fda00624eac"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+MixedModels = "ff71e718-51f3-5ec2-a782-8ffcbfa3c316"
+Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
+Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
+
+[sources]
+HSquared = {path = "../.."}

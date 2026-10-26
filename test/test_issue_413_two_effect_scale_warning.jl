@@ -29,7 +29,13 @@ using Test
     X = ones(8, 1)
     Z2 = [1.0 0; 1 0; 0 1; 0 1; 1 0; 0 1; 1 0; 0 1]
 
+    # An explicit unit start is still warned about; the default start is scale-aware
+    # (test_issue_413_scale_aware_start.jl) and does not warn.
     @test_logs (:warn, r"unit-scale start") min_level = Base.CoreLogging.Warn begin
+        fit_two_effect_reml(y_big, X, Z, Ainv, Z2, Matrix(1.0I, 2, 2);
+            initial = (sigma1 = 1.0, sigma2 = 1.0, sigma_e2 = 1.0), iterations = 1)
+    end
+    @test_logs min_level = Base.CoreLogging.Warn begin
         fit_two_effect_reml(y_big, X, Z, Ainv, Z2, Matrix(1.0I, 2, 2); iterations = 1)
     end
     @test_logs min_level = Base.CoreLogging.Warn begin

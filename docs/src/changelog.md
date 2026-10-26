@@ -7,11 +7,41 @@
   and Documenter `authors`; Shinichi Nakagawa remains primary contact. No
   version or capability change.
 
+- Changed #413: the dense `fit_two_effect_reml` and `fit_repeatability_reml` fitters
+  (and `two_effect_ratio_interval`, `repeatability_interval`, which call them) default to
+  scale-aware starting variances set from the response variance: `sigma_e2 = var(y)/2`
+  and the two random-effect variances `var(y)/4` each, the same rule as
+  `initial = :auto` on the sparse multi-effect fitter. The default start was
+  `(1, 1, 1)`, which is blind to the unit of `y`: on a response with variance near
+  1e7 (milk yield in kg x 1000) NelderMead stopped at a wrong near-zero-heritability
+  point with `converged = true`, while `y / 1000` gave the correct REML answer. The
+  optimum now no longer depends on the unit of the response. A constant response
+  falls back to `(1, 1, 1)`. An explicit `initial` is used as given, and passing
+  `(1, 1, 1)` explicitly with `var(y)` far from 1 still emits the unit-scale start
+  warning (#447). The default start changes the NelderMead path, so estimates on
+  unit-variance data can differ from earlier releases in the last digits and the
+  reported optimum can differ where the old start stopped early; the `sim/`
+  recovery harnesses pass the unit start explicitly and are unchanged. `converged`
+  still means only that the simplex tolerance was met, not that the REML score is
+  small.
+
 None of the entries below change any capability status, row count, or
 package version. `public_covered_count` stays **7**, and no entry below touches
 `Project.toml`. The package version is `0.9.0`; its released section is recorded
 below.
 
+- Part of #411: `repeatability_interval`, `two_effect_ratio_interval` and
+  `direct_maternal_interval` each gain a method that takes an already-fitted result
+  (`repeatability_interval(fit, y, X, Z, Ainv; ...)`, and likewise for the other two) and
+  computes only the finite-difference information at `fit.variance_components`, so a caller
+  that has just fitted no longer repeats the whole dense Nelder-Mead fit inside the interval.
+  The existing refitting methods now call the same code and return identical values.
+  `repeatability_interval` also accepts `max_dense_cells` and forwards it to its fit; before,
+  a cap raised for `fit_repeatability_reml` was ignored by the interval, which refused any
+  model over the default 1,000,000 cells. Still open: the R bridge calls these functions
+  with the refitting form, the sparse `multi_effect_*` route is not yet used for the
+  repeatability and direct-maternal bridge targets, and each interval still forms one dense
+  `inv(Ainv)`.
 - `reliability`'s denominator `diag(inv(Ainv))` comes from `1 .+ F` when Julia builds `Ainv`
   from pedigree rows: `pedigree_inverse` already computes the inbreeding coefficients `F`
   (Meuwissen & Luo) for Henderson's rules, so the spec now carries them

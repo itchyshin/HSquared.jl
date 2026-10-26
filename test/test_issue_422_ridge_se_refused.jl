@@ -14,7 +14,7 @@ using Test
     ped = normalize_pedigree(string.(1:n), fill("0", n), fill("0", n))
     Ainv = pedigree_inverse(ped)
     Z = sparse(1.0I, n, n)
-    nrefused = 0
+    nridge = 0
     for seed in 1:12
         Random.seed!(seed)
         male = rand(Bool, n)
@@ -24,16 +24,25 @@ using Test
         fit = Base.CoreLogging.with_logger(Base.CoreLogging.NullLogger()) do
             fit_ai_reml(spec; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0))
         end
-        fit.converged === true || continue
-        nrefused += 1
+        # Decision on #422 (25 Oct 2026): the ridge fit is never certified, so
+        # every rep is converged = false with NaN h2, SE and interval.
+        nridge += 1
+        @test fit.converged === false
+        @test fit.optimizer_status == "unidentified_ridge"
+        @test isnan(heritability(fit))
+        @test isnan(heritability_standard_error(fit))
+        @test isnan(heritability_interval(fit).lower)
+        @test isnan(heritability_interval(fit).upper)
         @test_throws ArgumentError variance_component_covariance(fit)
         @test_throws ArgumentError variance_component_standard_errors(fit)
-        @test_throws ArgumentError heritability_standard_error(fit)
-        @test_throws ArgumentError heritability_interval(fit)
-        err = try heritability_standard_error(fit) catch e; e end
-        @test err isa ArgumentError && occursin("not identified", err.msg)
     end
-    @test nrefused >= 8
+    @test nridge == 12
+end
+
+@testset "issue 422 singular information is still refused" begin
+    @test_throws ArgumentError HSquared._require_identified_information(
+        [1.0 1.0; 1.0 1.0], "test")
+    @test HSquared._require_identified_information([2.0 0.0; 0.0 1.0], "test") === nothing
 end
 
 @testset "issue 422 identified fits keep their SE" begin
