@@ -1,0 +1,1 @@
+date=2026-10-25T16:24:46.194 host=totoro julia=1.12.7 MixedModels=5.9.1 HSquared_rev=f91337de julia_threads=2 blas_threads=1 reps=9 rtol_var=0.001 rtol_beta=1.0e-6
