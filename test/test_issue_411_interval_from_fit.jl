@@ -9,7 +9,10 @@ using SparseArrays
 using Test
 
 function _issue411_repeatability_fixture()
-    rng = MersenneTwister(20260618)
+    # MersenneTwister streams differ between Julia 1.10 and 1.12+, so this seed is
+    # chosen to give an interior, converged REML fit on both (seed 20260618 hit the
+    # sigma_pe2 boundary and did not converge on 1.12+, giving a NaN interval).
+    rng = MersenneTwister(20260623)
     nsire, ndam, noff, reps = 8, 16, 40, 3
     sids = ["s$i" for i in 1:nsire]; dids = ["d$i" for i in 1:ndam]; oids = ["o$i" for i in 1:noff]
     ids = vcat(sids, dids, oids)
