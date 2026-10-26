@@ -54,10 +54,12 @@ end
     # The cap is forwarded to the fit, so a cap below the model size is refused with
     # the named guard, and a cap at the model size is honoured.
     @test_throws ArgumentError repeatability_interval(y, X, Z, Ainv; max_dense_cells = cells - 1)
-    ci = repeatability_interval(y, X, Z, Ainv; max_dense_cells = cells)
+    ci = repeatability_interval(y, X, Z, Ainv; max_dense_cells = cells, iterations = 1000)
     @test isfinite(ci.repeatability)
 
-    fit = fit_repeatability_reml(y, X, Z, Ainv; max_dense_cells = cells)
+    # iterations = 1000: Nelder-Mead from the scale-aware start (#413) needs more than the
+    # default 200 here; a non-converged fit is (correctly) reported as a boundary interval.
+    fit = fit_repeatability_reml(y, X, Z, Ainv; max_dense_cells = cells, iterations = 1000)
 
     # Fit-taking method reproduces the refitting method exactly (same fit, same FD).
     ci_fit = repeatability_interval(fit, y, X, Z, Ainv; max_dense_cells = cells)
