@@ -33,6 +33,25 @@ using Test
         fit_ai_reml(spec; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0), iterations = 2)
     end
 
+    # Decision on #422 (25 Oct 2026): the ridge fit is not certified. converged is
+    # false, h2 and its standard error and interval are NaN, and a reason is given.
+    ridge = with_logger(NullLogger()) do
+        fit_ai_reml(spec; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0), iterations = 100)
+    end
+    @test ridge.converged == false
+    @test ridge.optimizer_status == "unidentified_ridge"
+    @test isnan(heritability(ridge))
+    @test isnan(heritability_standard_error(ridge))
+    for method in (:delta, :profile)
+        iv = heritability_interval(ridge; method = method)
+        @test isnan(iv.heritability) && isnan(iv.lower) && isnan(iv.upper)
+        @test occursin("not separately identifiable", iv.reason)
+        @test iv.method == method
+    end
+    @test isnan(heritability_interval(ridge).se)
+    # The identified total Va + Ve is still reported.
+    @test ridge.variance_components.sigma_a2 > 0 && ridge.variance_components.sigma_e2 > 0
+
     Zrep = sparse(1:n, repeat(1:(n ÷ 2), inner = 2), 1.0, n, n ÷ 2)
     Arep = sparse(1.0I, n ÷ 2, n ÷ 2)
     @test HSquared._is_identity_precision(Arep)
@@ -47,4 +66,11 @@ using Test
     Q = pedigree_inverse(related)
     @test !HSquared._is_identity_precision(Q)
     @test !HSquared._animal_residual_split_unidentifiable(Z, Q)
+
+    # Replicated records identify the split even with A = I: no override.
+    yrep = [1.6, 3.0, 1.9, 1.9, 0.9, 2.4, 1.2, 0.6]
+    sprep = animal_model_spec(yrep, ones(n, 1), Zrep, Arep; ids = string.(1:(n ÷ 2)), method = :REML)
+    frep = fit_ai_reml(sprep; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0), iterations = 200)
+    @test frep.optimizer_status != "unidentified_ridge"
+    @test !isnan(heritability(frep))
 end

@@ -624,7 +624,7 @@ end
                            trait_names = nothing, ...)
 
 Genetic-GLLVM integrated-Laplace fitting (#50 slice 3): ESTIMATE the rank-`K` latent loadings `Λ` (`T×K`) by
-maximizing the K-factor fixed-and-genetic-effect integrated objective [`gllvm_laplace_marginal_loglik`](@ref) over
+maximizing the K-factor fixed-and-genetic-effect integrated objective `gllvm_laplace_marginal_loglik` over
 the loadings (NelderMead). The among-trait genetic covariance is `G_lat = ΛΛ'`
 (`structure = :lowrank`) or `G_lat = ΛΛ' + diag(Ψ)` (`structure = :factor_analytic`,
 adding a per-trait specific genetic variance `Ψ > 0` — fitted on the `log` scale). The
