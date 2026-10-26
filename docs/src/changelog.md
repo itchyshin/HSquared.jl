@@ -31,7 +31,29 @@
   reported optimum can differ where the old start stopped early; the `sim/`
   recovery harnesses pass the unit start explicitly and are unchanged. `converged`
   still means only that the simplex tolerance was met, not that the REML score is
-  small.
+  small (superseded by #424 below).
+
+- Changed #424: the eleven NelderMead fitters (`fit_variance_components`,
+  `fit_sparse_reml`, `fit_two_effect_reml`, `fit_multi_effect_reml`,
+  `fit_direct_maternal_reml`, `fit_repeatability_reml`,
+  `fit_random_regression_reml`, `fit_multivariate_reml`,
+  `fit_multivariate_repeatability_reml`, `fit_gllvm_laplace_reml`, and the
+  NelderMead branches of `fit_laplace_reml`) no longer take `converged` from
+  `Optim.converged` alone. One shared helper in `src/likelihood.jl` also requires,
+  at the returned optimum, a numerically zero gradient (Newton decrement at most
+  1e-3 log-likelihood units) and curvature in every direction (smallest eigenvalue
+  of the finite-difference Hessian in correlation form above 1e-3). Coordinates
+  already at a boundary (a variance share at or below 1e-6, a covariance that
+  lost rank or a variance in it, an FA uniqueness at its floor, a #327 safety
+  rail) are left out of the check, and the rotation directions of free loadings
+  are set aside. A flat REML ridge, such as Va and Ve with one record per
+  unrelated animal, or a rank-1 factor-analytic G_lat for two traits in
+  `fit_gllvm_laplace_reml`, now reports `converged = false`, and so does a
+  simplex that stopped short of the optimum. The check costs `2d^2 + 4d` extra
+  objective evaluations for `d` checked parameters. Point estimates of a single
+  fit are unchanged; the multivariate FA two-start search now prefers a start
+  that passes the check, and bootstrap refits that fail it count as not
+  converged.
 
 None of the entries below change any capability status, row count, or
 package version. `public_covered_count` stays **7**, and no entry below touches

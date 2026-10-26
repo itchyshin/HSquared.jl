@@ -723,6 +723,8 @@ function fit_gllvm_laplace_reml(Y::AbstractMatrix, Ainv::AbstractMatrix,
         vec(Λ0)
     end
     res = optimize(negloglik, params0, NelderMead(), Optim.Options(iterations = iterations))
+    # The marginal is rotation-invariant in the K common-factor loadings (#424).
+    optimizer_converged = _nelder_mead_converged(negloglik, res; null_dims = K * (K - 1) ÷ 2)
     phat = Optim.minimizer(res)
     Λhat = reshape(phat[1:nλ], T, K)
     ψhat = structure == :factor_analytic ? exp.(phat[(nλ + 1):(nλ + T)]) : nothing
@@ -741,9 +743,9 @@ function fit_gllvm_laplace_reml(Y::AbstractMatrix, Ainv::AbstractMatrix,
         _gllvm_trait_effects(mhat.g, Λhat, ψhat),
         trait_names,
         K,
-        Optim.converged(res) && mhat.converged,
+        optimizer_converged && mhat.converged,
         Optim.iterations(res),
-        Optim.converged(res),
+        optimizer_converged,
         mhat.converged,
         mhat.gradient_norm,
         mhat.iterations,

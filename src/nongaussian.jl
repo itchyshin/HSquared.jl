@@ -1396,6 +1396,11 @@ function _unused_laplace_family_controls(family::Symbol, n_trials, rho, theta_in
     return unused
 end
 
+# Coordinates of a NelderMead minimizer `p` that sit clear of the ±8-log-unit
+# safety rails around `centers` (#327). Coordinates on or next to a rail are a
+# reported boundary, so the #424 gradient and curvature check skips them.
+_laplace_rail_free(p, centers) = abs.(p .- centers) .< 8.0 - 0.1
+
 """
     fit_laplace_reml(y, X, Z, Ainv; family = :gaussian, marginal = :laplace,
                      initial = nothing, ids = nothing, iterations = 200,
@@ -1543,9 +1548,10 @@ function fit_laplace_reml(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatri
         pmin = Optim.minimizer(res); sa2, se2 = exp.(pmin)
         fit = margfun(y, X, Z, Ainv, sa2, GaussianResponse(se2))
         boundary = abs(pmin[1] - lsa0) >= 8.0 - 1e-6 || abs(pmin[2] - lse0) >= 8.0 - 1e-6
+        nm_converged = _nelder_mead_converged(objgs, res; free = _laplace_rail_free(pmin, [lsa0, lse0]))
         NonGaussianFit((sigma_a2 = sa2, sigma_e2 = se2), val(fit), fit.beta,
                        marginal === :variational ? fit.m : fit.u, aids,
-                       Optim.converged(res) && fit.converged, :gaussian, marginal, nothing, nothing,
+                       nm_converged && fit.converged, :gaussian, marginal, nothing, nothing,
                        boundary, nothing)
     elseif family === :nbinom
         # negative-binomial: TWO estimable scalars (sigma_a2 + the overdispersion theta),
@@ -1566,8 +1572,9 @@ function fit_laplace_reml(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatri
         pmin = Optim.minimizer(res); sa2, theta = exp.(pmin)
         fit = laplace_marginal_loglik(y, X, Z, Ainv, sa2, NegativeBinomialResponse(theta))
         boundary = abs(pmin[1] - lsa0) >= 8.0 - 1e-6 || abs(pmin[2] - lth0) >= 8.0 - 1e-6
+        nm_converged = _nelder_mead_converged(objnb, res; free = _laplace_rail_free(pmin, [lsa0, lth0]))
         NonGaussianFit((sigma_a2 = sa2, theta = theta), fit.loglik, fit.beta,
-                       fit.u, aids, Optim.converged(res) && fit.converged, :nbinom, :laplace, nothing, nothing,
+                       fit.u, aids, nm_converged && fit.converged, :nbinom, :laplace, nothing, nothing,
                        boundary, nothing)
     elseif family === :ordered_probit
         # ordered-categorical probit: JOINTLY estimate σ²a AND the K-1 cutpoints θ.
@@ -1610,11 +1617,14 @@ function fit_laplace_reml(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatri
         boundary = if ndelta == 0                        # K = 2: only σ²a (1-D Brent), θ = [0]
             res = optimize(s -> objord([s]), log(sa0) - 6.0, log(sa0) + 6.0)
             sa2 = exp(Optim.minimizer(res)); thetahat = [0.0]
+            nm_converged = Optim.converged(res)
             abs(log(sa2) - logsa0) >= 6.0 - 1e-6
         else
             res = optimize(objord, vcat(log(sa0), zeros(ndelta)), NelderMead(),
                            Optim.Options(iterations = iterations))
             pmin = Optim.minimizer(res); sa2 = exp(pmin[1]); thetahat = _cuts(pmin[2:end])
+            nm_converged = _nelder_mead_converged(objord, res;
+                                                  free = _laplace_rail_free(pmin, vcat(logsa0, zeros(ndelta))))
             abs(pmin[1] - logsa0) >= 8.0 - 1e-6 ||
                 # NelderMead can settle just inside a discontinuous penalty rail
                 # once objective differences are below its stopping tolerance.
@@ -1622,7 +1632,7 @@ function fit_laplace_reml(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatri
         end
         fit = laplace_marginal_loglik(y, X, Z, Ainv, sa2, OrderedProbitResponse(thetahat))
         NonGaussianFit((sigma_a2 = sa2, cutpoints = thetahat), fit.loglik, fit.beta,
-                       fit.u, aids, Optim.converged(res) && fit.converged,
+                       fit.u, aids, nm_converged && fit.converged,
                        :ordered_probit, :laplace, nothing, nothing, boundary, nothing)
     elseif family === :gamma
         # Gamma (log link): TWO estimable scalars (σ²a + the shape ν), profiled jointly by
@@ -1655,8 +1665,9 @@ function fit_laplace_reml(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatri
         pmin = Optim.minimizer(res); sa2, shape = exp.(pmin)
         fit = laplace_marginal_loglik(y, X, Z, Ainv, sa2, GammaResponse(shape))
         boundary = abs(pmin[1] - lsa0) >= 8.0 - 1e-6 || abs(pmin[2] - lth0) >= 8.0 - 1e-6
+        nm_converged = _nelder_mead_converged(objg, res; free = _laplace_rail_free(pmin, [lsa0, lth0]))
         NonGaussianFit((sigma_a2 = sa2, shape = shape), fit.loglik, fit.beta,
-                       fit.u, aids, Optim.converged(res) && fit.converged, :gamma, :laplace, nothing, nothing,
+                       fit.u, aids, nm_converged && fit.converged, :gamma, :laplace, nothing, nothing,
                        boundary, nothing)
     else
         # single-variance-component families: Poisson (log link), Bernoulli/Binomial

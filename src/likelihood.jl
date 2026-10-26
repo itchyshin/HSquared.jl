@@ -398,6 +398,121 @@ function _optimize_two_variances(objective, logstart, spec::AnimalModelSpec, ite
     return result, total_iterations
 end
 
+# HSquared.jl #424: one convergence check shared by every NelderMead fitter.
+# `Optim.converged` for NelderMead only says that the spread of the objective
+# values over the simplex fell below `g_tol`. A flat REML ridge, or a simplex
+# that contracted onto a non-stationary point, passes that rule, so on its own
+# it is not a convergence certificate. The NelderMead fitters report
+# `converged = true` only when Optim's rule holds AND a central
+# finite-difference gradient `g` and Hessian `H` of the objective (minus the
+# log-likelihood) at the returned minimizer show:
+#   * curvature along every coordinate: each `H[i, i]` is positive and above
+#     `_NM_FLAT_CURVATURE_TOL` times the largest one;
+#   * no ridge and no saddle: the smallest eigenvalue of the scaled Hessian
+#     `S = D^(-1/2) H D^(-1/2)`, `D = Diagonal(H)`, exceeds `_NM_RIDGE_TOL`.
+#     `S` is the information matrix in correlation form, so the check does not
+#     change when a parameter is rescaled (a log-variance and the variance give
+#     the same answer). A near-zero eigenvalue means some combination of the
+#     parameters is not determined by the data (a ridge, such as `Va + Ve`
+#     when only the sum is estimable); a negative one is a saddle; and
+#   * a gradient that is numerically zero: the Newton decrement
+#     `g' H⁻¹ g / 2`, the gradient norm in the inverse-Hessian metric and the
+#     objective decrease a Newton step still predicts (log-likelihood units),
+#     is at most `_NM_STATIONARY_GAIN_TOL`.
+# `free` picks the coordinates that are checked. A fitter passes `false` for a
+# coordinate it already treats as a boundary (a variance driven toward zero on
+# the log scale, a covariance that lost rank, or a parameter on a safety
+# rail), where the objective is flat or penalized by construction. `null_dims`
+# sets aside that many eigenvalues of `S` of smallest magnitude for a known
+# exact invariance of the objective (the `r(r-1)/2` rotations of rank-`r` free
+# loadings).
+const _NM_FD_STEP = 1e-3
+const _NM_STATIONARY_GAIN_TOL = 1e-3
+const _NM_RIDGE_TOL = 1e-3
+const _NM_FLAT_CURVATURE_TOL = 1e-8
+
+function _nelder_mead_stationarity(objective, x::AbstractVector;
+                                   free = trues(length(x)), null_dims::Integer = 0)
+    base = Vector{Float64}(x)
+    idx = findall(collect(Bool, free))
+    d = length(idx)
+    0 <= null_dims <= d ||
+        throw(ArgumentError("null_dims must be between 0 and the number of free coordinates"))
+    d == 0 && return (stationary = true, gain = 0.0, ridge = Inf, gradient_norm = 0.0)
+    function f(z)
+        trial = copy(base)
+        trial[idx] = z
+        return objective(trial)
+    end
+    z = base[idx]
+    h = _NM_FD_STEP .* max.(1.0, abs.(z))
+    g = zeros(d)
+    for i in 1:d
+        e = zeros(d)
+        e[i] = h[i]
+        g[i] = (f(z + e) - f(z - e)) / (2 * h[i])
+    end
+    H = _direct_maternal_fd_hessian(f, z, h)
+    gradient_norm = maximum(abs, g)
+    flat = (stationary = false, gain = Inf, ridge = NaN, gradient_norm = gradient_norm)
+    (all(isfinite, g) && all(isfinite, H)) || return flat
+    curvature = diag(H)
+    minimum(curvature) > _NM_FLAT_CURVATURE_TOL * max(1.0, maximum(curvature)) || return flat
+    scale = 1 ./ sqrt.(curvature)
+    E = eigen(Symmetric(scale .* H .* transpose(scale)))
+    kept = sort(sortperm(abs.(E.values))[(null_dims + 1):end])
+    isempty(kept) && return (stationary = true, gain = 0.0, ridge = Inf, gradient_norm = gradient_norm)
+    ridge = minimum(E.values[kept])
+    ridge > 0 || return (stationary = false, gain = Inf, ridge = ridge, gradient_norm = gradient_norm)
+    gs = transpose(E.vectors[:, kept]) * (scale .* g)
+    gain = 0.5 * sum(gs .^ 2 ./ E.values[kept])
+    stationary = ridge > _NM_RIDGE_TOL && gain <= _NM_STATIONARY_GAIN_TOL
+    return (stationary = stationary, gain = gain, ridge = ridge, gradient_norm = gradient_norm)
+end
+
+# `converged` for a NelderMead `result` of `objective`: Optim's simplex rule AND
+# the gradient and curvature check above at `Optim.minimizer(result)`.
+function _nelder_mead_converged(objective, result; kwargs...)
+    Optim.converged(result) || return false
+    return _nelder_mead_stationarity(objective, Optim.minimizer(result); kwargs...).stationary
+end
+
+# Coordinates of a log-variance vector that are not at the zero-variance
+# boundary, the `free` mask for `_nelder_mead_converged`.
+_nelder_mead_interior(variances) =
+    [v / sum(variances) > _NELDER_MEAD_BOUNDARY_SHARE for v in variances]
+
+# The same mask for a log-Cholesky vector in `_chol_params_to_cov` order. Column
+# `j` is at the boundary when its squared diagonal factor is at most
+# `_NELDER_MEAD_BOUNDARY_SHARE` of row `j`'s variance (the covariance lost rank, a
+# correlation at +-1) or row `j`'s variance is at most that share of `scale` (a
+# variance driven to zero; by default the largest variance in the block). The
+# entries below that diagonal are then not identified separately from the later
+# columns, so the whole column is left out of the check.
+function _log_cholesky_interior(v, t::Integer; scale = nothing)
+    L = zeros(t, t)
+    idx = 1
+    for j in 1:t, i in j:t
+        L[i, j] = i == j ? exp(v[idx]) : v[idx]
+        idx += 1
+    end
+    rowvar = [sum(abs2, @view L[i, 1:i]) for i in 1:t]
+    reference = scale === nothing ? maximum(rowvar) : scale
+    edge = [L[j, j]^2 <= _NELDER_MEAD_BOUNDARY_SHARE * rowvar[j] ||
+            rowvar[j] <= _NELDER_MEAD_BOUNDARY_SHARE * reference for j in 1:t]
+    free = trues(length(v))
+    idx = 1
+    for j in 1:t, i in j:t
+        free[idx] = !edge[j]
+        idx += 1
+    end
+    return free
+end
+
+# Largest variance in the covariance that a log-Cholesky vector encodes, the
+# common `scale` of `_log_cholesky_interior` across the blocks of one model.
+_log_cholesky_scale(v, t::Integer) = maximum(diag(_chol_params_to_cov(v, t)))
+
 """
     fit_variance_components(spec; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0),
                             method = spec.method, iterations = 1_000,
@@ -420,6 +535,11 @@ and keeps the higher log-likelihood. From the unit-scale default start, a
 response with variance far below 1 can otherwise stop at a false `σ²e → 0`
 boundary with `converged = true` (HSquared.jl #429). `iterations` caps each
 run; the reported count is the sum over both runs.
+
+`converged = true` needs both the NelderMead simplex rule and the shared
+gradient and curvature check at the optimum (HSquared.jl #424): a numerically
+zero REML score and no flat or negative direction of the REML surface. A
+variance share at or below `1e-6` is a boundary and is left out of that check.
 """
 function fit_variance_components(
     spec::AnimalModelSpec;
@@ -459,6 +579,9 @@ function fit_variance_components(
     )
 
     isfinite(Optim.minimum(result)) || throw(ArgumentError("dense optimizer did not find a finite objective"))
+    # Checked before any local that `objective` also assigns is read again (#424).
+    converged = _nelder_mead_converged(objective, result;
+                                       free = _nelder_mead_interior(exp.(Optim.minimizer(result))))
     variances = _try_positive_exp(Optim.minimizer(result))
     variances === nothing && throw(ArgumentError("dense optimizer did not return finite positive variances"))
     sigma_a2, sigma_e2 = variances
@@ -469,7 +592,6 @@ function fit_variance_components(
         A,
         normalized_method,
     )
-    converged = Optim.converged(result)
     status = converged ? "converged" : "not_converged"
 
     return AnimalModelFit(
@@ -494,8 +616,10 @@ The optimizer works on log-variance parameters and uses
 path toward sparse fitting. It is REML-only, not AI-REML, not the default
 fitting path, and not a production sparse solver.
 
-`converged` is the optimizer stopping flag for a finite returned result. It does
-not certify score stationarity or a closed-boundary optimum. Exact zero
+`converged` is the optimizer stopping flag combined with the shared gradient and
+curvature check at the optimum (HSquared.jl #424). A variance share at or below
+`1e-6` is a boundary and is left out of that check, so `converged` does not
+certify a closed-boundary optimum. Exact zero
 components are unavailable in this positive log-variance parameterization;
 nonfinite proposals are rejected and nonfinite final results raise an error.
 
@@ -550,13 +674,15 @@ function fit_sparse_reml(
     )
 
     isfinite(Optim.minimum(result)) || throw(ArgumentError("sparse optimizer did not find a finite objective"))
+    # Checked before any local that `objective` also assigns is read again (#424).
+    converged = _nelder_mead_converged(objective, result;
+                                       free = _nelder_mead_interior(exp.(Optim.minimizer(result))))
     variances = _try_positive_exp(Optim.minimizer(result))
     variances === nothing && throw(ArgumentError("sparse optimizer did not return finite positive variances"))
     sigma_a2, sigma_e2 = variances
     _finite_positive_variance_update((sigma_a2,), sigma_e2) ||
         throw(ArgumentError("sparse optimizer returned variances outside the finite precision range"))
     likelihood = _sparse_reml_loglik(spec, sigma_a2, sigma_e2, Ainv, logdet_Ainv)
-    converged = Optim.converged(result)
     status = converged ? "converged" : "not_converged"
 
     return AnimalModelFit(
@@ -1854,12 +1980,15 @@ Experimental, dense/validation-scale, REML-only; uncertainty intervals and the R
 model-spec mapping are not part of this function. On small data the optimum can
 sit on a boundary (a variance → 0).
 
-`converged` is `Optim.converged` for NelderMead: the simplex objective spread
-fell below `g_tol`. It is not a score, information-rank, or multi-start check.
+`converged` needs the NelderMead simplex rule (the objective spread fell below
+`g_tol`) and the shared gradient and curvature check at the optimum
+(HSquared.jl #424): a flat or negative direction of the REML surface reports
+`converged = false`. It is not a multi-start check.
 When the two random effects are linearly dependent on the residual (the usual
 animal + dam case where each dam has one sire, so A = 0.5 I + 0.5 D among
 phenotyped animals), only two combinations of (Va, Vdam, Ve) are identified.
-Different starts can then return different h2 values at the same log-likelihood.
+Different starts can then return different h2 values at the same log-likelihood,
+and the curvature check reports `converged = false` on that exact ridge.
 Read `ratio1` as one point on that ridge, not a unique heritability
 (HSquared.jl #416).
 
@@ -1933,6 +2062,8 @@ function fit_two_effect_reml(
     p0 = log.(starts)
     result = optimize(objective, p0, NelderMead(), Optim.Options(iterations = iterations))
     isfinite(Optim.minimum(result)) || throw(ArgumentError("two-effect optimizer did not find a finite objective"))
+    converged = _nelder_mead_converged(objective, result;
+                                       free = _nelder_mead_interior(exp.(Optim.minimizer(result))))
     variances = _try_positive_exp(Optim.minimizer(result))
     variances === nothing && throw(ArgumentError("two-effect optimizer did not return finite positive variances"))
     sigma1, sigma2, sigma_e2 = variances
@@ -1948,7 +2079,7 @@ function fit_two_effect_reml(
         effect1 = (ids = e1ids, values = u1),
         effect2 = (ids = e2ids, values = u2),
         loglik = loglik,
-        converged = Optim.converged(result),
+        converged = converged,
     ), loglik_convention_fields(LOGLIK_CONVENTION_OMIT_2PI, n, p))
 end
 
@@ -2362,8 +2493,9 @@ an `n×n` `V` (guarded by `max_dense_cells`); it is an oracle for small `K`
 (≲4) and `n` (≲2000), NOT a production sparse estimator — that is the owed sparse
 AI-REML `K`-component path. On small/uninformative data the optimum can sit on a
 boundary (a variance → 0), reported via `converged` / `boundary`, never hidden.
-Non-identifiability (e.g. two `A=I` effects on the same grouping) can produce a
-flat ridge even when the optimizer reports `converged = true`. Optimizer
+Non-identifiability (e.g. two `A=I` effects on the same grouping) produces a
+flat ridge, which the shared curvature check reports as `converged = false`
+(HSquared.jl #424); a nearly flat direction can still pass that check. Optimizer
 convergence and boundary flags do not certify identifiability.
 """
 function fit_multi_effect_reml(
@@ -2423,6 +2555,8 @@ function fit_multi_effect_reml(
     end
     result = optimize(objective, p0, NelderMead(), Optim.Options(iterations = iterations))
     isfinite(Optim.minimum(result)) || throw(ArgumentError("multi-effect optimizer did not find a finite objective"))
+    converged = _nelder_mead_converged(objective, result;
+                                       free = _nelder_mead_interior(exp.(Optim.minimizer(result))))
     popt = _try_positive_exp(Optim.minimizer(result))
     popt === nothing && throw(ArgumentError("multi-effect optimizer did not return finite positive variances"))
     sigmas = popt[1:K]
@@ -2438,7 +2572,7 @@ function fit_multi_effect_reml(
         beta = beta,
         effects = effects_out,
         loglik = loglik,
-        converged = Optim.converged(result),
+        converged = converged,
         iterations = Optim.iterations(result),
         f_calls = Optim.f_calls(result),
         boundary = [s / total < 1e-6 for s in sigmas],
@@ -3653,6 +3787,11 @@ function fit_direct_maternal_reml(
     result = optimize(negloglik, p0, NelderMead(), Optim.Options(iterations = iterations))
     popt = Optim.minimizer(result)
     isfinite(Optim.minimum(result)) || throw(ArgumentError("direct-maternal optimizer did not find a finite objective"))
+    # Checked before `se2`, which `negloglik` also assigns, is set below (#424).
+    dm_scale = max(_log_cholesky_scale(popt[1:3], 2), exp(popt[4]))
+    converged = _nelder_mead_converged(negloglik, result;
+        free = vcat(_log_cholesky_interior(popt[1:3], 2; scale = dm_scale),
+                    exp(popt[4]) > _NELDER_MEAD_BOUNDARY_SHARE * dm_scale))
     Graw = _try_chol_params_to_cov(popt[1:3], 2)
     Graw === nothing && throw(ArgumentError("direct-maternal optimizer did not return a finite positive-definite genetic covariance"))
     G_dm = Matrix(Symmetric(Graw))
@@ -3673,7 +3812,7 @@ function fit_direct_maternal_reml(
         direct_effects = (ids = aids, values = ad),
         maternal_effects = (ids = aids, values = am),
         loglik = loglik,
-        converged = Optim.converged(result),
+        converged = converged,
     )
 end
 
@@ -3937,6 +4076,8 @@ function fit_repeatability_reml(
     p0 = log.(starts)
     result = optimize(objective, p0, NelderMead(), Optim.Options(iterations = iterations))
     isfinite(Optim.minimum(result)) || throw(ArgumentError("repeatability optimizer did not find a finite objective"))
+    converged = _nelder_mead_converged(objective, result;
+                                       free = _nelder_mead_interior(exp.(Optim.minimizer(result))))
     variances = _try_positive_exp(Optim.minimizer(result))
     variances === nothing && throw(ArgumentError("repeatability optimizer did not return finite positive variances"))
     sigma_a2, sigma_pe2, sigma_e2 = variances
@@ -3953,7 +4094,7 @@ function fit_repeatability_reml(
         animal_effects = (ids = encoded_ids, values = ahat),
         permanent_effects = (ids = encoded_ids, values = pehat),
         loglik = loglik,
-        converged = Optim.converged(result),
+        converged = converged,
     ), loglik_convention_fields(LOGLIK_CONVENTION_OMIT_2PI, n, p))
 end
 
