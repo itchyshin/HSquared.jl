@@ -60,8 +60,11 @@ end
     @test score < -1
     @test !result.fit.converged
     @test result.diagnostics.termination_reason == "boundary_score_unresolved"
-    @test result.fit.optimizer_status == "boundary_score_unresolved"
-    @test fit_diagnostics(result.fit).optimizer_status == "boundary_score_unresolved"
+    # This fixture is a founders-only ridge (A = I, one record each), so the
+    # public status is "unidentified_ridge" (HSquared.jl #422); the abort reason
+    # stays in the diagnostics above.
+    @test result.fit.optimizer_status == "unidentified_ridge"
+    @test fit_diagnostics(result.fit).optimizer_status == "unidentified_ridge"
     @test result.fit.variance_components == (sigma_a2 = a, sigma_e2 = e)
     @test isnan(result.diagnostics.ai_score_norm)
     @test isfinite(result.fit.likelihood.loglik)
