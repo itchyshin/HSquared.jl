@@ -54,10 +54,12 @@ end
     # The cap is forwarded to the fit, so a cap below the model size is refused with
     # the named guard, and a cap at the model size is honoured.
     @test_throws ArgumentError repeatability_interval(y, X, Z, Ainv; max_dense_cells = cells - 1)
-    ci = repeatability_interval(y, X, Z, Ainv; max_dense_cells = cells)
+    # 200 NelderMead iterations stop just short of the ridge optimum on this fixture on
+    # Julia 1.12 and later (converged = false, NaN limits); 1000 is ample on every version.
+    ci = repeatability_interval(y, X, Z, Ainv; max_dense_cells = cells, iterations = 1000)
     @test isfinite(ci.repeatability)
 
-    fit = fit_repeatability_reml(y, X, Z, Ainv; max_dense_cells = cells)
+    fit = fit_repeatability_reml(y, X, Z, Ainv; max_dense_cells = cells, iterations = 1000)
 
     # Fit-taking method reproduces the refitting method exactly (same fit, same FD).
     ci_fit = repeatability_interval(fit, y, X, Z, Ainv; max_dense_cells = cells)
