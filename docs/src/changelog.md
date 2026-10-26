@@ -7,6 +7,14 @@
   and Documenter `authors`; Shinichi Nakagawa remains primary contact. No
   version or capability change.
 
+- Genetic GLLVM (#50, owner decision 25 Oct 2026): `fit_gllvm_laplace_reml`, the
+  `GeneticGLLVMFit` fit object and a new `genetic_gllvm_result_payload(fit)` are now
+  exported so the R lane can bridge them. Both are labelled partial and experimental
+  (the payload carries `status = "partial"`, `experimental = true`, `scale = "latent"`).
+  The payload reports only rotation-invariant functionals of `G_lat` (never raw
+  loadings) and no heritability. `GeneticGLLVMFit` gains a trailing `families` field
+  (per-trait response family tokens). No capability status, row count or version changes.
+
 - Changed #413: the dense `fit_two_effect_reml` and `fit_repeatability_reml` fitters
   (and `two_effect_ratio_interval`, `repeatability_interval`, which call them) default to
   scale-aware starting variances set from the response variance: `sigma_e2 = var(y)/2`
