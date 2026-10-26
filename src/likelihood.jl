@@ -54,6 +54,8 @@ end
 
 # Counts validations so tests can assert hoisting (e.g. profile intervals).
 const _VALIDATED_SPEC_CALLS = Ref(0)
+# Counts MME factorisations in the sparse REML evaluator, for the same purpose.
+const _SPARSE_REML_EVALS = Ref(0)
 
 function _likelihood_validated_spec(spec::AnimalModelSpec; method = spec.method, supplied::Bool = false)
     _VALIDATED_SPEC_CALLS[] += 1
@@ -312,6 +314,18 @@ function _sparse_reml_loglik(
     Ainv::SparseMatrixCSC{Float64,Ti},
     logdet_Ainv::Real,
 ) where {Ti<:Integer}
+    return _sparse_reml_loglik_parts(spec, sigma_a2, sigma_e2, Ainv, logdet_Ainv).result
+end
+
+# The REML evaluation plus the generalised residual sum of squares
+# `quad` = y'Py, which the total-variance profile needs.
+function _sparse_reml_loglik_parts(
+    spec::AnimalModelSpec,
+    sigma_a2::Real,
+    sigma_e2::Real,
+    Ainv::SparseMatrixCSC{Float64,Ti},
+    logdet_Ainv::Real,
+) where {Ti<:Integer}
     (isfinite(sigma_a2) && sigma_a2 > 0) ||
         throw(ArgumentError("sigma_a2 must be positive and finite"))
     (isfinite(sigma_e2) && sigma_e2 > 0) ||
@@ -320,6 +334,7 @@ function _sparse_reml_loglik(
     n = length(spec.y)
     p = size(spec.X, 2)
     p < n || throw(ArgumentError("REML requires fewer fixed-effect columns than observations"))
+    _SPARSE_REML_EVALS[] += 1
     lhs, rhs, _ = _sparse_mme_system(spec, sigma_a2, sigma_e2)
     lhs_factor = cholesky(Symmetric(lhs); check = true)
     solution = lhs_factor \ rhs
@@ -338,7 +353,7 @@ function _sparse_reml_loglik(
     loglik = -0.5 * ((n - p) * log(2 * pi) + logdetR + logdetG + logdetC + quad)
 
     _likelihood_result_finite(loglik, beta, u)
-    return GaussianLikelihoodResult(
+    result = GaussianLikelihoodResult(
         loglik,
         Vector{Float64}(solution[1:p]),
         Float64(sigma_a2),
@@ -347,6 +362,7 @@ function _sparse_reml_loglik(
         n,
         p,
     )
+    return (result = result, quad = quad)
 end
 
 # HSquared.jl #429: on log-variances the objective goes flat as a variance goes
@@ -4592,24 +4608,33 @@ end
 _profile_reml_loglik(spec::AnimalModelSpec, h2::Real) =
     _profile_reml_loglik(_profile_reml_context(spec), h2)
 
+# With (sigma_a2, sigma_e2) = (h2*V, (1-h2)*V) the REML objective is a scale family
+# in V: the MME matrix scales as 1/V, so
+#   loglik(V) = loglik(1) - 0.5 * ((n - p) * log(V) + quad(1) / V - quad(1)),
+# with quad(1) = y'Py at V = 1. It is maximised at V = quad(1) / (n - p), so one
+# factorisation per h2 replaces a 1-D search. The maximiser is clamped to the
+# bracket the search used (1e-4 to 1e4 times the phenotypic variance of y); the
+# objective is unimodal in V, so the clamp is the bracket maximum. A system that
+# is not positive definite gives -Inf, as before.
 function _profile_reml_loglik(ctx::NamedTuple, h2::Real)
     spec = ctx.spec
     0 < h2 < 1 || throw(ArgumentError("h2 must be in (0, 1)"))
     y = Float64.(spec.y)
     n = length(y)
+    df = n - size(spec.X, 2)
     ybar = sum(y) / n
     v0 = max(sum(abs2, y .- ybar) / max(1, n - 1), eps())
-    function objective(logV)
-        V = exp(logV)
-        try
-            return -_profile_reml_eval(ctx, h2 * V, (1 - h2) * V).loglik
-        catch err
-            err isa PosDefException && return Inf
-            rethrow()
-        end
+    sigma_a2 = _likelihood_positive("sigma_a2", h2; precision = true)
+    sigma_e2 = _likelihood_positive("sigma_e2", 1 - h2; precision = true)
+    parts = try
+        _sparse_reml_loglik_parts(ctx.spec, sigma_a2, sigma_e2, ctx.Ainv, ctx.logdet_Ainv)
+    catch err
+        err isa PosDefException && return -Inf
+        rethrow()
     end
-    result = optimize(objective, log(v0 * 1e-4), log(v0 * 1e4))
-    return -Optim.minimum(result)
+    quad = parts.quad
+    V = clamp(quad / df, v0 * 1e-4, v0 * 1e4)
+    return parts.result.loglik - 0.5 * (df * log(V) + quad / V - quad)
 end
 
 # Profile REML log-likelihood at a fixed additive variance `sigma_a2`: maximize
