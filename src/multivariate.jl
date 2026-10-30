@@ -782,6 +782,21 @@ function _structured_genetic_params_to_cov(params, t, genetic_structure::Symbol,
     end
 end
 
+# The #424 boundary mask for the genetic block of `_structured_genetic_params_to_cov`
+# at the estimate `G0` (residual variances up to `rscale`): a lost-rank or
+# vanishing unstructured G0, a vanishing diagonal-G0 variance, or an FA uniqueness
+# within `0.01 * FA_UNIQUENESS_FLOOR` of its floor (the `near_uniqueness_floor`
+# rule) is a boundary.
+function _mv_genetic_interior(params, t, genetic_structure::Symbol, rank::Int, G0, rscale)
+    scale = max(maximum(diag(G0)), rscale)
+    genetic_structure == :unstructured && return _log_cholesky_interior(params, t; scale = scale)
+    genetic_structure == :diagonal &&
+        return exp.(params) .> _NELDER_MEAD_BOUNDARY_SHARE * scale
+    genetic_structure == :factor_analytic || return trues(length(params))
+    nload = t * rank
+    return vcat(trues(nload), exp.(params[(nload + 1):end]) .> 0.01 * FA_UNIQUENESS_FLOOR)
+end
+
 function _structured_genetic_params0(G0_start, genetic_structure::Symbol, rank::Int, t, initial)
     if genetic_structure == :unstructured
         return _cov_to_chol_params(G0_start, t)
@@ -1206,6 +1221,9 @@ function fit_multivariate_reml(
         ((name = name, initial = initial),)
     end
 
+    # Rank-r free loadings are identified only up to an r x r rotation (#424).
+    loading_null_dims = genetic_structure in (:lowrank, :factor_analytic) ?
+        grank * (grank - 1) ÷ 2 : 0
     attempts = map(start_specs) do spec
         params0 = params_for_start(spec.initial)
         result = optimize(negloglik, params0, NelderMead(), Optim.Options(iterations = iterations))
@@ -1221,7 +1239,13 @@ function fit_multivariate_reml(
                 (L === nothing || all(isfinite, L)) &&
                 (ψ === nothing || all(isfinite, ψ))
         (; name = spec.name, result, phat, G0, R0, L, ψ,
-           objective, valid, converged = Optim.converged(result),
+           objective, valid,
+           converged = valid && _nelder_mead_converged(negloglik, result;
+               free = vcat(_mv_genetic_interior(phat[1:ngen], t, genetic_structure, grank,
+                                                G0, maximum(diag(R0))),
+                           _log_cholesky_interior(phat[(ngen + 1):end], t;
+                                                  scale = max(maximum(diag(G0)), maximum(diag(R0))))),
+               null_dims = loading_null_dims),
            iterations = Optim.iterations(result))
     end
     valid_attempts = filter(a -> a.valid, attempts)
@@ -1451,6 +1475,10 @@ function fit_multivariate_repeatability_reml(
     R0hat = Matrix(Symmetric(R0raw))
 
     beta, ebv, pe = _mv_pe_gls_blup(yvec, Xfull, Zfull, A, indiv, N, G0hat, P0hat, R0hat, t, p, q)
+    mvpe_scale = maximum(vcat(diag(G0hat), diag(P0hat), diag(R0hat)))
+    mvpe_free = vcat(_log_cholesky_interior(phat[1:ncov], t; scale = mvpe_scale),
+                     _log_cholesky_interior(phat[(ncov + 1):(2 * ncov)], t; scale = mvpe_scale),
+                     _log_cholesky_interior(phat[(2 * ncov + 1):end], t; scale = mvpe_scale))
     denom = [G0hat[k, k] + P0hat[k, k] + R0hat[k, k] for k in 1:t]
     hsq = [G0hat[k, k] / denom[k] for k in 1:t]
     rpt = [(G0hat[k, k] + P0hat[k, k]) / denom[k] for k in 1:t]
@@ -1472,7 +1500,8 @@ function fit_multivariate_repeatability_reml(
         genetic_loadings = nothing,
         genetic_uniqueness = nothing,
         loglik = -Optim.minimum(result),
-        converged = Optim.converged(result),
+        converged = _nelder_mead_converged(negloglik, result;
+                                           free = mvpe_free),
         iterations = Optim.iterations(result),
         traits = tlabels,
         estimator = :multivariate_repeatability_reml,

@@ -25,9 +25,12 @@ include("test_issue_421_sparse_laplace.jl")
 include("test_issue_357_henderson_mme_cholesky.jl")
 include("test_issue_357_result_payload_reuse.jl")
 include("test_issue_413_two_effect_scale_warning.jl")
+include("test_issue_413_scale_aware_start.jl")
 include("test_issue_429_false_residual_boundary.jl")
+include("test_issue_424_nelder_mead_convergence.jl")
 include("test_issue_416_weak_identifiability_warning.jl")
 include("test_issue_407_docs_note.jl")
+include("test_issue_275_mixedmodels_surface.jl")
 
 # dense NRM helper lives in src now: HSquared._numerator_relationship (src/pedigree.jl)
 
@@ -6822,8 +6825,12 @@ end
     fit = fit_repeatability_reml(y, X, Z, Ainv; initial = (sigma_a2 = 1.0, sigma_pe2 = 1.0, sigma_e2 = 1.0))
     @test ci.repeatability ≈ fit.repeatability               # point estimate matches the fit
     # higher confidence ⇒ wider interval
-    ci90 = repeatability_interval(y, X, Z, Ainv; level = 0.90)
-    ci99 = repeatability_interval(y, X, Z, Ainv; level = 0.99)
+    # (same explicit start as `ci`: the REML surface is flat in the sigma_a2/sigma_pe2
+    # split, so a different start (the scale-aware default, #413) stops at a different
+    # point and the widths would not be comparable)
+    unit = (sigma_a2 = 1.0, sigma_pe2 = 1.0, sigma_e2 = 1.0)
+    ci90 = repeatability_interval(y, X, Z, Ainv; level = 0.90, initial = unit)
+    ci99 = repeatability_interval(y, X, Z, Ainv; level = 0.99, initial = unit)
     @test ci99.lower < ci90.lower && ci99.upper > ci90.upper
     # guard
     @test_throws ArgumentError repeatability_interval(y, X, Z, Ainv; level = 1.5)
@@ -7088,7 +7095,10 @@ end
 
     # K=2 REML byte-identical to fit_two_effect_reml on identified data
     gen2 = fit_multi_effect_reml(yf, Xf, [(Zf, Ainv), (Z2f, Matrix(1.0I, 2, 2))])
-    two = fit_two_effect_reml(yf, Xf, Zf, Ainv, Z2f, Matrix(1.0I, 2, 2))
+    # (explicit unit start: `fit_multi_effect_reml` starts at (1, ..., 1); the two-effect
+    # default is scale-aware since #413, so the same start is passed to compare optima)
+    two = fit_two_effect_reml(yf, Xf, Zf, Ainv, Z2f, Matrix(1.0I, 2, 2);
+                              initial = (sigma1 = 1.0, sigma2 = 1.0, sigma_e2 = 1.0))
     @test gen2.variance_components.sigmas[1] ≈ two.variance_components.sigma1 atol = 1e-10
     @test gen2.variance_components.sigmas[2] ≈ two.variance_components.sigma2 atol = 1e-10
     @test gen2.variance_components.sigma_e2 ≈ two.variance_components.sigma_e2 atol = 1e-10
@@ -7185,7 +7195,10 @@ end
     # information, same estimand — only iteration path differs).
     eff2 = [(sparse(Z1), Ainv), (sparse(Z2), I2)]
     m2 = multi_effect_ratio_interval(y, X, eff2)
-    t2 = two_effect_ratio_interval(y, X, sparse(Z1), Ainv, sparse(Z2), I2)
+    # (explicit unit start: `multi_effect_ratio_interval` starts at (1, ..., 1); the
+    # two-effect default is scale-aware since #413)
+    t2 = two_effect_ratio_interval(y, X, sparse(Z1), Ainv, sparse(Z2), I2;
+                                   initial = (sigma1 = 1.0, sigma2 = 1.0, sigma_e2 = 1.0))
     @test m2.ratios[1].estimate ≈ t2.ratio1.estimate rtol = 1e-6
     @test m2.ratios[2].estimate ≈ t2.ratio2.estimate rtol = 1e-6
     @test m2.ratios[1].lower ≈ t2.ratio1.lower rtol = 1e-4
@@ -10553,7 +10566,9 @@ end
     #     [Λ | diag(√Ψ)] (so G_lat = Λ̂Λ̂' + diag(Ψ̂)), reusing the marginal unchanged ---
     fa = fitr(Yg, Ainv, HSquared.GaussianResponse(σe); rank = 1, structure = :factor_analytic,
               initial = reshape([0.8, 0.6], 2, 1), initial_uniqueness = [0.3, 0.3])
-    @test fa.converged
+    # T = 2, K = 1 FA: four parameters for three G_lat entries, an exact ridge (#424)
+    @test fa.mode_converged
+    @test !fa.converged
     @test fa.uniqueness !== nothing && length(fa.uniqueness) == 2 && all(fa.uniqueness .> 0)
     @test all(0 .< fa.latent_structure.communality .< 1)             # Ψ > 0 ⇒ communality < 1
     @test fa.loglik ≈ HSquared._multivariate_reml_loglik(Yg, X, Z, Ainv,
@@ -10561,7 +10576,8 @@ end
     @test fa.loglik ≥ gg.loglik - 1e-4                               # FA nests low-rank (Ψ → 0)
     fap = fitr(Yp2, Ainv, HSquared.PoissonResponse(); rank = 1, structure = :factor_analytic,
                initial = reshape([0.5, 0.4], 2, 1), initial_uniqueness = [0.2, 0.2])
-    @test fap.converged && all(fap.uniqueness .> 0)
+    @test !fap.converged                                             # same T = 2, K = 1 ridge (#424)
+    @test all(fap.uniqueness .> 0)
 
     # --- guards ---
     @test_throws ArgumentError fitr(Yg, Ainv, HSquared.GaussianResponse(1.0); rank = 0)
@@ -11387,6 +11403,7 @@ include("test_qtl_table_marker_paths.jl")
 include("test_hsdata_idmap_specs_status_rows.jl")
 
 include("test_issue_409_profile_interval_hoist.jl")
+include("test_issue_409_profile_h2_closed_form.jl")
 include("test_issue_340_lowrank_rotation.jl")
 include("test_issue_408_plot_data_single_information.jl")
 include("test_issue_408_variance_component_uncertainty.jl")
@@ -11396,3 +11413,5 @@ include("test_metafounder_animal_model_guards.jl")
 include("test_status_row_types.jl")
 include("test_genetic_gllvm_mme_options.jl")
 include(joinpath(@__DIR__, "test_fit_metafounder_single_step_kwargs.jl"))
+include(joinpath(@__DIR__, "test_issue_50_genetic_gllvm_export_payload.jl"))
+include("test_issue_411_interval_from_fit.jl")
