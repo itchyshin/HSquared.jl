@@ -27,6 +27,7 @@ include("test_issue_357_result_payload_reuse.jl")
 include("test_issue_413_two_effect_scale_warning.jl")
 include("test_issue_413_scale_aware_start.jl")
 include("test_issue_429_false_residual_boundary.jl")
+include("test_issue_424_nelder_mead_convergence.jl")
 include("test_issue_416_weak_identifiability_warning.jl")
 include("test_issue_407_docs_note.jl")
 include("test_issue_412_monotone_ai_reml.jl")
@@ -10566,7 +10567,9 @@ end
     #     [Λ | diag(√Ψ)] (so G_lat = Λ̂Λ̂' + diag(Ψ̂)), reusing the marginal unchanged ---
     fa = fitr(Yg, Ainv, HSquared.GaussianResponse(σe); rank = 1, structure = :factor_analytic,
               initial = reshape([0.8, 0.6], 2, 1), initial_uniqueness = [0.3, 0.3])
-    @test fa.converged
+    # T = 2, K = 1 FA: four parameters for three G_lat entries, an exact ridge (#424)
+    @test fa.mode_converged
+    @test !fa.converged
     @test fa.uniqueness !== nothing && length(fa.uniqueness) == 2 && all(fa.uniqueness .> 0)
     @test all(0 .< fa.latent_structure.communality .< 1)             # Ψ > 0 ⇒ communality < 1
     @test fa.loglik ≈ HSquared._multivariate_reml_loglik(Yg, X, Z, Ainv,
@@ -10574,7 +10577,8 @@ end
     @test fa.loglik ≥ gg.loglik - 1e-4                               # FA nests low-rank (Ψ → 0)
     fap = fitr(Yp2, Ainv, HSquared.PoissonResponse(); rank = 1, structure = :factor_analytic,
                initial = reshape([0.5, 0.4], 2, 1), initial_uniqueness = [0.2, 0.2])
-    @test fap.converged && all(fap.uniqueness .> 0)
+    @test !fap.converged                                             # same T = 2, K = 1 ridge (#424)
+    @test all(fap.uniqueness .> 0)
 
     # --- guards ---
     @test_throws ArgumentError fitr(Yg, Ainv, HSquared.GaussianResponse(1.0); rank = 0)
@@ -11409,4 +11413,5 @@ include("test_metafounder_animal_model_guards.jl")
 include("test_status_row_types.jl")
 include("test_genetic_gllvm_mme_options.jl")
 include(joinpath(@__DIR__, "test_fit_metafounder_single_step_kwargs.jl"))
+include(joinpath(@__DIR__, "test_issue_50_genetic_gllvm_export_payload.jl"))
 include("test_issue_411_interval_from_fit.jl")

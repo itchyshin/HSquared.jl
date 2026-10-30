@@ -72,9 +72,11 @@ end
     end
 
     @testset "public interval keeps #437 and reports drop counts" begin
-        y = [1.0, 2.0, 4.0]
-        X = ones(3, 1)
-        Z = sparse(1.0I, 3, 3)
+        # two records per animal, so REML separates sigma_a2 from sigma_e2 and
+        # the fit can converge (one record each is a ridge, #424)
+        y = [1.0, 2.0, 4.0, 1.6, 2.1, 3.2]
+        X = ones(6, 1)
+        Z = sparse(vcat(Matrix(1.0I, 3, 3), Matrix(1.0I, 3, 3)))
         Ainv = sparse(1.0I, 3, 3)
         spec = animal_model_spec(y, X, Z, Ainv; method = :REML)
         likelihood = sparse_reml_loglik(spec, 1.0, 1.0)

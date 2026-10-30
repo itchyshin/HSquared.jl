@@ -16,5 +16,5 @@ using Test
     @test occursin("Nelder-Mead simplex contracted", page)
     @test occursin("A = 0.5 I + 0.5 D", page)
     @test occursin("0.5 Va + Ve", page)
-    @test occursin("Nothing in the returned `converged` flag names that ridge", page)
+    @test occursin("On that exact ridge the curvature check reports `converged = false`", page)
 end
