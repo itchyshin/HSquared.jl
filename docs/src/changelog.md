@@ -60,6 +60,17 @@ package version. `public_covered_count` stays **7**, and no entry below touches
 `Project.toml`. The package version is `0.9.0`; its released section is recorded
 below.
 
+- #411 and #409 (no result change; outputs are bitwise identical to before on the test
+  fixtures). The refitting forms of `repeatability_interval`, `two_effect_ratio_interval`,
+  `direct_maternal_interval` and `multi_effect_ratio_interval` now reuse the dense
+  `A = inv(Ainv)` (and dense `X`, `Z`, `y`) that their fit already built, instead of
+  inverting each `Ainv` a second time for the finite-difference information. The profile
+  intervals (`heritability_interval(fit; method = :profile)` and
+  `variance_component_interval`) keep one mixed-model-equation workspace per interval: the
+  cross products and the sparsity pattern are formed once, each evaluation refills the
+  coefficient matrix in place and refactors it with the cached symbolic analysis
+  (`cholesky!`), where before every evaluation re-formed the cross products, concatenated
+  the blocks and reordered. The number of evaluations is unchanged.
 - Part of #411: `repeatability_interval`, `two_effect_ratio_interval` and
   `direct_maternal_interval` each gain a method that takes an already-fitted result
   (`repeatability_interval(fit, y, X, Z, Ainv; ...)`, and likewise for the other two) and
