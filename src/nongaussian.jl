@@ -1642,6 +1642,10 @@ end
 # reported boundary, so the #424 gradient and curvature check skips them.
 _laplace_rail_free(p, centers) = abs.(p .- centers) .< 8.0 - 0.1
 
+# The fitter never reads `S`, so it takes the route that does not densify it.
+_variational_fit_objective(y, X, Z, Ainv, sigma_a2, family) =
+    _variational_marginal_loglik_sparse(y, X, Z, Ainv, sigma_a2, family; dense_covariance = false)
+
 """
     fit_laplace_reml(y, X, Z, Ainv; family = :gaussian, marginal = :laplace,
                      initial = nothing, ids = nothing, iterations = 200,
@@ -1718,10 +1722,6 @@ and sets `boundary = true`; pass an `initial` on the scale of the data (or read
 not the public default, not wired into the R formula path, no R model-spec, no
 external comparator.
 """
-# The fitter never reads `S`, so it takes the route that does not densify it.
-_variational_fit_objective(y, X, Z, Ainv, sigma_a2, family) =
-    _variational_marginal_loglik_sparse(y, X, Z, Ainv, sigma_a2, family; dense_covariance = false)
-
 function fit_laplace_reml(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatrix,
                           Ainv::AbstractMatrix; family::Symbol = :gaussian,
                           marginal::Symbol = :laplace, initial = nothing,
