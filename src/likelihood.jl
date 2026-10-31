@@ -4874,6 +4874,9 @@ end
 # evaluation fills `lhs` in place and refactors with the cached symbolic analysis
 # (`cholesky!`) instead of re-forming cross products, concatenating blocks and
 # reordering. The entries are the same products `_sparse_mme_system` forms.
+# Not thread-safe: `lhs` and the cached factor are mutated on every evaluation,
+# so one workspace (and the profile context that owns it) must not be shared
+# across tasks or threads; build a separate context per thread instead.
 mutable struct _ProfileMMEWorkspace
     C::SparseMatrixCSC{Float64,Int}
     G::SparseMatrixCSC{Float64,Int}

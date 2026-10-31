@@ -41,6 +41,9 @@ end
     rm, km = _issue411_inverse_count(() -> multi_effect_ratio_interval(y2, X2, effects))
     @test km == 2
     # K = 2 reduction: same estimand and information as the two-effect path.
+    # rtol = 1e-3: the two paths are separate REML fits, each stopping at its own
+    # convergence tolerance (on main 8f58b13a they differ by about 2e-5 relative),
+    # so this checks the same estimand, not bitwise agreement.
     @test rm.ratios[1].lower ≈ r2.ratio1.lower rtol = 1e-3
     @test rm.ratios[2].upper ≈ r2.ratio2.upper rtol = 1e-3
 
