@@ -162,3 +162,17 @@ end
     @test isapprox(a.variance_components.sigma_a2, b.variance_components.sigma_a2; rtol = 1e-6)
     @test isapprox(a.marginal_loglik, b.marginal_loglik; atol = 1e-9, rtol = 0)
 end
+
+# The fallback in the sparse variational Newton loop must not swallow Ctrl-C.
+@testset "issue 421: refactorisation fallback rethrows InterruptException" begin
+    struct _InterruptingFactor end
+    struct _FailingFactor end
+    LinearAlgebra.cholesky!(::_InterruptingFactor, ::Symmetric; check = true) = throw(InterruptException())
+    LinearAlgebra.cholesky!(::_FailingFactor, ::Symmetric; check = true) = throw(ArgumentError("pattern changed"))
+    HS = Symmetric(sparse([2.0 0.5; 0.5 1.0]))
+    @test_throws InterruptException HSquared._refactor_cholesky!(_InterruptingFactor(), HS)
+    # An ordinary failure still falls back to a fresh factorisation.
+    f = HSquared._refactor_cholesky!(_FailingFactor(), HS)
+    @test issuccess(f)
+    @test isapprox(f \ [1.0, 2.0], Matrix(HS) \ [1.0, 2.0]; atol = 1e-12)
+end

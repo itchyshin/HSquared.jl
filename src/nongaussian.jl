@@ -1128,6 +1128,18 @@ function _va_covariance_sparse(family, Zs, Zt, Zsq, P0, ηbar, v0, n, tol, covar
             iterations = iterations, fixed_point_error = change)
 end
 
+# Reuse the symbolic analysis of `fac` for a new matrix with the same pattern;
+# fall back to a fresh factorisation if that update fails. An interrupt is never
+# a failed update, so it propagates.
+function _refactor_cholesky!(fac, HS)
+    try
+        return cholesky!(fac, HS; check = false)
+    catch err
+        err isa InterruptException && rethrow()
+        return cholesky(HS; check = false)
+    end
+end
+
 # Sparse implementation behind `variational_marginal_loglik`. With
 # `dense_covariance = false` (the `fit_laplace_reml` route) the returned `S` is
 # `nothing`, so a fit never forms a dense q×q matrix.
@@ -1172,11 +1184,7 @@ function _variational_marginal_loglik_sparse(y::AbstractVector, X::AbstractMatri
         if fac === nothing
             fac = cholesky(HS; check = false)
         else
-            fac = try
-                cholesky!(fac, HS; check = false)
-            catch
-                cholesky(HS; check = false)
-            end
+            fac = _refactor_cholesky!(fac, HS)
         end
         return fac
     end
