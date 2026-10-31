@@ -1031,6 +1031,12 @@ the variational covariance fixed; it does not account for how the optimized
 covariance changes with the fixed-effect coefficients. Architecture follows
 the MIT DRM.jl VA dispatch idea; the correlated-prior kernel is reimplemented
 here.
+
+`Z`, `Ainv` and the Hessians are kept sparse and factored with CHOLMOD (dense
+inputs are accepted and converted); the per-record variances `diag(Z S Z')`,
+`tr(Ainv S)` and `logdet S` come from the Takahashi selected inverse, so no
+dense `q×q` matrix is formed while iterating. The returned `S` is still the
+dense covariance (`:full`) or a `Diagonal` (`:diagonal`), formed once at the end.
 """
 function variational_marginal_loglik(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatrix,
                                      Ainv::AbstractMatrix, sigma_a2::Real,
@@ -1038,6 +1044,241 @@ function variational_marginal_loglik(y::AbstractVector, X::AbstractMatrix, Z::Ab
                                      covariance::Symbol = :full,
                                      tol::Real = 1e-10, maxiter::Integer = 100,
                                      covariance_maxiter::Integer = 200)
+    return _variational_marginal_loglik_sparse(y, X, Z, Ainv, sigma_a2, family;
+                                               covariance = covariance, tol = tol,
+                                               maxiter = maxiter,
+                                               covariance_maxiter = covariance_maxiter,
+                                               dense_covariance = true)
+end
+
+# Selected inverse of a CHOLMOD factor kept as the raw Takahashi values (permuted
+# CSC of L), read by `_va_selinv_entry` without materialising a sparse matrix.
+function _va_selinv(fac)
+    Zvals, colptr, rowval, perm, _ = _selinv_zvals(fac)
+    return (Zvals = Zvals, colptr = colptr, rowval = rowval, iperm = invperm(perm))
+end
+
+@inline function _va_selinv_entry(sel, j::Int, k::Int)
+    a = sel.iperm[j]
+    b = sel.iperm[k]
+    lo, hi = minmax(a, b)
+    idx = lo == hi ? sel.colptr[lo] : _csc_rowidx(sel.colptr, sel.rowval, lo, hi)
+    idx == -1 && throw(ArgumentError("entry ($j, $k) is outside the selected-inverse pattern"))
+    return sel.Zvals[idx]
+end
+
+# Per-record `v[i] = z_i' S z_i` for the rows of `Z` (columns of `Zt`). Every pair
+# (j, k) that shares a row of Z is a structural entry of Z'WZ, hence of the factor
+# pattern, so the selected-inverse values are exact there.
+function _va_row_quadratic(Zt::SparseMatrixCSC, sel)
+    rows = rowvals(Zt)
+    vals = nonzeros(Zt)
+    v = zeros(size(Zt, 2))
+    @inbounds for i in 1:size(Zt, 2)
+        acc = 0.0
+        for a in nzrange(Zt, i), b in nzrange(Zt, i)
+            acc += vals[a] * vals[b] * _va_selinv_entry(sel, rows[a], rows[b])
+        end
+        v[i] = acc
+    end
+    return v
+end
+
+# `tr(Ai S)` over the nonzeros of `Ai`, whose pattern lies inside Huu's.
+function _va_trace_selinv(Ai::SparseMatrixCSC, sel)
+    rows = rowvals(Ai)
+    vals = nonzeros(Ai)
+    acc = 0.0
+    @inbounds for j in 1:size(Ai, 2), k in nzrange(Ai, j)
+        acc += vals[k] * _va_selinv_entry(sel, rows[k], j)
+    end
+    return acc
+end
+
+# Sparse twin of `_va_covariance`: the same fixed point, with `S` held as a
+# `Diagonal` (`:diagonal`) or as the Takahashi selected inverse of a CHOLMOD
+# factor of Huu (`:full`).
+function _va_covariance_sparse(family, Zs, Zt, Zsq, P0, ηbar, v0, n, tol, covariance, maxiter)
+    v = copy(v0)
+    local Huu, S, fac
+    change = Inf
+    converged = false
+    iterations = 0
+    for iteration in 1:maxiter
+        iterations = iteration
+        w = [_fam_expected_weight(_fam_record(family, i), ηbar[i], v[i]) for i in 1:n]
+        Huu = Zt * (Diagonal(w) * Zs) + P0
+        if covariance === :diagonal
+            S = Diagonal(1.0 ./ diag(Huu))
+            vnew = Zsq * S.diag
+        else
+            fac = iteration == 1 ? cholesky(Symmetric(Huu)) : cholesky!(fac, Symmetric(Huu))
+            S = _va_selinv(fac)
+            vnew = _va_row_quadratic(Zt, S)
+        end
+        change = maximum(abs.(vnew .- v))
+        v = vnew
+        if change < tol
+            converged = true
+            break
+        end
+    end
+    logdet_S = covariance === :diagonal ? sum(log, S.diag) : -logdet(fac)
+    return (S = S, Huu = Huu, logdet_S = logdet_S, v = v, converged = converged,
+            iterations = iterations, fixed_point_error = change)
+end
+
+# Sparse implementation behind `variational_marginal_loglik`. With
+# `dense_covariance = false` (the `fit_laplace_reml` route) the returned `S` is
+# `nothing`, so a fit never forms a dense q×q matrix.
+function _variational_marginal_loglik_sparse(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatrix,
+                                             Ainv::AbstractMatrix, sigma_a2::Real,
+                                             family::ResponseFamily;
+                                             covariance::Symbol = :full,
+                                             tol::Real = 1e-10, maxiter::Integer = 100,
+                                             covariance_maxiter::Integer = 200,
+                                             dense_covariance::Bool = true)
+    sigma_a2 = _finite_positive_variance_float64("sigma_a2", sigma_a2)
+    tol = _finite_positive_float64("tol", tol)
+    maxiter >= 1 || throw(ArgumentError("maxiter must be positive"))
+    covariance in (:full, :diagonal) ||
+        throw(ArgumentError("covariance must be :full or :diagonal"))
+    covariance_maxiter >= 1 || throw(ArgumentError("covariance_maxiter must be positive"))
+    yv = Float64.(y)
+    Xd = Matrix{Float64}(X)
+    Zs = SparseMatrixCSC{Float64,Int}(sparse(Z))
+    n = length(yv)
+    p = size(Xd, 2)
+    q = size(Zs, 2)
+    size(Xd, 1) == n || throw(ArgumentError("X must have one row per record"))
+    size(Zs, 1) == n || throw(ArgumentError("Z must have one row per record"))
+    size(Ainv, 1) == q == size(Ainv, 2) || throw(ArgumentError("Ainv must be q×q with q = size(Z,2)"))
+    Ai, logdet_Ainv = _sparse_relationship_precision(Ainv, q)
+    _check_counts(family, yv)
+    _check_flat_effect_integral(family, yv, Xd)
+    P0 = Ai ./ sigma_a2
+    Xs = sparse(Xd)
+    Xt = sparse(transpose(Xd))
+    Zt = sparse(transpose(Zs))
+    Zsq = Zs .^ 2
+    function joint_hessian(w)
+        WZ = Diagonal(w) * Zs
+        return [Xt*(Diagonal(w)*Xs) Xt*WZ
+                Zt*(Diagonal(w)*Xs) (Zt*WZ + P0)]
+    end
+    fac = nothing
+    function factor!(H)
+        HS = Symmetric(H)
+        if fac === nothing
+            fac = cholesky(HS; check = false)
+        else
+            fac = try
+                cholesky!(fac, HS; check = false)
+            catch
+                cholesky(HS; check = false)
+            end
+        end
+        return fac
+    end
+    va_cov(ηbar, v) = _va_covariance_sparse(family, Zs, Zt, Zsq, P0, ηbar, v, n, tol,
+                                            covariance, covariance_maxiter)
+
+    beta = zeros(p)
+    m = zeros(q)
+    v = zeros(n)
+    gnorm = Inf
+    iters = 0
+    converged = false
+    covariance_result = nothing
+    for outer_it in 1:maxiter
+        iters = outer_it
+        ηbar = Xd * beta .+ Zs * m
+        covariance_result = va_cov(ηbar, v)
+        v = covariance_result.v
+        w = [_fam_expected_weight(_fam_record(family, i), ηbar[i], v[i]) for i in 1:n]
+        g = [_fam_expected_score(_fam_record(family, i), yv[i], ηbar[i], v[i]) for i in 1:n]
+        grad = vcat(transpose(Xd) * g, Zt * g .- P0 * m)
+        gnorm = norm(grad)
+        H = joint_hessian(w)
+        f = factor!(H)
+        step = issuccess(f) ? (f \ grad) : (Symmetric(Matrix(H)) \ grad)
+        step_beta = step[1:p]
+        step_m = step[(p + 1):end]
+        step_eta = Xd * step_beta .+ Zs * step_m
+        step_penalty = sqrt(max(dot(step_m, P0 * step_m), 0.0))
+        current_penalty = sqrt(max(dot(m, P0 * m), 0.0))
+        step_scale = hypot(norm(step_eta), step_penalty)
+        current_scale = hypot(norm(ηbar), current_penalty)
+        if step_scale <= tol * (1 + current_scale) && covariance_result.converged
+            converged = true
+            break
+        end
+        current_objective = sum(_fam_expected_loglik(_fam_record(family, i), yv[i], ηbar[i], v[i]) for i in 1:n) -
+                            0.5 * dot(m, P0 * m)
+        alpha = 1.0
+        accepted = false
+        for _ in 1:64
+            beta_candidate = beta .+ alpha .* step_beta
+            m_candidate = m .+ alpha .* step_m
+            eta_candidate = Xd * beta_candidate .+ Zs * m_candidate
+            objective_candidate = sum(_fam_expected_loglik(_fam_record(family, i), yv[i], eta_candidate[i], v[i]) for i in 1:n) -
+                                  0.5 * dot(m_candidate, P0 * m_candidate)
+            allowance = 1e-12 * (1 + abs(current_objective))
+            if isfinite(objective_candidate) && objective_candidate >= current_objective - allowance
+                beta .= beta_candidate
+                m .= m_candidate
+                accepted = true
+                break
+            end
+            alpha *= 0.5
+        end
+        accepted || break
+    end
+
+    ηbar = Xd * beta .+ Zs * m
+    covariance_result = va_cov(ηbar, v)
+    S, v = covariance_result.S, covariance_result.v
+    g = [_fam_expected_score(_fam_record(family, i), yv[i], ηbar[i], v[i]) for i in 1:n]
+    gnorm = norm(vcat(transpose(Xd) * g, Zt * g .- P0 * m))
+    converged = converged && covariance_result.converged
+    Ell = sum(_fam_expected_loglik(_fam_record(family, i), yv[i], ηbar[i], v[i]) for i in 1:n)
+    trAiS = covariance === :diagonal ? dot(diag(Ai), S.diag) : _va_trace_selinv(Ai, S)
+    kl = 0.5 * ((dot(m, Ai * m) + trAiS) / sigma_a2 + q * log(sigma_a2) -
+                logdet_Ainv - covariance_result.logdet_S - q)
+    # β integrated under a flat prior by a local Laplace correction; see
+    # `_variational_marginal_loglik_dense` for the derivation notes.
+    beta_term = 0.0
+    if p > 0
+        w = [_fam_expected_weight(_fam_record(family, i), ηbar[i], v[i]) for i in 1:n]
+        WZ = Diagonal(w) * Zs
+        XtWZ = Xt * WZ
+        mean_factor = cholesky(Symmetric(Zt * WZ + P0))
+        schur = Symmetric(
+            transpose(Xd) * (w .* Xd) .- XtWZ * (mean_factor \ Matrix(transpose(XtWZ))),
+        )
+        beta_term = 0.5 * p * log(2π) - 0.5 * logdet(cholesky(schur))
+    end
+    elbo = converged ? (Ell - kl + beta_term) : NaN
+    objective = p == 0 ? :elbo :
+                (family isa GaussianResponse && covariance === :full ? :gaussian_reml : :variational_laplace)
+    S_out = !dense_covariance ? nothing :
+            covariance === :diagonal ? S : inv(Symmetric(Matrix(covariance_result.Huu)))
+    return (elbo = elbo, beta = beta, m = m, S = S_out, converged = converged,
+            gradient_norm = gnorm, iterations = iters, covariance = covariance,
+            objective = objective, is_lower_bound = objective !== :variational_laplace,
+            covariance_converged = covariance_result.converged,
+            covariance_iterations = covariance_result.iterations,
+            covariance_fixed_point_error = covariance_result.fixed_point_error)
+end
+
+# Dense reference implementation retained for `test/test_issue_421_sparse_laplace.jl`
+# (the pre-#421 variational algorithm). Not used by the engine.
+function _variational_marginal_loglik_dense(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatrix,
+                                            Ainv::AbstractMatrix, sigma_a2::Real,
+                                            family::ResponseFamily;
+                                            covariance::Symbol = :full,
+                                            tol::Real = 1e-10, maxiter::Integer = 100,
+                                            covariance_maxiter::Integer = 200)
     sigma_a2 = _finite_positive_variance_float64("sigma_a2", sigma_a2)
     tol = _finite_positive_float64("tol", tol)
     maxiter >= 1 || throw(ArgumentError("maxiter must be positive"))
@@ -1401,6 +1642,10 @@ end
 # reported boundary, so the #424 gradient and curvature check skips them.
 _laplace_rail_free(p, centers) = abs.(p .- centers) .< 8.0 - 0.1
 
+# The fitter never reads `S`, so it takes the route that does not densify it.
+_variational_fit_objective(y, X, Z, Ainv, sigma_a2, family) =
+    _variational_marginal_loglik_sparse(y, X, Z, Ainv, sigma_a2, family; dense_covariance = false)
+
 """
     fit_laplace_reml(y, X, Z, Ainv; family = :gaussian, marginal = :laplace,
                      initial = nothing, ids = nothing, iterations = 200,
@@ -1523,7 +1768,7 @@ function fit_laplace_reml(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatri
     marginal = _marginal_method_symbol(mm)
     Ainv = Ainv isa SparseMatrixCSC ? first(_sparse_relationship_precision(Ainv, size(Z, 2))) :
            _check_relationship_precision(Ainv, size(Z, 2))
-    margfun = mm isa Variational ? variational_marginal_loglik : laplace_marginal_loglik
+    margfun = mm isa Variational ? _variational_fit_objective : laplace_marginal_loglik
     val(r) = mm isa Variational ? r.elbo : r.loglik
     aids = ids === nothing ? collect(1:size(Z, 2)) : collect(ids)
     length(aids) == size(Z, 2) ||
