@@ -97,3 +97,27 @@ end
     Zs = sparse(1:m, 1:m, 1.0, m, m)
     @test HSquared._weak_identifiability_rank_sparse([Zs], [sparse(1.0I, m, m)], m) == 1
 end
+
+@testset "issue 416 repeatability and direct-maternal pre-check size cap" begin
+    # Both dense fitters pass their covariance closures to the stacked rank with the
+    # dense cell cap (n^2 * (m + 1) cells). Past it the rank is skipped before any
+    # closure runs, and a skipped rank emits no warning.
+    W = Base.CoreLogging.Warn
+    never = () -> error("covariance formed past the cell cap")
+    cap = HSquared._WEAK_IDENTIFIABILITY_MAX_CELLS
+    # repeatability: animal + permanent environment (m = 2, 3 columns)
+    n = 3652
+    @test n^2 * 3 > cap && (n - 1)^2 * 3 <= cap
+    r = HSquared._weak_identifiability_stacked_rank([never, never], n)
+    @test r === nothing
+    @test_logs min_level = W HSquared._warn_weak_identifiability_rank(
+        r, 3, ("sigma_a2", "sigma_pe2"); hint = "h", remedy = "r")
+    # direct-maternal: direct, covariance, maternal (m = 3, 4 columns)
+    n = 3163
+    @test n^2 * 4 > cap && (n - 1)^2 * 4 <= cap
+    r = HSquared._weak_identifiability_stacked_rank([never, never, never], n)
+    @test r === nothing
+    @test_logs min_level = W HSquared._warn_weak_identifiability_rank(
+        r, 4, ("direct genetic", "direct-maternal covariance", "maternal genetic");
+        hint = "h", remedy = "r")
+end
