@@ -847,6 +847,7 @@ function fit_multi_effect_mc_reml(
         end
     end
     validated_effects = [(Zs[i], Ainvs[i]) for i in eachindex(Ainvs)]
+    _warn_weak_identifiability_sparse(Zs, Ainvs, n, ["effect $i" for i in 1:K])
     nrand = sum(qs)
     p < n || throw(ArgumentError("REML requires fewer fixed-effect columns than observations"))
     _require_full_fixed_effect_rank(Xs)
