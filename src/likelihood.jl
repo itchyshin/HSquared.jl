@@ -5131,7 +5131,7 @@ function breeding_values_plot_data(fit::AnimalModelFit; trait = 1)
 end
 
 """
-    result_payload(fit)
+    result_payload(fit; skip_pev_reliability = false)
 
 Return a bridge-facing result payload with field names aligned to the R
 `hsquared_fit` contract.
@@ -5156,15 +5156,28 @@ MME is solved once here and shared by `breeding_values` and `fitted_values`
 (pedigree) `Ainv` no dense matrix is formed anywhere in this payload; a dense
 genomic `Ginv` keeps its dense path (`:auto`). This remains a validation-scale
 claim, not a production large-pedigree reliability claim.
+
+`skip_pev_reliability = true` is an opt-in switch (hsquared#266) that skips the
+PEV and reliability computation, which dominates the post-fit cost on large
+pedigrees. The `prediction_error_variance` and `reliability` fields are then
+absent from the payload; every other field is unchanged. The default (`false`)
+returns the full payload above. Call [`prediction_error_variance`](@ref) or
+[`reliability`](@ref) on the fit to compute them later.
 """
-function result_payload(fit::AnimalModelFit)
+function result_payload(fit::AnimalModelFit; skip_pev_reliability::Bool = false)
     vc = variance_components(fit)
     beta = fixed_effects(fit)
     mme = henderson_mme(fit.spec, vc.sigma_a2, vc.sigma_e2)
     bv = breeding_values(mme)
     predictions = fitted_values(mme)
-    pev = prediction_error_variance(fit; method = :auto)
-    rel = reliability(fit; method = :auto, pev = pev)
+    pev_rel = if skip_pev_reliability
+        NamedTuple()
+    else
+        pev = prediction_error_variance(fit; method = :auto)
+        rel = reliability(fit; method = :auto, pev = pev)
+        (prediction_error_variance = (ids = pev.ids, values = pev.values),
+         reliability = (ids = rel.ids, values = rel.values))
+    end
 
     return (
         variance_components = vc,
@@ -5176,8 +5189,7 @@ function result_payload(fit::AnimalModelFit)
         df = fit.likelihood.nfixed + length(vc),
         nobs = fit.likelihood.nobs,
         predictions = predictions,
-        prediction_error_variance = (ids = pev.ids, values = pev.values),
-        reliability = (ids = rel.ids, values = rel.values),
+        pev_rel...,
         diagnostics = (
             converged = fit.converged,
             optimizer_status = fit.optimizer_status,
