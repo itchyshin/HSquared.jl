@@ -128,5 +128,7 @@ end
     fit_payload_v2(payload; scale_method = :auto)   # warm up compilation
     elapsed = @elapsed fit = fit_payload_v2(payload; scale_method = :auto)
     @test fit.converged
-    @test elapsed < 10.0
+    # Dense path is ~1900 s. Hosted Julia 1.13 Windows recorded 10.207 s against
+    # the old 10.0 s bound (job 125392634656). 15.0 s still rejects the dense path.
+    @test elapsed < 15.0
 end
