@@ -33,7 +33,12 @@ end
 
 @testset "issue 412 AI-REML REML objective is monotone on the residual boundary" begin
     spec = _mrode3_monotone_spec()
-    reference = fit_sparse_reml(spec).likelihood.loglik
+    # REML objective at the boundary optimum (Va ~ 0.676125, Ve -> 0), evaluated at a
+    # well-conditioned Ve = 1e-6 (-3.9242289). fit_sparse_reml's own log-likelihood is
+    # not a stable reference: below Ve ~ 1e-10 the objective is roundoff-limited, and on
+    # Julia 1.12.6 / macOS arm64 it reports -3.9153 (above the true supremum) with
+    # converged = false after 1039 iterations.
+    reference = HSquared.sparse_reml_loglik(spec, 0.676125, 1e-6).loglik
     starts = [(1.0, 1.0), (0.5, 0.5), (0.1, 5.0), (5.0, 0.1)]
 
     for (a0, e0) in starts
