@@ -56,6 +56,10 @@ end
 const _VALIDATED_SPEC_CALLS = Ref(0)
 # Counts MME factorisations in the sparse REML evaluator, for the same purpose.
 const _SPARSE_REML_EVALS = Ref(0)
+# Counts full sparse MME assemblies (`_sparse_mme_system`) and dense inverses of a
+# relationship precision (#409, #411), for the same purpose.
+const _SPARSE_MME_ASSEMBLIES = Ref(0)
+const _DENSE_RELATIONSHIP_INVERSES = Ref(0)
 
 function _likelihood_validated_spec(spec::AnimalModelSpec; method = spec.method, supplied::Bool = false)
     _VALIDATED_SPEC_CALLS[] += 1
@@ -220,8 +224,14 @@ end
 
 function _dense_relationship_covariance(Ainv_input::AbstractMatrix)
     canonical, _ = _validate_matrix_free_precision(sparse(Float64.(Ainv_input)), 1)
-    A = inv(Symmetric(Matrix{Float64}(canonical)))
+    A = _dense_relationship_inverse(canonical)
     return _likelihood_check_finite("relationship covariance", A)
+end
+
+# Dense `A = inv(Ainv)` with no validation (the interval paths' historical form).
+function _dense_relationship_inverse(Ainv::AbstractMatrix)
+    _DENSE_RELATIONSHIP_INVERSES[] += 1
+    return inv(Symmetric(Matrix{Float64}(Ainv)))
 end
 
 function _gaussian_loglik_with_covariance(
@@ -337,6 +347,17 @@ function _sparse_reml_loglik_parts(
     _SPARSE_REML_EVALS[] += 1
     lhs, rhs, _ = _sparse_mme_system(spec, sigma_a2, sigma_e2)
     lhs_factor = cholesky(Symmetric(lhs); check = true)
+    return _sparse_reml_loglik_from_factor(
+        spec, sigma_a2, sigma_e2, Ainv, logdet_Ainv, lhs_factor, rhs)
+end
+
+# The REML evaluation from a factorised MME coefficient matrix and its right-hand side.
+function _sparse_reml_loglik_from_factor(
+    spec::AnimalModelSpec, sigma_a2::Real, sigma_e2::Real,
+    Ainv::SparseMatrixCSC{Float64,Ti}, logdet_Ainv::Real, lhs_factor, rhs,
+) where {Ti<:Integer}
+    n = length(spec.y)
+    p = size(spec.X, 2)
     solution = lhs_factor \ rhs
 
     logdetR = n * log(Float64(sigma_e2))
@@ -2013,6 +2034,24 @@ function fit_two_effect_reml(
     ids1 = nothing,
     ids2 = nothing,
 )
+    return _fit_two_effect_reml_dense(y, X, Z1, Ainv1, Z2, Ainv2; initial = initial,
+        iterations = iterations, ids1 = ids1, ids2 = ids2).fit
+end
+
+# The fit plus the dense inputs it built, so a refitting interval reuses `A1`/`A2`
+# instead of inverting `Ainv1`/`Ainv2` again (#411).
+function _fit_two_effect_reml_dense(
+    y::AbstractVector,
+    X::AbstractMatrix,
+    Z1::AbstractMatrix,
+    Ainv1::AbstractMatrix,
+    Z2::AbstractMatrix,
+    Ainv2::AbstractMatrix;
+    initial = nothing,
+    iterations::Integer = 200,
+    ids1 = nothing,
+    ids2 = nothing,
+)
     if initial === nothing
         s0 = _scale_aware_start(y, 2)
         initial = (sigma1 = s0[1], sigma2 = s0[2], sigma_e2 = s0[3])
@@ -2071,7 +2110,7 @@ function fit_two_effect_reml(
     total = sigma1 + sigma2 + sigma_e2
     isfinite(total) && total > 0 || throw(ArgumentError("two-effect optimizer returned a nonfinite total variance"))
     p = size(Xd, 2)
-    return merge((
+    fit = merge((
         variance_components = (sigma1 = sigma1, sigma2 = sigma2, sigma_e2 = sigma_e2),
         ratio1 = sigma1 / total,
         ratio2 = sigma2 / total,
@@ -2081,6 +2120,7 @@ function fit_two_effect_reml(
         loglik = loglik,
         converged = converged,
     ), loglik_convention_fields(LOGLIK_CONVENTION_OMIT_2PI, n, p))
+    return (fit = fit, dense = (yv = yv, Xd = Xd, Z1d = Z1d, A1 = A1, Z2d = Z2d, A2 = A2))
 end
 
 # One variance ratio `theta[keep_num] / total` and its logit-delta CI from the
@@ -2295,11 +2335,12 @@ function two_effect_ratio_interval(
     fd_step = _validate_uncertainty_fd_step(fd_step)
     which in (:both, :ratio1, :ratio2) ||
         throw(ArgumentError("which must be :both, :ratio1, or :ratio2"))
-    fit = fit_two_effect_reml(y, X, Z1, Ainv1, Z2, Ainv2;
-                              initial = initial, iterations = iterations,
-                              ids1 = ids1, ids2 = ids2)
+    fit, dense = _fit_two_effect_reml_dense(y, X, Z1, Ainv1, Z2, Ainv2;
+                                            initial = initial, iterations = iterations,
+                                            ids1 = ids1, ids2 = ids2)
     return _two_effect_ratio_interval_from_fit(fit, y, X, Z1, Ainv1, Z2, Ainv2;
-        level = level, which = which, fd_step = fd_step, boundary_tol = boundary_tol)
+        level = level, which = which, fd_step = fd_step, boundary_tol = boundary_tol,
+        dense = dense)
 end
 
 function two_effect_ratio_interval(
@@ -2321,15 +2362,15 @@ end
 # Interval from an already-fitted two-effect REML result (no refit); arguments are
 # validated by the two public methods.
 function _two_effect_ratio_interval_from_fit(
-    fit, y, X, Z1, Ainv1, Z2, Ainv2; level, which, fd_step, boundary_tol,
+    fit, y, X, Z1, Ainv1, Z2, Ainv2; level, which, fd_step, boundary_tol, dense = nothing,
 )
     vc = fit.variance_components
     theta = [vc.sigma1, vc.sigma2, vc.sigma_e2]
 
-    A1 = inv(Symmetric(Matrix{Float64}(Ainv1)))
-    A2 = inv(Symmetric(Matrix{Float64}(Ainv2)))
-    Xd = Matrix{Float64}(X); Z1d = Matrix{Float64}(Z1); Z2d = Matrix{Float64}(Z2)
-    yv = Float64.(y)
+    yv, Xd, Z1d, A1, Z2d, A2 = dense === nothing ?
+        (Float64.(y), Matrix{Float64}(X), Matrix{Float64}(Z1), _dense_relationship_inverse(Ainv1),
+         Matrix{Float64}(Z2), _dense_relationship_inverse(Ainv2)) :
+        (dense.yv, dense.Xd, dense.Z1d, dense.A1, dense.Z2d, dense.A2)
     loglik(t) = _two_effect_dense(yv, Xd, Z1d, A1, Z2d, A2, t[1], t[2], t[3])[1]
 
     # observed information = −Hessian of the REML loglik (central finite differences)
@@ -2507,6 +2548,21 @@ function fit_multi_effect_reml(
     ids = nothing,
     max_dense_cells::Integer = DEFAULT_MAX_DENSE_CELLS,
 )
+    return _fit_multi_effect_reml_dense(y, X, effects; initial = initial,
+        iterations = iterations, ids = ids, max_dense_cells = max_dense_cells).fit
+end
+
+# The fit plus the dense inputs it built (`yv`, `Xd`, `ZAs`), so the refitting
+# `multi_effect_ratio_interval` reuses each `A_i` instead of inverting again (#411).
+function _fit_multi_effect_reml_dense(
+    y::AbstractVector,
+    X::AbstractMatrix,
+    effects::AbstractVector;
+    initial = nothing,
+    iterations::Integer = 200,
+    ids = nothing,
+    max_dense_cells::Integer = DEFAULT_MAX_DENSE_CELLS,
+)
     K = length(effects)
     K >= 1 || throw(ArgumentError("at least one random effect is required"))
     iterations >= 1 || throw(ArgumentError("iterations must be at least 1"))
@@ -2566,7 +2622,7 @@ function fit_multi_effect_reml(
     isfinite(total) && total > 0 || throw(ArgumentError("multi-effect optimizer returned a nonfinite total variance"))
     effects_out = [(ids = eids[i], values = us[i]) for i in 1:K]
     p = size(Xd, 2)
-    return merge((
+    fit = merge((
         variance_components = (sigmas = sigmas, sigma_e2 = se2),
         ratios = sigmas ./ total,
         beta = beta,
@@ -2577,6 +2633,7 @@ function fit_multi_effect_reml(
         f_calls = Optim.f_calls(result),
         boundary = [s / total < 1e-6 for s in sigmas],
     ), loglik_convention_fields(LOGLIK_CONVENTION_OMIT_2PI, n, p))
+    return (fit = fit, dense = (yv = yv, Xd = Xd, ZAs = ZAs))
 end
 
 """
@@ -2648,16 +2705,14 @@ function multi_effect_ratio_interval(
             throw(ArgumentError("which must be :all or an integer component index 1..$K"))
     end
 
-    fit = fit_multi_effect_reml(y, X, effects; initial = initial,
-                                iterations = iterations, ids = ids)
+    # The fit's own dense `A_i`, `Z_i`, `X`, `y` are reused for the information (#411).
+    fit, dense = _fit_multi_effect_reml_dense(y, X, effects; initial = initial,
+                                              iterations = iterations, ids = ids)
     sigmas = fit.variance_components.sigmas
     se2 = fit.variance_components.sigma_e2
     theta = vcat(collect(sigmas), se2)        # [σ_1², …, σ_K², σ_e²], length K+1
 
-    As = [inv(Symmetric(Matrix{Float64}(pair[2]))) for pair in effects]
-    Zds = [Matrix{Float64}(pair[1]) for pair in effects]
-    ZAs = [(Zds[i], As[i]) for i in 1:K]
-    Xd = Matrix{Float64}(X); yv = Float64.(y)
+    ZAs = dense.ZAs; Xd = dense.Xd; yv = dense.yv
     loglik(t) = _multi_effect_dense(yv, Xd, ZAs, t[1:K], t[K + 1])[1]
 
     # observed information = −Hessian of the K-effect REML loglik (central FD),
@@ -3729,6 +3784,23 @@ function fit_direct_maternal_reml(
     ids = nothing,
     max_dense_cells::Integer = DEFAULT_MAX_DENSE_CELLS,
 )
+    return _fit_direct_maternal_reml_dense(y, X, Zd, Zm, Ainv; initial = initial,
+        iterations = iterations, ids = ids, max_dense_cells = max_dense_cells).fit
+end
+
+# The fit plus the dense inputs it built, so a refitting interval reuses `A`
+# instead of inverting `Ainv` again (#411).
+function _fit_direct_maternal_reml_dense(
+    y::AbstractVector,
+    X::AbstractMatrix,
+    Zd::AbstractMatrix,
+    Zm::AbstractMatrix,
+    Ainv::AbstractMatrix;
+    initial = nothing,
+    iterations::Integer = 200,
+    ids = nothing,
+    max_dense_cells::Integer = DEFAULT_MAX_DENSE_CELLS,
+)
     initial === nothing || hasproperty(initial, :G_dm) || hasproperty(initial, :sigma_e2) ||
         throw(ArgumentError("initial must supply G_dm or sigma_e2"))
     iterations >= 1 || throw(ArgumentError("iterations must be at least 1"))
@@ -3799,7 +3871,7 @@ function fit_direct_maternal_reml(
     isfinite(se2) && se2 > 0 || throw(ArgumentError("direct-maternal optimizer did not return a finite positive residual variance"))
     loglik, beta, ad, am = _direct_maternal_dense(yv, Xd, Zdd, Zmd, A, G_dm, se2)
     r_am = G_dm[1, 2] / sqrt(G_dm[1, 1] * G_dm[2, 2])
-    return (
+    fit = (
         variance_components = (
             G_dm = G_dm,
             sigma_ad = G_dm[1, 1],
@@ -3814,6 +3886,7 @@ function fit_direct_maternal_reml(
         loglik = loglik,
         converged = converged,
     )
+    return (fit = fit, dense = (yv = yv, Xd = Xd, Zdd = Zdd, Zmd = Zmd, A = A))
 end
 
 # Central-difference Hessian of `f` at `theta` with per-coordinate steps `h`. Fills the upper
@@ -3881,11 +3954,11 @@ function direct_maternal_interval(
     max_dense_cells::Integer = DEFAULT_MAX_DENSE_CELLS,
 )
     0 < level < 1 || throw(ArgumentError("level must be in (0, 1)"))
-    fit = fit_direct_maternal_reml(y, X, Zd, Zm, Ainv; initial = initial,
-                                   iterations = iterations, ids = ids,
-                                   max_dense_cells = max_dense_cells)
+    fit, dense = _fit_direct_maternal_reml_dense(y, X, Zd, Zm, Ainv; initial = initial,
+                                                 iterations = iterations, ids = ids,
+                                                 max_dense_cells = max_dense_cells)
     return _direct_maternal_interval_from_fit(fit, y, X, Zd, Zm, Ainv;
-        level = level, fd_step = fd_step)
+        level = level, fd_step = fd_step, dense = dense)
 end
 
 function direct_maternal_interval(
@@ -3908,13 +3981,15 @@ function direct_maternal_interval(
 end
 
 # Interval from an already-fitted direct-maternal REML result (no refit).
-function _direct_maternal_interval_from_fit(fit, y, X, Zd, Zm, Ainv; level, fd_step)
+function _direct_maternal_interval_from_fit(fit, y, X, Zd, Zm, Ainv; level, fd_step,
+                                            dense = nothing)
     vc = fit.variance_components
     theta = [vc.sigma_ad, vc.sigma_am, vc.sigma_dm, vc.sigma_e2]
 
-    A = inv(Symmetric(Matrix{Float64}(Ainv)))
-    Xd = Matrix{Float64}(X); Zdd = Matrix{Float64}(Zd); Zmd = Matrix{Float64}(Zm)
-    yv = Float64.(y)
+    yv, Xd, Zdd, Zmd, A = dense === nothing ?
+        (Float64.(y), Matrix{Float64}(X), Matrix{Float64}(Zd), Matrix{Float64}(Zm),
+         _dense_relationship_inverse(Ainv)) :
+        (dense.yv, dense.Xd, dense.Zdd, dense.Zmd, dense.A)
     # REML loglik as a function of the natural VCs (G = [σ²_ad σ_dm; σ_dm σ²_am]).
     function loglik(t)
         G = [t[1] t[3]; t[3] t[2]]
@@ -4039,6 +4114,22 @@ function fit_repeatability_reml(
     ids = nothing,
     max_dense_cells::Integer = DEFAULT_MAX_DENSE_CELLS,
 )
+    return _fit_repeatability_reml_dense(y, X, Z, Ainv; initial = initial,
+        iterations = iterations, ids = ids, max_dense_cells = max_dense_cells).fit
+end
+
+# The fit plus the dense inputs it built (`yv`, `Xd`, `Zd`, `A`), so a refitting
+# interval reuses `A` instead of inverting `Ainv` again (#411).
+function _fit_repeatability_reml_dense(
+    y::AbstractVector,
+    X::AbstractMatrix,
+    Z::AbstractMatrix,
+    Ainv::AbstractMatrix;
+    initial = nothing,
+    iterations::Integer = 200,
+    ids = nothing,
+    max_dense_cells::Integer = DEFAULT_MAX_DENSE_CELLS,
+)
     if initial === nothing
         s0 = _scale_aware_start(y, 2)
         initial = (sigma_a2 = s0[1], sigma_pe2 = s0[2], sigma_e2 = s0[3])
@@ -4086,7 +4177,7 @@ function fit_repeatability_reml(
     total = sigma_a2 + sigma_pe2 + sigma_e2
     isfinite(total) && total > 0 || throw(ArgumentError("repeatability optimizer returned a nonfinite total variance"))
     p = size(Xd, 2)
-    return merge((
+    fit = merge((
         variance_components = (sigma_a2 = sigma_a2, sigma_pe2 = sigma_pe2, sigma_e2 = sigma_e2),
         repeatability = (sigma_a2 + sigma_pe2) / total,
         heritability = sigma_a2 / total,
@@ -4096,6 +4187,7 @@ function fit_repeatability_reml(
         loglik = loglik,
         converged = converged,
     ), loglik_convention_fields(LOGLIK_CONVENTION_OMIT_2PI, n, p))
+    return (fit = fit, dense = (yv = yv, Xd = Xd, Zd = Zd, A = A))
 end
 
 function _repeatability_boundary_interval(t, level, converged)
@@ -4124,6 +4216,7 @@ function _repeatability_interval_from_fit(
     level::Real,
     fd_step::Real,
     boundary_tol::Real,
+    dense = nothing,
 )
     vc = fit.variance_components
     theta = Float64[vc.sigma_a2, vc.sigma_pe2, vc.sigma_e2]
@@ -4139,10 +4232,9 @@ function _repeatability_interval_from_fit(
                   !(boundary_tol < t < 1 - boundary_tol)
     on_boundary && return _repeatability_boundary_interval(t, level, true)
 
-    A = inv(Symmetric(Matrix{Float64}(Ainv)))
-    Xd = Matrix{Float64}(X)
-    Zd = Matrix{Float64}(Z)
-    yv = Float64.(y)
+    yv, Xd, Zd, A = dense === nothing ?
+        (Float64.(y), Matrix{Float64}(X), Matrix{Float64}(Z), _dense_relationship_inverse(Ainv)) :
+        (dense.yv, dense.Xd, dense.Zd, dense.A)
     loglik(p) = _repeatability_dense(yv, Xd, Zd, A, p[1], p[2], p[3])[1]
     info = _reml_fd_information(loglik, theta, fd_step)
     if !(all(isfinite, info) && isposdef(info))
@@ -4217,11 +4309,11 @@ function repeatability_interval(
     0 < level < 1 || throw(ArgumentError("level must be in (0, 1)"))
     fd_step = _validate_uncertainty_fd_step(fd_step)
     boundary_tol = _validate_boundary_tol(boundary_tol)
-    fit = fit_repeatability_reml(y, X, Z, Ainv; initial = initial, iterations = iterations,
-                                 ids = ids, max_dense_cells = max_dense_cells)
+    fit, dense = _fit_repeatability_reml_dense(y, X, Z, Ainv; initial = initial,
+        iterations = iterations, ids = ids, max_dense_cells = max_dense_cells)
     return _repeatability_interval_from_fit(
         fit, y, X, Z, Ainv;
-        level = level, fd_step = fd_step, boundary_tol = boundary_tol,
+        level = level, fd_step = fd_step, boundary_tol = boundary_tol, dense = dense,
     )
 end
 
@@ -4772,14 +4864,88 @@ function _profile_reml_context(spec::AnimalModelSpec)
         throw(ArgumentError("REML requires fewer fixed-effect columns than observations"))
     validated, factor = _likelihood_validated_spec(spec)
     Ainv = sparse(Float64.(validated.Ainv))
-    return (spec = validated, Ainv = Ainv, logdet_Ainv = logdet(factor))
+    return (spec = validated, Ainv = Ainv, logdet_Ainv = logdet(factor),
+            mme = _profile_mme_workspace(validated, Ainv))
+end
+
+# One MME workspace per profile interval (#409). The coefficient matrix is
+# C = [X'X X'Z; Z'X Z'Z] / sigma_e2 + blockdiag(0, Ainv) / sigma_a2; the two
+# variance-free parts are stored once on one shared sparsity pattern, so each
+# evaluation fills `lhs` in place and refactors with the cached symbolic analysis
+# (`cholesky!`) instead of re-forming cross products, concatenating blocks and
+# reordering. The entries are the same products `_sparse_mme_system` forms.
+# Not thread-safe: `lhs` and the cached factor are mutated on every evaluation,
+# so one workspace (and the profile context that owns it) must not be shared
+# across tasks or threads; build a separate context per thread instead.
+mutable struct _ProfileMMEWorkspace
+    C::SparseMatrixCSC{Float64,Int}
+    G::SparseMatrixCSC{Float64,Int}
+    lhs::SparseMatrixCSC{Float64,Int}
+    b::Vector{Float64}
+    factor::Any
+end
+
+function _profile_mme_workspace(spec::AnimalModelSpec, Ainv::SparseMatrixCSC)
+    y = Float64.(spec.y)
+    X = sparse(Float64.(spec.X))
+    Z = sparse(Float64.(spec.Z))
+    Xt = transpose(X)
+    Zt = transpose(Z)
+    p = size(X, 2)
+    C0 = [(Xt * X) (Xt * Z); (Zt * X) (Zt * Z)]
+    G0 = blockdiag(spzeros(Float64, p, p), SparseMatrixCSC{Float64,Int}(Ainv))
+    N = size(C0, 1)
+    Ic, Jc, Vc = findnz(C0)
+    Ig, Jg, Vg = findnz(G0)
+    rows = vcat(Ic, Ig)
+    cols = vcat(Jc, Jg)
+    # Building both from the same (row, col) list gives identical colptr/rowval.
+    C = sparse(rows, cols, vcat(Vc, zeros(length(Vg))), N, N)
+    G = sparse(rows, cols, vcat(zeros(length(Vc)), Vg), N, N)
+    (C.colptr == G.colptr && C.rowval == G.rowval) ||
+        error("internal: profile MME workspace patterns differ")
+    b = vcat(Vector{Float64}(Xt * y), Vector{Float64}(Zt * y))
+    return _ProfileMMEWorkspace(C, G, copy(C), b, nothing)
+end
+
+# Factorise the workspace MME at (sigma_a2, sigma_e2); returns (factor, rhs).
+function _profile_mme_factor!(ws::_ProfileMMEWorkspace, sigma_a2::Real, sigma_e2::Real)
+    residual_precision = inv(Float64(sigma_e2))
+    relationship_precision = inv(Float64(sigma_a2))
+    nonzeros(ws.lhs) .= residual_precision .* nonzeros(ws.C) .+
+                        relationship_precision .* nonzeros(ws.G)
+    rhs = residual_precision .* ws.b
+    _likelihood_check_finite("MME coefficient matrix", ws.lhs)
+    _likelihood_check_finite("MME right-hand side", rhs)
+    sym = Symmetric(ws.lhs)
+    if ws.factor === nothing
+        ws.factor = cholesky(sym; check = true)
+    else
+        try
+            cholesky!(ws.factor, sym; check = true)
+        catch err
+            err isa LinearAlgebra.PosDefException || rethrow(err)
+            # As in `_factorize!`: a failed refactorisation is retried fresh, so a
+            # cache artefact is never reported as a property of the data.
+            ws.factor = cholesky(sym; check = true)
+        end
+    end
+    return ws.factor, rhs
+end
+
+# `_sparse_reml_loglik_parts` on the context's workspace.
+function _profile_reml_parts(ctx, sigma_a2::Real, sigma_e2::Real)
+    _SPARSE_REML_EVALS[] += 1
+    factor, rhs = _profile_mme_factor!(ctx.mme, sigma_a2, sigma_e2)
+    return _sparse_reml_loglik_from_factor(
+        ctx.spec, sigma_a2, sigma_e2, ctx.Ainv, ctx.logdet_Ainv, factor, rhs)
 end
 
 # Same numerics as the public `sparse_reml_loglik`, minus the per-call validation.
 function _profile_reml_eval(ctx, sigma_a2::Real, sigma_e2::Real)
     sigma_a2 = _likelihood_positive("sigma_a2", sigma_a2; precision = true)
     sigma_e2 = _likelihood_positive("sigma_e2", sigma_e2; precision = true)
-    return _sparse_reml_loglik(ctx.spec, sigma_a2, sigma_e2, ctx.Ainv, ctx.logdet_Ainv)
+    return _profile_reml_parts(ctx, sigma_a2, sigma_e2).result
 end
 
 _profile_reml_loglik(spec::AnimalModelSpec, h2::Real) =
@@ -4804,7 +4970,7 @@ function _profile_reml_loglik(ctx::NamedTuple, h2::Real)
     sigma_a2 = _likelihood_positive("sigma_a2", h2; precision = true)
     sigma_e2 = _likelihood_positive("sigma_e2", 1 - h2; precision = true)
     parts = try
-        _sparse_reml_loglik_parts(ctx.spec, sigma_a2, sigma_e2, ctx.Ainv, ctx.logdet_Ainv)
+        _profile_reml_parts(ctx, sigma_a2, sigma_e2)
     catch err
         err isa PosDefException && return -Inf
         rethrow()
@@ -5263,6 +5429,7 @@ function _dense_marginal_covariance(Z::AbstractMatrix, A::AbstractMatrix, sigma_
 end
 
 function _sparse_mme_system(spec::AnimalModelSpec, sigma_a2::Real, sigma_e2::Real)
+    _SPARSE_MME_ASSEMBLIES[] += 1
     y = Float64.(spec.y)
     X = sparse(Float64.(spec.X))
     Z = sparse(Float64.(spec.Z))
