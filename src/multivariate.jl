@@ -964,11 +964,19 @@ function _mv_gls_blup(yvec, Xfull, Zfull, A, indiv, N, G0, R0, t, p, q)
     return permutedims(reshape(betavec, t, p)), permutedims(reshape(uvec, t, q))
 end
 
+# Dense relationship matrix A = inv(Ainv). Counts calls so a test can assert the
+# covariance-SE path inverts once, not once per finite-difference evaluation (#410).
+const _MV_DENSE_A_CALLS = Ref(0)
+function _mv_dense_A(Ainv, q)
+    _MV_DENSE_A_CALLS[] += 1
+    return inv(Symmetric(_check_relationship_precision(Ainv, q)))
+end
+
 # Convenience: multivariate REML log-likelihood directly from model inputs at
 # supplied covariances (rebuilds the observed structures). Used in validation.
 function _multivariate_reml_loglik(Y, X, Z, Ainv, G0, R0)
     n = size(Y, 1); t = size(Y, 2); q = size(Ainv, 1); p = size(X, 2)
-    A = inv(Symmetric(_check_relationship_precision(Ainv, q)))
+    A = _mv_dense_A(Ainv, q)
     yvec, Xfull, Zfull, indiv, N = _mv_observed(Y, X, Z, n, t, q, p)
     return _mv_reml_loglik_core(yvec, Xfull, Zfull, A, indiv, N,
                                 Matrix(Float64.(Matrix(G0))), Matrix(Float64.(Matrix(R0))))
@@ -1775,7 +1783,12 @@ function multivariate_covariance_standard_errors(fit, Y, X, Z, Ainv; fd_step::Re
     end
     ng = t * (t + 1) ÷ 2
     phat = vcat(_cov_to_chol_params(G0, t), _cov_to_chol_params(R0, t))
-    loglik(θ) = _multivariate_reml_loglik(Y, X, Z, Ainv,
+    # Hoist the dense A and observed-data structures out of the 2p^2+1
+    # finite-difference evaluations, as the fitter does (#410).
+    n = size(Y, 1); q = size(Ainv, 1); p = size(X, 2)
+    A = _mv_dense_A(Ainv, q)
+    yvec, Xfull, Zfull, indiv, N = _mv_observed(Y, X, Z, n, t, q, p)
+    loglik(θ) = _mv_reml_loglik_core(yvec, Xfull, Zfull, A, indiv, N,
         _chol_params_to_cov(@view(θ[1:ng]), t),
         _chol_params_to_cov(@view(θ[ng + 1:end]), t))
     hs = _mv_logchol_component_steps(phat, t, fd_step)

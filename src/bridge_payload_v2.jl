@@ -617,7 +617,8 @@ estimator's raw `NamedTuple` result.  For a single-pedigree-block payload
 this is exactly the result of `fit_animal_model(…)`.
 
 `initial` and `iterations` (hsquared#212) are forwarded ONLY to the
-`:multi_effect` and `:direct_maternal` dispatch arms — the two engine calls
+`:multi_effect` and `:direct_maternal` dispatch arms (and to `:two_effect` when
+`scale_method = :auto`, #415) — the two engine calls
 this dispatcher previously hardcoded with neither. Default `nothing`
 for both reproduces the exact pre-#212-fix call (each underlying fitter's own
 default: `fit_multi_effect_reml`'s `initial = nothing` / `iterations = 200`,
@@ -628,7 +629,8 @@ default `:dense` fitter `fit_multi_effect_reml`, and the opt-in `:auto` route's
 selects (`fit_sparse_multi_effect_aireml`'s `initial = nothing` / `iterations = 100`,
 or `fit_multi_effect_mc_reml`'s `initial = nothing` / `iterations = 200`). A
 supplied `initial`, `iterations`, or non-default `scale_method` on any other
-wired arm (`:animal`, `:two_effect`, `:multivariate_repeatability`; also
+wired arm (`:animal`, `:two_effect` on its default dense route,
+`:multivariate_repeatability`; also
 non-default `scale_method` on `:direct_maternal`) raises `ArgumentError` and
 names the unsupported keyword (HSquared.jl#436). `:multivariate` and
 `:coefcov` still raise `Phase0NotImplementedError`.
@@ -650,9 +652,12 @@ function _reject_unsupported_fit_kwargs(dispatch::Symbol;
                                         scale_method::Symbol,
                                         initial,
                                         iterations)
-    honours_initial = dispatch in (:multi_effect, :direct_maternal)
-    honours_iterations = dispatch in (:multi_effect, :direct_maternal)
-    honours_scale_method = dispatch === :multi_effect
+    # `:two_effect` honours `scale_method = :auto` (sparse AI-REML, #415) and then
+    # forwards `initial` / `iterations` to it; its default dense route honours none.
+    two_effect_sparse = dispatch === :two_effect && scale_method === :auto
+    honours_initial = dispatch in (:multi_effect, :direct_maternal) || two_effect_sparse
+    honours_iterations = dispatch in (:multi_effect, :direct_maternal) || two_effect_sparse
+    honours_scale_method = dispatch === :multi_effect || two_effect_sparse
     unsupported = String[]
     !honours_initial && initial !== nothing && push!(unsupported, "initial")
     !honours_iterations && iterations !== nothing && push!(unsupported, "iterations")
@@ -660,6 +665,22 @@ function _reject_unsupported_fit_kwargs(dispatch::Symbol;
     isempty(unsupported) && return nothing
     throw(ArgumentError(
         "payload-v2 $dispatch dispatch does not support $(join(unsupported, ", "))"))
+end
+
+# Map a K = 2 `fit_multi_effect` result onto the `fit_two_effect_reml` field names that
+# `result_payload_v2` reads (#415). `loglik` and its convention fields are passed through
+# in the sparse route's own convention (`:reml_full_constant`), so they stay self-describing.
+function _two_effect_from_multi_effect(res)
+    vc = res.variance_components
+    total = vc.sigmas[1] + vc.sigmas[2] + vc.sigma_e2
+    rest = Base.structdiff(res, NamedTuple{(:variance_components, :ratios, :effects)})
+    return merge(rest, (
+        variance_components = (sigma1 = vc.sigmas[1], sigma2 = vc.sigmas[2], sigma_e2 = vc.sigma_e2),
+        ratio1 = vc.sigmas[1] / total,
+        ratio2 = vc.sigmas[2] / total,
+        effect1 = res.effects[1],
+        effect2 = res.effects[2],
+    ))
 end
 
 function _dispatch_fit(parsed::ParsedPayloadV2; scale_method::Symbol = :dense,
@@ -689,6 +710,19 @@ function _dispatch_fit(parsed::ParsedPayloadV2; scale_method::Symbol = :dense,
         # §6 row 2: two independent blocks → fit_two_effect_reml.
         b1, b2 = blocks[1], blocks[2]
         y = parsed.y
+        if scale_method === :auto
+            # #415 opt-in: the two blocks go through the SPARSE AI-REML (`fit_multi_effect`,
+            # K = 2) and the result is mapped back to the two_effect field names. Default
+            # (`:dense`, absent) is the untouched dense call below. `initial` is the
+            # K+1 vector `fit_multi_effect` takes (sigma1, sigma2, sigma_e2).
+            kwargs = iterations === nothing ?
+                (initial === nothing ? NamedTuple() : (initial = initial,)) :
+                (initial === nothing ? (iterations = iterations,) : (initial = initial, iterations = iterations))
+            effects = [(sparse(Matrix{Float64}(b.Z)), sparse(Matrix{Float64}(b.relmat_inverse))) for b in (b1, b2)]
+            res = fit_multi_effect(y, X, effects; method = :auto, ids = [b1.ids, b2.ids],
+                                   kwargs...)
+            return _two_effect_from_multi_effect(res)
+        end
         return fit_two_effect_reml(y, X,
                                    Matrix{Float64}(b1.Z), Matrix{Float64}(b1.relmat_inverse),
                                    Matrix{Float64}(b2.Z), Matrix{Float64}(b2.relmat_inverse);
@@ -874,12 +908,13 @@ function result_payload_v2(fit, parsed::ParsedPayloadV2)
             (name=b1.name, ids=fit.effect1.ids, values=fit.effect1.values),
             (name=b2.name, ids=fit.effect2.ids, values=fit.effect2.values),
         ]
+        two_effect_extra = hasproperty(fit, :boundary) ? (boundary = fit.boundary,) : NamedTuple()
         return merge((
             variance_components = (residual=vc.sigma_e2, blocks=variance_blocks),
             random_effects = re_blocks,
             loglik = fit.loglik,
             converged = fit.converged,
-        ), _v2_structured_result_metadata(fit, parsed, 3))
+        ), two_effect_extra, _v2_structured_result_metadata(fit, parsed, 3))
     end
 
     if dispatch == :multi_effect

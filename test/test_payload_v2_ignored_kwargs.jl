@@ -99,8 +99,11 @@ end
             err_iterations = _fit_error(payload; iterations = 5)
             @test _names_keyword(err_iterations, dispatch, :iterations)
 
-            err_auto = _fit_error(payload; scale_method = :auto)
-            @test _names_keyword(err_auto, dispatch, :scale_method)
+            # #415: :two_effect honours scale_method = :auto (sparse route).
+            if dispatch !== :two_effect
+                err_auto = _fit_error(payload; scale_method = :auto)
+                @test _names_keyword(err_auto, dispatch, :scale_method)
+            end
 
             err_bogus = _fit_error(payload; scale_method = :bogus)
             @test _names_keyword(err_bogus, dispatch, :scale_method)
