@@ -1,0 +1,26 @@
+{
+  "schema": "hsquared-arc1-check-result-v1",
+  "recorded_at_utc": "2026-10-12T07:48:15Z",
+  "execution_time_capture": "recorded after terminal command result",
+  "cwd": "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/LOOP/lanes/arc1-gaussian-reliability-20261002/evidence/g2-development-nine-cell-admission-v17",
+  "environment": {
+    "PYTHONDONTWRITEBYTECODE": "1"
+  },
+  "python_executable": "/Library/Frameworks/Python.framework/Versions/3.13/bin/python3",
+  "python_version": "3.13.15",
+  "argv": [
+    "/Library/Frameworks/Python.framework/Versions/3.13/bin/python3",
+    "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/LOOP/lanes/arc1-gaussian-reliability-20261002/evidence/g2-development-nine-cell-admission-v17/test_candidate.py"
+  ],
+  "exit_code": 1,
+  "stdout_summary": "Ran 16 tests in 57.524s; 15 passed and 1 failed.",
+  "raw_log_sha256": "990d7b92a6e5fca664135968eb38447dee47f736e64a5e29a0cdc102b6b24774",
+  "test_script_sha256": "d2c28bf2006a2cccaa37d6f80eb61663dfc7141b2f6aa7c4383efcbd63a212b1",
+  "failure": {
+    "test": "test_exact_candidate_lock_manifest_and_failure_receipt",
+    "path": "LOOP/lanes/arc1-gaussian-reliability-20261002/checkpoint.md",
+    "frozen_sha256": "913eec3f1e20e8b9451a01d61ad4cbd1c10cf1517276f71ee579b45be2a9277e",
+    "current_sha256": "73ab2a1eb0b2a93727b556cf68cb50c90f495db81fcd86fd190709373e3eb185"
+  },
+  "scope_note": "Historical v17 candidate suite only. Fifteen contract tests passed; the exact-source test correctly refuses replay against the mutable current checkout because checkpoint.md has changed since the candidate lock. This is not a failure of the retained outer33 result receipt and does not authorize reuse of the historical candidate. No Julia fit or study attempt ran; no gate credit is added."
+}

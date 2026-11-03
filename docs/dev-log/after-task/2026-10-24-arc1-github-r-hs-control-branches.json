@@ -1,0 +1,542 @@
+{
+  "schema": "arc1-github-branch-head-hs-control-audit-v1",
+  "repository": "itchyshin/hsquared",
+  "path": "R/hs_control.R",
+  "expected_sha256": "0951333cb8541a1c6615ba0131db5c98f8b5a59bccc24ab3358d4a47d85146f4",
+  "branch_heads_listed": 106,
+  "source_versions_hashed": 105,
+  "missing_path_heads": [
+    {
+      "branch": "gh-pages",
+      "commit": "4264c735a83da03f88121f8f5bb2f597419a83a1"
+    }
+  ],
+  "exact_matches": 0,
+  "results": [
+    {
+      "branch": "claude/bridge-option-guards-9vbent",
+      "commit": "7b21058beda8ab1abdb3302542ba0cf6ed45d03e",
+      "sha256": "71cd526145ddccf269695cf2af6523f861713ee483912922da047a16fad9e7b2"
+    },
+    {
+      "branch": "claude/cloud-304-input-and-plot-guard-tests",
+      "commit": "6952981b60677479a173ae43e0da86bffcf3f45d",
+      "sha256": "71cd526145ddccf269695cf2af6523f861713ee483912922da047a16fad9e7b2"
+    },
+    {
+      "branch": "claude/cloud-metafounder-ids-fallback",
+      "commit": "a7705050601e9c7e5e53b34d6892db4526c89a61",
+      "sha256": "71cd526145ddccf269695cf2af6523f861713ee483912922da047a16fad9e7b2"
+    },
+    {
+      "branch": "claude/cloud-metafounder-names-fallback",
+      "commit": "3571afac760010bf6f42c0289d40a39a5be04736",
+      "sha256": "71cd526145ddccf269695cf2af6523f861713ee483912922da047a16fad9e7b2"
+    },
+    {
+      "branch": "claude/cloud-metafounder-names-fix",
+      "commit": "cd41573c6b8017ab1d41e43bfd5902d0a81cdec4",
+      "sha256": "71cd526145ddccf269695cf2af6523f861713ee483912922da047a16fad9e7b2"
+    },
+    {
+      "branch": "claude/cloud-none-hs-data-guards",
+      "commit": "f337caf77b65ae0b649256007d96442d7dd6d21e",
+      "sha256": "71cd526145ddccf269695cf2af6523f861713ee483912922da047a16fad9e7b2"
+    },
+    {
+      "branch": "claude/extractor-fences-rv8qh9",
+      "commit": "a003165f8b13a2bdf17b8dab84f3f39a235cf209",
+      "sha256": "71cd526145ddccf269695cf2af6523f861713ee483912922da047a16fad9e7b2"
+    },
+    {
+      "branch": "claude/fix-297-iterations-doc",
+      "commit": "646f19062506101efce1dfd08a4675fcc255fa5c",
+      "sha256": "97c98f697d4942f6d0c9440d26e78de7fba638c19c580191c2d599efe22476ea"
+    },
+    {
+      "branch": "claude/fix-300-random-regression-docs-documentation",
+      "commit": "450d0f68eb04fbc679f489a12dd8699864ea8ab4",
+      "sha256": "97c98f697d4942f6d0c9440d26e78de7fba638c19c580191c2d599efe22476ea"
+    },
+    {
+      "branch": "claude/genomic-single-step-guards-wka9tc",
+      "commit": "dec6ca51cfe07c21e03aad7554ee0ecec053d32a",
+      "sha256": "71cd526145ddccf269695cf2af6523f861713ee483912922da047a16fad9e7b2"
+    },
+    {
+      "branch": "claude/gwas-marker-guard-tests-kda2pg",
+      "commit": "4cccc3d5c2438f94b8f8d0954cd7c4f8f4b9171a",
+      "sha256": "71cd526145ddccf269695cf2af6523f861713ee483912922da047a16fad9e7b2"
+    },
+    {
+      "branch": "claude/model-input-guard-tests-hwa06s",
+      "commit": "1fc67f69dfe1d37291f8a4b1bd3ae0654ee48e8a",
+      "sha256": "71cd526145ddccf269695cf2af6523f861713ee483912922da047a16fad9e7b2"
+    },
+    {
+      "branch": "claude/pedigree-validation-guards-qw0ui8",
+      "commit": "12161112f637b43be65fb98e3138d06dea947e92",
+      "sha256": "71cd526145ddccf269695cf2af6523f861713ee483912922da047a16fad9e7b2"
+    },
+    {
+      "branch": "claude/response-parser-guards-3rhbb3",
+      "commit": "57a980393f096b097d026640921eaf8ed96b047e",
+      "sha256": "71cd526145ddccf269695cf2af6523f861713ee483912922da047a16fad9e7b2"
+    },
+    {
+      "branch": "claude/term-parser-guard-tests-2kj70g",
+      "commit": "90ea1671b4722b0224ca8ef56b7afc2bb36e2022",
+      "sha256": "71cd526145ddccf269695cf2af6523f861713ee483912922da047a16fad9e7b2"
+    },
+    {
+      "branch": "codex/activation-plans",
+      "commit": "5e7f7d52b5549b27d01e60251ebf1a00c7ea8176",
+      "sha256": "e327a9273e4bce0113a437dee9af8b4c89c4cd08376a39e8fc455b761d00f9a5"
+    },
+    {
+      "branch": "codex/board-hygiene-coordination",
+      "commit": "b837bf301f54242e83bee7b264d4b66a95a98ce0",
+      "sha256": "e327a9273e4bce0113a437dee9af8b4c89c4cd08376a39e8fc455b761d00f9a5"
+    },
+    {
+      "branch": "codex/bridge-production-fences-20260907",
+      "commit": "6b6d1ae61326284c3ee0482cec31a94d97f866fa",
+      "sha256": "e3e27afbf559cd82c50217b7e5a1ec16f5e169276f350d750c6d0fb9e1288118"
+    },
+    {
+      "branch": "codex/claude-to-julia-handover",
+      "commit": "ae4bf2f05bba26152fd4b5bde25998a8ab7544bd",
+      "sha256": "e327a9273e4bce0113a437dee9af8b4c89c4cd08376a39e8fc455b761d00f9a5"
+    },
+    {
+      "branch": "codex/comparator-validation-runbooks",
+      "commit": "935dd2bcd5d638259ac8fb50c03f20915ec1710b",
+      "sha256": "e327a9273e4bce0113a437dee9af8b4c89c4cd08376a39e8fc455b761d00f9a5"
+    },
+    {
+      "branch": "codex/cran-090-description-review-fix",
+      "commit": "0cdfb783f33fb42c03b1f1e468c9cacdf5924117",
+      "sha256": "b3ac7e2f2625717c9f1ffd15c0befaf0bf5c53e08e4dbf29ccebad104f9746d7"
+    },
+    {
+      "branch": "codex/cran-090-examples-review-20261008",
+      "commit": "e742c5156eded132a05ad3b48c6c78230646987b",
+      "sha256": "b3ac7e2f2625717c9f1ffd15c0befaf0bf5c53e08e4dbf29ccebad104f9746d7"
+    },
+    {
+      "branch": "codex/cran-copyright-windows-sha",
+      "commit": "ea09aaf24bd6fa005e61396538fb5a9ed45e2e92",
+      "sha256": "b3ac7e2f2625717c9f1ffd15c0befaf0bf5c53e08e4dbf29ccebad104f9746d7"
+    },
+    {
+      "branch": "codex/cran-incoming-resubmit-090",
+      "commit": "ea5fea0c9bf22f3604a89fc02642d1f53f64ff74",
+      "sha256": "b3ac7e2f2625717c9f1ffd15c0befaf0bf5c53e08e4dbf29ccebad104f9746d7"
+    },
+    {
+      "branch": "codex/fa-ss-status-honesty-20260907",
+      "commit": "16c15d8dce136f2c330c77cfeb67c4d943d53dee",
+      "sha256": "e3e27afbf559cd82c50217b7e5a1ec16f5e169276f350d750c6d0fb9e1288118"
+    },
+    {
+      "branch": "codex/genomic-external-comparator-run",
+      "commit": "97cfd01b6a476b3d26ea5b5d08b5b00d523f5bad",
+      "sha256": "e327a9273e4bce0113a437dee9af8b4c89c4cd08376a39e8fc455b761d00f9a5"
+    },
+    {
+      "branch": "codex/gparity-and-v4-honesty",
+      "commit": "8547fa512850f42d76bd687c8f50ceea73712c0e",
+      "sha256": "e327a9273e4bce0113a437dee9af8b4c89c4cd08376a39e8fc455b761d00f9a5"
+    },
+    {
+      "branch": "codex/hsq09-gateb-r-artifact-20260911",
+      "commit": "ab14ec630cdde0714a11a1bfe0df31baa0aa1250",
+      "sha256": "92a0700db92af1f652296f8fd67ce9169001658e606bb776451ff0ee217412bc"
+    },
+    {
+      "branch": "codex/hsq09-release-final-r-20260912",
+      "commit": "c04ce54dc8f6ceda4fa2df2ff9439f0f31593a74",
+      "sha256": "92a0700db92af1f652296f8fd67ce9169001658e606bb776451ff0ee217412bc"
+    },
+    {
+      "branch": "codex/hsq09-release-final-r-vignettes-20260912",
+      "commit": "1c40c1610417ce86c309e949de63d0c446d7580e",
+      "sha256": "92a0700db92af1f652296f8fd67ce9169001658e606bb776451ff0ee217412bc"
+    },
+    {
+      "branch": "codex/hsq09-release-r-20260911",
+      "commit": "d62f14238277ae6fe559059f5795ea8bdae82f8a",
+      "sha256": "9a1fc550d2440f0818c89d7f424f0db9437edf4f748c72164d94758447b3b513"
+    },
+    {
+      "branch": "codex/hsquared-fa-gllvm-20260927",
+      "commit": "5efe0ec41d84d5c82dfbe52e1f4e89b52fa4deb7",
+      "sha256": "046245873504ef6228486383a4139b1d73c1a24a9033cf754fd2c585eb6c9891"
+    },
+    {
+      "branch": "codex/include-gitattributes-release-fixtures",
+      "commit": "58e1da532f25a9665d118ddea19fe16c4c4f3502",
+      "sha256": "b3ac7e2f2625717c9f1ffd15c0befaf0bf5c53e08e4dbf29ccebad104f9746d7"
+    },
+    {
+      "branch": "codex/mv-mcmcglmm-agreement",
+      "commit": "02402763c9dfcf4f76e110038f746c6fad082326",
+      "sha256": "8228390ff6b0dfd1f586031a20306dc78165fc4cf9f4ae5d9d4e88d23d8c4495"
+    },
+    {
+      "branch": "codex/nongaussian-per-record-trials-r",
+      "commit": "9e5a25b8b7d7f0d6e67797cdcac675c194e65cdb",
+      "sha256": "e327a9273e4bce0113a437dee9af8b4c89c4cd08376a39e8fc455b761d00f9a5"
+    },
+    {
+      "branch": "codex/release-records-20260907",
+      "commit": "a9b69ce5b0d6521e39b69a46caec9a5850977d3e",
+      "sha256": "e3e27afbf559cd82c50217b7e5a1ec16f5e169276f350d750c6d0fb9e1288118"
+    },
+    {
+      "branch": "codex/repair-julia-crosslinks-20260907",
+      "commit": "af6e8599468ec78367f3e9bdb87a8cdf3d248e16",
+      "sha256": "e3e27afbf559cd82c50217b7e5a1ec16f5e169276f350d750c6d0fb9e1288118"
+    },
+    {
+      "branch": "codex/structured-cov-ratification",
+      "commit": "292805a8a0f324b5a979b1a8b8d8378306db167c",
+      "sha256": "e327a9273e4bce0113a437dee9af8b4c89c4cd08376a39e8fc455b761d00f9a5"
+    },
+    {
+      "branch": "codex/web-journey-20260907",
+      "commit": "9da186982f1c593b00b71f1f14d16259d5c312fb",
+      "sha256": "e3e27afbf559cd82c50217b7e5a1ec16f5e169276f350d750c6d0fb9e1288118"
+    },
+    {
+      "branch": "codex/2026-07-12-v07-genomic-activation",
+      "commit": "3ea1a0a32aa9ac9acba1ae125942c71374bcd413",
+      "sha256": "23c6bc712a0fb9d2850a570a75050ff424dde7d93b943deafd8c5681411ba7bf"
+    },
+    {
+      "branch": "codex/2026-07-12-v07-optimizer-localization",
+      "commit": "9092bee10567ee0b1661df5eaecb2f22c57df4d6",
+      "sha256": "7a4f602042177dbb3fa0831976afda4b1c3ccd87634fda6e8bee90e63d212f1f"
+    },
+    {
+      "branch": "codex/2026-07-13-v07-performance-localization",
+      "commit": "f5c0d46bdb2ae3c2dfb2cc932883610d88f67f77",
+      "sha256": "fff625b43779a712ac540b79d606a74ffe6757a2eda9fa4f1a8a7a00591100c8"
+    },
+    {
+      "branch": "cursor/a20-experimental-050",
+      "commit": "e25e3e2d08496585c0f97a0148adffb89a296c0f",
+      "sha256": "bcc80118edff2775583625ed9876ecf37016ffe96b45c5f6e7bbc5f51f0b638d"
+    },
+    {
+      "branch": "cursor/authors-orcid-trio-20260925",
+      "commit": "94514108c078a49bba3cfd458e1e84c47090b822",
+      "sha256": "b3ac7e2f2625717c9f1ffd15c0befaf0bf5c53e08e4dbf29ccebad104f9746d7"
+    },
+    {
+      "branch": "cursor/block1-postreg-20260902",
+      "commit": "34c2e7b998864d105702d1f6149a8e33023a0dbe",
+      "sha256": "bcc80118edff2775583625ed9876ecf37016ffe96b45c5f6e7bbc5f51f0b638d"
+    },
+    {
+      "branch": "cursor/checklog-builder-r-20260903",
+      "commit": "a588aa270c12468172453b2196c5cecd5b53168c",
+      "sha256": "fadc5387ba8c3943da03ff67464a1be33883556792a101696164700470d4080f"
+    },
+    {
+      "branch": "cursor/docs-070-honesty-20260903",
+      "commit": "193d6e4cb397c64941dfb4b377269956c4c848ed",
+      "sha256": "fadc5387ba8c3943da03ff67464a1be33883556792a101696164700470d4080f"
+    },
+    {
+      "branch": "cursor/docs-ia-examples-20260924",
+      "commit": "3a494154bcab2ceab69e9a004c2e93fadce10a25",
+      "sha256": "b3ac7e2f2625717c9f1ffd15c0befaf0bf5c53e08e4dbf29ccebad104f9746d7"
+    },
+    {
+      "branch": "cursor/docs-p1-ascii-hotfix-20260902",
+      "commit": "4466554aae002ac99a321afbfd81e2952de8b4d1",
+      "sha256": "69e591ce28d0be206aa44a9899a85a66872425a89eaf1f2cae14db0c5790e903"
+    },
+    {
+      "branch": "cursor/docs-quality-060-20260902",
+      "commit": "1c84e7634e58bfc3b14827c31455d0abf16e612b",
+      "sha256": "69e591ce28d0be206aa44a9899a85a66872425a89eaf1f2cae14db0c5790e903"
+    },
+    {
+      "branch": "cursor/g5-stale-copy-20260903",
+      "commit": "249fc4f8b24b9e1454a9979cec12c81bcafc7291",
+      "sha256": "fadc5387ba8c3943da03ff67464a1be33883556792a101696164700470d4080f"
+    },
+    {
+      "branch": "cursor/g10-ascii-hotfix-20260902",
+      "commit": "6fef509834ae92d45de0bae853fdbec276b5273e",
+      "sha256": "69e591ce28d0be206aa44a9899a85a66872425a89eaf1f2cae14db0c5790e903"
+    },
+    {
+      "branch": "cursor/h2-r-next-20261005b",
+      "commit": "c670df1e553f6561d34ed1c1d56271cd00134c1c",
+      "sha256": "71cd526145ddccf269695cf2af6523f861713ee483912922da047a16fad9e7b2"
+    },
+    {
+      "branch": "cursor/h2-r-next-20261005c",
+      "commit": "1a1b02ddd9498f96c5b11ec70358154ca868326b",
+      "sha256": "71cd526145ddccf269695cf2af6523f861713ee483912922da047a16fad9e7b2"
+    },
+    {
+      "branch": "cursor/h2-r-next-20261005d",
+      "commit": "f5a70e67f3f18d7966f6b887dcbfd5a61a29a117",
+      "sha256": "71cd526145ddccf269695cf2af6523f861713ee483912922da047a16fad9e7b2"
+    },
+    {
+      "branch": "cursor/h2-sweep-cleanup-20261004",
+      "commit": "77ff9591bf1206b55e198ba6c357e60672c67a46",
+      "sha256": "71cd526145ddccf269695cf2af6523f861713ee483912922da047a16fad9e7b2"
+    },
+    {
+      "branch": "cursor/mv4-060-20260902",
+      "commit": "14dc84b425b456e7a46afde254c49c25ded6f9b6",
+      "sha256": "bcc80118edff2775583625ed9876ecf37016ffe96b45c5f6e7bbc5f51f0b638d"
+    },
+    {
+      "branch": "cursor/pkgdown-internal-pages-hotfix",
+      "commit": "a05c25e7a923a57af8b67ff2cf23bf951be64108",
+      "sha256": "bcc80118edff2775583625ed9876ecf37016ffe96b45c5f6e7bbc5f51f0b638d"
+    },
+    {
+      "branch": "cursor/post366-t2-fa-ss-honesty",
+      "commit": "bfe7349af7b4091fedc3f34e4ac98354ad1fafc8",
+      "sha256": "3dd082c4c05b8d9dcaa1b19aa05a1481eb4583896cda1e9d8fdfb1bfde3965d4"
+    },
+    {
+      "branch": "cursor/post-g10-060-20260902",
+      "commit": "54035baba74d83b64aa51bc86ed1d7a1b2f11231",
+      "sha256": "69e591ce28d0be206aa44a9899a85a66872425a89eaf1f2cae14db0c5790e903"
+    },
+    {
+      "branch": "cursor/preamble-cap-r-20260903",
+      "commit": "d8bab0d8a286680ea6c2ce23e07b14e6c90ce548",
+      "sha256": "fadc5387ba8c3943da03ff67464a1be33883556792a101696164700470d4080f"
+    },
+    {
+      "branch": "cursor/reader-surface-scrub-20260903",
+      "commit": "6d6cc9a624eba0619d891cacfa72760d3cbbfbd5",
+      "sha256": "fadc5387ba8c3943da03ff67464a1be33883556792a101696164700470d4080f"
+    },
+    {
+      "branch": "cursor/0.9-fa-ss-honesty-wave3",
+      "commit": "a69d8d47aae68f99990109d98bb70e9c9a197206",
+      "sha256": "e3e27afbf559cd82c50217b7e5a1ec16f5e169276f350d750c6d0fb9e1288118"
+    },
+    {
+      "branch": "cursor/0.9-sprint-d1-bridge-docs",
+      "commit": "caa94fcb3fd307b605b047c1f993d7a81438998a",
+      "sha256": "e3e27afbf559cd82c50217b7e5a1ec16f5e169276f350d750c6d0fb9e1288118"
+    },
+    {
+      "branch": "cursor/0.9-sprint-d1-status-honesty",
+      "commit": "7ce2a84c55fd6c6d7933f61a9d733f837d01e1ae",
+      "sha256": "e3e27afbf559cd82c50217b7e5a1ec16f5e169276f350d750c6d0fb9e1288118"
+    },
+    {
+      "branch": "cursor/0.9-sprint-d2-capability-locks",
+      "commit": "83701a903cb647da6b50e3983b5d74a7709e9066",
+      "sha256": "e3e27afbf559cd82c50217b7e5a1ec16f5e169276f350d750c6d0fb9e1288118"
+    },
+    {
+      "branch": "cursor/0.9-sprint-d2-fa-grammar",
+      "commit": "51088502a0dbf2c6777242a169e425f1fdb07509",
+      "sha256": "e3e27afbf559cd82c50217b7e5a1ec16f5e169276f350d750c6d0fb9e1288118"
+    },
+    {
+      "branch": "cursor/0.9-sprint-d2-fa-planned-errors",
+      "commit": "972c6eed8ca5bea8ee57806d7cb620920d7797cb",
+      "sha256": "e3e27afbf559cd82c50217b7e5a1ec16f5e169276f350d750c6d0fb9e1288118"
+    },
+    {
+      "branch": "cursor/0.9-sprint-d2-fa-planned-scaffold",
+      "commit": "d006a5c98c2fd4594261f66d189d87624fac0909",
+      "sha256": "e3e27afbf559cd82c50217b7e5a1ec16f5e169276f350d750c6d0fb9e1288118"
+    },
+    {
+      "branch": "cursor/07-greml-20260902",
+      "commit": "305eeec7d3463ad81deaa2db07f342e16fffe5d1",
+      "sha256": "fadc5387ba8c3943da03ff67464a1be33883556792a101696164700470d4080f"
+    },
+    {
+      "branch": "cursor/08-fa-20260903",
+      "commit": "477a91de98c38d6f36b24c6a991ebc823a0b2b63",
+      "sha256": "fadc5387ba8c3943da03ff67464a1be33883556792a101696164700470d4080f"
+    },
+    {
+      "branch": "cursor/08-fa-catchup-20260904",
+      "commit": "ae1246553a3413ce6ff3a6550211399c6d19dd2b",
+      "sha256": "e3e27afbf559cd82c50217b7e5a1ec16f5e169276f350d750c6d0fb9e1288118"
+    },
+    {
+      "branch": "cursor/08-fa-g10-20260903",
+      "commit": "0126c3d19f6182e25d57bf40b7eb383cc8ca1c78",
+      "sha256": "fadc5387ba8c3943da03ff67464a1be33883556792a101696164700470d4080f"
+    },
+    {
+      "branch": "cursor/08-fa-partial-20260903",
+      "commit": "eaa043d49133ffe3062d2823d1ac983b21abaa4d",
+      "sha256": "eeefd63a6082df6ce62e28cceec2a42e5677908119ccd942c2690928f04babaf"
+    },
+    {
+      "branch": "cursor/08-ss-hinv-parity-20260903",
+      "commit": "d208f3759b4456bf99044c1ef055de34e90412dd",
+      "sha256": "fadc5387ba8c3943da03ff67464a1be33883556792a101696164700470d4080f"
+    },
+    {
+      "branch": "cursor/08-ss-honesty-r-20260903",
+      "commit": "cc7d1fe4707a3fc6644b99993d268fab25a38ec9",
+      "sha256": "fadc5387ba8c3943da03ff67464a1be33883556792a101696164700470d4080f"
+    },
+    {
+      "branch": "cursor/08-ss-pointer-20260903",
+      "commit": "7efcf564ee0345176108ab5079b5074de38fa543",
+      "sha256": "eeefd63a6082df6ce62e28cceec2a42e5677908119ccd942c2690928f04babaf"
+    },
+    {
+      "branch": "cursor/08-ss-r-catchup-20260903",
+      "commit": "5705659581393dcb2662e7d97011b78810b6e877",
+      "sha256": "eeefd63a6082df6ce62e28cceec2a42e5677908119ccd942c2690928f04babaf"
+    },
+    {
+      "branch": "cursor/08-ver-080-r-20260903",
+      "commit": "a028ac10b3b8dec99afd0209970ce55650d3bef4",
+      "sha256": "eeefd63a6082df6ce62e28cceec2a42e5677908119ccd942c2690928f04babaf"
+    },
+    {
+      "branch": "cursor/09-h0-layerB-count-20260903",
+      "commit": "a08d6cbd86077d2208c4589b2c9baa83b0186bcd",
+      "sha256": "eeefd63a6082df6ce62e28cceec2a42e5677908119ccd942c2690928f04babaf"
+    },
+    {
+      "branch": "cursor/09-h0-scope-cite-20260903",
+      "commit": "5d900b92c58e4a2f744b784c2de54bd8651e65f0",
+      "sha256": "fadc5387ba8c3943da03ff67464a1be33883556792a101696164700470d4080f"
+    },
+    {
+      "branch": "cursor/09-h1-h3-harness-r-20260903",
+      "commit": "682885e2727634602de16deac40fc3c380a579dd",
+      "sha256": "fadc5387ba8c3943da03ff67464a1be33883556792a101696164700470d4080f"
+    },
+    {
+      "branch": "cursor/09-ng1-s8-prose-20260904",
+      "commit": "cc7ff94b41ebe9683611d2d416208714c5442b06",
+      "sha256": "e3e27afbf559cd82c50217b7e5a1ec16f5e169276f350d750c6d0fb9e1288118"
+    },
+    {
+      "branch": "cursor/41-080-honesty-20260904",
+      "commit": "62aeb18bbffea95988fca12c7b454f64ccd21a6a",
+      "sha256": "e3e27afbf559cd82c50217b7e5a1ec16f5e169276f350d750c6d0fb9e1288118"
+    },
+    {
+      "branch": "docs/after-task-gate6-scratch-2026-09-05",
+      "commit": "c3bae39b4e69dbbcbc1fb12c220da19b30343335",
+      "sha256": "e3e27afbf559cd82c50217b7e5a1ec16f5e169276f350d750c6d0fb9e1288118"
+    },
+    {
+      "branch": "docs/check-log-phase1-scratch-2026-09-05",
+      "commit": "a3c30feb3f6253a8c59c4064ac106e51d1a1302f",
+      "sha256": "e3e27afbf559cd82c50217b7e5a1ec16f5e169276f350d750c6d0fb9e1288118"
+    },
+    {
+      "branch": "docs/cool-pkgdown-landing-hex",
+      "commit": "73bff02c44427d8ed791180fef8a950862c750dc",
+      "sha256": "e3e27afbf559cd82c50217b7e5a1ec16f5e169276f350d750c6d0fb9e1288118"
+    },
+    {
+      "branch": "docs/coord-board-09-status-2026-09-05",
+      "commit": "ec020574c10423e681d627c1b25f0055302ca403",
+      "sha256": "e3e27afbf559cd82c50217b7e5a1ec16f5e169276f350d750c6d0fb9e1288118"
+    },
+    {
+      "branch": "docs/2026-07-02-vignette-status-reconcile",
+      "commit": "4eea590000ae6a3dbca443f90457a4d0d279334e",
+      "sha256": "125d8802105fff97e54f8fd47931570b2ec0df29b842f897c2288bded14162ed"
+    },
+    {
+      "branch": "docs/2026-07-10-interval-prereg-evidence",
+      "commit": "b90d4c345e60e8e14acd9f8caf09b3121325a56d",
+      "sha256": "125d8802105fff97e54f8fd47931570b2ec0df29b842f897c2288bded14162ed"
+    },
+    {
+      "branch": "docs/2026-07-11-claude-handover",
+      "commit": "2f9de29504557367933b3987435b299a04d89a8f",
+      "sha256": "125d8802105fff97e54f8fd47931570b2ec0df29b842f897c2288bded14162ed"
+    },
+    {
+      "branch": "feat/2026-07-01-payload-v2-emitter",
+      "commit": "f69241839ed0358e243ff4a3c3bf1f8af4a18bce",
+      "sha256": "125d8802105fff97e54f8fd47931570b2ec0df29b842f897c2288bded14162ed"
+    },
+    {
+      "branch": "feat/2026-07-01-phase1-two-effect-public",
+      "commit": "532d51def47db6f2a965c794d2745d5af245b155",
+      "sha256": "125d8802105fff97e54f8fd47931570b2ec0df29b842f897c2288bded14162ed"
+    },
+    {
+      "branch": "feat/2026-07-01-phase2-r-multieffect",
+      "commit": "9fe14585e2af0f76adefff0d6fa16e133b444366",
+      "sha256": "125d8802105fff97e54f8fd47931570b2ec0df29b842f897c2288bded14162ed"
+    },
+    {
+      "branch": "feat/2026-07-01-phase3-rr-public",
+      "commit": "9cb3481e9403d3bc5721227e1bb790bd1434154c",
+      "sha256": "125d8802105fff97e54f8fd47931570b2ec0df29b842f897c2288bded14162ed"
+    },
+    {
+      "branch": "feat/2026-07-01-phase4-direct-maternal",
+      "commit": "ef65844452aafb1a14060c5b6c1acf9d2c12dd3c",
+      "sha256": "125d8802105fff97e54f8fd47931570b2ec0df29b842f897c2288bded14162ed"
+    },
+    {
+      "branch": "feat/2026-07-09-v01-honesty",
+      "commit": "d332ee4315719330dd42e6c0dc0b8b5069c26eed",
+      "sha256": "125d8802105fff97e54f8fd47931570b2ec0df29b842f897c2288bded14162ed"
+    },
+    {
+      "branch": "feat/2026-07-10-relmat-precision-experimental",
+      "commit": "736c8be018baef28463f23b4a8f4111c7d453aa0",
+      "sha256": "125d8802105fff97e54f8fd47931570b2ec0df29b842f897c2288bded14162ed"
+    },
+    {
+      "branch": "feat/2026-07-10-track-a-hardening",
+      "commit": "3556e497835637cda5c791bcb6e87d1d780c9cf3",
+      "sha256": "125d8802105fff97e54f8fd47931570b2ec0df29b842f897c2288bded14162ed"
+    },
+    {
+      "branch": "fix/pkgdown-twin-boundary-index",
+      "commit": "1fb47827ca1ff1f0b6aa270ad61b633212e3a429",
+      "sha256": "e3e27afbf559cd82c50217b7e5a1ec16f5e169276f350d750c6d0fb9e1288118"
+    },
+    {
+      "branch": "fix/2026-07-01-pkgdown-reference-index",
+      "commit": "3e3c99765f4bda460b5dc60b46c322213e2d9c85",
+      "sha256": "125d8802105fff97e54f8fd47931570b2ec0df29b842f897c2288bded14162ed"
+    },
+    {
+      "branch": "handover/2026-07-12-codex",
+      "commit": "6383ddeca17b4536ea245ffe78d783960e5572a1",
+      "sha256": "125d8802105fff97e54f8fd47931570b2ec0df29b842f897c2288bded14162ed"
+    },
+    {
+      "branch": "handover/2026-09-07-codex-handover",
+      "commit": "19572c66e8777805042045aa8738cf6e1c308079",
+      "sha256": "e3e27afbf559cd82c50217b7e5a1ec16f5e169276f350d750c6d0fb9e1288118"
+    },
+    {
+      "branch": "main",
+      "commit": "c63e89598991e9d94554aae409bd7f8652e28625",
+      "sha256": "86e7d9d76fd037d5e861fa7e9802d5f88cc78d84e1105f2e15b57a1b4d716109"
+    },
+    {
+      "branch": "scratch/layerb-six-surface-content",
+      "commit": "ce5582f192a3124a5e8d74aaab77d71e50701511",
+      "sha256": "e3e27afbf559cd82c50217b7e5a1ec16f5e169276f350d750c6d0fb9e1288118"
+    }
+  ]
+}

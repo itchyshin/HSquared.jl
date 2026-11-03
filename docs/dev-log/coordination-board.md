@@ -1,4 +1,4 @@
-Current status (2026-10-03): the non-GPU H2 project needs a fresh Ultra Plan before further implementation. The bounded automatic FA-rank design contract is complete; Gaussian-reliability Arc 1 remains incomplete with G0–G8 open. The stopped Codex continuation recorded profile-v4 HOLD, a canonical G7 checker failure before tests, three consumed development attempts, and no pilot or confirmation. Public covered count remains seven. See the Active Lane Split and `docs/dev-log/handover/2026-10-03-codex-handover.md`; historical states below retain their original scope and timestamps.
+Current status (2026-10-11): M0/H0 passed exact-hash review and is closed for planning readiness only. Arc 1 G0, G1, G6 and G7 are met for their recorded scopes; G2-G5 and G8 remain open. Current-source G7 v29 package checks and independent retained verification passed. The approved v14 N80/null outer32 attempt failed during artifact serialization, counts once as a failed attempt, and has no gate credit. Its v14 nine-cell allocation has 268 attempts remaining. The exact v17 N80/null outer33 candidate passed a fresh read-only Totoro source/runtime/output-path preflight with no fit launched, but owner approval remains required. No pilot or confirmation has passed. The Julia worktree remains dirty; the original Dropbox hsquared checkout was not changed. Capability remains experimental and the covered count remains seven. See the current Arc 1 checkpoint for exact hashes and resume action.
 
 # Coordination Board
 
@@ -71,15 +71,30 @@ remains held for approval at its recorded 8.1-hour estimate.
 
 ## Active Lane Split
 
+Arc 1 current status, 2026-10-11: G0, G1, G6 and G7 are met for their recorded scopes. Current-source G7 v29 passed the full Julia/R/docs package runner and independent retained verification. G2-G5 and G8 remain open. The v14 N80/null outer32 singleton used candidate `a3e0066897e8fd8fab55d3b9e4e963c442cfe0ae03627457f0ca780be772b729` and source lock `3463c8a621318e06bbf3c63b7561c538e7f27d17c54c033245b0dd9ae9407af9`; it terminated with a serialization failure and no gate credit. The separate v17 N80/null outer33 attempt used candidate `0efa941c2a6ae177012a03282bbeea03cd8bdd7dc8760165bcf23e7534324cd0` and source lock `f4500848f22e1282c3f1db263fd528b6041603c585aa3780006a161854c737f2`; after current Totoro preflight and exact owner approval, it returned `status=ok`, selected K0, is denominator-counted and rate-eligible, and has no gate credit. The seed and exact execution identity remain in the retained receipt and result: `LOOP/lanes/arc1-gaussian-reliability-20261002/evidence/g2-development-nine-cell-admission-v17/retained-attempt-outer33-v17-ingest.json`. No pilot or confirmation has passed; capability stays experimental and covered count stays seven.
+
+G5 source/evidence slice: current source-map and v3 synthetic-inspector reviews passed. The v3 fake-engine profile-history artifact passed the canonical inspector; its independently checked receipt records zero study attempts, zero seed allocation, no legacy-artifact read, and no gate credit. This adds engineering evidence only. G5 interval formation, all-attempt coverage, and real fitted-trace performance remain open. Exact receipt, review, and limits: `docs/dev-log/after-task/2026-10-10-g5-v3-synthetic-inspector-preflight.md`.
+
+G2-G5 and G8 remain open. The one approved outer32 study attempt ran and failed at artifact serialization; it counts as a failed attempt in the v14 denominator and is not eligible for the selection-rate numerator. No pilot or confirmation study has run. The previous outer32-only approval is consumed; any next seed requires a fresh exact candidate, source review, Totoro preflight, and owner approval. A later campaign projected above three hours also requires its measured pre-run and separate approval. Details and exact resume action are in `LOOP/lanes/arc1-gaussian-reliability-20261002/checkpoint.md`.
+
+Historical G2 triage note from 2026-10-06: the retained v7 batch had four refusals in 24 completed attempts. Its outer-19 Wolfe-condition diagnostic and later changed-source outer-19/25 replays existed; the planned next diagnostic was the unexamined outer-20 failure under fresh reviewed source admission. No study seed or gate status changed in that historical entry.
+
+A separate, fixed-coordinate v2 diagnostic of nine saved outer25 K1 rows completed
+after a fresh exact-hash admission. All objectives and independent certificates
+were `ok`; eight accuracy checks passed, and the ninth retained its failed saved
+line-search input. This consumed-development diagnostic does not change G2 status,
+denominators, or the next outer20 v1 diagnostic. Report and output hashes:
+`docs/dev-log/after-task/2026-10-06-arc1-v2-saved-certificate-attempt4.md`.
+
 - Julia lane: this repository, `HSquared.jl`.
 - R lane: sibling repository, `hsquared`.
 - Coordinator lane: shared issue ledger, public-claim wording, and
   cross-repo contract checks.
 
 Current handovers and deferred menus:
-- Julia Arc 1 and the fresh non-GPU planning intake: `docs/dev-log/handover/2026-10-03-codex-handover.md`; detailed stopped-fork evidence: `.unlazy/arc1-gaussian-reliability/evidence/fork-stop-checkpoint-20261003/checkpoint.md`. Keep G0–G8 open.
+- Julia Arc 1 and the non-GPU goal: `docs/dev-log/handover/2026-10-03-h2-nongpu-completion-plan.md`; exact-hash M0/H0 planning review: `docs/dev-log/source-review/2026-10-04-m0-h0-final-exact-review.md`; after-task report: `docs/dev-log/after-task/2026-10-04-m0-route-inventory.md`. Parent H1-H9 status remains under its ledger. Arc 1 G0/G1/G6/G7 are met, while G2-G5/G8 remain open.
 - R twin Arc 1 state: `/private/tmp/hsquared-arc1-r-20261003`, branch `codex/arc1-gaussian-reliability-20261003`; source/check receipts and exact limits are in `docs/dev-log/after-task/2026-10-03-arc1-gaussian-reliability-handoff.md`. Preserve the original Dropbox `hsquared` checkout.
-- Coordinator work remains this shared board and cross-twin contract ledger. The new Ultra Plan must retain both package lanes and their outstanding menus; it does not authorize source changes.
+- Coordinator work remains this shared board and cross-twin contract ledger. H0 closes inventory planning only; implementation and every runtime acceptance route remain open.
 
 ### 2026-09-26: #237 Julia MV+PE fitter (experimental, no flip)
 
@@ -1795,3 +1810,7 @@ All eight original gates pass after the accepted O1 comparator repair. Focused p
 ## Arc 1 Gaussian reliability handoff, 2026-10-03
 
 The later broad Gaussian reliability Arc 1 is active on Julia branch `codex/arc1-gaussian-reliability-20261002` and isolated R branch `codex/arc1-gaussian-reliability-20261003`. It is separate from the completed bounded automatic-rank programme. G0-G8 remain open. Current manual Julia and R package results are retained and source-matched to the independently reviewed freeze, but the canonical G7 package checker has not admitted them. No confirmation study has run. A live lane lease and overlapping worktrees were reported by preflight, so ownership must be confirmed before overlapping implementation continues. Resume details: `docs/dev-log/after-task/2026-10-03-arc1-gaussian-reliability-handoff.md`.
+
+### 2026-10-09: G5 retained artifact reavailability
+
+The outer-2 N=320 near-zero-additive artifact remains on Totoro with its original path, size, and hash verified. Candidate v1 was held because a copied source tree changes absolute paths checked by the inspector. Candidate v2's sidecar arrangement passed review with conditions; candidate v3 records them and awaits exact review. G5 remains open; no fit, study attempt, seed, denominator, or capability status changed. Details: `docs/dev-log/after-task/2026-10-09-g5-retained-artifact-reavailability-audit.md`.

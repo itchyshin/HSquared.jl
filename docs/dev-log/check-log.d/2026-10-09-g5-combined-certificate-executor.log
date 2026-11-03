@@ -1,0 +1,37 @@
+
+[83748] signal (2): Interrupt: 2
+in expression starting at /var/folders/7x/ytfpq14s0v18frbm9v_w9f4c0000gq/T/arc1-executor-fixture-bYlUpN/fake-engine/sim/arc1/inspect_artifacts.jl:162
+_ZNK4llvm17RegisterClassInfo16computePSetLimitEj at /Users/z3437171/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/lib/julia/libLLVM.dylib (unknown line)
+unknown function (ip: 0x0)
+Allocations: 11433127 (Pool: 11420275; Big: 12852); GC: 16
+ERROR: LoadError: InterruptException:
+Stacktrace:
+  [1] poptask(W::Base.IntrusiveLinkedListSynchronized{Task})
+    @ Base ./task.jl:985
+  [2] wait()
+    @ Base ./task.jl:994
+  [3] wait(c::Base.GenericCondition{Base.Threads.SpinLock}; first::Bool)
+    @ Base ./condition.jl:130
+  [4] wait
+    @ Base ./condition.jl:125 [inlined]
+  [5] wait_readnb(x::Base.PipeEndpoint, nb::Int64)
+    @ Base ./stream.jl:416
+  [6] read(stream::Base.PipeEndpoint)
+    @ Base ./stream.jl:930
+  [7] read(cmd::Base.CmdRedirect)
+    @ Base ./process.jl:448
+  [8] read(cmd::Base.CmdRedirect)
+    @ Base ./process.jl:458 [inlined]
+  [9] _arc1_inspect_fake_artifact(root::String, artifact_path::String; context_unavailable::Bool, projection_counter::Nothing)
+    @ Main ~/.codex/worktrees/b9ae/HSquared.jl/test/arc1_simulation_executor.jl:374
+ [10] _arc1_inspect_fake_artifact
+    @ ~/.codex/worktrees/b9ae/HSquared.jl/test/arc1_simulation_executor.jl:363 [inlined]
+ [11] (::var"#210#292")(temp::String)
+    @ Main ~/.codex/worktrees/b9ae/HSquared.jl/test/arc1_simulation_executor.jl:1469
+ [12] mktempdir(fn::var"#210#292", parent::String; prefix::String)
+    @ Base.Filesystem ./file.jl:766
+ [13] include(fname::String)
+    @ Base.MainInclude ./client.jl:489
+in expression starting at /Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/test/arc1_simulation_executor.jl:406
+Test Summary:                          | Pass  Total      Time
+Arc1 source-bound one-attempt executor |  412    412  14m37.6s

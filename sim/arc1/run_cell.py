@@ -61,22 +61,68 @@ def _toml_input(path: Path, *, mode: str, source_root: Path, attempt_output: Pat
     path.write_text("\n".join(lines), encoding="utf-8")
 
 
+def _process_group_exists(pgid: int) -> bool:
+    try:
+        os.killpg(pgid, 0)
+        return True
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+
+
+def _wait_for_process_group_exit(process: subprocess.Popen[str], timeout: float) -> bool:
+    deadline = time.monotonic() + timeout
+    while True:
+        process.poll()  # Reap the direct child so it cannot keep its process group alive as a zombie.
+        if not _process_group_exists(process.pid):
+            return True
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            return False
+        time.sleep(min(0.02, remaining))
+
+
 def _stop_process_group(process: subprocess.Popen[str], *, first_signal: int = signal.SIGTERM,
                         grace_seconds: float = 5.0) -> None:
-    if process.poll() is not None:
-        return
+    if grace_seconds < 0:
+        raise ValueError("process-group cleanup grace must be non-negative")
     try:
         os.killpg(process.pid, first_signal)
     except ProcessLookupError:
+        pass
+    if _wait_for_process_group_exit(process, grace_seconds):
+        process.wait(timeout=max(grace_seconds, 0.1))
         return
+
     try:
-        process.wait(timeout=grace_seconds)
-    except subprocess.TimeoutExpired:
-        try:
-            os.killpg(process.pid, signal.SIGKILL)
-        except ProcessLookupError:
-            pass
-        process.wait()
+        os.killpg(process.pid, signal.SIGKILL)
+    except ProcessLookupError:
+        pass
+    if not _wait_for_process_group_exit(process, max(grace_seconds, 0.1)):
+        raise subprocess.TimeoutExpired(process.args, max(grace_seconds, 0.1),
+                                        "process group survived SIGKILL")
+    process.wait(timeout=max(grace_seconds, 0.1))
+
+
+def _communicate_after_group_stop(process: subprocess.Popen[str], *, timeout_seconds: float = 1.0
+                                  ) -> tuple[str, str, bool]:
+    try:
+        stdout, stderr = process.communicate(timeout=timeout_seconds)
+        return stdout, stderr, True
+    except subprocess.TimeoutExpired as error:
+        def as_text(value: str | bytes | None) -> str:
+            if value is None:
+                return ""
+            return value.decode("utf-8", errors="replace") if isinstance(value, bytes) else value
+
+        stdout, stderr = as_text(error.output), as_text(error.stderr)
+        if process.stdout is not None:
+            process.stdout.close()
+        if process.stderr is not None:
+            process.stderr.close()
+        process.wait(timeout=timeout_seconds)
+        return stdout, stderr, False
 
 
 class _Arc1ParentSignal(BaseException):
@@ -103,26 +149,33 @@ def launch_julia_attempt(command: list[str], *, env: dict[str, str], timeout_sec
         stdout, stderr = process.communicate(timeout=timeout_seconds)
     except subprocess.TimeoutExpired:
         _stop_process_group(process)
-        stdout, stderr = process.communicate()
+        stdout, stderr, streams_complete = _communicate_after_group_stop(process)
         elapsed = time.monotonic() - started
         _write_log(log_path, stdout, stderr)
-        return {"success": False, "status": "timeout", "failure_reason":
-                f"Julia attempt exceeded {timeout_seconds:g} seconds", "elapsed_seconds": elapsed,
-                "child_exit_code": process.returncode, "stdout": stdout, "stderr": stderr}
+        return {"success": False,
+                "status": "timeout" if streams_complete else "timeout_cleanup_incomplete",
+                "failure_reason": f"Julia attempt exceeded {timeout_seconds:g} seconds",
+                "elapsed_seconds": elapsed, "child_exit_code": process.returncode,
+                "process_group_cleanup_confirmed": True,
+                "output_streams_complete": streams_complete,
+                "stdout": stdout, "stderr": stderr}
     except KeyboardInterrupt:
         _stop_process_group(process, first_signal=signal.SIGINT)
-        stdout, stderr = process.communicate()
+        stdout, stderr, _ = _communicate_after_group_stop(process)
         _write_log(log_path, stdout, stderr)
         raise
     except _Arc1ParentSignal as interrupted:
         _stop_process_group(process, first_signal=interrupted.signum)
-        stdout, stderr = process.communicate()
+        stdout, stderr, streams_complete = _communicate_after_group_stop(process)
         elapsed = time.monotonic() - started
         _write_log(log_path, stdout, stderr)
         return {"success": False, "status": "interrupted",
                 "failure_reason": f"launcher received signal {interrupted.signum}",
                 "signal": interrupted.signum, "elapsed_seconds": elapsed,
-                "child_exit_code": process.returncode, "stdout": stdout, "stderr": stderr}
+                "child_exit_code": process.returncode,
+                "process_group_cleanup_confirmed": True,
+                "output_streams_complete": streams_complete,
+                "stdout": stdout, "stderr": stderr}
     finally:
         if previous_sigterm is not None:
             signal.signal(signal.SIGTERM, previous_sigterm)
@@ -181,6 +234,7 @@ def execute_cli(args: argparse.Namespace) -> dict[str, Any]:
     if source_root == output_root or source_root.is_relative_to(output_root) or output_root.is_relative_to(source_root):
         raise ValueError("source and result roots must be disjoint")
     admission = json.loads(args.admission.read_text(encoding="utf-8"))
+    runner.validate_execution_scope(admission, args.outer)
     julia_version = _julia_version(args.julia)
     cell = admission.get("cell")
     if not isinstance(cell, dict):

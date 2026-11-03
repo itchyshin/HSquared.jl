@@ -1,0 +1,16 @@
+..............................E...........................
+======================================================================
+ERROR: test_profile_search_contract_admits_v4_without_changing_legacy_meanings (__main__.Arc1ReceiptAdversaries.test_profile_search_contract_admits_v4_without_changing_legacy_meanings)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/test/test_arc1_receipt_adversaries.py", line 425, in test_profile_search_contract_admits_v4_without_changing_legacy_meanings
+    arc1_manifest.verify_manifest(manifest_path, audit_root=ROOT)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/tools/arc1_manifest.py", line 1053, in verify_manifest
+    raise ValueError("tracked historical seed audit paths or hashes changed")
+ValueError: tracked historical seed audit paths or hashes changed
+
+----------------------------------------------------------------------
+Ran 58 tests in 2397.058s
+
+FAILED (errors=1)

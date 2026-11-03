@@ -77,8 +77,9 @@ end
 
 function arc1_reference_required(selection, cell, outer::Int)
     cell["programme"] == "fa_rank" || return false
-    cell["phase"] in ("pilot", "confirmation") || return false
-    preselected = outer <= 20
+    phase = cell["phase"]
+    phase in ("development", "pilot", "confirmation") || return false
+    preselected = phase == "development" ? (31 <= outer <= 50) : (outer <= 20)
     usable = selection.selection_status == :selected && selection.selected_fit !== nothing &&
              selection.selected_rank !== nothing
     preselected || !usable || selection.near_tie === true ||
@@ -137,8 +138,13 @@ end
 
 function arc1_interval_rows(prefix)
     rows = Dict{String,Any}()
+    labels = string.([interval.trait for interval in prefix.intervals])
+    expected_labels = ["trait$i" for i in 1:4]
+    if length(labels) != length(expected_labels) || sort(labels) != expected_labels
+        throw(ArgumentError("FA bootstrap intervals must contain exactly one interval for each of traits 1 through 4"))
+    end
     for i in 1:4
-        result = only(filter(x -> x.trait == Symbol("trait$i"), prefix.intervals))
+        result = only(filter(x -> string(x.trait) == "trait$i", prefix.intervals))
         formed = Bool(result.formed)
         segments = formed ? [[Float64(result.lower), Float64(result.upper)]] : Any[]
         rows["h2_$i"] = (; formed, segments, status=formed ? "formed" : "insufficient_usable_bootstrap",
@@ -170,7 +176,7 @@ function arc1_inner_rank_receipt(inner)
         String(inner.selector_status) : "not_available"
     starts_planned = hasproperty(inner, :starts_planned) ? Int(inner.starts_planned) : 0
     starts_attempted = hasproperty(inner, :starts_attempted) ? Int(inner.starts_attempted) : 0
-    schedule_complete = starts_planned == 19 && starts_attempted == 19
+    schedule_complete = starts_planned == 24 && starts_attempted == 24
     usable = inner.status == :ok && selector_status == "selected" &&
         schedule_complete &&
         hasproperty(inner, :selected_fit_summary) && inner.selected_fit_summary !== nothing &&
@@ -198,6 +204,14 @@ function arc1_inner_rank_receipt(inner)
                     discrepancy=nothing, tolerance=1e-8)),
         selected_rank=usable ? "K$(inner.selected_rank)" : nothing,
         rank_candidates=candidates, selected_fit)
+end
+
+function _arc1_sha256_repr(value)
+    # `repr(Dict)` depends on the process-local hash-table iteration order.
+    # Use the Arc1 JSON projection, which sorts dictionary keys, so retained
+    # diagnostic identities can be independently recomputed after deserialization.
+    bytes = Vector{UInt8}(codeunits(arc1_json(value)))
+    return bytes2hex(sha256(bytes))
 end
 
 function arc1_repeatability_receipt(profile)
@@ -235,8 +249,8 @@ function arc1_repeatability_receipt(profile)
             reference_point_identity=profile.reference_point_identity,
             source_identity=profile.source_identity,
             reference_source_identity=profile.reference_source_identity,
-            point_fit_diagnostic_identity=bytes2hex(sha256(repr(profile.point_fit_candidate))),
-            target_diagnostics_identity=bytes2hex(sha256(repr(profile.targets))))
+            point_fit_diagnostic_identity=_arc1_sha256_repr(profile.point_fit_candidate),
+            target_diagnostics_identity=_arc1_sha256_repr(profile.targets))
 end
 
 function arc1_repeatability_result(profile)
@@ -285,6 +299,30 @@ function arc1_interval_receipt_from_raw(bootstrap, prefixes, cell)
             reference_audit=(; status="not_required", reason="expanded reference is not part of the FA interval gate"))
 end
 
+function arc1_profile_evidence_summary(evidence)
+    evidence isa AbstractDict || return nothing
+    v3_history = get(evidence, :arc1_profile_v3_evaluations, Any[])
+    v4_history = get(evidence, :arc1_profile_v4_evaluations, Any[])
+    history_event_count(rows) = rows isa AbstractVector ? sum(rows; init=0) do row
+        events = row isa AbstractDict ? get(row, :events, Any[]) :
+            hasproperty(row, :events) ? row.events : Any[]
+        events isa AbstractVector ? length(events) : 0
+    end : 0
+    certificates_present = haskey(evidence, :v4_tail_certificates)
+    certificates = get(evidence, :v4_tail_certificates, nothing)
+    certificates_shape = !certificates_present ? "missing" :
+        certificates isa AbstractVector ? "vector" : "malformed"
+    return (; requested_method_version=get(evidence, :requested_method_version, nothing),
+        actual_method_version=get(evidence, :actual_method_version, nothing),
+        source_identity=get(evidence, :source_identity, nothing),
+        returned_method_version=get(evidence, :returned_method_version, nothing),
+        history_aliases_match=v3_history isa AbstractVector && v3_history === v4_history,
+        history_row_count=v4_history isa AbstractVector ? length(v4_history) : 0,
+        history_event_count=history_event_count(v4_history),
+        v4_tail_certificates_shape=certificates_shape,
+        v4_tail_certificates=certificates isa AbstractVector ? certificates : nothing)
+end
+
 function arc1_json_receipt(result)
     if hasproperty(result, :rank_candidates)
         return (; success=result.success, status=result.status, failure_reason=result.failure_reason,
@@ -303,8 +341,8 @@ function arc1_json_receipt(result)
         return (; success=result.success, status=result.status, failure_reason=result.failure_reason,
             profile_method=result.profile_method, profile_lr_cutoff=result.profile_lr_cutoff,
             profile_intervals=result.profile_intervals, point_estimates=result.point_estimates,
-            v3_profile_evidence=hasproperty(result, :v3_profile_evidence) ?
-                result.v3_profile_evidence : nothing,
+            v3_profile_evidence_summary=hasproperty(result, :v3_profile_evidence) ?
+                arc1_profile_evidence_summary(result.v3_profile_evidence) : nothing,
             profile_method_version=result.profile_method_version,
             point_fit_status=result.point_fit_status,
             point_fit_not_optimal=result.point_fit_not_optimal,
@@ -319,10 +357,27 @@ function arc1_json_receipt(result)
     end
 end
 
+"""Separate canonical compact summaries from legacy full-history diagnostics."""
+function arc1_inspector_receipt_projection(summary)
+    summary === nothing && return (; status="missing", qualifiable=false,
+        receipt_summary=nothing, diagnostic_summary=nothing)
+    if hasproperty(summary, :v3_profile_evidence)
+        diagnostic = arc1_json_receipt(summary)
+        if hasproperty(summary, :requested_profile_method_version)
+            diagnostic = merge(diagnostic, (; requested_profile_method_version=
+                summary.requested_profile_method_version))
+        end
+        return (; status="legacy_full_history_diagnostic_only", qualifiable=false,
+            receipt_summary=nothing, diagnostic_summary=diagnostic)
+    end
+    return (; status="canonical_compact", qualifiable=true,
+        receipt_summary=summary, diagnostic_summary=nothing)
+end
+
 function arc1_raw_result_projection_difference(payload, result, metadata)
     if hasproperty(result, :rank_candidates)
-        hasproperty(payload, :selection) || return "retained FA rank result lacks raw selector"
-        selection = payload.selection
+        hasproperty(payload, :raw_selection) || return "retained FA rank result lacks raw selector"
+        selection = payload.raw_selection
         audit = result.reference_audit
         if hasproperty(payload, :reference_raw) && payload.reference_raw !== nothing
             projected_audit = arc1_reference_audit_from_raw(selection, payload.reference_raw)
@@ -334,8 +389,8 @@ function arc1_raw_result_projection_difference(payload, result, metadata)
         return arc1_json(arc1_json_receipt(arc1_fa_rank_result(selection, audit))) ==
                arc1_json(arc1_json_receipt(result)) ? nothing : "FA rank receipt differs from raw selector/reference"
     elseif hasproperty(result, :bootstrap)
-        hasproperty(payload, :selection) || return "FA interval result lacks raw outer selector"
-        selection = payload.selection
+        hasproperty(payload, :raw_selection) || return "FA interval result lacks raw outer selector"
+        selection = payload.raw_selection
         # Expanded reference is never scheduled for interval cells. The nested
         # outer-selector audit has a different meaning from the interval
         # result's top-level reference_audit field, so reconstruct its exact
@@ -361,6 +416,16 @@ function arc1_raw_result_projection_difference(payload, result, metadata)
         return valid_refusal ? nothing : "FA interval refusal lacks matching pre-start selector failure"
     elseif hasproperty(payload, :profile)
         projected = arc1_repeatability_result(payload.profile)
+        # The serialized result receipt includes the retained v3 evidence
+        # sink. Reconstruct that field from the raw artifact as well, rather
+        # than comparing an incomplete projection to the transported receipt.
+        projected_evidence = hasproperty(payload, :v3_profile_evidence) ?
+            payload.v3_profile_evidence : nothing
+        retained_evidence = hasproperty(result, :v3_profile_evidence) ?
+            result.v3_profile_evidence : nothing
+        isequal(projected_evidence, retained_evidence) ||
+            return "repeatability receipt differs from raw profile"
+        projected = merge(projected, (; v3_profile_evidence=projected_evidence))
         return arc1_json(arc1_json_receipt(projected)) ==
                arc1_json(arc1_json_receipt(result)) ? nothing : "repeatability receipt differs from raw profile"
     end
@@ -443,13 +508,13 @@ function arc1_execute_attempt(engine::Module, loaded_engine,
             end
         end
         model = programme == "fa_interval" && hasproperty(result, :raw_bootstrap) ?
-            (; data, design, selection, result, bootstrap_raw=result.raw_bootstrap,
+            (; data, design, raw_selection=selection, result, bootstrap_raw=result.raw_bootstrap,
                prefix_raw=result.raw_prefixes) :
-            (; data, design, selection, result, reference_raw=raw_reference[])
+            (; data, design, raw_selection=selection, result, reference_raw=raw_reference[])
         kind = programme == "fa_rank" ? "fa_rank" : "fa_interval"
     elseif programme in ("repeatability", "boundary")
-        requested_profile_method_version == "arc1_profile_v3" ||
-            throw(ArgumentError("profile attempt must explicitly request arc1_profile_v3"))
+        requested_profile_method_version == "arc1_profile_v4" ||
+            throw(ArgumentError("profile attempt must explicitly request arc1_profile_v4"))
         data = arc1_simulate_repeatability(seed, n, Symbol(cell["signal"]))
         design = arc1_repeatability_design(engine, data)
         profile = getfield(engine, :arc1_profile_repeatability)(design.y, design.X,
@@ -507,10 +572,11 @@ if abspath(PROGRAM_FILE) == @__FILE__
     global engine = loaded_engine.module_object
     include(joinpath(root, "sim", "arc1", "independent_dgp.jl"))
     include(joinpath(root, "sim", "arc1", "engine_io.jl"))
+    include(joinpath(root, "sim", "arc1", "artifact_container.jl"))
     pre_identity = arc1_execution_identity(loaded_engine, engine_hashes, environment_hashes)
     requested_profile_method_version = isempty(String(get(config, "profile_method_version", ""))) ?
         nothing : String(config["profile_method_version"])
-    v3_evidence_sink = requested_profile_method_version == "arc1_profile_v3" ?
+    v3_evidence_sink = requested_profile_method_version in ("arc1_profile_v3", "arc1_profile_v4") ?
         Dict{Symbol,Any}(:requested_method_version => requested_profile_method_version) : nothing
     try
         cell = Dict{String,Any}(String(k) => v for (k,v) in config["cell"])
@@ -519,8 +585,8 @@ if abspath(PROGRAM_FILE) == @__FILE__
         profile_programme = config["cell"]["programme"] in ("repeatability", "boundary")
         profile_programme == (requested_profile_method_version !== nothing) ||
             error("profile method admission pin does not match the requested programme")
-        profile_programme && requested_profile_method_version != "arc1_profile_v3" &&
-            error("profile attempt requires explicit arc1_profile_v3")
+        profile_programme && requested_profile_method_version != "arc1_profile_v4" &&
+            error("profile attempt requires explicit arc1_profile_v4")
         summary = arc1_execute_attempt(engine, loaded_engine, engine_hashes, environment_hashes,
             cell, Int(config["outer"]), seed, bootstrap_seed_strings,
             requested_profile_method_version; v3_evidence_sink)
@@ -535,7 +601,7 @@ if abspath(PROGRAM_FILE) == @__FILE__
             string(summary.result.profile_method_version) : nothing
         profile_method_version_mismatch = requested_profile_method_version !== nothing &&
             actual_profile_method_version_value != requested_profile_method_version
-        artifact = merge(summary.artifact_payload, (; metadata=(; schema="arc1-full-result-v2",
+        artifact_metadata = (; schema="arc1-full-result-v2",
             mode=String(config["mode"]), cell, outer=summary.outer,
             seed_string=summary.seed_string, julia_version=string(VERSION),
             execution_identity=post_identity, timing_seconds=summary.elapsed_seconds,
@@ -548,9 +614,10 @@ if abspath(PROGRAM_FILE) == @__FILE__
             profile_method_version=actual_profile_method_version_value,
             loaded_arc1_source_identity=string(getfield(loaded_engine.module_object, :_ARC1_SOURCE_IDENTITY)),
             receipt_summary_sha256=receipt_summary_sha,
-            receipt_summary_path=receipt_summary_path),
-            receipt_summary))
-        artifact_sha = arc1_serialize_new(config["artifact_path"], artifact)
+            receipt_summary_path=receipt_summary_path)
+        artifact = merge(summary.artifact_payload,
+            (; metadata=artifact_metadata, receipt_summary), receipt_summary)
+        artifact_sha = arc1_write_artifact_container_new(config["artifact_path"], artifact)
         receipt = (; schema="arc1-attempt-result-v1", mode=String(config["mode"]),
             success=summary.success, status=summary.status, failure_reason=summary.failure_reason,
             outer=summary.outer, seed=summary.seed,
@@ -609,7 +676,7 @@ if abspath(PROGRAM_FILE) == @__FILE__
             error=(; type=string(typeof(error)), message=failure_reason,
                    backtrace=string.(Base.stacktrace(catch_backtrace()))))
         failure_artifact_sha = try
-            arc1_serialize_new(config["artifact_path"], failure_artifact)
+            arc1_write_artifact_container_new(config["artifact_path"], failure_artifact)
         catch retention_error
             evidence_retention_error = sprint(showerror, retention_error)
             nothing
@@ -619,9 +686,10 @@ if abspath(PROGRAM_FILE) == @__FILE__
             # serialized. The receipt reports that evidence retention failed.
             fallback = (; metadata=merge(failure_artifact.metadata,
                     (; v3_evidence_retention_error=evidence_retention_error)),
+                v3_profile_evidence_raw=v3_evidence_sink,
                 error=failure_artifact.error)
             failure_artifact_sha = try
-                arc1_serialize_new(config["artifact_path"], fallback)
+                arc1_write_artifact_container_new(config["artifact_path"], fallback)
             catch fallback_error
                 evidence_retention_error = string(evidence_retention_error,
                     "; fallback artifact: ", sprint(showerror, fallback_error))
@@ -637,7 +705,7 @@ if abspath(PROGRAM_FILE) == @__FILE__
             profile_method_version=actual_profile_method_version,
             profile_source_identity=v3_evidence_sink === nothing ? nothing :
                 get(v3_evidence_sink, :source_identity, nothing),
-            v3_profile_evidence=v3_evidence_sink,
+            v3_profile_evidence_summary=arc1_profile_evidence_summary(v3_evidence_sink),
             v3_evidence_retention_error=evidence_retention_error,
             failure_reason, execution_identity=after_error_identity,
             artifact_path=String(config["artifact_path"]), artifact_sha256=failure_artifact_sha,
@@ -653,6 +721,7 @@ if abspath(PROGRAM_FILE) == @__FILE__
             profile_method_version_mismatch,
             profile_source_identity=v3_evidence_sink === nothing ? nothing :
                 get(v3_evidence_sink, :source_identity, nothing),
+            v3_profile_evidence_summary=arc1_profile_evidence_summary(v3_evidence_sink),
             loaded_arc1_source_identity=after_error_identity === nothing ? nothing :
                 string(getfield(loaded_engine.module_object, :_ARC1_SOURCE_IDENTITY)),
             artifact_path=String(config["artifact_path"]), artifact_sha256=failure_artifact_sha,

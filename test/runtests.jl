@@ -11206,12 +11206,15 @@ include(joinpath(@__DIR__, "fa_independent_dense_reml.jl"))
 include(joinpath(@__DIR__, "test_auto_fa_rank.jl"))
 include(joinpath(@__DIR__, "arc1_exact_objectives.jl"))
 include(joinpath(@__DIR__, "arc1_optimizer_contracts.jl"))
+include(joinpath(@__DIR__, "arc1_fa_v2_contracts.jl"))
 include(joinpath(@__DIR__, "arc1_profiles.jl"))
+include(joinpath(@__DIR__, "arc1_profiles_v4.jl"))
 include(joinpath(@__DIR__, "arc1_bootstrap.jl"))
 include(joinpath(@__DIR__, "arc1_interfaces.jl"))
 include(joinpath(@__DIR__, "arc1_simulation_dgp.jl"))
 include(joinpath(@__DIR__, "arc1_simulation_identity.jl"))
 include(joinpath(@__DIR__, "arc1_simulation_executor.jl"))
+include(joinpath(@__DIR__, "arc1_legacy_receipt_summary.jl"))
 
 # Keep the accepted standalone native-transport fixture's engine_io methods and
 # constants isolated from the executor/reference tests that load the same file.

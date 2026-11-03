@@ -105,6 +105,22 @@ end
     @test last(k1).amplitude == last(ARC1_REFERENCE_K1_AMPLITUDES)
     @test last(k1).signs == [1.0, -1.0, -1.0, -1.0]
     @test all(k -> all(k.uniqueness .> Arc1ReferenceFakeEngine.FA_UNIQUENESS_FLOOR), k1)
+
+    # A finite K0 residual-factor vector can reconstruct to a singular matrix
+    # when exponentiation underflows. K1 should carry the fitted coordinates
+    # forward rather than refactor that rounded covariance.
+    underflow_factors = zeros(10)
+    underflow_factors[[1, 5, 8, 10]] .= -400.0
+    underflow_R = Arc1ReferenceFakeEngine._chol_params_to_cov(underflow_factors, 4)
+    @test all(isfinite, underflow_R)
+    @test !isposdef(Symmetric(underflow_R))
+    underflow_k1 = arc1_reference_k1_starts(Arc1ReferenceFakeEngine,
+        (; genetic_diagonal=g, residual_covariance=underflow_R,
+           residual_factor_params=underflow_factors))
+    @test length(underflow_k1) == 64
+    @test all(s -> !hasproperty(s, :initialization_status), underflow_k1)
+    @test all(s -> s.params[9:18] == underflow_factors, underflow_k1)
+
     Arc1ReferenceFakeEngine.FAIL_NEXT_UNIQUENESS_MAP[] = true
     partly_invalid = arc1_reference_k1_starts(Arc1ReferenceFakeEngine,
         (; genetic_diagonal=g, residual_covariance=R))
@@ -135,7 +151,11 @@ end
         push!(calls, (; rank, params=copy(params), budget))
         k0_index = count(c -> c.rank == 0, calls)
         accepted = !(rank == 0 && k0_index == 6)
-        (; phat=copy(params), optimizer_converged=accepted, accepted,
+        phat = copy(params)
+        if rank == 0
+            phat[[5, 9, 12, 14]] .= -400.0
+        end
+        (; phat, optimizer_converged=accepted, accepted,
            line_search_success=true, iterations=1,
            optimizer_status=accepted ? "controlled" : "controlled finite-unaccepted",
            status=accepted ? :converged : :optimizer_unconverged,
@@ -192,11 +212,14 @@ end
     k1_initial = only(filter(r -> r.rank == 1 && r.stage == :bfgs_initial &&
         r.start_name == first(arc1_reference_k1_starts(Arc1ReferenceFakeEngine,
             (; genetic_diagonal=0.9 .* diag(P),
-               residual_covariance=reference.k0_anchor.residual_covariance))).name,
+               residual_covariance=reference.k0_anchor.residual_covariance,
+               residual_factor_params=reference.best_by_rank[0].params[5:14]))).name,
         reference.rows))
     expected_loading = first(ARC1_REFERENCE_K1_AMPLITUDES) .* sqrt.(
         reference.k0_anchor.genetic_diagonal .- Arc1ReferenceFakeEngine.FA_UNIQUENESS_FLOOR)
     @test k1_initial.start_params[1:4] ≈ expected_loading
+    @test reference.best_by_rank[0].params[[5, 9, 12, 14]] == fill(-400.0, 4)
+    @test k1_initial.start_params[9:18] == reference.best_by_rank[0].params[5:14]
     @test all(r -> r.dataset_identity == reference.dataset_identity, reference.rows)
 end
 

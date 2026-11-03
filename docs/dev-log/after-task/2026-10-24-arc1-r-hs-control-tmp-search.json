@@ -1,0 +1,22 @@
+{
+  "schema": "arc1-r-temp-copy-search-v1",
+  "root": "/private/tmp",
+  "path_basename": "hs_control.R",
+  "expected_sha256": "0951333cb8541a1c6615ba0131db5c98f8b5a59bccc24ab3358d4a47d85146f4",
+  "method": "read-only os.walk, followlinks=false, excluding .git and node_modules directories; hash same-basename files",
+  "matches": [],
+  "different_files": [
+    {
+      "path": "/private/tmp/hsquared-pr345-fix/R/hs_control.R",
+      "sha256": "71cd526145ddccf269695cf2af6523f861713ee483912922da047a16fad9e7b2"
+    },
+    {
+      "path": "/private/tmp/arc1-r-test-package-8f1d9f1/R/hs_control.R",
+      "sha256": "36433c28c4c72f2b684a124a96d215f89e926f3ee4ca5974da5b714a7c350221"
+    },
+    {
+      "path": "/private/tmp/claude-503/-Users-z3437171-Dropbox-Github-Local-Shinichi/33ea1473-3183-4e97-ba76-72b4a4da186a/scratchpad/hs2/R/hs_control.R",
+      "sha256": "86e7d9d76fd037d5e861fa7e9802d5f88cc78d84e1105f2e15b57a1b4d716109"
+    }
+  ]
+}

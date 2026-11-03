@@ -22,9 +22,105 @@ sys.path.insert(0, str(ROOT / "tools"))
 sys.path.insert(0, str(ROOT / "sim" / "arc1"))
 
 import arc1_manifest
+import arc1_package_checks as package_checks
 import arc1_receipt_check as checker
 import runner as arc1_runner
 import run_cell as arc1_run_cell
+
+
+class RetainedArtifactInspectorBoundaryTests(unittest.TestCase):
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name)
+        (self.root / "sim/arc1").mkdir(parents=True)
+        (self.root / "sim/arc1/inspect_artifacts.jl").write_text("# fixture\n", encoding="utf-8")
+        self.artifact = self.root / "retained.jls"
+        self.artifact.write_bytes(b"fixture")
+
+    def _completed(self, rows, *, stdout_prefix="", stderr=""):
+        return subprocess.CompletedProcess(
+            args=["julia"], returncode=0,
+            stdout=stdout_prefix + json.dumps(rows) + "\n", stderr=stderr)
+
+    def test_empty_request_skips_julia_and_failures_are_contextual(self):
+        with mock.patch.object(checker.subprocess, "run") as run:
+            self.assertEqual(checker._inspect_full_artifacts(self.root, []), {})
+            run.assert_not_called()
+
+        inspector = self.root / "sim/arc1/inspect_artifacts.jl"
+        inspector.unlink()
+        with self.assertRaisesRegex(checker.ReceiptError, "lacks the full-artifact inspector"):
+            checker._inspect_full_artifacts(self.root, [self.artifact])
+        inspector.write_text("# fixture\n", encoding="utf-8")
+
+        for failure in (OSError("julia missing"), subprocess.TimeoutExpired("julia", 120)):
+            with self.subTest(failure=type(failure).__name__), \
+                    mock.patch.object(checker.subprocess, "run", side_effect=failure):
+                with self.assertRaisesRegex(checker.ReceiptError,
+                                            "could not inspect retained Julia artifacts"):
+                    checker._inspect_full_artifacts(self.root, [self.artifact])
+
+    def test_inspector_process_is_bounded_and_nonzero_exit_is_rejected(self):
+        with mock.patch.dict(os.environ, {"ARC1_JULIA": "julia-test",
+                                          "JULIA_DEPOT_PATH": "/existing/depot"}), \
+                mock.patch.object(checker.subprocess, "run",
+                                  return_value=subprocess.CompletedProcess(
+                                      args=["julia-test"], returncode=7, stdout="",
+                                      stderr="x" * 2500 + "TAIL")) as run:
+            with self.assertRaises(checker.ReceiptError) as caught:
+                checker._inspect_full_artifacts(self.root, [self.artifact])
+        args, kwargs = run.call_args
+        self.assertEqual(args[0][0], "julia-test")
+        self.assertIn("--threads=1", args[0])
+        self.assertEqual(kwargs["timeout"], 120)
+        self.assertTrue(kwargs["capture_output"])
+        self.assertEqual(kwargs["env"]["JULIA_NUM_THREADS"], "1")
+        self.assertEqual(kwargs["env"]["OPENBLAS_NUM_THREADS"], "1")
+        self.assertEqual(kwargs["env"]["ARC1_INSPECT_INCLUDE_V3_EVIDENCE"], "false")
+        self.assertTrue(kwargs["env"]["JULIA_DEPOT_PATH"].endswith(os.pathsep + "/existing/depot"))
+        self.assertIn("Julia artifact inspection failed", str(caught.exception))
+        self.assertIn("TAIL", str(caught.exception))
+        self.assertLessEqual(len(str(caught.exception).split(": ", 1)[-1]), 2000)
+
+        expected = {"path": str(self.artifact.resolve()), "metadata": {"kind": "container"}}
+        with mock.patch.object(checker.subprocess, "run",
+                               return_value=self._completed([expected])) as run:
+            checker._inspect_full_artifacts(self.root, [self.artifact],
+                                            include_v3_evidence=True)
+        self.assertEqual(run.call_args.kwargs["env"]["ARC1_INSPECT_INCLUDE_V3_EVIDENCE"], "true")
+
+    def test_inspector_requires_typed_complete_unique_exact_path_rows(self):
+        expected = {"path": str(self.artifact.resolve()), "metadata": {"kind": "container"}}
+        invalid_payloads = [
+            ("", "no typed metadata"),
+            ("not-json\n", "no typed metadata"),
+            ("[]\n", "every requested artifact"),
+            ("{}\n", "every requested artifact"),
+            (json.dumps([None]) + "\n", "malformed metadata"),
+            (json.dumps([{"path": 7, "metadata": {}}]) + "\n", "malformed metadata"),
+            (json.dumps([{"path": str(self.artifact), "metadata": None}]) + "\n",
+             "malformed metadata"),
+            (json.dumps([{"path": str(self.root / "other.jls"), "metadata": {}}]) + "\n",
+             "different artifact paths"),
+        ]
+        for stdout, message in invalid_payloads:
+            with self.subTest(stdout=stdout[:40]), \
+                    mock.patch.object(checker.subprocess, "run",
+                                      return_value=subprocess.CompletedProcess(
+                                          args=["julia"], returncode=0, stdout=stdout, stderr="")):
+                with self.assertRaisesRegex(checker.ReceiptError, message):
+                    checker._inspect_full_artifacts(self.root, [self.artifact])
+
+        with mock.patch.object(checker.subprocess, "run",
+                               return_value=self._completed([expected, expected])):
+            with self.assertRaisesRegex(checker.ReceiptError, "duplicate path"):
+                checker._inspect_full_artifacts(self.root, [self.artifact, self.artifact])
+
+        with mock.patch.object(checker.subprocess, "run",
+                               return_value=self._completed([expected], stdout_prefix="startup noise\n")):
+            inspected = checker._inspect_full_artifacts(self.root, [self.artifact])
+        self.assertEqual(inspected[str(self.artifact.resolve())], expected)
 
 
 def _overlapping_store_worker(source_root, output_dir, admission, result_queue):
@@ -85,7 +181,7 @@ def selector_guards(*, schedule_complete: bool = True, better_unaccepted: bool =
 
 
 def rank_receipt() -> tuple[dict, list[int]]:
-    n = 30
+    n = arc1_manifest.FA_RANK_DEVELOPMENT_COUNT
     seeds = [arc1_manifest.seed_for(RANK_CELL["programme"], RANK_CELL["phase"],
                                    RANK_CELL["N"], RANK_CELL["signal"], i, 0, "data")
              for i in range(1, n + 1)]
@@ -103,6 +199,11 @@ def rank_receipt() -> tuple[dict, list[int]]:
                          "guard_results": selector_guards(schedule_complete=eligible,
                              witness_status="passed" if eligible else "unavailable",
                              discrepancy=0.0 if eligible else None),
+                         "starts_planned": 24, "starts_attempted": 24 if eligible else 6,
+                         "selector_attempts": ([{"rank": 0 if i < 6 else 1,
+                             "attempted": True} for i in range(24)] if eligible else
+                             [{"rank": 0, "attempted": True} for _ in range(6)] +
+                             [{"rank": 1, "attempted": False} for _ in range(18)]),
                          "rank_candidates": {"K0": k0, "K1": k1}})
     receipt = {"schema": "arc1-attempt-receipt-v1", **RANK_CELL,
                "protocol_sha256": PROTOCOL_HASH, "source_hashes": dict(SOURCE_HASHES),
@@ -139,7 +240,7 @@ def interval_attempts() -> tuple[dict, list[int], dict[int, list[int]]]:
                                "guard_results": selector_guards(schedule_complete=okay,
                                    witness_status="passed" if okay else "unavailable",
                                    discrepancy=0.0 if okay else None),
-                               "starts_planned": 19, "starts_attempted": 19 if okay else 3,
+                               "starts_planned": 24, "starts_attempted": 24 if okay else 3,
                                "schedule_complete": okay,
                                "rank_candidates": {"K0": k0, "K1": k1},
                                "selected_fit": ({"G_matrix": covariance_payload(0.25 + inner_index * 1e-5),
@@ -164,6 +265,9 @@ def interval_attempts() -> tuple[dict, list[int], dict[int, list[int]]]:
                          "status": "ok", "success": True,
                          "outer_selection": {"eligible": True, "selection_status": "selected", "selected_rank": "K0",
                                              "guard_results": selector_guards(),
+                                             "starts_planned": 24, "starts_attempted": 24,
+                                             "selector_attempts": [{"rank": 0 if i < 6 else 1,
+                                                 "attempted": True} for i in range(24)],
                                              "rank_candidates": {"K0": candidate("K0", True, -10.0),
                                                                  "K1": candidate("K1", True, -10.0)}},
                          "bootstrap": {"stage": "started", "requested_B": B,
@@ -199,15 +303,53 @@ def verify(receipt: dict, *, cell: dict | None = None, seeds: list[int] | None =
 
 
 class Arc1ReceiptAdversaries(unittest.TestCase):
-    def test_profile_search_contract_selects_v3_without_changing_v1_or_v2_meanings(self):
+    def test_g7_julia_command_runs_only_the_reviewed_environment_without_pkg_resolution(self):
+        with tempfile.TemporaryDirectory(prefix="arc1-g7-command-") as temp:
+            run_dir = Path(temp) / "run"
+            run_dir.mkdir()
+            sandbox_dir = Path(temp) / "reviewed-sandbox"
+            sandbox = {
+                "project_path": str(sandbox_dir / "Project.toml"),
+                "manifest_path": str(sandbox_dir / "Manifest.toml"),
+                "project_sha256": "a" * 64,
+                "manifest_sha256": "b" * 64,
+            }
+
+            argv, env = package_checks._julia_command(run_dir / "julia-test-driver.jl", sandbox)
+
+            self.assertIn("--startup-file=no", argv)
+            self.assertIn("--check-bounds=yes", argv)
+            self.assertIn("--threads=1", argv)
+            self.assertIn(f"--project={sandbox_dir.resolve()}", argv)
+            self.assertEqual(argv[-1], str((run_dir / "julia-test-driver.jl").resolve()))
+            command = "\n".join(argv)
+            self.assertNotIn("Pkg.test", command)
+            self.assertNotIn("Pkg.resolve", command)
+            self.assertNotIn("Pkg.instantiate", command)
+            self.assertEqual(env["JULIA_LOAD_PATH"], "@:@stdlib")
+            driver = package_checks.julia_test_driver_source(sandbox, run_dir / "julia-test-sandbox")
+            self.assertNotIn("Pkg.test", driver)
+            self.assertNotIn("Pkg.resolve", driver)
+            self.assertNotIn("Pkg.instantiate", driver)
+            self.assertIn("ARC1_TEST_SANDBOX_VERIFIED", driver)
+            self.assertIn("ARC1_LOADED_HSQUARED_SOURCE_VERIFIED", driver)
+            self.assertIn(sandbox["project_sha256"], driver)
+            self.assertIn(sandbox["manifest_sha256"], driver)
+            self.assertIn("include(ARC1_TEST_FILE)", driver)
+
+    def test_profile_search_contract_admits_v4_without_changing_legacy_meanings(self):
         profile = arc1_manifest.SCIENTIFIC_CONTRACT["profile_search"]
-        self.assertEqual(profile["method_version"], "arc1_profile_v3")
+        self.assertEqual(profile["method_version"], "arc1_profile_v4")
         self.assertEqual(profile["default_method_version"], "arc1_profile_v1")
-        self.assertEqual(profile["study_admission_method_version"], "arc1_profile_v3")
+        self.assertEqual(profile["study_admission_method_version"], "arc1_profile_v4")
         self.assertTrue(profile["method_version_policy"]["explicit_request_required"])
         self.assertTrue(profile["method_version_policy"]["refuse_mismatch"])
         self.assertTrue(profile["method_version_policy"]["preserve_v1_implementation_and_artifacts"])
         self.assertTrue(profile["method_version_policy"]["preserve_v2_implementation_and_artifacts"])
+        self.assertTrue(profile["method_version_policy"]["preserve_v3_implementation_and_artifacts"])
+        self.assertEqual(profile["v4_uniform_tail_bound"]["precision_bits"], 256)
+        self.assertEqual(profile["v4_uniform_tail_bound"]["strict_gap_minimum"], 1e-8)
+        self.assertEqual(profile["v4_candidate_history"]["shared_certified_winner_only_exemption"], True)
         self.assertEqual(profile["v3_corner_certificate"]["target"], "residual_variance")
         self.assertEqual(profile["v3_corner_certificate"]["target_index"], 3)
         self.assertEqual(profile["v3_corner_certificate"]["fixed_residual_variance"], True)
@@ -287,7 +429,7 @@ class Arc1ReceiptAdversaries(unittest.TestCase):
         self.assertEqual(manifest["protocol_sha256"], arc1_manifest.contract_sha256())
         self.assertEqual(manifest["nested_seed_ranges"], arc1_manifest.nested_ranges())
         self.assertEqual(manifest["outer_csv_sha256"],
-                         "4c2b834f43c3203d8748fc2fc6e0f383b8905a34bc332ea879889a55c1da13bf")
+                         "498fcac802f01fedf4b8fb4fc90ba7a61d5b05259c44907d000a6e585587fe07")
         arc1_manifest.verify_manifest(manifest_path, audit_root=ROOT)
 
     def test_actual_run_cell_closure_rejects_child_outer_seed_relabeling(self):
@@ -344,7 +486,7 @@ _arc1_write_fake_engine(ARGS[2])
                 JULIA_NUM_THREADS="1", OPENBLAS_NUM_THREADS="1")
             setup_result = subprocess.run([julia, "--startup-file=no", "--threads=1", f"--project={ROOT}",
                 str(setup), str(ROOT / "test/arc1_simulation_executor.jl"), str(source)],
-                capture_output=True, text=True, timeout=120, env=env)
+                capture_output=True, text=True, timeout=1800, env=env)
             self.assertEqual(setup_result.returncode, 0,
                 setup_result.stdout + "\n" + setup_result.stderr)
             for relative in arc1_manifest.discover_admission_source_paths(ROOT):
@@ -382,7 +524,7 @@ write(ARGS[5], stdout)
             julia_fixture = subprocess.run([julia, "--startup-file=no", "--threads=1", f"--project={ROOT}",
                 str(fixture), str(ROOT / "test/arc1_simulation_executor.jl"),
                 str(source), str(output), str(seed), str(stdout_path), str(admission_path)],
-                capture_output=True, text=True, timeout=180, env=env)
+                capture_output=True, text=True, timeout=1800, env=env)
             self.assertEqual(julia_fixture.returncode, 0,
                 julia_fixture.stdout + "\n" + julia_fixture.stderr)
             child = json.loads(stdout_path.read_text(encoding="utf-8"))
@@ -416,6 +558,15 @@ write(ARGS[5], stdout)
             self.assertEqual(retained["selected_rank"], "K0")
             self.assertEqual(retained["candidate_summary"]["K1"]["near_floor"], False)
             self.assertEqual(retained["stored_row"]["result"], child["result"])
+            wrong_row_admission = copy.deepcopy(receipt)
+            wrong_row_admission["attempts"][20]["stored_row"]["admission_sha256"] = "0" * 64
+            with self.assertRaisesRegex(checker.ReceiptError, "durable row admission digest"):
+                checker.verify_receipt(wrong_row_admission,
+                    expected_seeds=admission["expected_outer_seeds"],
+                    expected_source_hashes=admission["source_sha256"],
+                    expected_protocol_sha256=admission["protocol_sha256"], expected_cell=cell,
+                    expected_artifact_root=output, expected_source_root=source,
+                    expected_admission=admission)
             inspected = checker._inspect_full_artifacts(source, [Path(retained["artifact_path"])])
             inspected_row = inspected[str(Path(retained["artifact_path"]).resolve())]
             self.assertEqual(inspected_row["metadata"]["schema"], "arc1-full-result-v2")
@@ -469,45 +620,36 @@ write(ARGS[5], stdout)
             self.assertIsNone(failed_receipt["attempts"][1]["artifact_path"])
             mutate_jls = base / "mutate-retained-data.jl"
             mutate_jls.write_text('''using HSquared, Serialization
-artifact = open(deserialize, ARGS[1])
+root = dirname(Base.active_project())
+include(joinpath(root, "sim/arc1/engine_io.jl"))
+include(joinpath(root, "sim/arc1/artifact_container.jl"))
+artifact = arc1_read_artifact_container(ARGS[1])
 artifact.data.Y[1, 1] += 1
-open(ARGS[2], "w") do io
-    serialize(io, artifact)
-end
-artifact = open(deserialize, ARGS[1])
+arc1_write_artifact_container_new(ARGS[2], artifact)
+artifact = arc1_read_artifact_container(ARGS[1])
 metadata = merge(artifact.metadata,
     (; semantic_data_identity_sha256=repeat("0", 64)))
 artifact = merge(artifact, (; metadata))
-open(ARGS[3], "w") do io
-    serialize(io, artifact)
-end
-artifact = open(deserialize, ARGS[1])
+arc1_write_artifact_container_new(ARGS[3], artifact)
+artifact = arc1_read_artifact_container(ARGS[1])
 result = merge(artifact.result,
     (; success=false, status="selection_failed", failure_reason="mutated retained result"))
 artifact = merge(artifact, (; result))
-open(ARGS[4], "w") do io
-    serialize(io, artifact)
-end
-artifact = open(deserialize, ARGS[1])
+arc1_write_artifact_container_new(ARGS[4], artifact)
+artifact = arc1_read_artifact_container(ARGS[1])
 driver = merge(artifact.metadata.driver_protocol_identity,
     (; protocol_sha256=repeat("f", 64)))
 metadata = merge(artifact.metadata, (; driver_protocol_identity=driver))
 artifact = merge(artifact, (; metadata))
-open(ARGS[5], "w") do io
-    serialize(io, artifact)
-end
-artifact = open(deserialize, ARGS[1])
+arc1_write_artifact_container_new(ARGS[5], artifact)
+artifact = arc1_read_artifact_container(ARGS[1])
 data = merge(artifact.data, (; seed=UInt64(999)))
 artifact = merge(artifact, (; data))
-open(ARGS[6], "w") do io
-    serialize(io, artifact)
-end
-artifact = open(deserialize, ARGS[1])
-selection = merge(artifact.selection, (; selected_rank=1))
-artifact = merge(artifact, (; selection))
-open(ARGS[7], "w") do io
-    serialize(io, artifact)
-end
+arc1_write_artifact_container_new(ARGS[6], artifact)
+artifact = arc1_read_artifact_container(ARGS[1])
+raw_selection = merge(artifact.raw_selection, (; selected_rank=1))
+artifact = merge(artifact, (; raw_selection))
+arc1_write_artifact_container_new(ARGS[7], artifact)
 ''', encoding="utf-8")
             changed_artifact = output / "attempts" / "changed-data.full.jls"
             changed_metadata_artifact = output / "attempts" / "changed-metadata.full.jls"
@@ -535,7 +677,7 @@ end
                 # synthetic source tree; it is not a cell admission or study run.
                 raw_admission = dict(admission)
                 raw_admission["profile_method_version"] = (
-                    "arc1_profile_v3" if programme == "repeatability" else None)
+                    "arc1_profile_v4" if programme == "repeatability" else None)
                 raw_output = arc1_runner.cell_output_dir(base / "raw-path-results", raw_cell)
                 raw_attempt_dir = raw_output / "attempts"
                 raw_attempt_dir.mkdir(parents=True, exist_ok=True)
@@ -560,30 +702,36 @@ end
                     f"{programme}: {raw_row.get('raw_result_projection_difference')}")
                 if programme == "repeatability":
                     self.assertEqual(raw_row["metadata"]["requested_profile_method_version"],
-                                     "arc1_profile_v3")
+                                     "arc1_profile_v4")
                     self.assertEqual(raw_row["metadata"]["profile_method_version"],
-                                     "arc1_profile_v3")
+                                     "arc1_profile_v4")
                     self.assertIs(raw_row["metadata"]["profile_method_version_mismatch"], False)
                     self.assertIs(raw_row["profile_method_identity_matches"], True)
                 mutation_script = base / f"mutate-{programme}.jl"
                 mutation_body = ('''using HSquared, Serialization
-artifact = open(deserialize, ARGS[1])
+root = dirname(Base.active_project())
+include(joinpath(root, "sim/arc1/engine_io.jl"))
+include(joinpath(root, "sim/arc1/artifact_container.jl"))
+artifact = arc1_read_artifact_container(ARGS[1])
 targets = copy(artifact.profile.targets)
 targets[:heritability] = merge(targets[:heritability], (; status=:controlled_mutation))
 profile = merge(artifact.profile, (; targets))
 artifact = merge(artifact, (; profile))
-open(ARGS[2], "w") do io; serialize(io, artifact); end
-artifact = open(deserialize, ARGS[1])
+arc1_write_artifact_container_new(ARGS[2], artifact)
+artifact = arc1_read_artifact_container(ARGS[1])
 metadata = merge(artifact.metadata, (; profile_method_version="arc1_profile_v2"))
 artifact = merge(artifact, (; metadata))
-open(ARGS[3], "w") do io; serialize(io, artifact); end
+arc1_write_artifact_container_new(ARGS[3], artifact)
 ''' if programme == "repeatability" else '''using HSquared, Serialization
-artifact = open(deserialize, ARGS[1])
+root = dirname(Base.active_project())
+include(joinpath(root, "sim/arc1/engine_io.jl"))
+include(joinpath(root, "sim/arc1/artifact_container.jl"))
+artifact = arc1_read_artifact_container(ARGS[1])
 attempts = copy(artifact.bootstrap_raw.attempts)
 attempts[1] = merge(attempts[1], (; seed=UInt64(1)))
 bootstrap_raw = merge(artifact.bootstrap_raw, (; attempts))
 artifact = merge(artifact, (; bootstrap_raw))
-open(ARGS[2], "w") do io; serialize(io, artifact); end
+arc1_write_artifact_container_new(ARGS[2], artifact)
 ''')
                 mutation_script.write_text(mutation_body, encoding="utf-8")
                 altered_raw_artifact = raw_attempt_dir / f"{programme}-raw-mutation.full.jls"
@@ -703,6 +851,8 @@ open(ARGS[2], "w") do io; serialize(io, artifact); end
                         ROOT, cell, rank_markers, decision)
 
     def test_canonical_seed_vectors_are_pinned(self):
+        self.assertNotIn("sim/arc1/manifest-revisions.md",
+                         arc1_manifest.discover_admission_source_paths(ROOT))
         self.assertEqual(arc1_manifest.seed_for("fa_interval", "pilot", 160, "null", 1, 0, "data"),
                          5356929701607681179)
         self.assertEqual(arc1_manifest.seed_for("fa_interval", "pilot", 160, "null", 1, 1, "bootstrap"),
@@ -761,27 +911,31 @@ open(ARGS[2], "w") do io; serialize(io, artifact); end
                                                    julia_threads=4, blas_threads=1)
             repeatability_cell = {"programme": "repeatability", "phase": "development",
                                   "N": 80, "signal": "interior"}
-            with self.assertRaisesRegex(ValueError, "requires explicit arc1_profile_v3"):
+            with self.assertRaisesRegex(ValueError, "requires explicit arc1_profile_v4"):
                 arc1_manifest.build_run_admission(root, repeatability_cell, source_paths=[],
                     julia_version="1.10.0", julia_threads=1, blas_threads=1,
                     manifest_audit_root=ROOT)
-            with self.assertRaisesRegex(ValueError, "requires explicit arc1_profile_v3"):
+            with self.assertRaisesRegex(ValueError, "requires explicit arc1_profile_v4"):
                 arc1_manifest.build_run_admission(root, repeatability_cell, source_paths=[],
                     julia_version="1.10.0", julia_threads=1, blas_threads=1,
                     manifest_audit_root=ROOT, profile_method_version="arc1_profile_v2")
+            with self.assertRaisesRegex(ValueError, "requires explicit arc1_profile_v4"):
+                arc1_manifest.build_run_admission(root, repeatability_cell, source_paths=[],
+                    julia_version="1.10.0", julia_threads=1, blas_threads=1,
+                    manifest_audit_root=ROOT, profile_method_version="arc1_profile_v3")
             profile_admission = arc1_manifest.build_run_admission(
                 root, repeatability_cell, source_paths=[], julia_version="1.10.0",
                 julia_threads=1, blas_threads=1, manifest_audit_root=ROOT,
-                profile_method_version="arc1_profile_v3")
+                profile_method_version="arc1_profile_v4")
             arc1_manifest.verify_run_admission(root, profile_admission, julia_version="1.10.0",
                                                 julia_threads=1, blas_threads=1)
-            for wrong_version in ("arc1_profile_v1", "arc1_profile_v2", None):
+            for wrong_version in ("arc1_profile_v1", "arc1_profile_v2", "arc1_profile_v3", None):
                 altered_profile = copy.deepcopy(profile_admission)
                 if wrong_version is None:
                     del altered_profile["profile_method_version"]
                 else:
                     altered_profile["profile_method_version"] = wrong_version
-                with self.assertRaisesRegex(ValueError, "frozen arc1_profile_v3"):
+                with self.assertRaisesRegex(ValueError, "frozen arc1_profile_v4"):
                     arc1_manifest.verify_run_admission(root, altered_profile, julia_version="1.10.0",
                                                        julia_threads=1, blas_threads=1)
             legacy_profile = copy.deepcopy(profile_admission)
@@ -942,6 +1096,15 @@ open(ARGS[2], "w") do io; serialize(io, artifact); end
             receipt = arc1_runner.assemble_cell_receipt(rows, admission,
                 source_root=root, artifact_root=output_dir)
             self.assertEqual(receipt["attempts"][0]["stored_row"], rows[0])
+            wrong_admission_row = copy.deepcopy(receipt)
+            wrong_admission_row["attempts"][0]["stored_row"]["admission_sha256"] = "0" * 64
+            with self.assertRaisesRegex(checker.ReceiptError, "durable row admission digest"):
+                checker.verify_receipt(wrong_admission_row,
+                    expected_seeds=expected_seeds,
+                    expected_source_hashes=admission["source_sha256"],
+                    expected_protocol_sha256=admission["protocol_sha256"], expected_cell=cell,
+                    expected_artifact_root=output_dir, expected_source_root=root,
+                    expected_admission=admission)
             with self.assertRaisesRegex(checker.ReceiptError, "artifact claims require"):
                 checker.verify_receipt(receipt, expected_seeds=expected_seeds,
                     expected_source_hashes=admission["source_sha256"],
@@ -965,10 +1128,11 @@ open(ARGS[2], "w") do io; serialize(io, artifact); end
     def test_valid_full_cell_receipt_counts_failed_candidate_in_all_attempt_denominator(self):
         receipt, seeds = rank_receipt()
         result = verify(receipt, seeds=seeds)
-        self.assertEqual(result["attempts"], 30)
+        self.assertEqual(result["attempts"], arc1_manifest.FA_RANK_DEVELOPMENT_COUNT)
         self.assertEqual(result["failures"], 1)
-        self.assertEqual(result["eligible_both_candidates"], 29)
-        self.assertEqual(result["candidate_errors"]["K1"]["denominator"], 30)
+        self.assertEqual(result["eligible_both_candidates"], 59)
+        self.assertEqual(result["candidate_errors"]["K1"]["denominator"],
+                         arc1_manifest.FA_RANK_DEVELOPMENT_COUNT)
 
     def test_available_candidate_pair_is_separate_from_guarded_selector_outcome(self):
         receipt, seeds = rank_receipt()
@@ -979,8 +1143,37 @@ open(ARGS[2], "w") do io; serialize(io, artifact); end
         pair_available, _ = checker._check_rank_decision(attempt, required=True)
         self.assertTrue(pair_available)
         result = verify(receipt, seeds=seeds)
-        self.assertEqual(result["eligible_both_candidates"], 29)
+        self.assertEqual(result["eligible_both_candidates"], 59)
         self.assertEqual(result["failures"], 2)
+
+    def test_selected_rank_reconciles_retained_six_plus_eighteen_schedule(self):
+        receipt, _ = rank_receipt()
+        selected = receipt["attempts"][0]
+        checker._check_rank_decision(selected, required=True)
+        selected["selector_attempts"].pop()
+        with self.assertRaisesRegex(checker.ReceiptError, "planned-start count"):
+            checker._check_rank_decision(selected, required=True)
+        receipt, _ = rank_receipt()
+        selected = receipt["attempts"][0]
+        del selected["selector_attempts"]
+        with self.assertRaisesRegex(checker.ReceiptError, "must retain every selector attempt"):
+            checker._check_rank_decision(selected, required=True)
+        receipt, _ = rank_receipt()
+        spoofed = receipt["attempts"][0]
+        del spoofed["selector_attempts"]
+        spoofed["inner_index"] = 1
+        with self.assertRaisesRegex(checker.ReceiptError, "must retain every selector attempt"):
+            checker._check_rank_decision(spoofed, required=True)
+        receipt, _ = rank_receipt()
+        interrupted = receipt["attempts"][0]
+        interrupted.update(status="interrupted", success=False,
+            selection_status="interrupted", selected_rank=None,
+            failure_reason="interrupted before K0 schedule completion")
+        interrupted["selector_attempts"] = [{"rank": 0, "attempted": True}
+            for _ in range(6)] + [{"rank": 1, "attempted": True} for _ in range(18)]
+        interrupted["starts_attempted"] = 24
+        interrupted["guard_results"]["schedule_complete"] = None
+        checker._check_rank_decision(interrupted, required=True)
 
     def test_rejects_missing_attempt_even_when_failure_was_dropped(self):
         receipt, seeds = rank_receipt()
@@ -1116,7 +1309,7 @@ open(ARGS[2], "w") do io; serialize(io, artifact); end
                          "guard_results": selector_guards(schedule_complete=not failed,
                              witness_status="passed" if not failed else "unavailable",
                              discrepancy=0.0 if not failed else None),
-                         "starts_planned": 19, "starts_attempted": 19 if not failed else 3,
+                         "starts_planned": 24, "starts_attempted": 24 if not failed else 3,
                          "schedule_complete": not failed,
                          "rank_candidates": {"K0": candidate("K0"), "K1": candidate("K1", not failed)},
                          "selected_fit": None if failed else {"G_matrix": covariance_payload(), "R_matrix": covariance_payload()}})
@@ -1150,6 +1343,10 @@ open(ARGS[2], "w") do io; serialize(io, artifact); end
         attempt = {"outer": 1, "success": True,
                    "outer_selection": {"eligible": True, "selection_status": "selected", "selected_rank": "K0",
                                        "guard_results": selector_guards(),
+                                       "starts_planned": 24, "starts_attempted": 24,
+                                       "selector_attempts": [{"rank": 0 if i < 6 else 1,
+                                                              "attempted": True}
+                                                             for i in range(24)],
                                        "rank_candidates": {"K0": candidate("K0"), "K1": candidate("K1")}},
                    "bootstrap": {"stage": "started", "requested_B": 199,
                                  "inner_attempts": rows, "usable_inner": 196,
@@ -1251,6 +1448,67 @@ open(ARGS[2], "w") do io; serialize(io, artifact); end
         with self.assertRaisesRegex(checker.ReceiptError, "positive definite"):
             verify(receipt, cell=INTERVAL_CELL, seeds=seeds, bootstrap_seeds=inner)
 
+    def test_covariance_checker_rejects_cholesky_pass_exactly_indefinite_roundoff_witness(self):
+        matrix = [
+            [0.32703552661281554, 0.3339778994936688, -0.12197868147333915, -0.15526750130081754],
+            [0.3339778994936688, 0.6110494128948445, 0.25214283287929734, -0.07012389993364093],
+            [-0.12197868147333915, 0.25214283287929734, 0.5862464535913825, 0.09660223544193038],
+            [-0.15526750130081754, -0.07012389993364093, 0.09660223544193038, 0.5773462119534791],
+        ]
+        payload = covariance_payload()
+        payload["data"] = [matrix[row][col] for col in range(4) for row in range(4)]
+        with self.assertRaisesRegex(checker.ReceiptError, "positive definite"):
+            checker._decode_covariance_matrix(payload, "R")
+
+    def test_exact_positive_covariance_can_fail_legacy_float64_refactorability(self):
+        # Exact rational Sylvester minors are positive for this retained Float64
+        # witness; its last Float64 Cholesky pivot rounds slightly below zero.
+        matrix = [
+            [0.33508673936601313, 0.3329139329960774, -0.10266151482077902, -0.25402233285563575],
+            [0.3329139329960774, 0.6297492767174504, 0.1727480599916967, 0.003372019247056772],
+            [-0.10266151482077902, 0.1727480599916967, 0.5911721167915641, 0.06976173434632839],
+            [-0.25402233285563575, 0.003372019247056772, 0.06976173434632839, 0.6036129132899815],
+        ]
+        payload = covariance_payload()
+        payload["data"] = [matrix[row][col] for col in range(4) for row in range(4)]
+        with self.assertRaisesRegex(checker.ReceiptError, "Float64-Cholesky-refactorable"):
+            checker._decode_covariance_matrix(payload, "R")
+
+    def test_covariance_checker_rejects_subtolerance_asymmetry(self):
+        payload = covariance_payload()
+        payload["data"] = [
+            1.0, 0.0, 0.0, 0.0,
+            1e-13, 1.0, 0.0, 0.0,
+            0.0, 0.0, 1.0, 0.0,
+            0.0, 0.0, 0.0, 1.0,
+        ]
+
+        with self.assertRaisesRegex(checker.ReceiptError, "symmetric"):
+            checker._decode_covariance_matrix(payload, "R")
+
+    def test_covariance_checker_rejects_singular_zero_leading_pivot_and_nonfinite(self):
+        payload = covariance_payload()
+        payload["data"] = [1.0, 0.0, 0.0, 0.0,
+                           0.0, 0.0, 0.0, 0.0,
+                           0.0, 0.0, 1.0, 0.0,
+                           0.0, 0.0, 0.0, 1.0]
+        with self.assertRaisesRegex(checker.ReceiptError, "positive definite"):
+            checker._decode_covariance_matrix(payload, "R")
+
+        payload["data"] = [0.0, 1.0, 0.0, 0.0,
+                           1.0, 0.0, 0.0, 0.0,
+                           0.0, 0.0, 1.0, 0.0,
+                           0.0, 0.0, 0.0, 1.0]
+        with self.assertRaisesRegex(checker.ReceiptError, "positive definite"):
+            checker._decode_covariance_matrix(payload, "R")
+
+        payload["data"] = [1.0, 0.0, 0.0, 0.0,
+                           0.0, float("inf"), 0.0, 0.0,
+                           0.0, 0.0, 1.0, 0.0,
+                           0.0, 0.0, 0.0, 1.0]
+        with self.assertRaisesRegex(checker.ReceiptError, "finite values"):
+            checker._decode_covariance_matrix(payload, "R")
+
     def test_bootstrap_requires_nested_outer_selector_proof(self):
         receipt, seeds, inner = interval_attempts()
         del receipt["attempts"][0]["outer_selection"]
@@ -1258,6 +1516,9 @@ open(ARGS[2], "w") do io; serialize(io, artifact); end
             verify(receipt, cell=INTERVAL_CELL, seeds=seeds, bootstrap_seeds=inner)
 
     def test_external_phase_cell_pins_enforce_full_denominators(self):
+        self.assertEqual(checker._expected_outer_count(
+            {"programme": "fa_rank", "phase": "development", "N": 80, "signal": "null"}),
+            arc1_manifest.FA_RANK_DEVELOPMENT_COUNT)
         self.assertEqual(checker._expected_outer_count(
             {"programme": "fa_rank", "phase": "confirmation", "N": 320, "signal": "strong"}), 400)
         self.assertEqual(checker._expected_outer_count(
@@ -1318,25 +1579,33 @@ open(ARGS[2], "w") do io; serialize(io, artifact); end
         for change, expected in (({"point_fit_not_optimal": True, "max_constrained_loglik": 0.0},
                                   "nonoptimal common point fit"),
                                  ({"reference_point_identity": "e" * 64}, "point-fit identities differ"),
-                                 ({"reference_source_identity": "e" * 64}, "source identity differs")):
+                                 ({"reference_source_identity": "e" * 64}, "source identity differs"),
+                                 ({"point_identity": "invalid", "reference_point_identity": "invalid"},
+                                  "point-fit identities differ"),
+                                 ({"source_identity": "invalid", "reference_source_identity": "invalid"},
+                                  "source_identity must be a SHA-256 identity"),
+                                 ({"point_fit_diagnostic_identity": "invalid"},
+                                  "point_fit_diagnostic_identity must be a SHA-256 identity"),
+                                 ({"target_diagnostics_identity": "invalid"},
+                                  "target_diagnostics_identity must be a SHA-256 identity")):
             adversarial = copy.deepcopy(receipt)
             for row in adversarial["attempts"]:
                 row.update(change)
             with self.assertRaisesRegex(checker.ReceiptError, expected):
                 verify(adversarial, cell=cell, seeds=seeds)
 
-    def test_v3_profile_admission_binds_requested_actual_and_pre_engine_identity(self):
+    def test_v4_profile_admission_binds_requested_actual_and_pre_engine_identity(self):
         cell = {"programme": "repeatability", "phase": "development", "N": 80,
                 "signal": "interior"}
         seeds = [arc1_manifest.seed_for(cell["programme"], cell["phase"], cell["N"],
             cell["signal"], i, 0, "data") for i in range(1, 31)]
         formulas = checker._expected_interval_formulas(cell)
-        with tempfile.TemporaryDirectory(prefix="arc1-profile-v3-admission-") as temporary:
+        with tempfile.TemporaryDirectory(prefix="arc1-profile-v4-admission-") as temporary:
             base = Path(temporary)
             source = _copy_valid_source_tree(base / "source")
             admission = arc1_manifest.build_run_admission(source, cell, source_paths=[],
                 julia_version="1.10.0", julia_threads=1, blas_threads=1,
-                manifest_audit_root=ROOT, profile_method_version="arc1_profile_v3")
+                manifest_audit_root=ROOT, profile_method_version="arc1_profile_v4")
             engine_sources = {name: digest for name, digest in admission["source_sha256"].items()
                               if name.startswith("src/")}
             runtime_identity = {"engine_package_uuid": "a0667dea-0f38-44e8-9150-4fda00624eac",
@@ -1354,11 +1623,11 @@ open(ARGS[2], "w") do io; serialize(io, artifact); end
             for i, seed in enumerate(seeds, 1):
                 intervals = {target: {"formed": True, "segments": [[0.0, 1.0]],
                     "status": "formed", "formula": formula} for target, formula in formulas.items()}
-                attempts.append({"attempt_id": f"v3-{i}", "outer": i, "seed": seed,
+                attempts.append({"attempt_id": f"v4-{i}", "outer": i, "seed": seed,
                     "status": "ok", "success": True, "failure_reason": None,
                     "profile_method": "profile_likelihood_ratio", "profile_lr_cutoff": 3.841458820694124,
-                    "requested_profile_method_version": "arc1_profile_v3",
-                    "profile_method_version": "arc1_profile_v3", "point_fit_status": "ok",
+                    "requested_profile_method_version": "arc1_profile_v4",
+                    "profile_method_version": "arc1_profile_v4", "point_fit_status": "ok",
                     "point_fit_not_optimal": False, "point_loglik": -10.0,
                     "max_constrained_loglik": -10.0, "point_identity": "a" * 64,
                     "reference_point_identity": "a" * 64, "source_identity": "b" * 64,
@@ -1400,30 +1669,256 @@ open(ARGS[2], "w") do io; serialize(io, artifact); end
                 pre_engine = arc1_runner.assemble_cell_receipt(error_rows, admission,
                     source_root=source, artifact_root=Path(artifacts))
             self.assertEqual(pre_engine["attempts"][0]["requested_profile_method_version"],
-                             "arc1_profile_v3")
+                             "arc1_profile_v4")
             self.assertIsNone(pre_engine["attempts"][0]["profile_method_version"])
             self.assertEqual(verify_admitted(pre_engine)["failures"], 30)
 
+            interrupted_evidence_summary = {
+                "requested_method_version": "arc1_profile_v4",
+                "actual_method_version": "arc1_profile_v4",
+                "source_identity": "f" * 64,
+                "returned_method_version": None,
+                "history_aliases_match": True,
+                "history_row_count": 0,
+                "history_event_count": 0,
+                "v4_tail_certificates": [],
+            }
             entered_rows = [{"outer": i, "seed": seed, "status": "interrupted",
                 "success": False, "failure_reason": "synthetic interrupt after method entry",
-                "requested_profile_method_version": "arc1_profile_v3",
-                "profile_method_version": "arc1_profile_v3",
+                "requested_profile_method_version": "arc1_profile_v4",
+                "profile_method_version": "arc1_profile_v4",
                 "profile_source_identity": "f" * 64,
-                "v3_profile_evidence": {"requested_method_version": "arc1_profile_v3",
-                    "actual_method_version": "arc1_profile_v3",
-                    "source_identity": "f" * 64, "arc1_profile_v3_evaluations": []}}
+                "v3_profile_evidence_summary": interrupted_evidence_summary}
                 for i, seed in enumerate(seeds, 1)]
             with tempfile.TemporaryDirectory(dir=base) as artifacts:
                 entered = arc1_runner.assemble_cell_receipt(entered_rows, admission,
                     source_root=source, artifact_root=Path(artifacts))
             entered_attempt = entered["attempts"][0]
-            self.assertEqual(entered_attempt["profile_method_version"], "arc1_profile_v3")
+            self.assertEqual(entered_attempt["profile_method_version"], "arc1_profile_v4")
             self.assertEqual(entered_attempt["profile_source_identity"], "f" * 64)
+            self.assertEqual(entered_attempt["v3_profile_evidence_summary"],
+                             interrupted_evidence_summary)
             self.assertEqual(entered_attempt["point_fit_status"], "not_run")
             self.assertTrue(all(not target["formed"] for target in
                                 entered_attempt["profile_intervals"].values()))
             checker._check_profile_point_diagnostics(entered_attempt,
-                entered_attempt["profile_intervals"], expected_method_version="arc1_profile_v3")
+                entered_attempt["profile_intervals"], expected_method_version="arc1_profile_v4")
+            checker._check_v4_profile_evidence_payload(entered_attempt, "f" * 64,
+                native_evidence=interrupted_evidence_summary)
+
+    def test_v4_json_evidence_checks_aliases_tail_bound_and_source(self):
+        source = "f" * 64
+        threshold = checker.Fraction.from_float(1e-8)
+        certificate = {"status": "excluded_tail", "certified": True, "precision": 256,
+            "rounding": "directed_mpfr", "determinant_identity":
+                "detD_detHinvDH_equals_detHtH_detCtDC", "design_identity": "a" * 64,
+            "determinant": {"__arc1_rational__": {"numerator": "1", "denominator": "2",
+                "type": "Rational{BigInt}"}}, "residual_df": 78, "convention": "omit_2pi",
+            "E": 2.0, "gap_lower": {"__arc1_bigfloat__": {"numerator": "11",
+                "denominator": "1000000000", "precision": 256}}}
+        history = [{"target": "residual_variance", "value": 1.0}]
+        attempt = {"profile_source_identity": source,
+            "v3_profile_evidence": {"requested_method_version": "arc1_profile_v4",
+                "actual_method_version": "arc1_profile_v4", "source_identity": source,
+                "arc1_profile_v3_evaluations": history,
+                "arc1_profile_v4_evaluations": copy.deepcopy(history),
+                "v4_tail_certificates": [{"target": "residual_variance",
+                                            "certificate": certificate}]}}
+        checker._check_v4_profile_evidence_payload(attempt, source)
+        compact = {"requested_method_version": "arc1_profile_v4",
+            "actual_method_version": "arc1_profile_v4", "source_identity": source,
+            "returned_method_version": "arc1_profile_v4",
+            "history_aliases_match": True, "history_row_count": 1,
+            "history_event_count": 1,
+            "v4_tail_certificates_shape": "vector",
+            "v4_tail_certificates": attempt["v3_profile_evidence"]["v4_tail_certificates"]}
+        compact_attempt = {"profile_source_identity": source,
+            "v3_profile_evidence_summary": compact}
+        checker._check_v4_profile_evidence_payload(compact_attempt, source,
+            native_evidence=copy.deepcopy(compact))
+        for field, value, expected in (
+            ("v4_tail_certificates_shape", "malformed", "tail-certificate collection"),
+            ("history_aliases_match", False, "history aliases"),
+            ("history_row_count", -1, "history summary"),
+            ("source_identity", "0" * 64, "evidence identity"),
+        ):
+            corrupted_compact = copy.deepcopy(compact)
+            corrupted_compact[field] = value
+            with self.assertRaisesRegex(checker.ReceiptError, expected):
+                checker._check_v4_profile_evidence_payload(
+                    {"profile_source_identity": source,
+                     "v3_profile_evidence_summary": corrupted_compact}, source,
+                    native_evidence=corrupted_compact)
+        missing_shape = copy.deepcopy(compact)
+        missing_shape.pop("v4_tail_certificates_shape")
+        with self.assertRaisesRegex(checker.ReceiptError, "tail-certificate collection"):
+            checker._check_v4_profile_evidence_payload(
+                {"profile_source_identity": source,
+                 "v3_profile_evidence_summary": missing_shape}, source,
+                native_evidence=missing_shape)
+        for mutate, expected in (
+            (lambda x: x["v3_profile_evidence"].update(
+                returned_method_version="arc1_profile_v3"), "returned method version"),
+            (lambda x: x["v3_profile_evidence"].update(
+                returned_method_version=None), "returned method version"),
+            (lambda x: x["v3_profile_evidence"].pop("arc1_profile_v4_evaluations"),
+             "history aliases"),
+            (lambda x: x["v3_profile_evidence"].update(
+                arc1_profile_v4_evaluations=[{"target": "other"}]), "history aliases"),
+            (lambda x: x["v3_profile_evidence"].update(source_identity="0" * 64),
+             "evidence identity"),
+            (lambda x: x["v3_profile_evidence"]["v4_tail_certificates"][0]["certificate"].update(
+                gap_lower={"__arc1_bigfloat__": {"numerator": str(threshold.numerator),
+                    "denominator": str(threshold.denominator), "precision": 256}}),
+             "strict separation gap"),
+            (lambda x: x["v3_profile_evidence"]["v4_tail_certificates"][0]["certificate"].update(
+                gap_lower=None), "losslessly encoded"),
+            (lambda x: x["v3_profile_evidence"]["v4_tail_certificates"][0]["certificate"].update(
+                gap_lower="1.1e-8"), "losslessly encoded"),
+            (lambda x: x["v3_profile_evidence"]["v4_tail_certificates"][0]["certificate"].update(
+                gap_lower=True), "losslessly encoded"),
+            (lambda x: x["v3_profile_evidence"]["v4_tail_certificates"][0]["certificate"].update(
+                gap_lower={"__arc1_float__": "NaN"}), "losslessly encoded"),
+            (lambda x: x["v3_profile_evidence"]["v4_tail_certificates"][0]["certificate"].pop(
+                "gap_lower"), "losslessly encoded"),
+        ):
+            corrupted = copy.deepcopy(attempt)
+            mutate(corrupted)
+            with self.assertRaisesRegex(checker.ReceiptError, expected):
+                checker._check_v4_profile_evidence_payload(corrupted, source)
+        for mutate in (
+            lambda x: x["v3_profile_evidence"].update(
+                arc1_profile_v3_evaluations=[], arc1_profile_v4_evaluations=[],
+                v4_tail_certificates=[]),
+            lambda x: x["v3_profile_evidence"].update(
+                arc1_profile_v3_evaluations=[{"target": "replaced"}],
+                arc1_profile_v4_evaluations=[{"target": "replaced"}]),
+        ):
+            corrupted = copy.deepcopy(attempt)
+            retained_native = copy.deepcopy(attempt["v3_profile_evidence"])
+            mutate(corrupted)
+            with self.assertRaisesRegex(checker.ReceiptError, "retained native JLS sink"):
+                checker._check_v4_profile_evidence_payload(
+                    corrupted, source, native_evidence=retained_native)
+
+    def test_v4_native_certificate_validation_checks_absence_and_interrupted_unavailability(self):
+        attempt = {"status": "ok"}
+        metadata = {"status": "ok"}
+        for malformed in (
+            {},
+            {"v3_evidence_records": None},
+            {"v3_evidence_records": []},
+            {"v3_evidence_records": {"v4_tail_certificates": ()}},
+            {"v3_evidence_records": {"v4_tail_certificates": {"target": "residual_variance"}}},
+            {"v3_evidence_records": {"v4_tail_certificates": None}},
+        ):
+            with self.assertRaisesRegex(checker.ReceiptError,
+                                        "native v4 certificate evidence is missing or malformed"):
+                checker._check_v4_native_certificate_validation(
+                    attempt, metadata, malformed)
+
+        absent = {"v3_evidence_records": {"v4_tail_certificates_shape": "vector",
+                                    "v4_tail_certificates": []},
+            "v4_tail_certificate_validation_status": "no_certificate",
+            "v4_tail_certificate_design_correspondence": "not_applicable",
+            "v4_tail_certificate_evidence_valid": True}
+        self.assertFalse(checker._check_v4_native_certificate_validation(
+            attempt, metadata, absent))
+        for contradictory_absence in (
+            {**absent, "v4_tail_certificate_validation_status": "validated"},
+            {**absent, "v4_tail_certificate_design_correspondence": "matched"},
+            {**absent, "v4_tail_certificate_evidence_valid": False},
+        ):
+            with self.assertRaisesRegex(checker.ReceiptError, "native v4 certificate absence"):
+                checker._check_v4_native_certificate_validation(
+                    attempt, metadata, contradictory_absence)
+
+        valid = {"v3_evidence_records": {"v4_tail_certificates_shape": "vector",
+                                          "v4_tail_certificates": [{"target": "residual_variance"}]},
+            "v4_tail_certificate_validation_status": "validated",
+            "v4_tail_certificate_design_correspondence": "matched",
+            "v4_tail_certificate_evidence_valid": True}
+        checker._check_v4_native_certificate_validation(attempt, metadata, valid)
+        for contradictory_validation in (
+            {**valid, "v4_tail_certificate_design_correspondence": "unavailable_interrupted"},
+            {**valid, "v4_tail_certificate_evidence_valid": False},
+        ):
+            with self.assertRaisesRegex(checker.ReceiptError,
+                                        "native v4 certificate is not fully validated"):
+                checker._check_v4_native_certificate_validation(
+                    attempt, metadata, contradictory_validation)
+
+        interrupted_attempt = {"status": "interrupted"}
+        interrupted_metadata = {"status": "interrupted"}
+        unavailable = {"v3_evidence_records": {"v4_tail_certificates_shape": "vector",
+                                                "v4_tail_certificates": [{"target": "residual_variance"}]},
+            "v4_tail_certificate_validation_status": "design_correspondence_unavailable_interrupted",
+            "v4_tail_certificate_design_correspondence": "unavailable_interrupted",
+            "v4_tail_certificate_evidence_valid": False}
+        checker._check_v4_native_certificate_validation(
+            interrupted_attempt, interrupted_metadata, unavailable)
+
+        for mutated_attempt, mutated_metadata, mutated_status in (
+            ({"status": "error"}, {"status": "interrupted"}, unavailable),
+            (interrupted_attempt, {"status": "error"}, unavailable),
+            (interrupted_attempt, interrupted_metadata, {**unavailable,
+                "v4_tail_certificate_validation_status": "invalid"}),
+            (interrupted_attempt, interrupted_metadata, {**unavailable,
+                "v4_tail_certificate_design_correspondence": "matched"}),
+            (interrupted_attempt, interrupted_metadata, {**unavailable,
+                "v4_tail_certificate_evidence_valid": True}),
+            (attempt, metadata, {**valid, "v4_tail_certificate_evidence_valid": False}),
+        ):
+            with self.assertRaisesRegex(checker.ReceiptError, "native v4 certificate"):
+                checker._check_v4_native_certificate_validation(
+                    mutated_attempt, mutated_metadata, mutated_status)
+
+    def test_rehashed_container_rejects_result_summary_contradiction(self):
+        julia = shutil.which("julia")
+        self.assertIsNotNone(julia, "Julia is required; this integrity test must not skip")
+        with tempfile.TemporaryDirectory(prefix="arc1-container-contradiction-") as temporary:
+            directory = Path(temporary)
+            original, changed = directory / "original.arc1c", directory / "changed.arc1c"
+            script = directory / "contradict.jl"
+            script.write_text('''using HSquared, Serialization, SHA
+source_root = ARGS[3]
+include(joinpath(source_root, "sim/arc1/engine_io.jl"))
+include(joinpath(source_root, "sim/arc1/artifact_container.jl"))
+include(joinpath(source_root, "sim/arc1/execute_attempt.jl"))
+metadata = (; schema="arc1-full-result-v2", status="error", outer=1,
+    seed_string="1", cell=(; programme="fa_rank", phase="pilot", N=80, signal="null"),
+    execution_identity=(;), driver_protocol_identity=(; source_sha256=Dict(),
+        protocol_sha256=repeat("0", 64), environment_sha256=Dict()))
+result = (; status="error", success=false, failure_reason="synthetic refusal",
+    profile_method="profile_likelihood_ratio", profile_lr_cutoff=3.841458820694124,
+    profile_intervals=Dict(), point_estimates=nothing, v3_profile_evidence=nothing,
+    profile_method_version=nothing, point_fit_status="not_run",
+    point_fit_not_optimal=nothing, point_loglik=nothing,
+    max_constrained_loglik=nothing, point_identity=nothing,
+    reference_point_identity=nothing, source_identity=nothing,
+    reference_source_identity=nothing, point_fit_diagnostic_identity=nothing,
+    target_diagnostics_identity=nothing)
+summary = merge(arc1_json_receipt(result), (; requested_profile_method_version=nothing))
+arc1_write_artifact_container_new(ARGS[1], (; metadata, result, receipt_summary=summary))
+artifact = arc1_read_artifact_container(ARGS[1])
+mutated = merge(artifact.result, (; failure_reason="mutated retained result"))
+arc1_write_artifact_container_new(ARGS[2], merge(artifact, (; result=mutated)))
+''', encoding="utf-8")
+            depot = directory / "julia-depot"
+            depot.mkdir()
+            inherited_depots = os.environ.get("JULIA_DEPOT_PATH", str(Path.home() / ".julia"))
+            env = dict(os.environ, JULIA_DEPOT_PATH=os.pathsep.join(
+                [str(depot), inherited_depots]), JULIA_NUM_THREADS="1",
+                OPENBLAS_NUM_THREADS="1")
+            generated = subprocess.run([julia, "--startup-file=no", "--threads=1",
+                f"--project={ROOT}", str(script), str(original), str(changed), str(ROOT)],
+                check=False, capture_output=True, text=True, timeout=120, env=env)
+            self.assertEqual(generated.returncode, 0, generated.stdout + "\n" + generated.stderr)
+            self.assertNotEqual(hashlib.sha256(original.read_bytes()).digest(),
+                                hashlib.sha256(changed.read_bytes()).digest())
+            inspected = checker._inspect_full_artifacts(ROOT, [changed])
+            row = inspected[str(changed.resolve())]
+            self.assertIs(row["receipt_summary_matches_retained_result"], False)
 
     def test_explicit_historical_v2_identity_remains_checkable(self):
         cell = {"programme": "repeatability", "N": 80}
@@ -1466,8 +1961,10 @@ open(ARGS[2], "w") do io; serialize(io, artifact); end
         rank_cell = {"programme": "fa_rank", "phase": "development", "N": 80,
                      "signal": "null"}
         rank_seeds = [arc1_manifest.seed_for(rank_cell["programme"], rank_cell["phase"],
-            rank_cell["N"], rank_cell["signal"], i, 0, "data") for i in range(1, 31)]
-        rank_admission = {"cell": rank_cell, "planned_attempts": 30,
+            rank_cell["N"], rank_cell["signal"], i, 0, "data")
+            for i in range(1, arc1_manifest.FA_RANK_DEVELOPMENT_COUNT + 1)]
+        rank_admission = {"cell": rank_cell,
+                          "planned_attempts": arc1_manifest.FA_RANK_DEVELOPMENT_COUNT,
                           "expected_outer_seeds": rank_seeds,
                           "source_sha256": dict(SOURCE_HASHES),
                           "protocol_sha256": PROTOCOL_HASH}

@@ -2,6 +2,26 @@ using Test
 using HSquared
 
 @testset "Arc1 interface boundaries" begin
+    bootstrap_ped = normalize_pedigree(["a"], ["0"], ["0"])
+    unavailable_v1 = (selection_status = :unavailable, optimizer_policy = "arc1_v1")
+    unavailable_v2 = (selection_status = :unavailable, optimizer_policy = "arc1_v2")
+    failed_v1_boot = arc1_bootstrap(unavailable_v1, zeros(1, 4), ones(1, 1),
+        ones(1, 1), bootstrap_ped; selector = :arc1_v1, B = 1,
+        seeds = UInt64[1], traits = ["a", "b", "c", "d"])
+    failed_v2_boot = arc1_bootstrap(unavailable_v2, zeros(1, 4), ones(1, 1),
+        ones(1, 1), bootstrap_ped; selector = :arc1_v2, B = 1,
+        seeds = UInt64[1], traits = ["a", "b", "c", "d"])
+    @test failed_v1_boot.method == "arc1_bootstrap_v1"
+    @test failed_v2_boot.method == "arc1_bootstrap_v2"
+    @test failed_v2_boot.optimizer_policy == "arc1_v2"
+    @test_throws ArgumentError arc1_bootstrap(unavailable_v2,
+        zeros(1, 4), ones(1, 1), ones(1, 1), bootstrap_ped;
+        selector = :arc1_v1, B = 1, seeds = UInt64[1],
+        traits = ["a", "b", "c", "d"])
+    @test_throws ArgumentError arc1_bootstrap(unavailable_v2,
+        zeros(1, 4), ones(1, 1), ones(1, 1), bootstrap_ped;
+        selector = :arc1_v3, B = 1, seeds = UInt64[1],
+        traits = ["a", "b", "c", "d"])
     @test_throws ArgumentError arc1_profile_repeatability(
         [1.0, 2.0], ones(2, 1), ones(2, 1),
         normalize_pedigree(["a", "b"], ["0", "0"], ["0", "0"]);
@@ -14,13 +34,24 @@ using HSquared
     @test HSquared._arc1_profile_method_version("arc1_profile_v1") === :arc1_profile_v1
     @test HSquared._arc1_profile_method_version("arc1_profile_v2") === :arc1_profile_v2
     @test HSquared._arc1_profile_method_version("arc1_profile_v3") === :arc1_profile_v3
+    @test HSquared._arc1_profile_method_version("arc1_profile_v4") === :arc1_profile_v4
+    @test HSquared._ARC1_PROFILE_METHOD_VERSION === :arc1_profile_v1
     @test_throws ArgumentError HSquared._arc1_profile_method_version(:arc1_profile_v2)
+    @test_throws ArgumentError HSquared._arc1_profile_method_version("arc1_profile_v5")
     @test_throws ArgumentError arc1_profile_repeatability(
         [1.0, 2.0], ones(2, 1), ones(2, 1), method_ped;
         method="arc1_profile_v1", v3_evidence_sink=Dict{Symbol,Any}())
     @test_throws ArgumentError arc1_profile_repeatability(
         [1.0, 2.0], ones(2, 1), ones(2, 1), method_ped;
         method="arc1_profile_v3", v3_evidence_sink=Dict{Symbol,Int}())
+    v4_preflight_sink = Dict{Symbol,Any}()
+    @test_throws ArgumentError arc1_profile_repeatability(
+        [1.0, 2.0], ones(2, 1), ones(2, 1), method_ped;
+        ids=["wrong"], method="arc1_profile_v4", v3_evidence_sink=v4_preflight_sink)
+    @test v4_preflight_sink[:requested_method_version] == "arc1_profile_v4"
+    @test v4_preflight_sink[:arc1_profile_v3_evaluations] ===
+          v4_preflight_sink[:arc1_profile_v4_evaluations]
+    @test !haskey(v4_preflight_sink, :actual_method_version)
     preflight_sink = Dict{Symbol,Any}()
     @test_throws ArgumentError arc1_profile_repeatability(
         [1.0, 2.0], ones(2, 1), ones(2, 1), method_ped;
@@ -58,6 +89,14 @@ using HSquared
         (method_version = :arc1_profile_v1,)))
     @test_throws ArgumentError arc1_confint(merge(fake_v2,
         (method = "arc1_profile_v3",)))
+    fake_v4 = merge(fake, (method = "arc1_profile_v4",
+                           method_version = :arc1_profile_v4))
+    @test length(arc1_confint(fake_v4)) == 1
+    @test arc1_confint(fake_v4)[1].estimand == "heritability"
+    @test_throws ArgumentError arc1_confint(merge(fake_v4,
+        (method_version = :arc1_profile_v3,)))
+    @test_throws ArgumentError arc1_confint(merge(fake_v4,
+        (method = "arc1_profile_v5",)))
     @test HSquared._arc1_interface_variance_components(fake.point_fit) ==
           (sigma_a2 = 0.2, sigma_pe2 = 0.2, sigma_e2 = 0.6)
     tiny_ped = normalize_pedigree(["a", "b", "c", "d"], fill("0", 4), fill("0", 4))

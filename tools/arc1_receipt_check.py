@@ -9,6 +9,7 @@ import math
 import os
 import subprocess
 import tempfile
+from fractions import Fraction
 from pathlib import Path
 from statistics import NormalDist
 from typing import Any, Iterable
@@ -20,8 +21,9 @@ class ReceiptError(ValueError):
     """Evidence is incomplete, inconsistent, or differs from independent pins."""
 
 
-def _inspect_full_artifacts(source_root: Path, paths: list[Path]) -> dict[str, dict[str, Any]]:
-    """Read actual Julia serialization metadata and its embedded receipt summary."""
+def _inspect_full_artifacts(source_root: Path, paths: list[Path], *,
+                            include_v3_evidence: bool = False) -> dict[str, dict[str, Any]]:
+    """Read authoritative container or legacy Julia artifacts and their summaries."""
     if not paths:
         return {}
     source_root = source_root.resolve()
@@ -36,6 +38,7 @@ def _inspect_full_artifacts(source_root: Path, paths: list[Path]) -> dict[str, d
         env = dict(os.environ)
         env["JULIA_NUM_THREADS"] = "1"
         env["OPENBLAS_NUM_THREADS"] = "1"
+        env["ARC1_INSPECT_INCLUDE_V3_EVIDENCE"] = "true" if include_v3_evidence else "false"
         inherited_depots = env.get("JULIA_DEPOT_PATH", str(Path.home() / ".julia"))
         env["JULIA_DEPOT_PATH"] = os.pathsep.join([str(depot), inherited_depots])
         try:
@@ -90,7 +93,9 @@ def _expected_outer_count(cell: dict[str, Any]) -> int:
     if programme in {"fa_rank", "repeatability"}:
         valid = n in {80, 160, 320} and signal in (
             manifest.FA_SIGNALS if programme == "fa_rank" else manifest.REPEATABILITY_SIGNALS)
-        counts = {"development": 30, "pilot": 30, "confirmation": 400}
+        development_count = (manifest.FA_RANK_DEVELOPMENT_COUNT
+                             if programme == "fa_rank" else 30)
+        counts = {"development": development_count, "pilot": 30, "confirmation": 400}
     elif programme == "fa_interval":
         valid, counts = n == 160 and signal in manifest.FA_SIGNALS, {
             "development": 30, "pilot": 30, "confirmation": 400}
@@ -189,7 +194,7 @@ def _check_profile_point_diagnostics(attempt: dict[str, Any], profile: dict[str,
         return
     _need(all(present), "profile receipt has incomplete shared point-fit diagnostics")
     if expected_method_version is not None:
-        _need(expected_method_version in {"arc1_profile_v1", "arc1_profile_v2", "arc1_profile_v3"} and
+        _need(expected_method_version in {"arc1_profile_v1", "arc1_profile_v2", "arc1_profile_v3", "arc1_profile_v4"} and
               attempt.get("requested_profile_method_version") == expected_method_version,
               "profile attempt request differs from the source-admitted method version")
     elif "requested_profile_method_version" in attempt and attempt["requested_profile_method_version"] is not None:
@@ -202,17 +207,17 @@ def _check_profile_point_diagnostics(attempt: dict[str, Any], profile: dict[str,
         _need(attempt["profile_method_version"] in allowed_unrun_versions,
               "not-run profile method version is malformed")
         # Method entry is provenance, not a completed point-fit diagnostic.
-        # An entered v3 call may be interrupted before a point fit exists.
-        if expected_method_version == "arc1_profile_v3":
+        # An entered v3/v4 call may be interrupted before a point fit exists.
+        if expected_method_version in {"arc1_profile_v3", "arc1_profile_v4"}:
             _need(attempt.get("profile_source_identity") is None or
                   _sha256(attempt.get("profile_source_identity")),
-                  "not-run v3 method source identity must be absent or a SHA-256")
+                  "not-run v3/v4 method source identity must be absent or a SHA-256")
             if attempt["profile_method_version"] is None:
                 _need(attempt.get("profile_source_identity") is None,
-                      "pre-entry v3 failure cannot claim a loaded method source identity")
+                      "pre-entry v3/v4 failure cannot claim a loaded method source identity")
             else:
                 _need(_sha256(attempt.get("profile_source_identity")),
-                      "entered v3 method must retain its loaded source identity")
+                      "entered v3/v4 method must retain its loaded source identity")
         null_point_fields = ("point_fit_not_optimal", "point_loglik",
             "max_constrained_loglik", "point_identity", "reference_point_identity",
             "source_identity", "reference_source_identity", "point_fit_diagnostic_identity",
@@ -261,8 +266,154 @@ def _check_profile_point_diagnostics(attempt: dict[str, Any], profile: dict[str,
               "failed point fit must retain null point likelihood/identity and a false optimality flag")
 
 
+def _check_v4_profile_evidence_payload(
+    attempt: dict[str, Any], source_identity: str,
+    native_evidence: dict[str, Any] | None = None,
+) -> None:
+    """Check JSON-side v4 aliases and retained tail-certificate provenance."""
+    evidence = attempt.get("v3_profile_evidence")
+    compact = evidence is None
+    if compact:
+        evidence = attempt.get("v3_profile_evidence_summary")
+    _need(isinstance(evidence, dict) and
+          evidence.get("requested_method_version") == "arc1_profile_v4" and
+          evidence.get("actual_method_version") == "arc1_profile_v4" and
+          evidence.get("source_identity") == source_identity and
+          attempt.get("profile_source_identity") == source_identity,
+          "v4 evidence identity differs from the requested method or loaded source")
+    if compact:
+        _need(evidence.get("returned_method_version") in (None, "arc1_profile_v4"),
+              "v4 evidence returned method version differs from the requested version")
+    else:
+        _need("returned_method_version" not in evidence or
+              evidence["returned_method_version"] == "arc1_profile_v4",
+              "v4 evidence returned method version differs from the requested version")
+    v3_history = evidence.get("arc1_profile_v3_evaluations")
+    v4_history = evidence.get("arc1_profile_v4_evaluations")
+    certificates = evidence.get("v4_tail_certificates")
+    if compact:
+        _need(evidence.get("v4_tail_certificates_shape") == "vector",
+              "compact v4 tail-certificate collection is missing or malformed")
+        _need(evidence.get("history_aliases_match") is True,
+              "v4 evidence history aliases are missing or contradictory")
+        _need(type(evidence.get("history_row_count")) is int and
+              evidence["history_row_count"] >= 0 and
+              type(evidence.get("history_event_count")) is int and
+              evidence["history_event_count"] >= 0,
+              "compact v4 history summary is malformed")
+        if native_evidence is not None:
+            _need(isinstance(native_evidence, dict) and evidence == native_evidence,
+                  "submitted v4 evidence summary differs from the retained native JLS sink")
+    else:
+        _need(isinstance(v3_history, list) and isinstance(v4_history, list) and
+              v3_history == v4_history,
+              "v4 JSON history aliases are missing or structurally different")
+        if native_evidence is not None:
+            _need(isinstance(native_evidence, dict) and evidence == native_evidence,
+                  "submitted v4 evidence differs from the retained native JLS sink")
+    _need(isinstance(certificates, list), "v4 tail-certificate collection is missing")
+    for row in certificates:
+        _need(isinstance(row, dict) and row.get("target") == "residual_variance" and
+              isinstance(row.get("certificate"), dict),
+              "v4 tail-certificate record has malformed target or certificate")
+        certificate = row["certificate"]
+        _need(certificate.get("status") == "excluded_tail" and
+              certificate.get("certified") is True and certificate.get("precision") == 256 and
+              certificate.get("rounding") == "directed_mpfr" and
+              certificate.get("determinant_identity") ==
+                  "detD_detHinvDH_equals_detHtH_detCtDC" and
+              _sha256(certificate.get("design_identity")),
+              "v4 tail certificate does not retain its strict numerical provenance")
+        determinant = certificate.get("determinant")
+        _need(isinstance(determinant, dict) and
+              set(determinant) == {"__arc1_rational__"} and
+              isinstance(determinant["__arc1_rational__"], dict) and
+              set(determinant["__arc1_rational__"]) == {"numerator", "denominator", "type"} and
+              all(isinstance(determinant["__arc1_rational__"].get(key), str)
+                  for key in ("numerator", "denominator", "type")) and
+              determinant["__arc1_rational__"].get("type") == "Rational{BigInt}",
+              "v4 tail certificate lacks a lossless exact Gram determinant")
+        denominator = 0
+        try:
+            numerator = int(determinant["__arc1_rational__"]["numerator"])
+            denominator = int(determinant["__arc1_rational__"]["denominator"])
+            exact_determinant = Fraction(numerator, denominator)
+        except (ValueError, ZeroDivisionError):
+            exact_determinant = Fraction(0, 1)
+        _need(denominator > 0 and exact_determinant > 0,
+              "v4 tail certificate exact Gram determinant is not positive")
+        _need(type(certificate.get("residual_df")) is int and
+              certificate["residual_df"] > 0 and
+              certificate.get("convention") == "omit_2pi" and
+              certificate.get("precision") == 256,
+              "v4 tail certificate has invalid residual degrees of freedom or convention")
+        boundary = certificate.get("E")
+        gap = certificate.get("gap_lower")
+        _need(isinstance(gap, dict) and set(gap) == {"__arc1_bigfloat__"} and
+              isinstance(gap["__arc1_bigfloat__"], dict) and
+              set(gap["__arc1_bigfloat__"]) == {"numerator", "denominator", "precision"} and
+              isinstance(gap["__arc1_bigfloat__"].get("numerator"), str) and
+              isinstance(gap["__arc1_bigfloat__"].get("denominator"), str) and
+              type(gap["__arc1_bigfloat__"].get("precision")) is int and
+              gap["__arc1_bigfloat__"]["precision"] == 256,
+              "v4 tail certificate strict separation gap is missing or not losslessly encoded")
+        try:
+            gap_numerator = int(gap["__arc1_bigfloat__"]["numerator"])
+            gap_denominator = int(gap["__arc1_bigfloat__"]["denominator"])
+            exact_gap = Fraction(gap_numerator, gap_denominator)
+        except (ValueError, ZeroDivisionError):
+            gap_denominator = 0
+            exact_gap = Fraction(0, 1)
+        _need(gap_denominator > 0 and exact_gap > Fraction.from_float(1e-8),
+              "v4 tail certificate does not clear the strict separation gap")
+        _need(type(boundary) in (int, float) and math.isfinite(boundary) and boundary > 0,
+              "v4 tail certificate has an invalid boundary")
+
+
+def _check_v4_native_certificate_validation(
+    attempt: dict[str, Any], metadata: dict[str, Any], inspected: dict[str, Any],
+) -> bool:
+    """Require native validation, except explicit unavailability on interruption.
+
+    Returns True only when the caller may accept the inspector's false combined
+    evidence-identity flag because design correspondence was unavailable after
+    an actual interruption. The certificate is still not called validated.
+    """
+    native = inspected.get("v3_evidence_records")
+    _need(isinstance(native, dict) and native.get("v4_tail_certificates_shape") == "vector" and
+          isinstance(native.get("v4_tail_certificates"), list),
+          "native v4 certificate evidence is missing or malformed")
+    certificates = native["v4_tail_certificates"]
+    status = inspected.get("v4_tail_certificate_validation_status")
+    correspondence = inspected.get("v4_tail_certificate_design_correspondence")
+    evidence_valid = inspected.get("v4_tail_certificate_evidence_valid")
+    if not certificates:
+        _need(status == "no_certificate" and correspondence == "not_applicable" and
+              evidence_valid is True,
+              "native v4 certificate absence has contradictory validation status")
+        return False
+    if status == "validated":
+        _need(correspondence == "matched" and evidence_valid is True,
+              "native v4 certificate is not fully validated against its design")
+        return False
+    interrupted_unavailable = (
+        attempt.get("status") == "interrupted" and metadata.get("status") == "interrupted" and
+        status == "design_correspondence_unavailable_interrupted" and
+        correspondence == "unavailable_interrupted" and evidence_valid is False
+    )
+    _need(interrupted_unavailable,
+          "native v4 certificate is invalid or lacks design correspondence outside interruption")
+    return True
+
+
 def _decode_covariance_matrix(value: Any, label: str) -> tuple[list[list[float]], list[list[float]]]:
-    """Validate a lossless Julia column-major matrix payload and strict PD."""
+    """Validate exact Float64 symmetry and PD plus Float64 Cholesky refactorability.
+
+    Exact rational minors decide PD. Cholesky remains an additional conservative
+    legacy receipt check that the rounded matrix passes Float64 Cholesky;
+    it is not an alternate definition of exact positive definiteness or a claim
+    that subsequent solves are accurate.
+    """
     _need(isinstance(value, dict) and value.get("__arc1_array__") is True and
           value.get("layout") == "julia_column_major" and value.get("dims") == [4, 4],
           f"selected {label} covariance must retain tagged 4x4 dimensions and Julia layout")
@@ -273,15 +424,40 @@ def _decode_covariance_matrix(value: Any, label: str) -> tuple[list[list[float]]
     matrix = [[float(data[c * 4 + r]) for c in range(4)] for r in range(4)]
     for i in range(4):
         for j in range(4):
-            _need(math.isclose(matrix[i][j], matrix[j][i], rel_tol=1e-12, abs_tol=1e-12),
+            _need(matrix[i][j] == matrix[j][i],
                   f"selected {label} covariance must be symmetric")
-    # Explicit Cholesky test; positive diagonals alone do not establish PD.
+    exact = [[Fraction.from_float(matrix[max(i, j)][min(i, j)])
+              for j in range(4)] for i in range(4)]
+    for size in range(1, 5):
+        minor = [row[:size] for row in exact[:size]]
+        determinant = Fraction(1)
+        sign = 1
+        for col in range(size):
+            pivot_row = next((row for row in range(col, size) if minor[row][col]), None)
+            if pivot_row is None:
+                determinant = Fraction(0)
+                break
+            if pivot_row != col:
+                minor[col], minor[pivot_row] = minor[pivot_row], minor[col]
+                sign *= -1
+            pivot = minor[col][col]
+            determinant *= pivot
+            for row in range(col + 1, size):
+                factor = minor[row][col] / pivot
+                for j in range(col + 1, size):
+                    minor[row][j] -= factor * minor[col][j]
+                minor[row][col] = Fraction(0)
+        _need(sign * determinant > 0,
+              f"selected {label} covariance must be positive definite")
+    # Legacy receipt consumers require Float64 refactorability in addition to
+    # exact PD. This numerical refusal is not a second mathematical PD test.
     lower = [[0.0] * 4 for _ in range(4)]
     for i in range(4):
         for j in range(i + 1):
             residual = matrix[i][j] - sum(lower[i][k] * lower[j][k] for k in range(j))
             if i == j:
-                _need(residual > 0.0, f"selected {label} covariance must be positive definite")
+                _need(residual > 0.0,
+                      f"selected {label} covariance is not Float64-Cholesky-refactorable")
                 lower[i][j] = math.sqrt(residual)
             else:
                 lower[i][j] = residual / lower[j][j]
@@ -332,7 +508,8 @@ def _candidate_score(candidate: dict[str, Any], label: str, parameter_count: int
     return None
 
 
-def _check_selector_guards(attempt: dict[str, Any], *, selected: bool) -> None:
+def _check_selector_guards(attempt: dict[str, Any], *, selected: bool,
+                           inner: bool = False) -> None:
     guards = attempt.get("guard_results")
     _need(isinstance(guards, dict) and
           {"schedule_complete", "better_unaccepted", "nonnested", "nesting_witness"}.issubset(guards),
@@ -353,6 +530,31 @@ def _check_selector_guards(attempt: dict[str, Any], *, selected: bool) -> None:
     if witness["status"] == "passed":
         _need(discrepancy is not None and discrepancy <= tolerance,
               "passed nesting witness exceeds its retained tolerance")
+    if selected and not inner:
+        _need("selector_attempts" in attempt,
+              "selected ordinary rank evidence must retain every selector attempt row")
+    if "selector_attempts" in attempt:
+        rows = attempt["selector_attempts"]
+        _need(isinstance(rows, list), "selector attempts must be retained as an ordered list")
+        planned = attempt.get("starts_planned")
+        observed = attempt.get("starts_attempted")
+        _need(type(planned) is int and planned == len(rows),
+              "selector planned-start count differs from its retained attempt rows")
+        _need(type(observed) is int and observed == sum(
+            row.get("attempted") is True for row in rows if isinstance(row, dict)),
+              "selector attempted-start count differs from its retained attempt rows")
+        _need(all(isinstance(row, dict) and row.get("rank") in (0, 1) for row in rows),
+              "selector attempt rows must retain rank 0/1 identities")
+        k0 = sum(row["rank"] == 0 for row in rows)
+        k1 = sum(row["rank"] == 1 for row in rows)
+        complete = (planned == 24 and observed == 24 and k0 == 6 and k1 == 18 and
+                    all(row.get("attempted") is True for row in rows))
+        if selected or guards["schedule_complete"] is not None:
+            _need(guards["schedule_complete"] is complete,
+                  "schedule-complete guard disagrees with the retained 6+18 attempt schedule")
+        if selected:
+            _need(complete,
+                  "selected rank lacks the complete retained six-start K0 and 18-start K1 schedule")
     if selected:
         _need(guards["schedule_complete"] is True and guards["better_unaccepted"] is False and
               guards["nonnested"] is False and witness["status"] == "passed" and
@@ -360,7 +562,8 @@ def _check_selector_guards(attempt: dict[str, Any], *, selected: bool) -> None:
               "selected rank conflicts with a retained selector guard")
 
 
-def _check_rank_decision(attempt: dict[str, Any], *, required: bool) -> tuple[bool, int]:
+def _check_rank_decision(attempt: dict[str, Any], *, required: bool,
+                         inner: bool = False) -> tuple[bool, int]:
     candidates = attempt.get("rank_candidates")
     if candidates is None:
         _need(not required, "rank attempt lacks candidate rows")
@@ -380,11 +583,11 @@ def _check_rank_decision(attempt: dict[str, Any], *, required: bool) -> tuple[bo
     if selection_status == "selected":
         _need(pair_available and selected == preferred,
               "selected rank disagrees with recomputed candidate scores and K0 tie rule")
-        _check_selector_guards(attempt, selected=True)
+        _check_selector_guards(attempt, selected=True, inner=inner)
     else:
         _need(selected is None,
               "unusable selector outcome cannot retain a selected rank")
-        _check_selector_guards(attempt, selected=False)
+        _check_selector_guards(attempt, selected=False, inner=inner)
     return pair_available, int(not candidates["K0"]["available"]) + int(not candidates["K1"]["available"])
 
 
@@ -471,16 +674,16 @@ def _check_inner_attempt(inner: dict[str, Any], inner_index: int, expected_seed:
           "bootstrap inner seed is missing, reordered, or replaced")
     _need(isinstance(inner.get("status"), str) and bool(inner["status"]),
           "every bootstrap inner attempt must retain an outcome status")
-    pair_available, _ = _check_rank_decision(inner, required=True)
+    pair_available, _ = _check_rank_decision(inner, required=True, inner=True)
     success = inner.get("success")
     selected = inner.get("selection_status", inner.get("selector_status")) == "selected"
     _need(isinstance(success, bool) and success is (pair_available and selected),
           "bootstrap inner usability must agree with candidate availability and selector outcome")
     if success:
-        _check_selector_guards(inner, selected=True)
-        _need(inner.get("schedule_complete") is True and inner.get("starts_planned") == 19 and
-              inner.get("starts_attempted") == 19,
-              "usable bootstrap selector must retain the completed frozen 19-start schedule")
+        _check_selector_guards(inner, selected=True, inner=True)
+        _need(inner.get("schedule_complete") is True and inner.get("starts_planned") == 24 and
+              inner.get("starts_attempted") == 24,
+              "usable bootstrap selector must retain the completed frozen 24-start schedule")
     _need((inner["status"] in {"ok", "success"}) is success,
           "bootstrap inner status and success fields disagree")
     if not success:
@@ -661,9 +864,12 @@ def verify_receipt(
                                    expected_cell["N"], expected_cell["signal"], outer, 0, "data")
                  for outer in range(1, expected_count + 1)]
     _need(expected == canonical, "external outer seed pin differs from canonical seed manifest")
+    expected_admission_sha256 = None
     if expected_admission is not None:
         _need(expected_source_root is not None and isinstance(expected_admission, dict),
               "receipt cross-binding requires the frozen source root and run admission")
+        expected_admission_sha256 = hashlib.sha256(json.dumps(
+            expected_admission, sort_keys=True, separators=(",", ":")).encode("utf-8")).hexdigest()
         _need(expected_admission.get("cell") == expected_cell and
               expected_admission.get("expected_outer_seeds") == expected and
               expected_admission.get("source_sha256") == expected_source_hashes and
@@ -692,6 +898,16 @@ def verify_receipt(
                        "receipt_summary_sha256")
     has_artifact_claims = any(isinstance(row, dict) and any(row.get(name) is not None
                               for name in artifact_fields) for row in attempts)
+    if expected_admission_sha256 is not None:
+        for index, row in enumerate(attempts, start=1):
+            if not isinstance(row, dict):
+                continue
+            stored = row.get("stored_row")
+            if row.get("artifact_path") is not None or (
+                    isinstance(stored, dict) and "admission_sha256" in stored):
+                _need(isinstance(stored, dict) and
+                      stored.get("admission_sha256") == expected_admission_sha256,
+                      f"attempt {index} durable row admission digest differs from the externally pinned run admission")
     artifact_metadata: dict[str, dict[str, Any]] = {}
     if expected_artifact_root is None:
         _need(not has_artifact_claims,
@@ -708,8 +924,10 @@ def verify_receipt(
             _need(path.is_relative_to(artifact_root) and path.is_file(),
                   "retained full-result artifact is missing or outside the pinned output root")
             paths.append(path)
+        legacy_full_evidence = any(isinstance(row, dict) and
+            isinstance(row.get("v3_profile_evidence"), dict) for row in attempts)
         artifact_metadata = _inspect_full_artifacts(Path(expected_source_root),
-            list(dict.fromkeys(paths)))
+            list(dict.fromkeys(paths)), include_v3_evidence=legacy_full_evidence)
     attempt_ids: set[str] = set()
     actual_seeds: list[int] = []
     eligible_count = 0
@@ -750,7 +968,7 @@ def verify_receipt(
                   f"attempt {attempt_id} artifact metadata differs from external outer/seed/cell pins")
             if expected_cell["programme"] in {"repeatability", "boundary"}:
                 expected_profile_version = (expected_admission or {}).get("profile_method_version")
-                _need(expected_profile_version in {"arc1_profile_v1", "arc1_profile_v2", "arc1_profile_v3"} and
+                _need(expected_profile_version in {"arc1_profile_v1", "arc1_profile_v2", "arc1_profile_v3", "arc1_profile_v4"} and
                       metadata.get("requested_profile_method_version") == expected_profile_version,
                       f"attempt {attempt_id} artifact does not retain the externally admitted profile method request")
                 _need(metadata.get("profile_method_version_mismatch") is not True,
@@ -766,19 +984,46 @@ def verify_receipt(
                       f"attempt {attempt_id} retained Julia method identity differs from request/actual output")
                 _need(observed_row.get("loaded_engine_source_identity_matches") is True,
                       f"attempt {attempt_id} execution identity does not match the inspected loaded engine")
-                if actual_profile_version == "arc1_profile_v3":
+                if actual_profile_version in {"arc1_profile_v3", "arc1_profile_v4"}:
+                    v4_interrupted_unavailable = False
+                    if actual_profile_version == "arc1_profile_v4":
+                        v4_interrupted_unavailable = _check_v4_native_certificate_validation(
+                            attempt, metadata, observed_row)
                     _need(observed_row.get("retained_v3_evidence_present") is True and
-                          observed_row.get("v3_evidence_identity_matches") is True and
+                          (observed_row.get("v3_evidence_identity_matches") is True or
+                           v4_interrupted_unavailable) and
                           observed_row.get("loaded_engine_source_identity_matches") is True,
-                          f"attempt {attempt_id} entered v3 but did not retain matching caller-owned evidence identity")
+                          f"attempt {attempt_id} entered v3/v4 but did not retain matching caller-owned evidence identity")
                     _need(attempt.get("v3_evidence_retention_error") is None,
-                          f"attempt {attempt_id} could not retain its v3 partial evidence")
+                          f"attempt {attempt_id} could not retain its v3/v4 partial evidence")
                     _need(attempt.get("profile_source_identity") ==
                           metadata.get("loaded_arc1_source_identity"),
-                          f"attempt {attempt_id} canonical v3 source identity differs from loaded engine")
-                elif expected_profile_version == "arc1_profile_v3":
+                          f"attempt {attempt_id} canonical v3/v4 source identity differs from loaded engine")
+                    native_evidence = observed_row.get("v3_evidence_records")
+                    if isinstance(attempt.get("v3_profile_evidence"), dict):
+                        native_evidence_full = observed_row.get("v3_evidence_records_full",
+                                                               native_evidence)
+                        _need(isinstance(native_evidence_full, dict) and
+                              attempt["v3_profile_evidence"] == native_evidence_full,
+                              f"attempt {attempt_id} submitted v3/v4 evidence differs from the retained native JLS sink")
+                        evidence_for_check = native_evidence_full
+                    else:
+                        _need(isinstance(native_evidence, dict) and
+                              attempt.get("v3_profile_evidence_summary") == native_evidence,
+                              f"attempt {attempt_id} submitted v3/v4 evidence summary differs from the retained native JLS sink")
+                        evidence_for_check = native_evidence
+                    if actual_profile_version == "arc1_profile_v4":
+                        _need(observed_row.get("v4_evidence_aliases_match") is True,
+                              f"attempt {attempt_id} v4 history aliases are missing, copied, or contradictory")
+                        try:
+                            _check_v4_profile_evidence_payload(
+                                attempt, metadata.get("loaded_arc1_source_identity"),
+                                native_evidence=evidence_for_check)
+                        except ReceiptError as error:
+                            raise ReceiptError(f"attempt {attempt_id}: {error}") from error
+                elif expected_profile_version in {"arc1_profile_v3", "arc1_profile_v4"}:
                     _need(observed_row.get("v3_evidence_identity_matches") is True,
-                          f"attempt {attempt_id} pre-entry v3 sink contradicts its method state")
+                          f"attempt {attempt_id} pre-entry v3/v4 sink contradicts its method state")
             driver_identity = metadata.get("driver_protocol_identity")
             _need(isinstance(driver_identity, dict) and
                   driver_identity.get("source_sha256") == expected_source_hashes and

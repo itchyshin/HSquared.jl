@@ -6,6 +6,25 @@ const _FA_RANK_RECHECK_TOL = 1e-8
 _fa_rank_structure(k) = k == 0 ? :diagonal : :factor_analytic
 _fa_rank_q(k) = k == 0 ? 14 : 18
 
+function _fa_rank_optimizer_output(fit)
+    return (; phat = fit.phat, objective = fit.raw_objective,
+        converged = fit.optimizer_converged,
+        optimizer_converged = fit.optimizer_converged,
+        optimizer_assessment_status = fit.optimizer_assessment_status,
+        optimizer_assessment_reason = fit.optimizer_assessment_reason,
+        iterations = fit.iterations, optimizer_status = fit.optimizer_status,
+        scaled_objective = fit.objective,
+        final_gradient_inf_norm = fit.final_gradient_inf_norm,
+        numerical_gradient_inf_norms = fit.numerical_gradient_inf_norms,
+        numerical_gradient_discrepancies = fit.numerical_gradient_discrepancies,
+        numerical_gradient_status = fit.numerical_gradient_status,
+        numerical_gradient_failed_sides = fit.numerical_gradient_failed_sides,
+        line_search_success = fit.line_search_success,
+        line_search_terminal_reason = fit.line_search_terminal_reason,
+        line_search_stats = fit.line_search_stats,
+        algorithm = fit.algorithm, optimizer_assessment = fit)
+end
+
 function _fa_rank_score(ell0::Real, ell1::Real)
     D = 8 - 2 * (ell1 - ell0)
     tie = abs(D) <= _FA_RANK_TAU
@@ -83,6 +102,9 @@ end
 
 function _fa_rank_publish!(sink, candidates, attempts; optimizer_policy = nothing,
                            optimizer_policy_version = nothing, source_identity = nothing,
+                           requested_optimizer_policy = nothing,
+                           actual_optimizer_policy = nothing,
+                           covariance_representation = nothing,
                            kwargs...)
     snapshot = _fa_rank_result(candidates, attempts; kwargs...)
     if optimizer_policy !== nothing
@@ -90,7 +112,32 @@ function _fa_rank_publish!(sink, candidates, attempts; optimizer_policy = nothin
             optimizer_algorithm = :bfgs_hager_zhang, optimizer_iterations = 2_000,
             optimizer_tolerance = 1e-8, final_scaled_gradient_tolerance = 1e-6,
             numerical_gradient_steps = (1e-4, 1e-5), numerical_gradient_tolerance = 5e-6,
-            starts_planned = 19, starts_attempted = count(a -> hasproperty(a, :attempted) && a.attempted, attempts)))
+            starts_planned = length(attempts), starts_attempted = count(a -> hasproperty(a, :attempted) && a.attempted, attempts)))
+    end
+    if requested_optimizer_policy == "arc1_v2"
+        v2_identity = (; requested_optimizer_policy, actual_optimizer_policy,
+            covariance_representation = _ARC1_FA_V2_REPRESENTATION,
+            optimizer_policy = "arc1_v2", optimizer_policy_version = 2,
+            source_identity = _ARC1_SOURCE_IDENTITY)
+        attempts = [merge(a, v2_identity, (; actual_optimizer_policy =
+            hasproperty(a, :actual_optimizer_policy) ? a.actual_optimizer_policy : nothing,
+            optimizer_observations = hasproperty(a, :optimizer_observations) &&
+                a.optimizer_observations !== nothing ? a.optimizer_observations : NamedTuple[],
+            best_observed_loglik = hasproperty(a, :best_observed_loglik) ? a.best_observed_loglik : nothing,
+            best_observation_certificate_status = hasproperty(a, :best_observation_certificate_status) ?
+                a.best_observation_certificate_status : :unavailable,
+            best_observation_accepted = hasproperty(a, :best_observation_accepted) ?
+                a.best_observation_accepted : false))
+            for a in attempts]
+        candidates = [merge(c, v2_identity, (; actual_optimizer_policy =
+            any(a -> a.rank == c.rank && a.attempted &&
+                    hasproperty(a, :actual_optimizer_policy) &&
+                    a.actual_optimizer_policy !== nothing, attempts) ? optimizer_policy : nothing))
+            for c in candidates]
+        snapshot = merge(snapshot, v2_identity, (; attempts, candidate_summary = copy(candidates)))
+        if snapshot.selected_fit !== nothing
+            snapshot = merge(snapshot, (; selected_fit = merge(snapshot.selected_fit, v2_identity)))
+        end
     end
     sink === nothing || (sink[] = snapshot)
     return snapshot
@@ -227,6 +274,43 @@ function _fa_rank_starts(ctx)
     return p0, f0, f1
 end
 
+const _ARC1_K0_SPLIT_SCHEDULE = (0.05, 0.15, 0.3, 0.5, 0.7, 0.9)
+
+function _arc1_k0_start_schedule(ctx, default_params)
+    starts = NamedTuple[]
+    floor = FA_UNIQUENESS_FLOOR
+    for (index, split) in enumerate(_ARC1_K0_SPLIT_SCHEDULE)
+        start_id = split == 0.5 ? :default : Symbol("split_$(split)")
+        try
+            params = if split == 0.5
+                copy(default_params)
+            else
+                n = size(ctx.Y, 1)
+                variance = [begin
+                    column = @view ctx.Y[:, j]
+                    observed = sum(abs2, column .- sum(column) / n) / (n - 1)
+                    max(isfinite(observed) && observed > 0 ? observed : 1.0,
+                        2 * floor)
+                end for j in axes(ctx.Y, 2)]
+                genetic_diagonal = max.(split .* variance, 2 * floor)
+                residual_covariance = Matrix(Diagonal((1 - split) .* variance))
+                all(x -> isfinite(x) && x > floor, genetic_diagonal) ||
+                    throw(ArgumentError("K0 split does not leave positive uniqueness above the floor"))
+                vcat(_fa_uniqueness_to_unconstrained(genetic_diagonal),
+                     _cov_to_chol_params(residual_covariance, 4))
+            end
+            push!(starts, (; rank = 0, start_id, split, schedule_index = index,
+                params, initialization_status = :ok, failure_reason = nothing))
+        catch err
+            err isa InterruptException && rethrow()
+            push!(starts, (; rank = 0, start_id, split, schedule_index = index,
+                params = Float64[], initialization_status = :invalid,
+                failure_reason = sprint(showerror, err)))
+        end
+    end
+    return starts
+end
+
 function _fa_rank_retry_params(diagonal_attempt)
     g = diag(diagonal_attempt.genetic_covariance)
     c = FA_UNIQUENESS_FLOOR
@@ -249,6 +333,12 @@ function _fa_rank_retry_params(diagonal_attempt)
 end
 
 function _fa_rank_nesting_discrepancy(ctx, diagonal_attempt)
+    if hasproperty(diagonal_attempt, :factor_state) && diagonal_attempt.factor_state !== nothing
+        state = diagonal_attempt.factor_state
+        params = vcat(zeros(4), state.parameters[1:4], state.parameters[5:14])
+        nested = _arc1_fa_v2_exact_objective_gradient(ctx.spectral, params, 1)
+        return nested.status == :ok ? abs(nested.loglik - diagonal_attempt.loglik) : Inf
+    end
     g = diag(diagonal_attempt.genetic_covariance)
     p = vcat(zeros(4), _fa_uniqueness_to_unconstrained(g),
              _cov_to_chol_params(diagonal_attempt.residual_covariance, 4))
@@ -273,9 +363,100 @@ function _fa_rank_read_or(f, fallback)
     end
 end
 
-function _fa_rank_evaluate_attempt(ctx, k, start_id, retry_index, params0, out)
+function _arc1_fa_v2_valid_likelihood_observation(evaluation)
+    evaluation === nothing && return false
+    hasproperty(evaluation, :loglik) && isfinite(evaluation.loglik) || return false
+    hasproperty(evaluation, :factor_state) && evaluation.factor_state !== nothing || return false
+    evaluation.factor_state.factor_valid || return false
+    evaluation.status == :ok && return true
+    return evaluation.status == :failed && hasproperty(evaluation, :observation) &&
+           evaluation.observation.status == :ok
+end
+
+function _arc1_fa_v2_retain_observation!(observations, params, evaluation;
+                                         rank, start_id, retry_index, source_identity)
+    _arc1_fa_v2_valid_likelihood_observation(evaluation) || return nothing
+    coordinates = try Float64.(collect(params)) catch; return nothing end
+    length(coordinates) == _fa_rank_q(rank) && all(isfinite, coordinates) || return nothing
+    existing = findfirst(o -> isequal(o.coordinates, coordinates), observations)
+    status = evaluation.status == :ok ? :ok : :likelihood_with_gradient_failure
+    if existing !== nothing
+        if status == :ok && observations[existing].evaluation_status != :ok
+            observations[existing] = merge(observations[existing],
+                (; evaluation_status = :ok, loglik = Float64(evaluation.loglik)))
+        end
+        return observations[existing]
+    end
+    identity = (; requested_optimizer_policy = "arc1_v2", actual_optimizer_policy = "arc1_v2",
+        optimizer_policy = "arc1_v2", optimizer_policy_version = 2,
+        covariance_representation = _ARC1_FA_V2_REPRESENTATION, source_identity,
+        rank, start_id, retry_index)
+    observation_id = bytes2hex(sha256(repr((identity, coordinates))))
+    record = merge(identity, (; observation_id, coordinates,
+        loglik = Float64(evaluation.loglik), evaluation_status = status,
+        factor_valid = evaluation.factor_state.factor_valid,
+        certificate_status = :pending, independent_loglik = nothing,
+        certificate_discrepancy = nothing, comparison_threshold = nothing,
+        optimizer_accepted = false))
+    push!(observations, record)
+    return record
+end
+
+function _arc1_fa_v2_certify_observations(observations, spectral, Y, X, B, rank,
+                                          candidate_loglik;
+                                          accepted_parameters = nothing,
+                                          accepted_loglik = nothing,
+                                          certifier = nothing)
+    certified = NamedTuple[]
+    threshold = candidate_loglik + _FA_RANK_TAU / 2
+    for observation in observations
+        observation.rank == rank || continue
+        # Exact re-evaluation may raise the observed likelihood by up to the
+        # accepted certificate tolerance. Keep that margin in the cheap screen
+        # so a just-below raw value cannot hide a just-above certified value.
+        if observation.loglik <= threshold - _FA_RANK_RECHECK_TOL
+            push!(certified, merge(observation, (; certificate_status = :below_candidate,
+                independent_loglik = nothing, certificate_discrepancy = nothing,
+                comparison_threshold = threshold, optimizer_accepted = false)))
+            continue
+        end
+        certificate = if certifier === nothing
+            evaluation = _arc1_fa_v2_exact_objective_gradient(spectral,
+                observation.coordinates, rank)
+            _arc1_fa_v2_valid_likelihood_observation(evaluation) ?
+                _arc1_fa_v2_certify(Y, X, B, observation.coordinates, rank,
+                    evaluation.loglik) :
+                (; status = :failed, independent_loglik = -Inf, discrepancy = Inf)
+        else
+            certifier(observation)
+        end
+        accepted = accepted_parameters !== nothing && accepted_loglik !== nothing &&
+            isequal(observation.coordinates, accepted_parameters) &&
+            certificate.status == :ok && isfinite(certificate.independent_loglik) &&
+            abs(certificate.independent_loglik - accepted_loglik) <= _FA_RANK_RECHECK_TOL
+        comparison_status = certificate.status == :ok &&
+            certificate.independent_loglik <= threshold ? :below_candidate : certificate.status
+        push!(certified, merge(observation, (; certificate_status = comparison_status,
+            independent_loglik = certificate.independent_loglik,
+            certificate_discrepancy = certificate.discrepancy,
+            comparison_threshold = threshold, optimizer_accepted = accepted)))
+    end
+    return certified
+end
+
+function _fa_rank_evaluate_attempt(ctx, k, start_id, retry_index, params0, out;
+                                   optimizer_policy = "arc1_v1")
     base = _fa_rank_attempt(k, start_id, retry_index;
                             initial_parameters = copy(params0))
+    if optimizer_policy == "arc1_v2"
+        base = merge(base, (; requested_optimizer_policy = optimizer_policy,
+            actual_optimizer_policy = optimizer_policy,
+            optimizer_policy = optimizer_policy, optimizer_policy_version = 2,
+            covariance_representation = _ARC1_FA_V2_REPRESENTATION,
+            source_identity = _ARC1_SOURCE_IDENTITY,
+            optimizer_observations = hasproperty(out, :optimizer_observations) ?
+                out.optimizer_observations : NamedTuple[]))
+    end
     p = try
         Float64.(collect(out.phat))
     catch err
@@ -299,6 +480,47 @@ function _fa_rank_evaluate_attempt(ctx, k, start_id, retry_index, params0, out)
             optimizer_objective = finite_objective ? obj : nothing)
     finite_estimates || return merge(base, core,
         (; status = :failed, reason = "optimizer returned nonfinite or wrong-length estimates"))
+    if optimizer_policy == "arc1_v2"
+        state_result = _arc1_fa_v2_factor_state(p, k)
+        state_result.status == :ok || return merge(base, core,
+            (; status = :failed, reason = state_result.reason, factor_valid = false,
+              covariance_representation = _ARC1_FA_V2_REPRESENTATION,
+              requested_optimizer_policy = optimizer_policy,
+              actual_optimizer_policy = optimizer_policy))
+        state = state_result.state
+        certificate = _arc1_fa_v2_certify(ctx.Y, ctx.X, ctx.Z * ctx.A * transpose(ctx.Z),
+            p, k, -obj)
+        distances = copy(state.delta)
+        near = any(x -> x > 0 && x <= 1e-6, distances)
+        discrepancy = certificate.discrepancy
+        assessment_accepted = assessment_status === :accepted
+        accepted = isfinite(obj) && certificate.status == :ok && assessment_accepted
+        loglik = certificate.status == :ok ? certificate.independent_loglik : nothing
+        reason = !assessment_accepted ?
+            (assessment_status === nothing ? "optimizer assessment status is missing" :
+             "optimizer assessment was not accepted: $(assessment_status)") :
+            accepted ? (converged ? nothing : "optimizer did not converge") : certificate.reason
+        return merge(base, core, (; status = accepted ? :completed : :failed,
+            reason,
+            eligible = accepted && converged,
+            pd_genetic = state.pd_genetic, pd_residual = state.pd_residual,
+            factor_valid = state.factor_valid, factor_state = state,
+            covariance_representation = _ARC1_FA_V2_REPRESENTATION,
+            requested_optimizer_policy = optimizer_policy,
+            actual_optimizer_policy = optimizer_policy,
+            genetic_covariance = state.G, residual_covariance = state.R,
+            genetic_loadings = k == 0 ? nothing : vec(state.loadings),
+            uniqueness = state.psi, floor_distances = distances, near_floor = near,
+            reevaluated_loglik = loglik, independent_loglik = certificate.independent_loglik,
+            objective_discrepancy = discrepancy,
+            loglik, criterion = loglik === nothing ? nothing : -2loglik + 2 * _fa_rank_q(k),
+            best_observed_loglik = hasproperty(out, :best_observed_loglik) ? out.best_observed_loglik :
+                certificate.status == :ok ? certificate.independent_loglik : nothing,
+            best_observation_certificate_status = hasproperty(out, :best_observation_certificate_status) ?
+                out.best_observation_certificate_status : certificate.status,
+            best_observation_accepted = hasproperty(out, :best_observation_accepted) ?
+                out.best_observation_accepted : accepted))
+    end
     local G, R, L, ψ
     try
         G, L, ψ = _fa_rank_cov(@view(p[1:(k == 0 ? 4 : 8)]), k)
@@ -348,7 +570,8 @@ function _fa_rank_candidate_from_attempts(k, attempts)
     good = filter(a -> a.eligible, rows)
     function finite_checked(a)
         a.attempted && a.finite_objective === true && a.finite_estimates === true &&
-        a.pd_genetic === true && a.pd_residual === true &&
+        (hasproperty(a, :factor_valid) ? a.factor_valid === true :
+            a.pd_genetic === true && a.pd_residual === true) &&
         a.reevaluated_loglik !== nothing && isfinite(a.reevaluated_loglik) &&
         a.objective_discrepancy !== nothing && isfinite(a.objective_discrepancy) &&
         a.objective_discrepancy <= _FA_RANK_RECHECK_TOL &&
@@ -381,10 +604,26 @@ function _fa_rank_candidate_from_attempts(k, attempts)
         r_relative_disagreement = rel_r)
 end
 
-function _fa_rank_fit(ctx, attempt, candidates, attempts)
+function _fa_rank_fit(ctx, attempt, candidates, attempts; optimizer_policy = "arc1_v1")
     G, R = attempt.genetic_covariance, attempt.residual_covariance
-    beta, ebv = _mv_gls_blup(ctx.y, ctx.Xfull, ctx.Zfull, ctx.A, ctx.indiv,
-                              length(ctx.y), G, R, 4, 1, length(ctx.ids))
+    rounded_matrix_pd = if optimizer_policy == "arc1_v2"
+        (; genetic = _arc1_fa_v2_exact_float64_pd(G),
+            residual = _arc1_fa_v2_exact_float64_pd(R))
+    else
+        # Preserve the legacy v1 diagnostic and avoid exact-rational work on
+        # a result that does not expose the v2 summary.
+        (; genetic = isposdef(Symmetric(G)), residual = isposdef(Symmetric(R)))
+    end
+    # ARC1 v2 currently certifies the factor-defined likelihood only. A PD
+    # rounded summary does not certify the accuracy of downstream GLS/BLUP
+    # operations, so leave those fields unavailable until a factor-aware or
+    # independently validated solver is supplied.
+    beta, ebv = if optimizer_policy == "arc1_v2"
+        (nothing, nothing)
+    else
+        _mv_gls_blup(ctx.y, ctx.Xfull, ctx.Zfull, ctx.A, ctx.indiv,
+                      length(ctx.y), G, R, 4, 1, length(ctx.ids))
+    end
     k = attempt.rank
     fa_rows = filter(a -> a.rank == 1, attempts)
     diag = k == 1 ? (; strategy = :default_balanced_optional_retry,
@@ -402,17 +641,28 @@ function _fa_rank_fit(ctx, attempt, candidates, attempts)
                     minimum_uniqueness = a.uniqueness === nothing ? nothing : minimum(a.uniqueness),
                     uniqueness_floor_distance = a.floor_distances === nothing ? nothing : minimum(a.floor_distances))
                   for a in fa_rows]) : nothing
-    return (; genetic_covariance = G, residual_covariance = R,
+    fit = (; genetic_covariance = G, residual_covariance = R,
         genetic_correlation = genetic_correlation(G), residual_correlation = genetic_correlation(R),
         heritability = [G[i, i] / (G[i, i] + R[i, i]) for i in 1:4], beta,
-        breeding_values = (; ids = ctx.ids, traits = ctx.traits, values = ebv),
+        breeding_values = ebv === nothing ? nothing : (; ids = ctx.ids, traits = ctx.traits, values = ebv),
         genetic_structure = _fa_rank_structure(k), genetic_rank = k == 1 ? 1 : nothing,
         genetic_loadings = attempt.genetic_loadings, genetic_uniqueness = attempt.uniqueness,
         loglik = attempt.loglik, converged = true, iterations = attempt.optimizer_iterations,
         fa_start_diagnostics = diag, traits = ctx.traits)
+    optimizer_policy == "arc1_v1" && return fit
+    return merge(fit, (; factor_state = attempt.factor_state,
+        covariance_representation = _ARC1_FA_V2_REPRESENTATION,
+        factor_valid = attempt.factor_valid,
+        rounded_matrix_pd,
+        matrix_operations_status = :unavailable,
+        matrix_operations_reason = "factor-defined fit does not certify GLS/BLUP accuracy from rounded covariance matrices",
+        downstream_diagnostics = (; gls = :not_certified, blup = :not_certified,
+            rounded_matrix_pd, factor_valid = attempt.factor_valid)))
 end
 
-function _arc1_result_with_policy(result, rows, fixed_rank, k0_eligible)
+function _arc1_result_with_policy(result, rows, fixed_rank, k0_eligible;
+                                  optimizer_policy = "arc1_v1", actual_policy = nothing)
+    optimizer_policy == "arc1_v2" || begin
     diag = (; strategy = :arc1_v1_bfgs_hager_zhang,
         optimizer_policy = "arc1_v1", optimizer_policy_version = 1,
         algorithm = :bfgs_hager_zhang, optimizer_iterations = 2_000,
@@ -420,7 +670,7 @@ function _arc1_result_with_policy(result, rows, fixed_rank, k0_eligible)
         numerical_gradient_steps = (1e-4, 1e-5), numerical_gradient_tolerance = 5e-6,
         source_identity = _ARC1_SOURCE_IDENTITY, julia_version = string(VERSION),
         optim_version = string(Base.pkgversion(Optim)),
-        starts_planned = 19, starts_attempted = count(a -> a.attempted, rows),
+        starts_planned = length(rows), starts_attempted = count(a -> a.attempted, rows),
         fixed_rank_request = fixed_rank, eligible_k0 = k0_eligible,
         starts = rows)
     fit = result.selected_fit === nothing ? nothing :
@@ -429,13 +679,64 @@ function _arc1_result_with_policy(result, rows, fixed_rank, k0_eligible)
                            optimizer_algorithm = :bfgs_hager_zhang, optimizer_iterations = 2_000,
                            optimizer_tolerance = 1e-8, final_scaled_gradient_tolerance = 1e-6,
                            numerical_gradient_steps = (1e-4, 1e-5), numerical_gradient_tolerance = 5e-6,
-                           starts_planned = 19,
+                           starts_planned = length(rows),
                            starts_attempted = count(a -> hasproperty(a, :attempted) && a.attempted, rows),
                            source_identity = _ARC1_SOURCE_IDENTITY,
                            selected_fit = fit))
+    end
+    identity = (; requested_optimizer_policy = optimizer_policy,
+        actual_optimizer_policy = actual_policy, optimizer_policy,
+        optimizer_policy_version = 2,
+        covariance_representation = _ARC1_FA_V2_REPRESENTATION,
+        source_identity = _ARC1_SOURCE_IDENTITY)
+    rows = [merge(row, identity, (; actual_optimizer_policy =
+        hasproperty(row, :actual_optimizer_policy) ? row.actual_optimizer_policy : nothing))
+        for row in rows]
+    diag = (; strategy = :arc1_v2_bfgs_hager_zhang,
+        optimizer_policy, optimizer_policy_version = 2,
+        covariance_representation = _ARC1_FA_V2_REPRESENTATION,
+        algorithm = :bfgs_hager_zhang, optimizer_iterations = 2_000,
+        optimizer_tolerance = 1e-8, final_scaled_gradient_tolerance = 1e-6,
+        numerical_gradient_steps = (1e-4, 1e-5), numerical_gradient_tolerance = 5e-6,
+        independent_likelihood_tolerance = 1e-8,
+        source_identity = _ARC1_SOURCE_IDENTITY, julia_version = string(VERSION),
+        optim_version = string(Base.pkgversion(Optim)), starts_planned = length(rows),
+        starts_attempted = count(a -> a.attempted, rows), fixed_rank_request = fixed_rank,
+        eligible_k0 = k0_eligible, requested_optimizer_policy = optimizer_policy,
+        actual_optimizer_policy = actual_policy, starts = rows)
+    fit = result.selected_fit === nothing ? nothing :
+        merge(result.selected_fit, (; fa_start_diagnostics = diag,
+            requested_optimizer_policy = optimizer_policy,
+            actual_optimizer_policy = actual_policy,
+            optimizer_policy, optimizer_policy_version = 2,
+            covariance_representation = _ARC1_FA_V2_REPRESENTATION,
+            source_identity = _ARC1_SOURCE_IDENTITY))
+    return merge(result, (; optimizer_policy, optimizer_policy_version = 2,
+        covariance_representation = _ARC1_FA_V2_REPRESENTATION,
+        requested_optimizer_policy = optimizer_policy, actual_optimizer_policy = actual_policy,
+        optimizer_algorithm = :bfgs_hager_zhang, optimizer_iterations = 2_000,
+        optimizer_tolerance = 1e-8, final_scaled_gradient_tolerance = 1e-6,
+        numerical_gradient_steps = (1e-4, 1e-5), numerical_gradient_tolerance = 5e-6,
+        independent_likelihood_tolerance = 1e-8, starts_planned = length(rows),
+        starts_attempted = count(a -> hasproperty(a, :attempted) && a.attempted, rows),
+        source_identity = _ARC1_SOURCE_IDENTITY, selected_fit = fit))
 end
 
 function _arc1_derived_starts(diagonal_attempt)
+    if hasproperty(diagonal_attempt, :factor_state) && diagonal_attempt.factor_state !== nothing
+        state = diagonal_attempt.factor_state
+        starts = NamedTuple[]
+        for a in (0.1, 0.7), mask in 0:7
+            signs = [1.0; [((mask >> (i - 2)) & 1) == 0 ? 1.0 : -1.0 for i in 2:4]]
+            λ = a .* signs .* sqrt.(state.delta)
+            delta = (1 - a^2) .* state.delta
+            name = Symbol("derived_a$(a)_s$(mask)")
+            params = vcat(λ, log.(delta), state.parameters[5:14])
+            push!(starts, (; name, params, loading = λ,
+                uniqueness = state.floor .+ delta, uniqueness_excess = delta))
+        end
+        return starts
+    end
     g = diag(diagonal_attempt.genetic_covariance)
     c = FA_UNIQUENESS_FLOOR
     all(x -> isfinite(x) && x > c, g) ||
@@ -461,13 +762,23 @@ end
 function _arc1_select_fa_rank(Y, X, Z, pedigree::Pedigree;
                               ids = nothing, traits = nothing, iterations = 2_000,
                               fixed_rank = nothing, ledger_sink = nothing,
-                              attempt_runner = nothing, checkpoint = () -> nothing)
+                              attempt_runner = nothing, checkpoint = () -> nothing,
+                              optimizer_policy = "arc1_v1",
+                              observation_certifier = nothing,
+                              k0_start_builder = _arc1_k0_start_schedule)
     candidates = NamedTuple[_fa_rank_candidate(k) for k in 0:1]
     attempts = NamedTuple[]
+    actual_policy = Ref{Union{Nothing,String}}(nothing)
     function publish(; kwargs...)
-        _fa_rank_publish!(ledger_sink, candidates, attempts;
-            optimizer_policy = "arc1_v1", optimizer_policy_version = 1,
-            source_identity = _ARC1_SOURCE_IDENTITY, kwargs...)
+        policy_version = optimizer_policy == "arc1_v2" ? 2 : 1
+        representation = optimizer_policy == "arc1_v2" ? _ARC1_FA_V2_REPRESENTATION : nothing
+        snapshot = _fa_rank_publish!(ledger_sink, candidates, attempts;
+            optimizer_policy, optimizer_policy_version = policy_version,
+            source_identity = _ARC1_SOURCE_IDENTITY,
+            requested_optimizer_policy = optimizer_policy == "arc1_v2" ? optimizer_policy : nothing,
+            actual_optimizer_policy = optimizer_policy == "arc1_v2" ? actual_policy[] : nothing,
+            covariance_representation = representation, kwargs...)
+        snapshot
     end
     publish(selection_status = :in_progress, reason = "ARC1 selector initialized")
     invalid = _fa_rank_preflight(Y, X, Z, pedigree, ids, traits, iterations)
@@ -476,7 +787,8 @@ function _arc1_select_fa_rank(Y, X, Z, pedigree::Pedigree;
             reason = invalid) for k in 0:1]
         base = publish(
             selection_status = :unsupported_input, reason = invalid)
-        return _arc1_result_with_policy(base, attempts, fixed_rank, false)
+        return _arc1_result_with_policy(base, attempts, fixed_rank, false;
+            optimizer_policy, actual_policy = actual_policy[])
     end
     ctx = try
         _fa_rank_context(Y, X, Z, pedigree, traits)
@@ -488,7 +800,8 @@ function _arc1_select_fa_rank(Y, X, Z, pedigree::Pedigree;
         why = "pedigree/model construction failed: $(sprint(showerror, err))"
         candidates = NamedTuple[_fa_rank_candidate(k; status = :unsupported_input, reason = why) for k in 0:1]
         base = publish(selection_status = :unsupported_input, reason = why)
-        return _arc1_result_with_policy(base, attempts, fixed_rank, false)
+        return _arc1_result_with_policy(base, attempts, fixed_rank, false;
+            optimizer_policy, actual_policy = actual_policy[])
     end
     B = ctx.Z * ctx.A * transpose(ctx.Z)
     spectral = try
@@ -503,7 +816,8 @@ function _arc1_select_fa_rank(Y, X, Z, pedigree::Pedigree;
     if spectral.status != :ok
         candidates = NamedTuple[_fa_rank_candidate(k; status = :unsupported_input, reason = spectral.reason) for k in 0:1]
         base = publish(selection_status = :unsupported_input, reason = spectral.reason)
-        return _arc1_result_with_policy(base, attempts, fixed_rank, false)
+        return _arc1_result_with_policy(base, attempts, fixed_rank, false;
+            optimizer_policy, actual_policy = actual_policy[])
     end
     ctx = merge(ctx, (; spectral = spectral.context))
     records = size(ctx.Y, 1)
@@ -517,28 +831,42 @@ function _arc1_select_fa_rank(Y, X, Z, pedigree::Pedigree;
             selection_status = :unsupported_input, reason = why,
             records, design_fingerprint = design_fp, relationship_fingerprint = rel_fp,
             kernel_ratio = ratio)
-        return _arc1_result_with_policy(base, attempts, fixed_rank, false)
+        return _arc1_result_with_policy(base, attempts, fixed_rank, false;
+            optimizer_policy, actual_policy = actual_policy[])
     end
     publish_context(; kwargs...) = publish(; records, design_fingerprint = design_fp,
         relationship_fingerprint = rel_fp, kernel_ratio = ratio, kwargs...)
     runner = attempt_runner === nothing ? nothing : attempt_runner
+    p0, f0, f1 = _fa_rank_starts(ctx)
+    k0_starts = optimizer_policy == "arc1_v1" ? k0_start_builder(ctx, p0) :
+        [(; rank = 0, start_id = :default, split = 0.5, schedule_index = 1,
+          params = copy(p0), initialization_status = :ok, failure_reason = nothing)]
     # Declare the full frozen schedule before fitting so interruptions retain
     # explicit rows for every not-yet-run start.
-    push!(attempts, merge(_fa_rank_attempt(0, :default, 0;
-        status = :unattempted, reason = "queued"), (; attempted = false)))
-    for name in (:default, :balanced)
-        push!(attempts, merge(_fa_rank_attempt(1, name, 0;
-            status = :unattempted, reason = "queued"), (; attempted = false)))
+    for start in k0_starts
+        reason = start.initialization_status == :ok ? "queued" : start.failure_reason
+        push!(attempts, merge(_fa_rank_attempt(0, start.start_id, 0;
+            status = :unattempted, reason),
+            (; attempted = false, split = start.split,
+               schedule_index = start.schedule_index,
+               initialization_status = start.initialization_status)))
     end
-    for a in (0.1, 0.7), mask in 0:7
+    for (schedule_index, name) in enumerate((:default, :balanced))
+        push!(attempts, merge(_fa_rank_attempt(1, name, 0;
+            status = :unattempted, reason = "queued"),
+            (; attempted = false, schedule_index, k0_anchor_start_id = nothing)))
+    end
+    for (offset, (a, mask)) in enumerate(((a, mask) for a in (0.1, 0.7) for mask in 0:7))
         name = Symbol("derived_a$(a)_s$(mask)")
         push!(attempts, merge(_fa_rank_attempt(1, name, 0;
             status = :unattempted, reason = "awaiting eligible K0 estimate"),
-            (; attempted = false)))
+            (; attempted = false, schedule_index = offset + 2,
+               k0_anchor_start_id = nothing)))
     end
-    function runstart(k, name, params0)
+    function runstart(k, name, params0; start_metadata = NamedTuple())
         rowidx = findfirst(a -> a.rank == k && a.start_id == name && !a.attempted, attempts)
-        fresh = _fa_rank_attempt(k, name, 0; initial_parameters = copy(params0))
+        fresh = merge(_fa_rank_attempt(k, name, 0; initial_parameters = copy(params0)),
+                      start_metadata)
         if rowidx === nothing
             push!(attempts, fresh)
             rowidx = length(attempts)
@@ -549,27 +877,52 @@ function _arc1_select_fa_rank(Y, X, Z, pedigree::Pedigree;
             (; status = :running, attempts_count = count(a -> a.rank == k && a.attempted, attempts)))
         publish_context()
         try
-            out = if runner === nothing
-                fit = _arc1_fa_bfgs(ctx.spectral, params0, k)
-        (; phat = fit.phat, objective = fit.raw_objective,
-                   converged = fit.optimizer_converged,
-                   optimizer_converged = fit.optimizer_converged,
-                   optimizer_assessment_status = fit.optimizer_assessment_status,
-                   optimizer_assessment_reason = fit.optimizer_assessment_reason,
-                   iterations = fit.iterations,
-                   optimizer_status = fit.optimizer_status,
-                   scaled_objective = fit.objective,
-                   final_gradient_inf_norm = fit.final_gradient_inf_norm,
-                   numerical_gradient_inf_norms = fit.numerical_gradient_inf_norms,
-                   numerical_gradient_discrepancies = fit.numerical_gradient_discrepancies,
-                   numerical_gradient_status = fit.numerical_gradient_status,
-                   line_search_success = fit.line_search_success,
-                   line_search_stats = fit.line_search_stats,
-                   algorithm = fit.algorithm, optimizer_assessment = fit)
-            else
-                runner(ctx.spectral, params0, k, name)
+            actual_policy[] = optimizer_policy
+            optimizer_policy == "arc1_v2" &&
+                (attempts[rowidx] = merge(attempts[rowidx],
+                    (; actual_optimizer_policy = optimizer_policy,
+                       optimizer_observations = NamedTuple[])))
+            observations = optimizer_policy == "arc1_v2" ? NamedTuple[] : nothing
+            observe = function (params, evaluation)
+                if optimizer_policy == "arc1_v2"
+                    record = _arc1_fa_v2_retain_observation!(observations, params, evaluation;
+                        rank = k, start_id = name, retry_index = 0,
+                        source_identity = _ARC1_SOURCE_IDENTITY)
+                    attempts[rowidx] = merge(attempts[rowidx],
+                        (; optimizer_observations = observations))
+                    return record
+                end
+                return nothing
             end
-            row = _fa_rank_evaluate_attempt(ctx, k, name, 0, params0, out)
+            out = if runner === nothing
+                fit = _arc1_fa_bfgs(ctx.spectral, params0, k; optimizer_policy,
+                    evaluation_callback = optimizer_policy == "arc1_v2" ? observe : nothing)
+                _fa_rank_optimizer_output(fit)
+            else
+                applicable(runner, ctx.spectral, params0, k, name, observe) ?
+                    runner(ctx.spectral, params0, k, name, observe) :
+                    runner(ctx.spectral, params0, k, name)
+            end
+            if optimizer_policy == "arc1_v2"
+                if hasproperty(out, :best_observation_parameters)
+                    proposed = try Float64.(collect(out.best_observation_parameters)) catch; Float64[] end
+                    proposed_eval = length(proposed) == _fa_rank_q(k) && all(isfinite, proposed) ?
+                        _arc1_fa_v2_exact_objective_gradient(ctx.spectral, proposed, k) : nothing
+                    _arc1_fa_v2_retain_observation!(observations, proposed, proposed_eval;
+                        rank = k, start_id = name, retry_index = 0,
+                        source_identity = _ARC1_SOURCE_IDENTITY)
+                end
+                if isempty(observations) && hasproperty(out, :phat)
+                    proposed = try Float64.(collect(out.phat)) catch; Float64[] end
+                    proposed_eval = length(proposed) == _fa_rank_q(k) && all(isfinite, proposed) ?
+                        _arc1_fa_v2_exact_objective_gradient(ctx.spectral, proposed, k) : nothing
+                    _arc1_fa_v2_retain_observation!(observations, proposed, proposed_eval;
+                        rank = k, start_id = name, retry_index = 0,
+                        source_identity = _ARC1_SOURCE_IDENTITY)
+                end
+                out = merge(out, (; optimizer_observations = observations))
+            end
+            row = _fa_rank_evaluate_attempt(ctx, k, name, 0, params0, out; optimizer_policy)
             if hasproperty(out, :line_search_success) && !out.line_search_success
                 row = merge(row, (; status = :failed,
                     eligible = false, reason = "Hager-Zhang line search failed"))
@@ -579,6 +932,8 @@ function _arc1_select_fa_rank(Y, X, Z, pedigree::Pedigree;
                      numerical_gradient_inf_norms = hasproperty(out, :numerical_gradient_inf_norms) ? out.numerical_gradient_inf_norms : nothing,
                      numerical_gradient_discrepancies = hasproperty(out, :numerical_gradient_discrepancies) ? out.numerical_gradient_discrepancies : nothing,
                      numerical_gradient_status = hasproperty(out, :numerical_gradient_status) ? out.numerical_gradient_status : :test_seam,
+                     numerical_gradient_failed_sides = hasproperty(out, :numerical_gradient_failed_sides) ? out.numerical_gradient_failed_sides : nothing,
+                     line_search_terminal_reason = hasproperty(out, :line_search_terminal_reason) ? out.line_search_terminal_reason : nothing,
                      optimizer_converged = hasproperty(out, :optimizer_converged) ? out.optimizer_converged : nothing,
                      optimizer_assessment_status = hasproperty(out, :optimizer_assessment_status) ? out.optimizer_assessment_status : nothing,
                      optimizer_assessment_reason = hasproperty(out, :optimizer_assessment_reason) ? out.optimizer_assessment_reason : nothing,
@@ -592,7 +947,7 @@ function _arc1_select_fa_rank(Y, X, Z, pedigree::Pedigree;
                      domain_restarts = hasproperty(out, :line_search_stats) ? out.line_search_stats.domain_restarts : nothing,
                      line_search_stats = hasproperty(out, :line_search_stats) ? out.line_search_stats : nothing,
                      algorithm = hasproperty(out, :algorithm) ? out.algorithm : :test_seam)
-            attempts[rowidx] = merge(row, extra)
+            attempts[rowidx] = merge(row, start_metadata, extra)
         catch err
             if err isa InterruptException
                 attempts[rowidx] = merge(attempts[rowidx], (; status = :interrupted,
@@ -609,26 +964,87 @@ function _arc1_select_fa_rank(Y, X, Z, pedigree::Pedigree;
         publish_context()
         return attempts[rowidx]
     end
-    p0, f0, f1 = _fa_rank_starts(ctx)
-    runstart(0, :default, p0)
-    try
-        checkpoint()
-    catch err
-        if err isa InterruptException
-            publish_context(; selection_status = :interrupted, reason = "interrupted after K0 start")
-            return _arc1_result_with_policy(publish_context(; selection_status = :interrupted,
-                reason = "interrupted after K0 start"), attempts, fixed_rank, candidates[1].eligible)
-        end
-        rethrow()
+    function scheduled_k1_metadata(name)
+        row = only(filter(a -> a.rank == 1 && a.start_id == name, attempts))
+        return (; schedule_index = row.schedule_index,
+            k0_anchor_start_id = row.k0_anchor_start_id)
     end
-    runstart(1, :default, f0)
-    runstart(1, :balanced, f1)
-    k0row = findfirst(a -> a.rank == 0 && a.eligible, attempts)
+    if optimizer_policy == "arc1_v2"
+        try
+            checkpoint()
+        catch err
+            if err isa InterruptException
+                publish_context(; selection_status = :interrupted,
+                    reason = "interrupted before first optimizer start")
+                return _arc1_result_with_policy(publish_context(
+                    selection_status = :interrupted,
+                    reason = "interrupted before first optimizer start"),
+                    attempts, fixed_rank, false; optimizer_policy,
+                    actual_policy = actual_policy[])
+            end
+            rethrow()
+        end
+    end
+    for start in k0_starts
+        if start.initialization_status == :ok
+            runstart(0, start.start_id, start.params;
+                start_metadata = (; split = start.split,
+                    schedule_index = start.schedule_index,
+                    initialization_status = start.initialization_status))
+        else
+            rowidx = findfirst(a -> a.rank == 0 && a.start_id == start.start_id && !a.attempted,
+                               attempts)
+            rowidx === nothing && error("K0 initialization failure has no planned ledger row")
+            attempts[rowidx] = merge(attempts[rowidx], (; status = :failed,
+                reason = start.failure_reason, initialization_status = start.initialization_status))
+            candidates[1] = _fa_rank_candidate_from_attempts(0, attempts)
+            publish_context()
+        end
+        try
+            checkpoint()
+        catch err
+            if err isa InterruptException
+                publish_context(; selection_status = :interrupted,
+                    reason = "interrupted after K0 start schedule position $(start.schedule_index)")
+                return _arc1_result_with_policy(publish_context(; selection_status = :interrupted,
+                    reason = "interrupted after K0 start schedule position $(start.schedule_index)"),
+                    attempts, fixed_rank, candidates[1].eligible;
+                    optimizer_policy, actual_policy = actual_policy[])
+            end
+            rethrow()
+        end
+    end
+    k0_eligible_rows = filter(a -> a.rank == 0 && a.eligible, attempts)
+    k0row = if isempty(k0_eligible_rows)
+        nothing
+    else
+        best_loglik = maximum(a.loglik for a in k0_eligible_rows)
+        findfirst(a -> a.rank == 0 && a.eligible && a.loglik == best_loglik, attempts)
+    end
+    if k0row !== nothing
+        anchor = string(attempts[k0row].start_id)
+        for i in eachindex(attempts)
+            a = attempts[i]
+            a.rank == 1 && (attempts[i] = merge(a, (; k0_anchor_start_id = anchor)))
+        end
+    end
     derived = NamedTuple[]
+    should_run_phenotypic_k1 = k0row !== nothing || optimizer_policy == "arc1_v2"
+    if should_run_phenotypic_k1
+        runstart(1, :default, f0; start_metadata = scheduled_k1_metadata(:default))
+        runstart(1, :balanced, f1; start_metadata = scheduled_k1_metadata(:balanced))
+    end
     if k0row !== nothing
         derived = _arc1_derived_starts(attempts[k0row])
         for start in derived
-            runstart(1, start.name, start.params)
+            runstart(1, start.name, start.params;
+                start_metadata = scheduled_k1_metadata(start.name))
+        end
+    elseif optimizer_policy == "arc1_v1"
+        for i in eachindex(attempts)
+            a = attempts[i]
+            a.rank == 1 && !a.attempted &&
+                (attempts[i] = merge(a, (; reason = "eligible K0 estimate unavailable for K1 schedule")))
         end
     else
         for i in eachindex(attempts)
@@ -643,44 +1059,92 @@ function _arc1_select_fa_rank(Y, X, Z, pedigree::Pedigree;
         if err isa InterruptException
             publish_context(; selection_status = :interrupted, reason = "interrupted after K1 starts")
             return _arc1_result_with_policy(publish_context(; selection_status = :interrupted,
-                reason = "interrupted after K1 starts"), attempts, fixed_rank, candidates[1].eligible)
+                reason = "interrupted after K1 starts"), attempts, fixed_rank, candidates[1].eligible;
+                optimizer_policy, actual_policy = actual_policy[])
         end
         rethrow()
     end
     c0, c1 = candidates
     k1rows = filter(a -> a.rank == 1 && a.attempted, attempts)
-    schedule_complete = count(a -> a.attempted, k1rows) == 18 &&
+    if optimizer_policy == "arc1_v2" && c1.eligible
+        for i in eachindex(attempts)
+            row = attempts[i]
+            row.rank == 1 && row.attempted || continue
+            observations = hasproperty(row, :optimizer_observations) &&
+                row.optimizer_observations !== nothing ? row.optimizer_observations : NamedTuple[]
+            certified = _arc1_fa_v2_certify_observations(observations,
+                ctx.spectral, ctx.Y, ctx.X, B, 1, c1.loglik;
+                accepted_parameters = row.eligible ? row.estimated_parameters : nothing,
+                accepted_loglik = row.eligible ? row.loglik : nothing,
+                certifier = observation_certifier)
+            valid = filter(o -> o.certificate_status == :ok &&
+                o.independent_loglik isa Real && isfinite(o.independent_loglik), certified)
+            best = isempty(valid) ? nothing : valid[argmax(getproperty.(valid, :independent_loglik))]
+            attempts[i] = merge(row, (; optimizer_observations = certified,
+                best_observed_loglik = best === nothing ? nothing : best.independent_loglik,
+                best_observation_certificate_status = best === nothing ?
+                    (isempty(certified) ? :unavailable : :failed) : best.certificate_status,
+                best_observation_accepted = best === nothing ? false : best.optimizer_accepted))
+        end
+        k1rows = filter(a -> a.rank == 1 && a.attempted, attempts)
+    end
+    k0_schedule_rows = filter(a -> a.rank == 0, attempts)
+    expected_k0_starts = optimizer_policy == "arc1_v1" ? 6 : 1
+    schedule_complete = count(a -> a.attempted, k0_schedule_rows) == expected_k0_starts &&
+                        count(a -> a.attempted, k1rows) == 18 &&
                         count(a -> a.start_id in (:default, :balanced), k1rows) == 2 &&
                         count(a -> startswith(string(a.start_id), "derived_"), k1rows) == 16
-    better_unaccepted = c1.eligible && any(a -> a.attempted && !a.eligible &&
-        a.finite_objective === true && a.finite_estimates === true &&
+    k0_attempts = filter(a -> a.rank == 0 && a.attempted, attempts)
+    better_unaccepted_k0 = optimizer_policy == "arc1_v1" && c0.eligible && any(a -> a.attempted &&
+        !a.eligible && a.finite_objective === true && a.finite_estimates === true &&
         a.pd_genetic === true && a.pd_residual === true &&
         a.reevaluated_loglik !== nothing && isfinite(a.reevaluated_loglik) &&
         a.objective_discrepancy !== nothing && isfinite(a.objective_discrepancy) &&
         a.objective_discrepancy <= _FA_RANK_RECHECK_TOL &&
         a.floor_distances !== nothing && all(>(0), a.floor_distances) &&
         a.loglik !== nothing && isfinite(a.loglik) &&
-        a.loglik > c1.loglik + _FA_RANK_TAU / 2, k1rows)
+        a.loglik > c0.loglik + _FA_RANK_TAU / 2, k0_attempts)
+    better_unaccepted_k1 = optimizer_policy == "arc1_v2" && c1.eligible && any(a -> a.attempted &&
+        hasproperty(a, :best_observation_certificate_status) &&
+        a.best_observation_certificate_status === :ok &&
+        hasproperty(a, :best_observed_loglik) && hasproperty(a, :best_observation_accepted) &&
+        a.best_observed_loglik !== nothing && isfinite(a.best_observed_loglik) &&
+        a.best_observed_loglik > c1.loglik + _FA_RANK_TAU / 2 &&
+        a.best_observation_accepted !== true, k1rows) ||
+        (c1.eligible && any(a -> a.attempted && !a.eligible &&
+        a.finite_objective === true && a.finite_estimates === true &&
+        (hasproperty(a, :factor_valid) ? a.factor_valid === true :
+            a.pd_genetic === true && a.pd_residual === true) &&
+        a.reevaluated_loglik !== nothing && isfinite(a.reevaluated_loglik) &&
+        a.objective_discrepancy !== nothing && isfinite(a.objective_discrepancy) &&
+        a.objective_discrepancy <= _FA_RANK_RECHECK_TOL &&
+        a.floor_distances !== nothing && all(>(0), a.floor_distances) &&
+        a.loglik !== nothing && isfinite(a.loglik) &&
+        a.loglik > c1.loglik + _FA_RANK_TAU / 2, k1rows))
+    better_unaccepted = better_unaccepted_k0 || better_unaccepted_k1
     nonnested = c0.eligible && c1.eligible && c1.loglik < c0.loglik - _FA_RANK_TAU / 2
     nesting_discrepancy = k0row === nothing ? nothing : _fa_rank_nesting_discrepancy(ctx, attempts[k0row])
     score = c0.eligible && c1.eligible ? _fa_rank_score(c0.loglik, c1.loglik) : nothing
     why = if !c0.eligible
         "an eligible K0 fit is required to complete the ARC1 start schedule"
+    elseif better_unaccepted_k0
+        "a materially better finite unaccepted K0 attempt remains after the frozen schedule"
     elseif !schedule_complete
-        "the frozen 18-start K1 schedule was not completed"
+        "the frozen six-start K0 and 18-start K1 schedules were not completed"
     elseif !c1.eligible
         "no eligible converged K1 start"
     elseif nesting_discrepancy === nothing || !isfinite(nesting_discrepancy) ||
            nesting_discrepancy > _FA_RANK_RECHECK_TOL
         "matched-floor L=0 nesting witness differs from the diagonal objective"
-    elseif better_unaccepted
+    elseif better_unaccepted_k1
         "a materially better finite unaccepted K1 attempt remains after the frozen schedule"
     elseif nonnested
         "FA likelihood remains non-nested below the diagonal fit"
     else
         nothing
     end
-    guard_results = (; schedule_complete, better_unaccepted, nonnested,
+    guard_results = (; schedule_complete, better_unaccepted,
+        better_unaccepted_k0, better_unaccepted_k1, nonnested,
         nesting_witness = (; status = nesting_discrepancy === nothing ? :unavailable :
             isfinite(nesting_discrepancy) && nesting_discrepancy <= _FA_RANK_RECHECK_TOL ? :passed : :failed,
             discrepancy = nesting_discrepancy, tolerance = _FA_RANK_RECHECK_TOL))
@@ -689,7 +1153,8 @@ function _arc1_select_fa_rank(Y, X, Z, pedigree::Pedigree;
             criterion_difference = score === nothing ? nothing : score.criterion_difference,
             near_tie = score === nothing ? nothing : score.near_tie,
             nesting_witness_discrepancy = nesting_discrepancy, guard_results)
-        return _arc1_result_with_policy(base, attempts, fixed_rank, c0.eligible)
+        return _arc1_result_with_policy(base, attempts, fixed_rank, c0.eligible;
+            optimizer_policy, actual_policy = actual_policy[])
     end
     if fixed_rank == 1
         winner = 1
@@ -700,12 +1165,13 @@ function _arc1_select_fa_rank(Y, X, Z, pedigree::Pedigree;
                            a.loglik == candidates[winner + 1].loglik, attempts)
     chosen === nothing && (chosen = findfirst(a -> a.rank == winner && a.eligible, attempts))
     attempts[chosen] = merge(attempts[chosen], (; selected_within_rank = true, selected = true))
-    fit = _fa_rank_fit(ctx, attempts[chosen], candidates, attempts)
+    fit = _fa_rank_fit(ctx, attempts[chosen], candidates, attempts; optimizer_policy)
     base = publish_context(; selection_status = fixed_rank === nothing ? :selected : :fixed_rank_fit,
         selected_rank = winner,
         criterion_difference = score.criterion_difference, near_tie = score.near_tie,
         selected_fit = fit, nesting_witness_discrepancy = nesting_discrepancy, guard_results)
-    return _arc1_result_with_policy(base, attempts, fixed_rank, c0.eligible)
+    return _arc1_result_with_policy(base, attempts, fixed_rank, c0.eligible;
+        optimizer_policy, actual_policy = actual_policy[])
 end
 
 """
@@ -734,8 +1200,24 @@ function select_fa_rank(Y, X, Z,
             selection_status = :unsupported_input, reason = "arc1_v1 fixes iterations at 2,000 per start")
         return _arc1_select_fa_rank(Y, X, Z, pedigree; ids, traits,
             iterations = niter, ledger_sink)
+    elseif optimizer_policy in ("arc1_v2", :arc1_v2)
+        why = iterations === nothing || iterations == 2_000 ? nothing :
+            "arc1_v2 fixes iterations at 2,000 per start"
+        if why !== nothing
+            candidates = NamedTuple[_fa_rank_candidate(k; status = :unsupported_input,
+                reason = why) for k in 0:1]
+            return _fa_rank_publish!(ledger_sink, candidates, NamedTuple[];
+                optimizer_policy = "arc1_v2", optimizer_policy_version = 2,
+                source_identity = _ARC1_SOURCE_IDENTITY,
+                requested_optimizer_policy = "arc1_v2",
+                actual_optimizer_policy = nothing,
+                covariance_representation = _ARC1_FA_V2_REPRESENTATION,
+                selection_status = :unsupported_input, reason = why)
+        end
+        return _arc1_select_fa_rank(Y, X, Z, pedigree; ids, traits,
+            iterations = 2_000, ledger_sink, optimizer_policy = "arc1_v2")
     end
-    why = "unknown optimizer_policy: $(repr(optimizer_policy)); supported value is \"arc1_v1\""
+    why = "unknown optimizer_policy: $(repr(optimizer_policy)); supported values are \"arc1_v1\" and \"arc1_v2\""
     return _fa_rank_publish!(ledger_sink,
         NamedTuple[_fa_rank_candidate(k; status = :unsupported_input, reason = why) for k in 0:1],
         NamedTuple[]; selection_status = :unsupported_input, reason = why)
@@ -748,10 +1230,16 @@ function select_fa_rank(Y, X, Z, relationship;
         NamedTuple[_fa_rank_candidate(k; status = :unsupported_input,
             reason = optimizer_policy in ("arc1_v1", :arc1_v1) ?
                 "arc1_v1 requires a validated Pedigree relationship; use Pedigree input" :
+                optimizer_policy in ("arc1_v2", :arc1_v2) ?
+                "arc1_v2 requires a validated Pedigree relationship; use Pedigree input" :
                 "unknown optimizer_policy: $(repr(optimizer_policy))") for k in 0:1],
         NamedTuple[]; selection_status = :unsupported_input,
-        optimizer_policy = "arc1_v1", optimizer_policy_version = 1,
+        optimizer_policy = optimizer_policy in ("arc1_v2", :arc1_v2) ? "arc1_v2" : "arc1_v1",
+        optimizer_policy_version = optimizer_policy in ("arc1_v2", :arc1_v2) ? 2 : 1,
         source_identity = _ARC1_SOURCE_IDENTITY,
+        requested_optimizer_policy = optimizer_policy in ("arc1_v2", :arc1_v2) ? "arc1_v2" : nothing,
+        actual_optimizer_policy = nothing,
+        covariance_representation = optimizer_policy in ("arc1_v2", :arc1_v2) ? _ARC1_FA_V2_REPRESENTATION : nothing,
         reason = optimizer_policy in ("arc1_v1", :arc1_v1) ?
             "arc1_v1 requires a validated Pedigree relationship; use Pedigree input" :
             "unknown optimizer_policy: $(repr(optimizer_policy))")

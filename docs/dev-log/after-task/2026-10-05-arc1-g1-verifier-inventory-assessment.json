@@ -1,0 +1,36 @@
+{
+  "assessment_performed": true,
+  "draft_sha256": "7b0e21918f2258ba777b9cd72216490f9d5bb7377ccf35259cc712ba4388c4f8",
+  "draft_version": "v1",
+  "requested_mode": "independent",
+  "assessor_type": "self",
+  "reviewer": "Codex",
+  "method": "Separate whole-report review under writing-naturalness.md; checked factual statements against current source, test outputs, hashes, and lane-preflight output.",
+  "genre": "technical after-task report",
+  "coverage": "Whole report, all 63 lines.",
+  "score": 2,
+  "style_status": "assessed",
+  "score_reason": "The report uses specific suite names, commands, outcomes, and limits. Its short sections are repetitive by design because the repository requires fixed headings.",
+  "confidence": "medium",
+  "confidence_reason": "Style is subjective, but the report is short and its technical register is consistent throughout.",
+  "examples": [
+    {
+      "location": "Section 8, first paragraph",
+      "cue": "Names the exact compared inventories and the retained scope limit.",
+      "impact": "A reviewer can see what was checked and that the production verifier hash stayed fixed.",
+      "repair": "no change needed",
+      "line": 42,
+      "quote": "Compared the synthetic adapter fixture and live oracle runner. Both contain the same nine paths in the same order; the v2 contract test is second. The locked verifier source hash remains unchanged. Confirmed this slice changes no fitted capability, numerical result, public interface, R source or study protocol."
+    }
+  ],
+  "evidence_none_reason": null,
+  "science_gate": "not_applicable",
+  "science_gate_reason": "This report documents test-fixture inventory parity and makes no statistical-method claim.",
+  "facts_gate": "pass",
+  "facts_gate_reason": "Test totals, command outcomes, source hashes, and the open-gate status were checked against current outputs and files.",
+  "references_gate": "not_applicable",
+  "references_gate_reason": "The report contains no external citations.",
+  "date": "2026-10-05",
+  "calibration_status": "No calibration examples consulted for this assessment.",
+  "interpretation": "perceived_style_not_authorship"
+}

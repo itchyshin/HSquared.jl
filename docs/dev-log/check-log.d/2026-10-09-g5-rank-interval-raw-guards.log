@@ -1,0 +1,98 @@
+ERROR: LoadError: IOError: open("/Users/z3437171/.julia/compiled/v1.10/HSquared/SJSgi_FRwgh.ji.pidfile", 2562, 292): operation not permitted (EPERM)
+Stacktrace:
+  [1] uv_error
+    @ Base ./libuv.jl:100 [inlined]
+  [2] open(path::String, flags::UInt32, mode::UInt16)
+    @ Base.Filesystem ./filesystem.jl:121
+  [3] tryopen_exclusive(path::String, mode::UInt16)
+    @ FileWatching.Pidfile ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/FileWatching/src/pidfile.jl:212
+  [4] open_exclusive(path::String; mode::UInt16, poll_interval::Int64, wait::Bool, stale_age::Int64, refresh::Float64)
+    @ FileWatching.Pidfile ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/FileWatching/src/pidfile.jl:239
+  [5] open_exclusive
+    @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/FileWatching/src/pidfile.jl:232 [inlined]
+  [6] mkpidlock(at::String, pid::Int32; stale_age::Int64, refresh::Float64, kwopts::@Kwargs{wait::Bool})
+    @ FileWatching.Pidfile ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/FileWatching/src/pidfile.jl:67
+  [7] mkpidlock
+    @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/FileWatching/src/pidfile.jl:62 [inlined]
+  [8] mkpidlock(f::Base.var"#968#969"{Base.PkgId}, at::String, pid::Int32; kwopts::@Kwargs{stale_age::Int64, wait::Bool})
+    @ FileWatching.Pidfile ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/FileWatching/src/pidfile.jl:91
+  [9] #mkpidlock#6
+    @ FileWatching.Pidfile ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/FileWatching/src/pidfile.jl:88 [inlined]
+ [10] trymkpidlock(::Function, ::Vararg{Any}; kwargs::@Kwargs{stale_age::Int64})
+    @ FileWatching.Pidfile ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/FileWatching/src/pidfile.jl:111
+ [11] #invokelatest#2
+    @ Base ./essentials.jl:889 [inlined]
+ [12] invokelatest
+    @ Base ./essentials.jl:884 [inlined]
+ [13] maybe_cachefile_lock(f::Base.var"#968#969"{Base.PkgId}, pkg::Base.PkgId, srcpath::String; stale_age::Int64)
+    @ Base ./loading.jl:2977
+ [14] maybe_cachefile_lock
+    @ Base ./loading.jl:2974 [inlined]
+ [15] _require(pkg::Base.PkgId, env::String)
+    @ Base ./loading.jl:1964
+ [16] __require_prelocked(uuidkey::Base.PkgId, env::String)
+    @ Base ./loading.jl:1806
+ [17] #invoke_in_world#3
+    @ Base ./essentials.jl:921 [inlined]
+ [18] invoke_in_world
+    @ Base ./essentials.jl:918 [inlined]
+ [19] _require_prelocked(uuidkey::Base.PkgId, env::String)
+    @ Base ./loading.jl:1797
+ [20] macro expansion
+    @ Base ./loading.jl:1784 [inlined]
+ [21] macro expansion
+    @ Base ./lock.jl:267 [inlined]
+ [22] __require(into::Module, mod::Symbol)
+    @ Base ./loading.jl:1747
+ [23] #invoke_in_world#3
+    @ Base ./essentials.jl:921 [inlined]
+ [24] invoke_in_world
+    @ Base ./essentials.jl:918 [inlined]
+ [25] require(into::Module, mod::Symbol)
+    @ Base ./loading.jl:1740
+in expression starting at /var/folders/7x/ytfpq14s0v18frbm9v_w9f4c0000gq/T/arc1-executor-fixture-k1NiLN/outside-results/attempts/repeatability-20261009.full.jls.raw-sink-check.jl:1
+ERROR: LoadError: Some tests did not pass: 429 passed, 0 failed, 1 errored, 0 broken.
+in expression starting at /Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/test/arc1_simulation_executor.jl:406
+fresh-process fake-engine wiring and evidence: Error During Test at /Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/test/arc1_simulation_executor.jl:1297
+  Got exception outside of a @test
+  failed process: Process(`/Users/z3437171/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/bin/julia -C native -J/Users/z3437171/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/lib/julia/sys.dylib -g1 --startup-file=no --threads=1 --project=/var/folders/7x/ytfpq14s0v18frbm9v_w9f4c0000gq/T/arc1-executor-fixture-k1NiLN/fake-engine /var/folders/7x/ytfpq14s0v18frbm9v_w9f4c0000gq/T/arc1-executor-fixture-k1NiLN/outside-results/attempts/repeatability-20261009.full.jls.raw-sink-check.jl`, ProcessExited(1)) [1]
+  
+  Stacktrace:
+    [1] pipeline_error
+      @ Base ./process.jl:565 [inlined]
+    [2] run(::Cmd; wait::Bool)
+      @ Base ./process.jl:480
+    [3] run
+      @ ./process.jl:477 [inlined]
+    [4] (::var"#210#292")(temp::String)
+      @ Main ~/.codex/worktrees/b9ae/HSquared.jl/test/arc1_simulation_executor.jl:1578
+    [5] mktempdir(fn::var"#210#292", parent::String; prefix::String)
+      @ Base.Filesystem ./file.jl:766
+    [6] macro expansion
+      @ ~/.codex/worktrees/b9ae/HSquared.jl/test/arc1_simulation_executor.jl:1298 [inlined]
+    [7] macro expansion
+      @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+    [8] macro expansion
+      @ ~/.codex/worktrees/b9ae/HSquared.jl/test/arc1_simulation_executor.jl:1298 [inlined]
+    [9] macro expansion
+      @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+   [10] top-level scope
+      @ ~/.codex/worktrees/b9ae/HSquared.jl/test/arc1_simulation_executor.jl:407
+   [11] include(fname::String)
+      @ Base.MainInclude ./client.jl:489
+   [12] top-level scope
+      @ none:1
+   [13] eval
+      @ Core ./boot.jl:385 [inlined]
+   [14] exec_options(opts::Base.JLOptions)
+      @ Base ./client.jl:291
+   [15] _start()
+      @ Base ./client.jl:552
+Test Summary:                                                              | Pass  Error  Total     Time
+Arc1 source-bound one-attempt executor                                     |  429      1    430  9m13.5s
+  authoritative container rejects malformed identity and serialization     |  210           210     8.5s
+  authoritative container round-trips typed sections and alias topology    |   13            13     0.7s
+  authoritative container streams profile events and preserves entry state |   11            11     0.6s
+  typed transport preserves exact and exceptional values                   |   34            34     1.9s
+  fresh-process fake-engine wiring and evidence                            |  156      1    157  9m01.3s
+  raw repeatability projection retains v3 evidence sink                    |    4             4     0.4s

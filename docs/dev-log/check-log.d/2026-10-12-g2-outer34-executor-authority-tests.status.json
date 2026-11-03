@@ -1,0 +1,18 @@
+{
+  "schema": "hsquared-arc1-check-result-v1",
+  "executed_at_utc": "2026-10-12T07:27:13Z",
+  "cwd": "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl",
+  "environment": {
+    "PYTHONDONTWRITEBYTECODE": "1"
+  },
+  "python_executable": "/Users/z3437171/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+  "python_version": "3.12.14",
+  "argv": [
+    "/Users/z3437171/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+    "LOOP/lanes/arc1-gaussian-reliability-20261002/evidence/g2-development-n80-null-outer34-v18/test_execute_candidate.py"
+  ],
+  "exit_code": 0,
+  "stdout": "test_exact_candidate_and_source_lock_load_and_dry_run (__main__.ExecuteAuthorityTests.test_exact_candidate_and_source_lock_load_and_dry_run) ... ok\ntest_import_tree_is_checked_against_locked_source_map (__main__.ExecuteAuthorityTests.test_import_tree_is_checked_against_locked_source_map) ... ok\ntest_launch_requires_exact_review_owner_approval_and_totoro_preflight (__main__.ExecuteAuthorityTests.test_launch_requires_exact_review_owner_approval_and_totoro_preflight) ... ok\ntest_only_exact_outer34_and_fa_rank_output_path_are_accepted (__main__.ExecuteAuthorityTests.test_only_exact_outer34_and_fa_rank_output_path_are_accepted) ... ok\ntest_receipt_drift_and_candidate_scope_drift_refuse (__main__.ExecuteAuthorityTests.test_receipt_drift_and_candidate_scope_drift_refuse) ... ok\ntest_receipt_file_digest_is_required (__main__.ExecuteAuthorityTests.test_receipt_file_digest_is_required) ... ok\ntest_runner_failures_and_unresolved_results_never_exit_zero (__main__.ExecuteAuthorityTests.test_runner_failures_and_unresolved_results_never_exit_zero) ... ok\n\n----------------------------------------------------------------------\nRan 7 tests in 0.074s\n\nOK\n",
+  "stderr": "",
+  "scope_note": "7/7 executor authority tests passed; tests exercise dry-run/refusal behavior and did not launch a fit."
+}

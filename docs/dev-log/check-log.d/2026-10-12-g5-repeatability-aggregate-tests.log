@@ -1,0 +1,17 @@
+# G5 repeatability aggregate synthetic tests
+
+Recorded UTC: 2026-10-12T07:33:25Z
+Working directory: /Users/z3437171/.codex/worktrees/b9ae/HSquared.jl
+Python executable: /Users/z3437171/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3
+Python version: 3.12.14
+Environment: PYTHONDONTWRITEBYTECODE=1
+Command: /Users/z3437171/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3 /Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/test/test_arc1_scientific_gates.py Arc1ScientificGateTests.test_repeatability_pilot_checks_each_estimand_and_counts_failures Arc1ScientificGateTests.test_complete_repeatability_pilot_emits_only_pilot_qualification Arc1ScientificGateTests.test_complete_repeatability_confirmation_uses_coverage_confidence_interval
+Exit code: 0
+Standard output:
+...
+----------------------------------------------------------------------
+Ran 3 tests in 0.049s
+
+OK
+Standard error: (empty)
+Scope: Three synthetic aggregator tests passed: every repeatability estimand is checked with failures retained in denominators; a complete pilot emits pilot qualification only; confirmation applies the Wilson coverage interval. No study datasets or fits ran; G5 remains open pending admitted pilot and confirmation evidence.

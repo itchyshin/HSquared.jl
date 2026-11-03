@@ -339,9 +339,33 @@ def _check_reference_audit(attempt: dict[str, Any]) -> tuple[bool, str | None]:
                             for value, expected in zip(uniqueness, expected_uniqueness))):
                     return False, "K1 starting uniquenesses do not derive from the retained K0 anchor"
                 params, start_params = definition.get("params"), row.get("start_params")
-                anchor_residual = _reference_cholesky_params(k0_anchor.get("residual_covariance"))
+                if k0_anchor.get("source") == "best_finite_reference_k0":
+                    anchor_rows = [candidate for candidate in rows
+                                   if candidate.get("rank") == 0 and
+                                   candidate.get("start_name") == k0_anchor.get("start_name") and
+                                   candidate.get("stage") == k0_anchor.get("source_stage")]
+                    if len(anchor_rows) != 1:
+                        return False, "K0 anchor does not identify one retained optimizer row"
+                    anchor_maxima = [maximum for maximum in
+                                     anchor_rows[0].get("intermediate_maxima", [])
+                                     if isinstance(maximum, dict) and
+                                     maximum.get("observation_order") ==
+                                     k0_anchor.get("observation_order") and
+                                     maximum.get("source") == k0_anchor.get("observation_source") and
+                                     maximum.get("loglik") == k0_anchor.get("loglik")]
+                    if len(anchor_maxima) != 1:
+                        return False, "K0 anchor does not identify one retained maximum"
+                    anchor_params = anchor_maxima[0].get("params")
+                    if (not isinstance(anchor_params, list) or len(anchor_params) != 14 or
+                            any(not isinstance(value, (int, float)) or not math.isfinite(value)
+                                for value in anchor_params)):
+                        return False, "K0 anchor lacks valid retained residual-factor parameters"
+                    anchor_residual = anchor_params[4:14]
+                else:
+                    anchor_residual = _reference_cholesky_params(
+                        k0_anchor.get("residual_covariance"))
                 if anchor_residual is None:
-                    return False, "K0 anchor lacks a valid retained residual covariance"
+                    return False, "K0 anchor lacks valid retained residual-factor parameters"
                 expected_params = (expected_loading +
                     [math.log(value - float(floor)) for value in expected_uniqueness] +
                     anchor_residual)

@@ -1,0 +1,21 @@
+{
+  "schema": "hsquared-arc1-check-result-v1",
+  "recorded_at_utc": "2026-10-12T07:32:56Z",
+  "execution_time_capture": "not recorded by the test runner; output was captured immediately before this record",
+  "cwd": "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl",
+  "environment": {
+    "PYTHONDONTWRITEBYTECODE": "1"
+  },
+  "python_executable": "/Users/z3437171/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+  "python_version": "3.12.14",
+  "argv": [
+    "/Users/z3437171/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+    "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/test/test_arc1_receipt_adversaries.py",
+    "Arc1ReceiptAdversaries.test_pilot_199_failure_is_not_replaced_by_formed_999_extension",
+    "Arc1ReceiptAdversaries.test_pilot_primary_interval_cannot_diverge_from_199_prefix_record"
+  ],
+  "exit_code": 0,
+  "stdout": "..\n----------------------------------------------------------------------\nRan 2 tests in 0.270s\n\nOK\n",
+  "stderr": "",
+  "scope_note": "Two synthetic adversarial tests passed. Three failures in the fixed 199 prefix prevent forming intervals even when the later 999 prefix qualifies; the primary interval must match the retained 199 prefix. No scientific study or fit ran."
+}

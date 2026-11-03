@@ -1,0 +1,10 @@
+ARC1_SYNTHETIC_R pass exit=0 counts={'file': 'test-arc1-controls.R', 'assertions': '1', 'successes': '1', 'failures': '0', 'errors': '0', 'skips': '0', 'warnings': '0'}
+ARC1_SYNTHETIC_R failure exit=1 counts={'file': 'test-arc1-controls.R', 'assertions': '1', 'successes': '0', 'failures': '1', 'errors': '0', 'skips': '0', 'warnings': '0'}
+ARC1_SYNTHETIC_R skip exit=1 counts={'file': 'test-arc1-controls.R', 'assertions': '1', 'successes': '0', 'failures': '0', 'errors': '0', 'skips': '1', 'warnings': '0'}
+ARC1_SYNTHETIC_R error exit=1 counts={'file': 'test-arc1-controls.R', 'assertions': '1', 'successes': '0', 'failures': '0', 'errors': '1', 'skips': '0', 'warnings': '0'}
+ARC1_SYNTHETIC_R empty exit=1 counts={'file': 'test-arc1-controls.R', 'assertions': '1', 'successes': '0', 'failures': '0', 'errors': '0', 'skips': '1', 'warnings': '0'}
+ARC1_SYNTHETIC_JULIA pass exit=0 output=['ARC1_TEST_COUNTS passes=1 failures=0 errors=0 broken=0']
+ARC1_SYNTHETIC_JULIA failure exit=1 output=['ERROR: Some tests did not pass: 0 passed, 1 failed, 0 errored, 0 broken.']
+ARC1_SYNTHETIC_JULIA skip exit=1 output=['ARC1_TEST_COUNTS passes=0 failures=0 errors=0 broken=1']
+ARC1_SYNTHETIC_JULIA empty exit=1 output=['ARC1_TEST_COUNTS passes=0 failures=0 errors=0 broken=0']
+ARC1_ORACLE_SELF_TEST_PASS

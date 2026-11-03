@@ -1,5 +1,5 @@
 {
-  "all_seed_rows_exhaustively_validated": 644480,
+  "all_seed_rows_exhaustively_validated": 644750,
   "canonical_fields": [
     "namespace",
     "programme",
@@ -11,6 +11,37 @@
     "stream"
   ],
   "historical_seed_audit": {
+    "documented_allocated_seed_consumptions": [
+      {
+        "candidate_sha256": "0efa941c2a6ae177012a03282bbeea03cd8bdd7dc8760165bcf23e7534324cd0",
+        "consumed_receipt_sha256": "8d38cd9f6277bd26504d7a17603ab59da7906bacc66ddc9d242a39ab5c88c776",
+        "key": [
+          "fa_rank",
+          "development",
+          80,
+          "null",
+          33,
+          0,
+          "data"
+        ],
+        "kind": "outer",
+        "logged_occurrence": {
+          "context_sha256": "06da7b5a4ad050c4271c6abe6dba1f94af9f2b2a62619dbf69d1b764cfcfe390",
+          "line": 6622,
+          "path": "docs/dev-log/check-log.md",
+          "source_sha256": "8ea4483c5baf6bc450dc338b6a05d741b55c0bfee69ce89508ea17a5b49f8e03"
+        },
+        "occurrence_count": 1,
+        "original_audit_sha256": "d86012a3887641cf9e7c8d1c9998f6ad3d8ea06b73560a84fef064c131d7e8c5",
+        "original_manifest_sha256": "c8ee07ea73b98cbffa669709a434ef840d45a518c717ba11b2100f61489d7999",
+        "owner_approval_sha256": "b564d7fa1f08b31b584a87e08aa891766c60f6bcde5b74dbb4eb978b3bf8d51c",
+        "preflight_receipt_sha256": "6e30071ddc972bb84b6664121d190c580436e81abbf44d5256be8b7db9f9b864",
+        "result_sha256": "b0da86cb3b854d5e3be212aa10ded52ef26e3a142188fe1180b42aeabbef1529",
+        "review_receipt_sha256": "43cf0323f2231842ff48fba778b7adea2ec4680971cf7707946f4879dcdd4c6c",
+        "seed": 11447647806120141284,
+        "source_lock_sha256": "f4500848f22e1282c3f1db263fd528b6041603c585aa3780006a161854c737f2"
+      }
+    ],
     "excluded_paths": [],
     "inclusion_rules": [
       "tracked sim/ and test/ source files with extensions .jl/.r/.py/.sh, excluding fixtures and the current Arc1 manifest/tests",
@@ -2630,16 +2661,16 @@
         "sha256": "118dcab4dbd0b2a109aa30afd6105e416596d90daa85875326c61e0e3a61811f"
       },
       {
-        "bytes": 419633,
-        "distinct_seed_context_literals": 54,
+        "bytes": 471379,
+        "distinct_seed_context_literals": 81,
         "path": "docs/dev-log/check-log.md",
-        "sha256": "47dd3d4d45504528c7af72ad943cb6b573d1689941cb829296d72db82849bba3"
+        "sha256": "8ea4483c5baf6bc450dc338b6a05d741b55c0bfee69ce89508ea17a5b49f8e03"
       },
       {
-        "bytes": 131572,
-        "distinct_seed_context_literals": 25,
+        "bytes": 137135,
+        "distinct_seed_context_literals": 32,
         "path": "docs/dev-log/coordination-board.md",
-        "sha256": "1010605cbe8addb2aab80d9c6b88e2f6c47193889831b08c5e2a5aca49a25a4b"
+        "sha256": "51b8a1043470d9e18b1c31ae7307c963e7810a97a7437083a232a1fa4bd94bbd"
       },
       {
         "bytes": 3772,
@@ -2954,10 +2985,16 @@
         "sha256": "aa6e694491b11ad08c2cad0d0d60dbe32b31254602a5db1b2653ceeb1814bbb7"
       },
       {
-        "bytes": 81171,
+        "bytes": 10061,
+        "distinct_seed_context_literals": 0,
+        "path": "docs/dev-log/handover/2026-10-03-codex-handover.md",
+        "sha256": "9efaa7461eca07daaacf8d4883fe2b127dd641e8ae6634ef96b4425492e3ad98"
+      },
+      {
+        "bytes": 83543,
         "distinct_seed_context_literals": 21,
         "path": "docs/dev-log/phase-snapshot-archive.md",
-        "sha256": "13cec2572a518a9f882bcd5d376b03e048a4dfe6eb5c3f49b728c429fa52ff06"
+        "sha256": "a2068de7c2d6058c2b03fc70aa73c83cd256e2a119ec1a5500649a63c188a888"
       },
       {
         "bytes": 20936,
@@ -5036,6 +5073,12 @@
         "sha256": "d2bca908b648823fd4871ddf5fabc05fb8660af4e63c440976f5705f18c6f52f"
       },
       {
+        "bytes": 8730,
+        "distinct_seed_context_literals": 28,
+        "path": "docs/dev-log/source-review/2026-10-04-h3-fir-seed-match-audit.md",
+        "sha256": "ec62a60a208a3edd1c93ddbdb7f926603816d43dd245cfda4184ab006b89cafa"
+      },
+      {
         "bytes": 7075,
         "distinct_seed_context_literals": 0,
         "path": "sim/cpu_fit_benchmark.jl",
@@ -5498,10 +5541,10 @@
         "sha256": "d6e219e02b49df62c17cc276a764bf3e3c1ebbf9883331ce8150667d0e76e30f"
       },
       {
-        "bytes": 15300,
-        "distinct_seed_context_literals": 10,
+        "bytes": 25924,
+        "distinct_seed_context_literals": 13,
         "path": "test/arc1_bootstrap.jl",
-        "sha256": "b88188637c93c600544353c181a44cc8743e91da0fff53bf1935f9706cd3b9a1"
+        "sha256": "33ae00fa034189e04bb6a2f53dcf562a89a60a8c09bab69a1de22951a7dfe6a8"
       },
       {
         "bytes": 9507,
@@ -5510,22 +5553,28 @@
         "sha256": "2d7dbba43efacfd1654d52ab303c7e06a47216aca006bf2ae4c17ef772562039"
       },
       {
-        "bytes": 7298,
-        "distinct_seed_context_literals": 0,
-        "path": "test/arc1_interfaces.jl",
-        "sha256": "86cb5ae5c99939f5f21f1d4f3f7c83b88a01e6339ea21f91e442d4c9df57f0e4"
+        "bytes": 22471,
+        "distinct_seed_context_literals": 6,
+        "path": "test/arc1_fa_factors.jl",
+        "sha256": "7952fa3e504840869af3bd02b5cd18ade012893ea1f68d716d1ae82a72c871fc"
       },
       {
-        "bytes": 25661,
+        "bytes": 10436,
+        "distinct_seed_context_literals": 1,
+        "path": "test/arc1_interfaces.jl",
+        "sha256": "af56173075eba3e9e511133c1e594afb94ee23d44c4df4ef1717ecb27912485a"
+      },
+      {
+        "bytes": 82461,
         "distinct_seed_context_literals": 2,
         "path": "test/arc1_optimizer_contracts.jl",
-        "sha256": "684f0ad2e3335f0c560e0fb122355f94fe89fc8e9f5a7dee78bdc7d73a001149"
+        "sha256": "c9004ba5f83d18554920a0dc97e417b23be0a969b2ab03289109de6849c5928b"
       },
       {
-        "bytes": 163581,
+        "bytes": 209960,
         "distinct_seed_context_literals": 1,
         "path": "test/arc1_profiles.jl",
-        "sha256": "fff0fec7ec97bb57e7610260b07a073a5662b2b282f38916b3d14537d4fee8e2"
+        "sha256": "35c591ed0c8264390363699a91ef5ab47301b14100105abedd8fe04707bd63bd"
       },
       {
         "bytes": 3472,
@@ -5534,22 +5583,28 @@
         "sha256": "b2243b365c1b652dfb4944daf95373694bad291585b6cd48d783b83bfac6b6ea"
       },
       {
-        "bytes": 21179,
+        "bytes": 116720,
         "distinct_seed_context_literals": 2,
         "path": "test/arc1_simulation_executor.jl",
-        "sha256": "f959e248680b3bb82dfe9ebba3e9a8d942a36b6d210d078490b05c596a835917"
+        "sha256": "4012d5bc1216ca63abbe39c24722e2d396e1bd6579c83bf785a42bb324763f98"
       },
       {
-        "bytes": 2884,
+        "bytes": 4250,
         "distinct_seed_context_literals": 0,
         "path": "test/arc1_simulation_identity.jl",
-        "sha256": "5e82c89b97ec7552248cd988ae1c2399ea13de3eb08ee74e773ad8860885f471"
+        "sha256": "a1906f7447f4510765963e17af4c3929e997a52e70b85b3c40463bb845da6040"
       },
       {
         "bytes": 28266,
         "distinct_seed_context_literals": 0,
         "path": "test/arc1_simulation_reference.jl",
         "sha256": "8c197f1b922a89e92a7517ce2510b964af794bbca576dafcf9edf6070460ed7a"
+      },
+      {
+        "bytes": 3638,
+        "distinct_seed_context_literals": 0,
+        "path": "test/arc1_transport_t1.jl",
+        "sha256": "9a6320e02393f00b966b32932f34e2ea46c000ebfa7ac956532d9248baf12613"
       },
       {
         "bytes": 100,
@@ -5690,10 +5745,10 @@
         "sha256": "f92c48de5a8c1b67d03b01dcad5b44ff3d3cd0ff200ca162ee753f6ed2dd1c41"
       },
       {
-        "bytes": 592646,
+        "bytes": 593065,
         "distinct_seed_context_literals": 41,
         "path": "test/runtests.jl",
-        "sha256": "25e01dc85bac5f23185e7a3bb61e26c1ff4500197a9c012cee3d6bc97d199f35"
+        "sha256": "81edbb3ebff7c30c1096e6c3ac41cc8e9042febd45282d1b60e2d2ba6192f677"
       },
       {
         "bytes": 2212,
@@ -6073,6 +6128,7 @@
       71,
       73,
       75,
+      76,
       80,
       83,
       87,
@@ -6110,6 +6166,8 @@
       181,
       182,
       183,
+      189,
+      190,
       200,
       201,
       202,
@@ -6131,51 +6189,65 @@
       229,
       230,
       235,
+      237,
       240,
       242,
       252,
       256,
       259,
+      268,
       286,
       295,
       297,
       300,
       315,
       320,
+      326,
       327,
+      330,
       331,
       333,
       345,
+      348,
       350,
       361,
       366,
       374,
       377,
+      394,
       398,
       400,
+      420,
       423,
       431,
       432,
       472,
       481,
+      499,
       500,
       512,
       529,
       540,
       600,
       627,
+      634,
+      644,
       650,
+      665,
       722,
       725,
       731,
+      750,
       800,
       860,
       872,
       873,
       880,
+      900,
       913,
       939,
       940,
+      942,
       960,
       999,
       1000,
@@ -6187,6 +6259,7 @@
       1575,
       1600,
       1734,
+      1800,
       1870,
       2000,
       2010,
@@ -6316,6 +6389,8 @@
       20260969,
       20261000,
       20261001,
+      20261002,
+      20261009,
       20261047,
       20261049,
       20261050,
@@ -6372,19 +6447,29 @@
       20281999,
       20769600,
       20769631,
+      21270914,
+      24270923,
       46235637,
       46236262,
       46237216,
       46725575,
       48040475,
       75279136,
+      95050029,
+      95050033,
+      95060036,
+      95060040,
       2026100204,
       2027130001,
       20260924001,
       20260924050,
       20260924500,
       20260926000,
-      81985529216486895
+      202610050302,
+      202610051019,
+      202610051108,
+      81985529216486895,
+      11447647806120141284
     ]
   },
   "indices": {
@@ -27136,9 +27221,9 @@
   ],
   "nested_seed_rows_exhaustively_validated": 634420,
   "outer_csv": "arc1_outer_seeds.csv",
-  "outer_csv_sha256": "4c2b834f43c3203d8748fc2fc6e0f383b8905a34bc332ea879889a55c1da13bf",
-  "outer_rows": 10060,
-  "protocol_sha256": "a6a3b9b8e02cf9a573905d55c2b0a5d49df9f02d1b7218ba15bbe52fa0c5ef26",
+  "outer_csv_sha256": "498fcac802f01fedf4b8fb4fc90ba7a61d5b05259c44907d000a6e585587fe07",
+  "outer_rows": 10330,
+  "protocol_sha256": "fc492ebe06fb31cf95280aa367c7a426b7752dffdb1103ca5c97c7ea7c4bfea6",
   "reference_reuse": {
     "endpoint_outer_indices_by_signal": {
       "null": [
@@ -27237,7 +27322,17 @@
           320
         ],
         "confirmation": 400,
-        "development": 30,
+        "development": 60,
+        "development_tranche": {
+          "amended_source_indices": [
+            31,
+            60
+          ],
+          "historical_source_indices": [
+            1,
+            30
+          ]
+        },
         "pilot": 30,
         "signals": {
           "null": 0.0,
@@ -27743,11 +27838,12 @@
       },
       "lr_chisq1_cutoff": 3.841458820694124,
       "maximum_check_includes_valid_evaluations_from_failed_nuisance_searches": true,
-      "method_version": "arc1_profile_v3",
+      "method_version": "arc1_profile_v4",
       "method_version_policy": {
         "explicit_request_required": true,
         "preserve_v1_implementation_and_artifacts": true,
         "preserve_v2_implementation_and_artifacts": true,
+        "preserve_v3_implementation_and_artifacts": true,
         "refuse_mismatch": true
       },
       "ordinary_point_fit": {
@@ -27885,7 +27981,7 @@
       ],
       "scale_reference": "s0=OLS residual sum of squares / residual df",
       "search_claim_limit": "finite_grid_resolved describes declared search only; narrower unsampled components are not ruled out",
-      "study_admission_method_version": "arc1_profile_v3",
+      "study_admission_method_version": "arc1_profile_v4",
       "unresolved_evaluation": "do not interpolate across; retain disconnected components, domain, gaps, refinement history, brackets, tail evidence, and nuisance statuses",
       "v3_corner_certificate": {
         "centered_score_spread_max": 1e-08,
@@ -27928,6 +28024,55 @@
         "target": "residual_variance",
         "target_index": 3,
         "winner_history_guard": "complete same-Ve centered history cannot exceed certified winner by more than 1e-8"
+      },
+      "v4_candidate_history": {
+        "alias_identity_required_in_native_artifact": true,
+        "aliases": [
+          "arc1_profile_v3_evaluations",
+          "arc1_profile_v4_evaluations"
+        ],
+        "candidate_owns_comparison_history": true,
+        "preserve_global_history_guard": true,
+        "retain": [
+          "native",
+          "callback",
+          "continuation",
+          "probe",
+          "exact-face",
+          "intersection"
+        ],
+        "shared_certified_winner_only_exemption": true,
+        "shared_co_winner_requires": [
+          "same target",
+          "same Ve",
+          "same source identity",
+          "same centering tag",
+          "accepted status",
+          "explicit convergence",
+          "absolute likelihood comparison <=1e-8 with zero relative tolerance"
+        ],
+        "unknown_or_unresolved_shared_evidence_refuses": true
+      },
+      "v4_uniform_tail_bound": {
+        "arithmetic": "directed MPFR bounds at 256 bits; lower-bound the threshold; upper-bound U",
+        "determinant_identity": "det(D)*det(H'inv(D)H)=det(H'H)*det(C'DC), C spans orthogonal complement of H",
+        "does_not_prove": [
+          "global optimum",
+          "convergence",
+          "profile score",
+          "coverage",
+          "interior membership",
+          "connected confidence set"
+        ],
+        "domain": "finite stored Float64 H; 1<=p<=8; p<n<=4096; nonnegative additive and permanent-environment variances; Ve>0",
+        "failure_behavior": "certificate unavailable or any invalid assumption retains the existing search; no clipping",
+        "gram_determinant": "exact rational representation of stored Float64 H entries and exact rational det(H'H); use actual transformed H",
+        "membership_only": true,
+        "objective": "ell(D)=-0.5*(logdet(D)+logdet(H'inv(D)H)+z'P_D*z), without Gaussian 2pi constant",
+        "precision_bits": 256,
+        "retain_certificate_with_attempt": true,
+        "strict_gap_minimum": 1e-08,
+        "upper_bound": "U(E)=-0.5*((n-p)*log(E)+logdet(H'H)); for every Ve>=E"
       }
     },
     "rank_selection": {
@@ -28072,8 +28217,8 @@
   },
   "validation": {
     "nested": 634420,
-    "outer": 10060,
-    "unique_keys": 644480,
-    "unique_seeds": 644480
+    "outer": 10330,
+    "unique_keys": 644750,
+    "unique_seeds": 644750
   }
 }

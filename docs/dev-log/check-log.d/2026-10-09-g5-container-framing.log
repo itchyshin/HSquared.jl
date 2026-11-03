@@ -1,0 +1,36 @@
+ERROR: LoadError: Some tests did not pass: 2 passed, 0 failed, 1 errored, 0 broken.
+in expression starting at /Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/test/arc1_simulation_executor.jl:1702
+Test Summary:                          | Pass  Total     Time
+Arc1 source-bound one-attempt executor |  402    402  4m38.8s
+Test Summary:                                               | Pass  Total  Time
+Arc1 reference-admission flags and rank comparison receipts |   15     15  0.7s
+Test Summary:                                                            | Pass  Total  Time
+Arc1 receipt diagnostic identity hashes exact UTF-8 representation bytes |   15     15  0.6s
+Arc1 container framing rejects malformed header and directory: Error During Test at /Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/test/arc1_simulation_executor.jl:1702
+  Got exception outside of a @test
+  UndefVarError: `_arc1_mutate_container_directory` not defined
+  Stacktrace:
+    [1] (::var"#396#402")(directory::String)
+      @ Main ~/.codex/worktrees/b9ae/HSquared.jl/test/arc1_simulation_executor.jl:1722
+    [2] mktempdir(fn::var"#396#402", parent::String; prefix::String)
+      @ Base.Filesystem ./file.jl:766
+    [3] mktempdir(fn::Function, parent::String)
+      @ Base.Filesystem ./file.jl:762
+    [4] macro expansion
+      @ ~/.codex/worktrees/b9ae/HSquared.jl/test/arc1_simulation_executor.jl:1703 [inlined]
+    [5] macro expansion
+      @ ~/.julia/juliaup/julia-1.10.0+0.aarch64.apple.darwin14/share/julia/stdlib/v1.10/Test/src/Test.jl:1577 [inlined]
+    [6] top-level scope
+      @ ~/.codex/worktrees/b9ae/HSquared.jl/test/arc1_simulation_executor.jl:1703
+    [7] include(fname::String)
+      @ Base.MainInclude ./client.jl:489
+    [8] top-level scope
+      @ none:1
+    [9] eval
+      @ Core ./boot.jl:385 [inlined]
+   [10] exec_options(opts::Base.JLOptions)
+      @ Base ./client.jl:291
+   [11] _start()
+      @ Base ./client.jl:552
+Test Summary:                                                 | Pass  Error  Total  Time
+Arc1 container framing rejects malformed header and directory |    2      1      3  0.5s

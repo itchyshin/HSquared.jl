@@ -34,6 +34,23 @@ function arc1_json(value)
             arc1_json_escape(string(typeof(value))) * ",\"name\":" *
             arc1_json_escape(string(value)) * ",\"value\":" * string(Int(value)) * "}}"
     end
+    if value isa Rational
+        exact = Rational{BigInt}(value)
+        return "{\"__arc1_rational__\":{\"numerator\":" *
+            arc1_json_escape(string(numerator(exact))) * ",\"denominator\":" *
+            arc1_json_escape(string(denominator(exact))) * ",\"type\":" *
+            arc1_json_escape(string(typeof(value))) * "}}"
+    end
+    if value isa BigFloat
+        if !isfinite(value)
+            return "{\"__arc1_float__\":" * arc1_json_escape(string(value)) * "}"
+        end
+        exact = Rational{BigInt}(value)
+        return "{\"__arc1_bigfloat__\":{\"numerator\":" *
+            arc1_json_escape(string(numerator(exact))) * ",\"denominator\":" *
+            arc1_json_escape(string(denominator(exact))) * ",\"precision\":" *
+            string(precision(value)) * "}}"
+    end
     value isa Integer && return string(value) # UInt64 stays an exact decimal token.
     value isa AbstractFloat && return isfinite(value) ? string(value) :
         "{\"__arc1_float__\":" * arc1_json_escape(string(value)) * "}"
@@ -102,7 +119,13 @@ function arc1_emit_receipt(receipt; fallback_fields)
 end
 
 function arc1_artifact_sha256(path::AbstractString)
-    return bytes2hex(sha256(read(path)))
+    context = SHA.SHA2_256_CTX()
+    open(path, "r") do io
+        while !eof(io)
+            SHA.update!(context, read(io, 1024 * 1024))
+        end
+    end
+    return bytes2hex(SHA.digest!(context))
 end
 
 function arc1_serialize_new(path::AbstractString, value)

@@ -1,0 +1,14 @@
+# G7 v34 retained-verifier replay (v3)
+
+Executed UTC: 2026-10-12T07:27:13Z
+Working directory: /Users/z3437171/.codex/worktrees/b9ae/HSquared.jl
+Python executable: /Users/z3437171/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3
+Python version: 3.12.14
+Environment: HSQUARED_ARC1_R_ROOT=/private/tmp/hsquared-arc1-r-reconstruction-20261008
+Environment: PYTHONDONTWRITEBYTECODE=1
+Command:
+  /Users/z3437171/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3 /Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/LOOP/lanes/arc1-gaussian-reliability-20261002/verify_retained_checks.py --gate G7 --receipt /Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/.unlazy/arc1-gaussian-reliability/evidence/package-checks/20261012T030340Z-39af9fce00/run.json --receipt-sha256 1dedd2e4acaf07f916a2b7ed8f4919e0be103859564e2046532cc98f97fe736a --freeze /private/tmp/h2-arc1-g7-v34/package-freeze-reviewed-v34.json --freeze-sha256 9d5bf3bd30132fbcec075a574d5004289bb4005c6e4f0ed81699ab478532907f
+Exit code: 0
+Standard output:
+  ARC1_G7_RETAINED_RECEIPT_VERIFIED
+Standard error: (empty)

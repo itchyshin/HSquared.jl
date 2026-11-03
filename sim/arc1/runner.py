@@ -22,6 +22,25 @@ class StoreBusyError(RuntimeError):
     """Another live worker owns this cell's evidence directory."""
 
 
+def validate_execution_scope(admission: dict[str, Any], outer: int) -> None:
+    """Enforce an optional exact outer-index fence carried by the admission."""
+    scope = admission.get("execution_scope")
+    if scope is None:
+        return
+    expected_keys = {"run_kind", "allowed_outer_indices", "case_count", "full_tranche"}
+    if (not isinstance(scope, dict) or set(scope) != expected_keys or
+            not isinstance(scope["run_kind"], str) or not scope["run_kind"] or
+            type(scope["case_count"]) is not int or type(scope["full_tranche"]) is not bool):
+        raise ValueError("execution_scope must declare a valid run_kind and exact outer allocation")
+    indices = scope["allowed_outer_indices"]
+    if (not isinstance(indices, list) or not indices or
+            any(type(index) is not int or index < 1 for index in indices) or
+            len(set(indices)) != len(indices) or scope["case_count"] != len(indices)):
+        raise ValueError("execution_scope allowed_outer_indices must match unique positive case_count")
+    if type(outer) is not int or outer not in indices:
+        raise ValueError("outer index is outside the admitted execution_scope")
+
+
 def cell_output_dir(output_root: Path, cell: dict[str, Any]) -> Path:
     """Return a collision-resistant per-cell output path beneath output_root."""
     parts = (str(cell["programme"]), str(cell["phase"]), f"N{int(cell['N'])}", str(cell["signal"]))
@@ -101,6 +120,7 @@ class Arc1AttemptStore:
         return self.directory / f"{outer:04d}.{state}.json"
 
     def begin(self, outer: int) -> dict[str, Any]:
+        validate_execution_scope(self.admission, outer)
         manifest.verify_run_admission(self.source_root, self.admission,
                                       julia_version=self.admission["julia_version"],
                                       julia_threads=self.admission["threads"]["julia"],
@@ -268,9 +288,16 @@ def assemble_cell_receipt(rows: list[dict[str, Any]], admission: dict[str, Any],
     source_root = source_root.resolve()
     artifact_root = artifact_root.resolve()
     attempts = []
+    admission_sha256 = hashlib.sha256(
+        json.dumps(admission, sort_keys=True, separators=(",", ":")).encode("utf-8")).hexdigest()
     for index, (stored, seed) in enumerate(zip(rows, seeds), start=1):
         if stored.get("outer") != index or stored.get("seed") != seed:
             raise ValueError("stored attempt rows differ from canonical outer ordering/seeds")
+        if ("admission_sha256" in stored and
+                stored.get("admission_sha256") != admission_sha256) or (
+                (stored.get("artifact_path") is not None or stored.get("full_result_path") is not None) and
+                stored.get("admission_sha256") != admission_sha256):
+            raise ValueError("stored attempt row admission digest differs from the canonical run admission")
         executor_payload = (stored if stored.get("schema") == "arc1-attempt-result-v1"
                             else stored.get("result"))
         executor_payload = executor_payload if isinstance(executor_payload, dict) else {}
@@ -324,6 +351,7 @@ def assemble_cell_receipt(rows: list[dict[str, Any]], admission: dict[str, Any],
                      "selection_reason", "selected_rank", "guard_results", "starts_planned", "starts_attempted",
                      "selector_attempts", "reference_audit", "outer_selection", "bootstrap",
                      "profile_method", "profile_lr_cutoff", "profile_intervals", "point_estimates",
+                     "v3_profile_evidence_summary",
                      "point_fit_status", "point_fit_not_optimal", "point_loglik",
                      "max_constrained_loglik", "point_identity", "reference_point_identity",
                      "source_identity", "reference_source_identity",
@@ -340,7 +368,7 @@ def assemble_cell_receipt(rows: list[dict[str, Any]], admission: dict[str, Any],
         # which is absent for terminal failures.
         for name in ("profile_method_version", "profile_source_identity",
                      "profile_method_version_mismatch", "v3_profile_evidence",
-                     "v3_evidence_retention_error"):
+                     "v3_profile_evidence_summary", "v3_evidence_retention_error"):
             if name in stored:
                 attempt[name] = stored[name]
         if "data_identity_sha256" in stored:

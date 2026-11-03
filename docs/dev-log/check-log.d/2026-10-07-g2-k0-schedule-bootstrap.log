@@ -1,0 +1,8 @@
+Test Summary:                                | Pass  Total  Time
+ARC1 fixed-B selector-repeating h² bootstrap |  154    154  7.0s
+Test Summary:                                               | Pass  Total  Time
+ARC1 v2 bootstrap validates exact outer mean and likelihood |    6      6  5.4s
+Test Summary:                                                   | Pass  Total  Time
+ARC1 v2 retained-factor bootstrap repeats the complete selector |   94     94  1.6s
+Test Summary:                                                     | Pass  Total  Time
+ARC1 bootstrap 99% formation boundaries match frozen stream sizes |   39     39  0.4s

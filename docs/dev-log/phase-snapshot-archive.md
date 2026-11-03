@@ -802,6 +802,14 @@ block** — nor does DRM.jl, nor the R twin `hsquared`, whose `AGENTS.md` carrie
 
 - **As of 2026-10-01 (bounded FA/GLLVM V3 landing verified).** Candidate `365f173f` landed through PR #401; closure PR #402 merged at `570f49ba`. Live GitHub receipts confirm four Julia OS/runtime jobs and documentation deployment passed at the implementation and closure merge commits. Final source and tests match the candidate. Fixed-rank Gaussian FA T4/K1 and Poisson-log genetic GLLVM T3/K2 remain experimental; `public_covered_count` remains 7. Automatic FA rank selection is a separate design arc; its plan is `docs/design/auto-fa-rank-design-plan-20261001.md`. No GPU, release, tag, registry, submission, capability promotion, or protected sibling-lane work. START HERE: `docs/dev-log/after-task/2026-10-01-v3-live-refresh-and-rank-plan.md`.
 
+## Archived on 2026-10-11 after the current-source G7 replay
+
+- **As of 2026-10-03 (non-GPU H2 Ultra Plan handoff).** The bounded automatic FA-rank design contract and validation plan are complete. The wider Gaussian-reliability Arc 1 remains incomplete with G0–G8 open. Latest fork stopped after profile-v4 Astra HOLD and a canonical G7 preflight failure before tests; three engineering attempts are consumed, with no pilot or confirmation study. Preserve Julia, isolated R, and protected settings state. Capability remains experimental; covered count stays seven. START HERE: `docs/dev-log/coordination-board.md` Active Lane Split and `docs/dev-log/handover/2026-10-03-codex-handover.md`.
+
+## Archived on 2026-10-11 after the current Totoro no-launch preflight
+
+- **As of 2026-10-11 (non-GPU Arc 1 continuation).** The bounded automatic FA-rank design contract and validation plan are complete. Arc 1 G0, G1, G6, and G7 are met; G2-G5 and G8 remain open. The approved v14 N80/null outer32 attempt failed during serialization and remains counted with no gate credit. No pilot or confirmation study has passed. The v17 outer33 candidate has an independent review PASS but remains non-executable pending intended-host Totoro preflight and separate owner approval. Capability remains experimental; covered count stays seven. START HERE: `docs/dev-log/coordination-board.md` Active Lane Split, `LOOP/lanes/arc1-gaussian-reliability-20261002/checkpoint.md`, and `.unlazy/arc1-gaussian-reliability/GATES.md`.
+
 
 ## Replaced during final automatic FA rank verification, 2026-10-01
 

@@ -8,6 +8,7 @@ using HSquared
 if !isdefined(HSquared, :_Arc1FASpectralContext)
     Base.include(HSquared, joinpath(@__DIR__, "..", "src", "arc1_fa.jl"))
 end
+
 if !isdefined(HSquared, :_arc1_fa_v2_factor_state)
     Base.include(HSquared, joinpath(@__DIR__, "..", "src", "arc1_fa_factors.jl"))
 end
@@ -348,21 +349,23 @@ const _ARC1_FACTORV2_RETAINED_COORDINATES = (
             _Arc1FactorV2InterruptMatrix(size(d.Y)), d.X, d.B, d.p0, 0)
 
         # The two saved residual-coordinate perturbations remain factor-valid.
-        # Case 11's rounded residual-PD report is recorded as a Boolean below;
-        # its historical classification is not assumed to be platform invariant.
+        # Rounded-matrix PD is the exact classification of each realized Float64
+        # report; factor validity remains a separate property.
         case3 = copy(_ARC1_FACTORV2_RETAINED_COORDINATES[2])
         case3[9] -= 1e-5
         residual_case3 = HSquared._arc1_fa_v2_factor_state(case3, 1)
         @test residual_case3.status == :ok
         @test residual_case3.state.factor_valid
-        @test !residual_case3.state.pd_residual
+        @test residual_case3.state.pd_residual ==
+            HSquared._arc1_fa_v2_exact_float64_pd(residual_case3.state.R)
         @test HSquared._arc1_fa_v2_block_factor(residual_case3.state, 0.7) !== nothing
         case11 = copy(_ARC1_FACTORV2_RETAINED_COORDINATES[3])
         case11[13] -= 1e-4
         residual_case11 = HSquared._arc1_fa_v2_factor_state(case11, 1)
         @test residual_case11.status == :ok
         @test residual_case11.state.factor_valid
-        @test residual_case11.state.pd_residual isa Bool
+        @test residual_case11.state.pd_residual ==
+            HSquared._arc1_fa_v2_exact_float64_pd(residual_case11.state.R)
         @test HSquared._arc1_fa_v2_block_factor(residual_case11.state, 0.7) !== nothing
 
         # A zero relationship eigenvalue is exact, not a dropped underflowed
@@ -400,5 +403,37 @@ const _ARC1_FACTORV2_RETAINED_COORDINATES = (
         @test preserved.observation.factor_state.parameters == d.p1
         @test last(preserved.observations).stage == :gradient
         @test last(preserved.observations).status == :failed
+    end
+end
+
+@testset "Arc1 exact PD status for rounded Float64 matrices" begin
+    reported_indefinite = [
+        0.32703552661281554  0.3339778994936688  -0.12197868147333915 -0.15526750130081754;
+        0.3339778994936688  0.6110494128948445   0.25214283287929734 -0.07012389993364093;
+       -0.12197868147333915 0.25214283287929734  0.5862464535913825   0.09660223544193038;
+       -0.15526750130081754 -0.07012389993364093 0.09660223544193038  0.5773462119534791]
+    reported_positive = [
+        0.33508673936601313  0.3329139329960774  -0.10266151482077902 -0.25402233285563575;
+        0.3329139329960774   0.6297492767174504   0.1727480599916967   0.003372019247056772;
+       -0.10266151482077902 0.1727480599916967   0.5911721167915641   0.06976173434632839;
+       -0.25402233285563575 0.003372019247056772 0.06976173434632839  0.6036129132899815]
+
+    @test isdefined(HSquared, :_arc1_fa_v2_exact_float64_pd)
+    if isdefined(HSquared, :_arc1_fa_v2_exact_float64_pd)
+        exact_pd = getfield(HSquared, :_arc1_fa_v2_exact_float64_pd)
+        @test exact_pd(reported_indefinite) === false
+        @test exact_pd(reported_positive) === true
+        @test exact_pd([1.0 1e-13 0.0 0.0; 0.0 1.0 0.0 0.0;
+                        0.0 0.0 1.0 0.0; 0.0 0.0 0.0 1.0]) === false
+        @test exact_pd([1.0 0.0 0.0 0.0; 0.0 0.0 0.0 0.0;
+                        0.0 0.0 1.0 0.0; 0.0 0.0 0.0 1.0]) === false
+        @test exact_pd([0.0 1.0 0.0 0.0; 1.0 0.0 0.0 0.0;
+                        0.0 0.0 1.0 0.0; 0.0 0.0 0.0 1.0]) === false
+        @test exact_pd([1.0 0.0 0.0 0.0; 0.0 Inf 0.0 0.0;
+                        0.0 0.0 1.0 0.0; 0.0 0.0 0.0 1.0]) === false
+        d = _arc1_factorv2_fixture()
+        state = HSquared._arc1_fa_v2_factor_state(d.p1, 1).state
+        @test state.pd_residual == exact_pd(state.R)
+        @test state.pd_genetic == exact_pd(state.G)
     end
 end

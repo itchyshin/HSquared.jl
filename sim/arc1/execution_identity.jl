@@ -1,6 +1,7 @@
 using SHA
 using LinearAlgebra
 using Pkg
+using TOML
 using UUIDs
 
 const ARC1_HSQUARED_UUID = UUID("a0667dea-0f38-44e8-9150-4fda00624eac")
@@ -38,6 +39,35 @@ function _arc1_environment_snapshot(root::AbstractString)
     return Dict(name => _arc1_sha256(path) for (name, path) in paths)
 end
 
+function _arc1_is_declared_manifest_extension(pkgid, mod, package_info)
+    extension_path = pathof(mod)
+    extension_path === nothing && return false
+    manifest_path = joinpath(dirname(Base.active_project()), "Manifest.toml")
+    isfile(manifest_path) || return false
+    dependencies = get(TOML.parsefile(manifest_path), "deps", nothing)
+    dependencies isa AbstractDict || return false
+    for entries in values(dependencies)
+        package_entries = entries isa AbstractVector ? entries : (entries,)
+        for entry in package_entries
+            entry isa AbstractDict || continue
+            extensions = get(entry, "extensions", nothing)
+            extensions isa AbstractDict && haskey(extensions, pkgid.name) || continue
+            uuid_text = get(entry, "uuid", nothing)
+            uuid_text isa AbstractString || continue
+            parent = get(package_info, UUID(uuid_text), nothing)
+            parent === nothing && continue
+            isdir(parent.source) || continue
+            relative = relpath(realpath(extension_path), realpath(parent.source))
+            parts = splitpath(relative)
+            isempty(parts) && continue
+            first(parts) == "ext" || continue
+            (pkgid.name in parts[2:end] || splitext(last(parts))[1] == pkgid.name) || continue
+            return true
+        end
+    end
+    return false
+end
+
 function _arc1_loaded_dependencies()
     package_info = Pkg.dependencies()
     records = Dict{String,Any}[]
@@ -46,6 +76,10 @@ function _arc1_loaded_dependencies()
         pkgid.name in ("Base", "Core", "Main") && continue
         info = get(package_info, pkgid.uuid, nothing)
         if info === nothing
+            # Julia extension modules have derived UUIDs rather than package
+            # entries. The manifest hash pins their parent package and extension
+            # declaration; accept only modules found under that package's ext/.
+            _arc1_is_declared_manifest_extension(pkgid, mod, package_info) && continue
             path = pathof(mod)
             path !== nothing && startswith(realpath(path), realpath(Sys.STDLIB)) && continue
             error("loaded dependency $(pkgid.name) ($(pkgid.uuid)) is absent from active Manifest.toml")

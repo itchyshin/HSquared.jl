@@ -42,7 +42,15 @@ from typing import Any
 
 RUNNER = Path(__file__).resolve()
 JULIA_ROOT = RUNNER.parents[1].resolve()
-R_ROOT = Path("/private/tmp/hsquared-auto-fa-r-20261001").resolve()
+DEFAULT_R_ROOT = Path("/private/tmp/hsquared-auto-fa-r-20261001")
+
+
+def _resolve_r_root() -> Path:
+    override = os.environ.get("HSQUARED_ARC1_R_ROOT", "").strip()
+    return Path(override).expanduser().resolve() if override else DEFAULT_R_ROOT.resolve()
+
+
+R_ROOT = _resolve_r_root()
 RUNS_ROOT = JULIA_ROOT / ".unlazy" / "arc1-gaussian-reliability" / "oracles" / "runs"
 JULIA_CALL_BOOTSTRAP_TEMPLATE = JULIA_ROOT / ".unlazy" / "arc1-gaussian-reliability" / "evidence" / "live-r-environment-mutation"
 JULIA_DEPOT = "/private/tmp/hsquared-arc1-bootstrap-depot:/Users/z3437171/.julia"
@@ -51,14 +59,18 @@ BLAS_THREADS = "1"
 PROFILE_WRAPPER = "0"
 PROFILE_V3_ONLY = "0"
 JULIA_TIMEOUT_S = 300
-R_TIMEOUT_S = 360
+JULIA_TIMEOUT_OVERRIDES_S = {"test/arc1_simulation_executor.jl": 1500}
+R_TIMEOUT_S = 3600
 VERSION_TIMEOUT_S = 20
-GATE_TIMEOUT_S = {"g1": 300, "g6": 360}
+TIMEOUT_POLICY_VERSION = 3
+GATE_TIMEOUT_S = {"g1": 2400, "g6": 4200}
+PROCESS_GROUP_EXIT_WAIT_S = 5
 SCHEMA = "hsquared-arc1-oracle-freeze-v1"
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 
 JULIA_TESTS = (
     "test/arc1_exact_objectives.jl",
+    "test/arc1_fa_v2_contracts.jl",
     "test/arc1_optimizer_contracts.jl",
     "test/arc1_profiles.jl",
     "test/arc1_bootstrap.jl",
@@ -67,13 +79,17 @@ JULIA_TESTS = (
     "test/arc1_simulation_reference.jl",
     "test/arc1_simulation_executor.jl",
 )
-JULIA_SIM_SOURCES = (
-    # Every source file in this directory is part of the transitive runner
-    # surface; reference/executor include helpers such as engine_io.jl.
+JULIA_TRANSITIVE_TEST_SOURCES = (
+    # Included by arc1_simulation_executor.jl; freeze it without executing it
+    # as an independent test file.
+    "test/arc1_container_framing.jl",
 )
 R_ARC1_TESTS = (
     "tests/testthat/test-arc1-controls.R",
     "tests/testthat/test-arc1-live-parity.R",
+    "tests/testthat/test-arc1-bootstrap-v2-live.R",
+    "tests/testthat/test-arc1-profile-v4-live.R",
+    "tests/testthat/test-arc1-profile-v4-transport-isolation.R",
     "tests/testthat/test-arc1-uncertainty-controls.R",
     "tests/testthat/test-arc1-uncertainty-live.R",
 )
@@ -100,14 +116,20 @@ R_DRIVER = r'''suppressPackageStartupMessages(library(testthat))
 pkg <- Sys.getenv("ARC1_ORACLE_PACKAGE_ROOT")
 if (!nzchar(pkg)) pkg <- "/private/tmp/hsquared-auto-fa-r-20261001"
 expected <- c("test-arc1-controls.R", "test-arc1-live-parity.R",
+              "test-arc1-bootstrap-v2-live.R", "test-arc1-profile-v4-live.R",
+              "test-arc1-profile-v4-transport-isolation.R",
               "test-arc1-uncertainty-controls.R", "test-arc1-uncertainty-live.R")
-selected <- sort(basename(testthat::find_test_scripts(file.path(pkg, "tests", "testthat"), filter = "arc1-", full.names = TRUE)))
+test_root <- file.path(pkg, "tests", "testthat")
+scripts <- testthat::find_test_scripts(test_root, full.names = TRUE)
+selected <- sort(basename(scripts[grepl("^test-arc1-", basename(scripts))]))
 if (!identical(selected, sort(expected))) stop("Arc1 test selection mismatch: ", paste(selected, collapse = ", "))
 reporter_list <- testthat::ListReporter$new()
 reporter_summary <- testthat::SummaryReporter$new(show_praise = FALSE)
 reporter <- testthat::MultiReporter$new(list(reporter_list, reporter_summary))
 run_error <- NULL
-tryCatch(devtools::test(pkg = pkg, filter = "arc1-", stop_on_failure = TRUE, reporter = reporter),
+test_stems <- sub("^test-", "", tools::file_path_sans_ext(expected))
+filter <- paste0("(", paste(test_stems, collapse = "|"), ")$")
+tryCatch(devtools::test(pkg = pkg, filter = filter, stop_on_failure = TRUE, reporter = reporter),
          error = function(e) { run_error <<- conditionMessage(e) })
 records <- unclass(reporter_list$get_results())
 is_class <- function(x, pattern) inherits(x, pattern) || any(grepl(pattern, class(x), fixed = TRUE))
@@ -152,7 +174,8 @@ def file_map() -> dict[str, tuple[Path, list[str]]]:
     julia_sim = sorted((JULIA_ROOT / "sim" / "arc1").rglob("*.jl"))
     julia_paths = [p.relative_to(JULIA_ROOT).as_posix() for p in julia_src]
     julia_paths += [p.relative_to(JULIA_ROOT).as_posix() for p in julia_sim]
-    julia_paths += ["Project.toml", "Manifest.toml", *JULIA_TESTS]
+    julia_paths += ["Project.toml", "Manifest.toml", *JULIA_TESTS,
+                    *JULIA_TRANSITIVE_TEST_SOURCES]
 
     test_root = R_ROOT / "tests" / "testthat"
     r_src = sorted((R_ROOT / "R").rglob("*.R"))
@@ -229,7 +252,7 @@ def validate_freeze(doc: Any, groups: dict[str, tuple[Path, list[str]]], *, gate
     if any(not isinstance(review.get(k), str) or not review[k].strip()
            for k in ("reviewer", "reviewed_at_utc")):
         raise OracleError("freeze review metadata needs reviewer and reviewed_at_utc")
-    roots = {"julia": str(JULIA_ROOT), "r": str(R_ROOT)}
+    roots = freeze_roots()
     if doc.get("roots") != roots:
         raise OracleError(f"freeze roots must exactly equal {roots!r}")
     runtime = doc.get("runtime")
@@ -247,6 +270,11 @@ def validate_freeze(doc: Any, groups: dict[str, tuple[Path, list[str]]], *, gate
         if any(not isinstance(v, str) or not SHA256_RE.fullmatch(v) for v in values.values()):
             raise OracleError(f"freeze {group} contains a malformed SHA-256 value")
     validate_julia_call_bootstrap(doc.get("julia_call_bootstrap"), required=gate == "g6")
+
+
+def freeze_roots() -> dict[str, str]:
+    """Return the exact source roots this process requires its freeze to pin."""
+    return {"julia": str(JULIA_ROOT), "r": str(R_ROOT)}
 
 
 def compare_hashes(actual: dict[str, dict[str, str]], expected: dict[str, dict[str, str]]) -> None:
@@ -297,22 +325,48 @@ def julia_env() -> dict[str, str]:
 
 
 def terminate_group(proc: subprocess.Popen[Any]) -> str:
-    if proc.poll() is not None:
-        return "already-exited"
-    try:
-        os.killpg(proc.pid, signal.SIGTERM)
-        proc.wait(timeout=10)
-        return "terminated"
-    except subprocess.TimeoutExpired:
+    """Stop a command's process group and wait until inherited log writers exit."""
+    pgid = proc.pid
+
+    def group_exists() -> bool:
         try:
-            os.killpg(proc.pid, signal.SIGKILL)
+            os.killpg(pgid, 0)
+        except ProcessLookupError:
+            return False
+        except PermissionError:
+            return True
+        return True
+
+    if not group_exists():
+        if proc.poll() is None:
+            proc.wait()
+        return "already-exited"
+
+    status = "terminated"
+    try:
+        os.killpg(pgid, signal.SIGTERM)
+    except ProcessLookupError:
+        pass
+    if proc.poll() is None:
+        try:
+            proc.wait(timeout=PROCESS_GROUP_EXIT_WAIT_S)
+        except subprocess.TimeoutExpired:
+            pass
+    deadline = time.monotonic() + PROCESS_GROUP_EXIT_WAIT_S
+    while group_exists() and time.monotonic() < deadline:
+        time.sleep(0.05)
+    if group_exists():
+        status = "killed"
+        try:
+            os.killpg(pgid, signal.SIGKILL)
         except ProcessLookupError:
             pass
+        deadline = time.monotonic() + PROCESS_GROUP_EXIT_WAIT_S
+        while group_exists() and time.monotonic() < deadline:
+            time.sleep(0.05)
+    if proc.poll() is None:
         proc.wait()
-        return "killed"
-    except ProcessLookupError:
-        proc.wait()
-        return "already-exited"
+    return status if not group_exists() else "group-still-alive"
 
 
 class Runner:
@@ -331,6 +385,8 @@ class Runner:
         self.runner_hash = sha256_file(RUNNER)
         self.meta: dict[str, Any] = {
             "schema": "hsquared-arc1-oracle-run-v1", "gate": gate,
+            "timeout_policy_version": TIMEOUT_POLICY_VERSION,
+            "gate_timeout_s": dict(GATE_TIMEOUT_S),
             "runner_sha256": self.runner_hash,
             "run_id": self.out.name, "status": "running",
             "started_at_utc": dt.datetime.now(dt.timezone.utc).isoformat(),
@@ -401,7 +457,7 @@ class Runner:
             "env_overrides": overrides, "timeout_s": timeout, "log": log_path.name,
             "started_at_utc": dt.datetime.now(dt.timezone.utc).isoformat(),
             "process_status": None, "timed_out": False, "interrupted": False,
-            "cleanup": None, "before_sha256": before}
+            "cleanup": None, "log_sealed": False, "before_sha256": before}
         if bootstrap_before is not None:
             record["julia_call_bootstrap_path"] = str(bootstrap_dir)
             record["julia_call_bootstrap_before_sha256"] = bootstrap_before
@@ -414,6 +470,8 @@ class Runner:
                 ACTIVE_PROCESS = proc
                 try:
                     record["process_status"] = proc.wait(timeout=timeout)
+                    record["cleanup"] = terminate_group(proc)
+                    record["process_group_leak"] = record["cleanup"] != "already-exited"
                 except subprocess.TimeoutExpired:
                     record["timed_out"] = True
                     record["cleanup"] = terminate_group(proc)
@@ -431,7 +489,8 @@ class Runner:
             os.fsync(log.fileno())
         record["elapsed_s"] = round(time.monotonic() - start, 3)
         record["ended_at_utc"] = dt.datetime.now(dt.timezone.utc).isoformat()
-        record["log_sha256"] = sha256_file(log_path)
+        record["log_sealed"] = record["cleanup"] != "group-still-alive"
+        record["log_sha256"] = sha256_file(log_path) if record["log_sealed"] else None
         if bootstrap_dir is not None and bootstrap_before is not None:
             try:
                 bootstrap_after = bootstrap_snapshot(bootstrap_dir)
@@ -452,6 +511,10 @@ class Runner:
         self.save()
         if record["timed_out"]:
             raise OracleError(f"{name} timed out; process group {record['cleanup']}")
+        if not record["log_sealed"]:
+            raise OracleError(f"{name} log remains unsealed; process group did not exit")
+        if record.get("process_group_leak"):
+            raise OracleError(f"{name} exited while descendants remained; group cleanup={record['cleanup']}")
         if record["interrupted"]:
             raise KeyboardInterrupt
         if record.get("launch_error"):
@@ -481,7 +544,7 @@ class Runner:
     def run_g1(self) -> None:
         for test in JULIA_TESTS:
             record = self.command("julia-" + Path(test).stem, julia_argv(test), JULIA_ROOT,
-                                  julia_env(), JULIA_TIMEOUT_S)
+                                  julia_env(), JULIA_TIMEOUT_OVERRIDES_S.get(test, JULIA_TIMEOUT_S))
             output = self.out.joinpath(record["log"]).read_text(errors="replace")
             counts = re.search(r"ARC1_TEST_COUNTS passes=(\d+) failures=(\d+) errors=(\d+) broken=(\d+)", output)
             if not counts or int(counts.group(1)) <= 0 or any(int(counts.group(i)) != 0 for i in range(2, 5)):
@@ -503,6 +566,7 @@ class Runner:
         env = julia_env()
         env.update({"HSQUARED_ARC1_REQUIRE_LIVE": "true",
                     "HSQUARED_JULIA_PROJECT": str(JULIA_ROOT),
+                    "ARC1_ORACLE_PACKAGE_ROOT": str(R_ROOT),
                     "JULIA_PROJECT": str(self.bootstrap_dir),
                     "JULIA_PKG_OFFLINE": "true",
                     "ARC1_ORACLE_RESULTS_RDS": str(result_path),
@@ -570,11 +634,217 @@ def _self_test_profile_environment_overrides() -> None:
                 os.environ[name] = value
 
 
+def _self_test_r_arc1_selection() -> None:
+    expected = (
+        "tests/testthat/test-arc1-controls.R",
+        "tests/testthat/test-arc1-live-parity.R",
+        "tests/testthat/test-arc1-bootstrap-v2-live.R",
+        "tests/testthat/test-arc1-profile-v4-live.R",
+        "tests/testthat/test-arc1-profile-v4-transport-isolation.R",
+        "tests/testthat/test-arc1-uncertainty-controls.R",
+        "tests/testthat/test-arc1-uncertainty-live.R",
+    )
+    if R_ARC1_TESTS != expected:
+        raise AssertionError("Arc1 R selection must include the profile-v4 transport-isolation regression")
+    global R_ROOT
+    original_root = R_ROOT
+    try:
+        with tempfile.TemporaryDirectory(prefix="arc1-r-selection-selftest-") as temp:
+            R_ROOT = Path(temp) / "r-package"
+            test_root = R_ROOT / "tests" / "testthat"
+            test_root.mkdir(parents=True)
+            (R_ROOT / "DESCRIPTION").write_text("Package: synthetic\n", encoding="utf-8")
+            (R_ROOT / "NAMESPACE").write_text("", encoding="utf-8")
+            (R_ROOT / "tests" / "testthat.R").write_text("", encoding="utf-8")
+            for relative in expected:
+                (R_ROOT / relative).write_text("", encoding="utf-8")
+            groups = file_map()
+            selected = tuple(path for path in groups["r"][1] if Path(path).name.startswith("test-arc1-"))
+            if selected != tuple(sorted(expected)):
+                raise AssertionError(f"Arc1 R selection differs from the frozen exact set: {selected}")
+
+            (test_root / "test-arc1-unreviewed.R").write_text("", encoding="utf-8")
+            try:
+                file_map()
+            except OracleError as exc:
+                if "R Arc1 test selection changed" not in str(exc):
+                    raise
+            else:
+                raise AssertionError("an unreviewed Arc1 test file was accepted by the source inventory")
+    finally:
+        R_ROOT = original_root
+
+
+def _self_test_process_group_sealing() -> None:
+    with tempfile.TemporaryDirectory(prefix="arc1-oracle-process-group-selftest-") as temp:
+        output = Path(temp, "descendant.log")
+        child_code = (
+            "import pathlib,time; p=pathlib.Path(" + repr(str(output)) + "); f=p.open('a')\n"
+            "while True:\n f.write('x\\n'); f.flush(); time.sleep(0.02)"
+        )
+        parent_code = (
+            "import subprocess,sys,time; subprocess.Popen([sys.executable, '-c', sys.argv[1]]); "
+            "time.sleep(0.1); "
+            "print('parent exited')"
+        )
+        proc = subprocess.Popen([sys.executable, "-c", parent_code, child_code],
+                                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                                start_new_session=True)
+        try:
+            if proc.wait(timeout=10) != 0:
+                raise AssertionError("synthetic oracle parent did not exit successfully")
+            deadline = time.monotonic() + 2
+            while not output.exists() and time.monotonic() < deadline:
+                time.sleep(0.01)
+            if not output.exists():
+                raise AssertionError("synthetic descendant did not open its inherited output")
+            status = terminate_group(proc)
+            if status not in ("terminated", "killed"):
+                raise AssertionError(f"synthetic inherited-log descendant was not stopped: {status}")
+            sealed_hash = sha256_file(output)
+            time.sleep(0.15)
+            if sha256_file(output) != sealed_hash:
+                raise AssertionError("descendant continued mutating output after process-group cleanup")
+        finally:
+            terminate_group(proc)
+
+
+def _self_test_runner_command_sealing() -> None:
+    with tempfile.TemporaryDirectory(prefix="arc1-oracle-runner-sealing-selftest-") as temp:
+        root = Path(temp)
+
+        def synthetic_runner(label: str) -> Runner:
+            out = root / label
+            out.mkdir()
+            runner = Runner.__new__(Runner)
+            runner.gate = "g1"
+            runner.freeze_path = root / "synthetic-freeze.json"
+            runner.groups = {}
+            runner.out = out
+            runner.start = time.monotonic()
+            runner.freeze_hash = "synthetic"
+            runner.expected = {}
+            runner.bootstrap_spec = None
+            runner.bootstrap_dir = None
+            runner.runner_hash = sha256_file(RUNNER)
+            runner.meta = {"commands": []}
+            runner.verify = lambda _label: {}  # type: ignore[method-assign]
+            return runner
+
+        def invoke(label: str, argv: list[str], timeout: float) -> dict[str, Any]:
+            runner = synthetic_runner(label)
+            try:
+                runner.command(label, argv, root, {}, timeout)
+            except (OracleError, KeyboardInterrupt):
+                pass
+            else:
+                raise AssertionError(f"synthetic {label} oracle command unexpectedly passed")
+            return runner.meta["commands"][0]
+
+        descendant_path = root / "oracle-descendant-output.log"
+        descendant_code = (
+            "import pathlib,time; f=pathlib.Path(" + repr(str(descendant_path)) + ").open('a')\n"
+            "while True:\n f.write('x\\n'); f.flush(); time.sleep(0.02)"
+        )
+        parent_code = (
+            "import subprocess,sys,time; subprocess.Popen([sys.executable, '-c', sys.argv[1]]); "
+            "time.sleep(0.1); print('parent exited')"
+        )
+        leaked_parent = invoke("parent-first-leak",
+                               [sys.executable, "-c", parent_code, descendant_code], 3)
+        assert leaked_parent["process_status"] == 0 and leaked_parent["process_group_leak"]
+        assert leaked_parent["log_sealed"] and leaked_parent["log_sha256"]
+        sealed_log = root / "parent-first-leak" / leaked_parent["log"]
+        sealed_hash = sha256_file(sealed_log)
+        time.sleep(0.15)
+        assert sha256_file(sealed_log) == sealed_hash
+
+        timeout = invoke("timeout", [sys.executable, "-c", "import time; time.sleep(5)"], 0.1)
+        assert timeout["timed_out"] and timeout["log_sealed"] and timeout["log_sha256"]
+
+        real_popen = subprocess.Popen
+        def interrupting_popen(*args: Any, **kwargs: Any) -> subprocess.Popen[Any]:
+            process = real_popen(*args, **kwargs)
+            real_wait = process.wait
+            first_wait = True
+            def wait_once(*wait_args: Any, **wait_kwargs: Any) -> int:
+                nonlocal first_wait
+                if first_wait:
+                    first_wait = False
+                    raise RunnerInterrupted("synthetic interruption")
+                return real_wait(*wait_args, **wait_kwargs)
+            process.wait = wait_once  # type: ignore[method-assign]
+            return process
+        subprocess.Popen = interrupting_popen
+        try:
+            interrupted = invoke("interrupted", [sys.executable, "-c", "import time; time.sleep(5)"], 3)
+        finally:
+            subprocess.Popen = real_popen
+        assert interrupted["interrupted"] and interrupted["log_sealed"] and interrupted["log_sha256"]
+
+        real_terminate = terminate_group
+        globals()["terminate_group"] = lambda _proc: "group-still-alive"
+        try:
+            unresolved = invoke("unresolved", [sys.executable, "-c", "print('finished')"], 3)
+        finally:
+            globals()["terminate_group"] = real_terminate
+        assert not unresolved["log_sealed"] and unresolved["log_sha256"] is None
+
+
 def self_test() -> None:
     assert hashlib.sha256(b"abc").hexdigest() == "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+    assert TIMEOUT_POLICY_VERSION == 3
+    assert GATE_TIMEOUT_S["g1"] == 2400, "G1 timeout policy v3 must allow 2400 seconds"
+    assert JULIA_TIMEOUT_S == 300
+    assert JULIA_TIMEOUT_OVERRIDES_S == {"test/arc1_simulation_executor.jl": 1500}
+    assert R_TIMEOUT_S >= 3300, "G6 live R cap must cover measured profile and uncertainty test runtimes"
+    assert GATE_TIMEOUT_S["g6"] >= 3900, "G6 gate cap must cover measured live R runtime with headroom"
     assert julia_argv(JULIA_TESTS[0])[:4] == ["julia", "--startup-file=no", "--project=.", "-e"]
     assert julia_argv(JULIA_TESTS[0])[-1] == str((JULIA_ROOT / JULIA_TESTS[0]).resolve())
+    assert "test/arc1_fa_v2_contracts.jl" in JULIA_TESTS
+    assert "test/arc1_container_framing.jl" in JULIA_TRANSITIVE_TEST_SOURCES
+    assert "test/arc1_container_framing.jl" not in JULIA_TESTS
+    assert "test/arc1_container_framing.jl" in file_map()["julia"][1]
+    assert julia_argv("test/arc1_fa_v2_contracts.jl")[-1] == str(
+        (JULIA_ROOT / "test/arc1_fa_v2_contracts.jl").resolve()
+    )
     _self_test_profile_environment_overrides()
+    _self_test_r_arc1_selection()
+    _self_test_process_group_sealing()
+    _self_test_runner_command_sealing()
+    with tempfile.TemporaryDirectory(prefix="arc1-oracle-root-selftest-") as temp:
+        selected_root = Path(temp, "selected-r-root").resolve()
+        env = os.environ.copy()
+        env["HSQUARED_ARC1_R_ROOT"] = str(selected_root)
+        probe = r"""
+import sys
+from pathlib import Path
+sys.path.insert(0, sys.argv[1])
+import arc1_oracles
+selected = Path(sys.argv[2])
+assert arc1_oracles.R_ROOT == selected
+assert arc1_oracles.freeze_roots()['r'] == str(selected)
+doc = {'schema': arc1_oracles.SCHEMA,
+       'review': {'status': 'reviewed', 'reviewer': 'self-test', 'reviewed_at_utc': 'test'},
+       'roots': arc1_oracles.freeze_roots()}
+try:
+    arc1_oracles.validate_freeze(doc, {})
+except arc1_oracles.OracleError as exc:
+    assert 'freeze roots' not in str(exc) and 'runtime' in str(exc)
+else:
+    raise AssertionError('incomplete synthetic freeze unexpectedly passed')
+doc['roots']['r'] = str(selected.parent / 'wrong-r-root')
+try:
+    arc1_oracles.validate_freeze(doc, {})
+except arc1_oracles.OracleError as exc:
+    assert 'freeze roots must exactly equal' in str(exc)
+else:
+    raise AssertionError('oracle freeze accepted the wrong R root')
+"""
+        result = subprocess.run([sys.executable, "-c", probe, str(RUNNER.parent), str(selected_root)],
+                                env=env, capture_output=True, text=True, check=False)
+        if result.returncode != 0:
+            raise AssertionError(f"synthetic oracle R-root override was not selected: {result.stderr}")
     try:
         julia_argv("-e")
     except OracleError:
@@ -648,6 +918,8 @@ def self_test() -> None:
             for index, filename in enumerate(required):
                 body = snippet if index == 0 else f'test_that("other {index}", {{ expect_true(TRUE) }})'
                 (tests / filename).write_text(body + "\n")
+            (tests / "test-unrelated.R").write_text(
+                'test_that("unrelated tests are excluded", { expect_true(FALSE) })\n')
             rds, result_csv = case_dir / "results.rds", case_dir / "results.csv"
             driver = case_dir / "driver.R"
             driver.write_text(R_DRIVER)
@@ -664,8 +936,8 @@ def self_test() -> None:
                 raise AssertionError(f"synthetic R {case} omitted its retained results")
             with result_csv.open(newline="") as stream:
                 rows = list(csv_module.DictReader(stream))
-            if len(rows) != 4:
-                raise AssertionError(f"synthetic R {case} did not report all four files: {rows}")
+            if len(rows) != len(required):
+                raise AssertionError(f"synthetic R {case} did not report all {len(required)} selected files: {rows}")
             first = rows[0]
             expected_field = {"failure": "failures", "skip": "skips", "error": "errors"}.get(case)
             if case == "pass" and (int(first["successes"]) <= 0 or int(first["failures"]) != 0):

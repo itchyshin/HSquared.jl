@@ -1,0 +1,2 @@
+Test Summary:                                                 | Pass  Total  Time
+Arc1 container framing rejects malformed header and directory |    7      7  1.9s

@@ -54,3 +54,29 @@ using SHA
         @test isempty(output)
     end
 end
+
+@testset "Arc1 runtime identity accepts declared package extensions" begin
+    root = normpath(joinpath(@__DIR__, ".."))
+    helper = joinpath(root, "sim", "arc1", "execution_identity.jl")
+    script = joinpath(mktempdir(prefix="arc1-extension-identity-"), "check.jl")
+    write(script, raw"""
+    using Test, SHA, Pkg
+    include(ARGS[1])
+    root = ARGS[2]
+    src = joinpath(root, "src")
+    engine_hashes = Dict(relpath(joinpath(dir, name), root) =>
+        bytes2hex(sha256(read(joinpath(dir, name))))
+        for (dir, _, names) in walkdir(src) for name in names if endswith(name, ".jl"))
+    environment_hashes = Dict(name => bytes2hex(sha256(read(joinpath(root, name))))
+        for name in ("Project.toml", "Manifest.toml"))
+    loaded = arc1_load_admitted_engine(root, engine_hashes, environment_hashes)
+    @test any(pkgid.name == "FillArraysStatisticsExt" for (pkgid, _) in Base.loaded_modules)
+    identity = arc1_execution_identity(loaded, engine_hashes, environment_hashes)
+    @test identity.dependency_environment_verified
+    println("ARC1_DECLARED_EXTENSIONS_ACCEPTED")
+    """)
+    command = addenv(`$(Base.julia_cmd()) --startup-file=no --threads=1 --project=$root $script $helper $root`,
+                     "OPENBLAS_NUM_THREADS" => "1")
+    output = read(command, String)
+    @test occursin("ARC1_DECLARED_EXTENSIONS_ACCEPTED", output)
+end

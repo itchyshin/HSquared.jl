@@ -4,6 +4,10 @@ The protocol identity is the SHA-256 of the canonical scientific contract, separ
 
 | State | Protocol SHA-256 | Outer CSV SHA-256 | Reason |
 |---|---|---|---|
+| Current-source historical-audit refresh, 2026-10-10 | `fc492ebe06fb31cf95280aa367c7a426b7752dffdb1103ca5c97c7ea7c4bfea6` | `498fcac802f01fedf4b8fb4fc90ba7a61d5b05259c44907d000a6e585587fe07` | Refreshed tracked historical-source audit hashes after current check-log and executor-test edits. The 644,750-row seed allocation, protocol, outer CSV bytes, namespace, and ranges are unchanged. Audit covers 1,001 tracked paths and 401 seed-context literals. Manifest JSON SHA-256: `f4b0980c119d939a3fdd8722dc9f5d5a5e8f2f294d0d8028f233594bea7ea685`. `python3.13 tools/arc1_manifest.py --validate-only` passed. Metadata validation only; not run admission or study evidence. |
+| Current-source historical-audit refresh, 2026-10-10 | `fc492ebe06fb31cf95280aa367c7a426b7752dffdb1103ca5c97c7ea7c4bfea6` | `498fcac802f01fedf4b8fb4fc90ba7a61d5b05259c44907d000a6e585587fe07` | Refreshed only tracked historical-source audit metadata after `docs/dev-log/check-log.md` changed. Previous manifest JSON SHA-256 `0d31d87ec7fbaba56c315d76b59eb28cc4d0dd499ad0bdaa11704947c1a917a5`; new JSON SHA-256 `57f0978c99799d0622ba4d17dbdf69091e11c9129106f349ff22956654299b30`. Protocol SHA, outer CSV bytes, namespace, ranges, and all 644,750 deterministic seed tuples are unchanged; audit covers 1,001 tracked paths and 401 seed-context literals. `python3.13 tools/arc1_manifest.py --validate-only` passed. Metadata validation only; not a run admission or study evidence. |
+| Current-source audit refresh after reference/scope enforcement | `fc492ebe06fb31cf95280aa367c7a426b7752dffdb1103ca5c97c7ea7c4bfea6` | `498fcac802f01fedf4b8fb4fc90ba7a61d5b05259c44907d000a6e585587fe07` | Protocol and seed allocation unchanged; regenerated manifest source-audit metadata for the amended-source reference rule and fail-closed one-row execution scope. Manifest JSON SHA-256: `24683524da6f194638c2427111b50cdb42c2ff6089b88a0cb0243c468046ee0d`. Exact run admission is separately candidate v12 and remains unapproved pending source review. |
+| Approved amended-source FA-rank development allocation | `fc492ebe06fb31cf95280aa367c7a426b7752dffdb1103ca5c97c7ea7c4bfea6` | `498fcac802f01fedf4b8fb4fc90ba7a61d5b05259c44907d000a6e585587fe07` | Adds FA-rank development indices 31–60 as a separate amended-source tranche, preserving historical-source indices 1–30 and every other allocation. The existing first 30 seed values are unchanged; exhaustive validation covers 644,750 unique rows. Owner approval and independent review are recorded in `docs/dev-log/decisions/2026-10-09-g2-fresh-development-tranche-adoption.md` and `docs/dev-log/source-review/2026-10-08-g2-fresh-development-tranche-review.md`. Allocation metadata only; no fit or gate credit. |
 | Superseded draft | `137b5e03a6992d5784323561e37836f16715c595595c403e968bc70e2deca28d` | `9a4a1846d3794813442a9aad99d305f4aacc7868e299051d4816a9629a4576cd` | Incomplete scientific contract; included unnecessary reference-seed rows. |
 | Superseded draft | `d8ab5320a3ceee98628f964e05328f7ac08ea9d7bcc3776680b14f7ed381018b` | `4c2b834f43c3203d8748fc2fc6e0f383b8905a34bc332ea879889a55c1da13bf` | Added contract details but did not yet freeze the final raw q/AIC-penalty distinction and Hager–Zhang method label. |
 | Superseded draft | `e3b67cc9e110f0e549c149f3099e29520d14474fb2fa2fa67e1777ab2a042878` | `4c2b834f43c3203d8748fc2fc6e0f383b8905a34bc332ea879889a55c1da13bf` | Full contract before the expanded-reference threshold was clarified as raw log-likelihood shortfall. |
@@ -11,7 +15,22 @@ The protocol identity is the SHA-256 of the canonical scientific contract, separ
 
 A protocol hash identifies a scientific contract, not execution or fitted evidence. No campaign results are represented by these manifests.
 
-## Candidate contract edits (manifest regeneration pending)
+`manifest-revisions.md` is an audit ledger, not a run input. It is intentionally excluded from `discover_admission_source_paths`: the ledger records generated manifest hashes, so pinning its bytes into the manifest would create a self-referential hash cycle. The actual protocol, design and implementation sources remain pinned.
+
+| Refreshed audit metadata | `a6a3b9b8e02cf9a573905d55c2b0a5d49df9f02d1b7218ba15bbe52fa0c5ef26` | `4c2b834f43c3203d8748fc2fc6e0f383b8905a34bc332ea879889a55c1da13bf` | Recomputed the tracked historical source/seed-literal audit after current implementation edits; all 644,480 deterministic seeds passed uniqueness and collision checks. Outer CSV bytes, contract, namespace, ranges, and allocated tuples are unchanged. Previous manifest JSON SHA-256: `be8c90abcd52fadd4f9984fbfbccab390bc6a089a43a719ed4b5794f43623f89`; refreshed JSON SHA-256: `e836c1960bc0039aa2c1404a8e2ff45c6e9ec0db4122a4d3730519610b35f134`. This refresh is metadata verification, not run admission or study evidence. |
+
+| Refreshed audit metadata after runtime-identity regression | `a6a3b9b8e02cf9a573905d55c2b0a5d49df9f02d1b7218ba15bbe52fa0c5ef26` | `4c2b834f43c3203d8748fc2fc6e0f383b8905a34bc332ea879889a55c1da13bf` | Updated the historical path hash for `test/arc1_simulation_identity.jl`; no seed-context literals changed. All 644,480 seeds remain unique, and the outer CSV is byte-identical. Prior JSON SHA-256: `e836c1960bc0039aa2c1404a8e2ff45c6e9ec0db4122a4d3730519610b35f134`; current JSON SHA-256: `77b5d3d7db0cf1c94b47b017a16aa6bd04c7ca6d0f1f6b68d1fe1be5a6857245`. Run admission remains separate. |
+
+| Candidate v4 admission contract | `0c4f992dd886b3e2b74165eee4b5612863de51e22074fc0bda41b8b58262891f` | `4c2b834f43c3203d8748fc2fc6e0f383b8905a34bc332ea879889a55c1da13bf` | Encoded the v4 residual-tail bound and candidate-owned evidence rules, and pinned new repeatability/boundary admissions to v4. All 644,480 seeds remain unique; the outer CSV is byte-identical. Manifest JSON SHA-256: `34886761f6cae7700dae04df6b192101d079180ca8a293c6cb5d05872dbe0bb0`. This is a candidate G0 contract only: no pilot/confirmation study is admitted or represented. |
+
+| Refreshed audit metadata after current-source drift | `0c4f992dd886b3e2b74165eee4b5612863de51e22074fc0bda41b8b58262891f` | `4c2b834f43c3203d8748fc2fc6e0f383b8905a34bc332ea879889a55c1da13bf` | Recomputed tracked historical source hashes after concurrent implementation and dev-log edits; all 644,480 deterministic seeds passed uniqueness and collision checks. Contract, namespace, ranges, allocated tuples, and outer CSV bytes are unchanged. Previous manifest JSON SHA-256: `34886761f6cae7700dae04df6b192101d079180ca8a293c6cb5d05872dbe0bb0`; refreshed JSON SHA-256: `b67ef786c649911ed5432c4c6f167177caebb412168aef6a3c21fcab8e4fc6a1`. This remains candidate metadata, not run admission or study evidence. |
+
+| Refreshed audit metadata after receipt-hash regression | `0c4f992dd886b3e2b74165eee4b5612863de51e22074fc0bda41b8b58262891f` | `4c2b834f43c3203d8748fc2fc6e0f383b8905a34bc332ea879889a55c1da13bf` | Refreshed only the tracked source hash for `test/arc1_simulation_executor.jl`. Its distinct seed-context literal count remains 2. Protocol, namespace, ranges, all 644,480 deterministic seeds, and outer CSV bytes are unchanged. Previous manifest JSON SHA-256: `99628646f6d6508771a611427f78cc31902e4ea0dc96423d5327cce8afa5200a`; refreshed JSON SHA-256: `9c647579f79be29258c9e8f84ec059577f3ab71766b51b555decff3e5bca9fc9`. This is audit metadata, not run admission or study evidence. |
+| Refreshed audit metadata after abstract NamedTuple regression test | `fc492ebe06fb31cf95280aa367c7a426b7752dffdb1103ca5c97c7ea7c4bfea6` | `498fcac802f01fedf4b8fb4fc90ba7a61d5b05259c44907d000a6e585587fe07` | Refreshed only the historical source hash for `test/arc1_simulation_executor.jl`; the historical literal count and 644,750 allocated seed values remain unchanged. The outer CSV is byte-identical. Previous manifest JSON SHA-256: `7b693544712efbe9750024d0f96f8cc867ff959697325d4dd82c20c5bbe34530`; refreshed JSON SHA-256: `9f7dc98071dd4c2e9d36ff730a1b77ab9e5bf9a3ee78727fab7a675a2c71b5b2`. This is audit metadata only, not run admission or study evidence. |
+
+| Document the single exact consumed outer-data reference | `fc492ebe06fb31cf95280aa367c7a426b7752dffdb1103ca5c97c7ea7c4bfea6` | `498fcac802f01fedf4b8fb4fc90ba7a61d5b05259c44907d000a6e585587fe07` | Added a fail-closed provenance exception for the one already consumed, denominator-counted outer-data allocation. It is bound to its exact allocation key, original manifest and audit, candidate, independent review, owner approval, preflight, retained result, and one logged occurrence. It changes no allocation, seed, or CSV bytes. All 644,750 allocated seed values remain unique. Prior manifest JSON SHA-256: `9f7dc98071dd4c2e9d36ff730a1b77ab9e5bf9a3ee78727fab7a675a2c71b5b2`; refreshed manifest JSON SHA-256 is recorded in the retained amendment evidence. This is provenance accounting only, not run admission or scientific gate credit. |
+
+## Current frozen contract; study admission pending
 
 The working contract now encodes reviewed invalid-trial restart limits, Wolfe
 verification tolerances, certified zero-face resolution, profile-search
@@ -19,11 +38,12 @@ certificates, and the distinct B=199 primary pilot result plus B=499/999
 endpoint-stability prefixes. Ordinary FA sign starts follow Julia's exact
 mask-0:7 order (trait 2 is the lowest bit); expanded-reference sign ordering is
 separate, and the top four finite refinements are selected per rank. The
-checked-in JSON/CSV remain prior candidate bytes; do not treat their protocol
-hash as the current source contract or start a run from them. Regenerate only
-after the remaining interface/profile/bootstrap contract review and the final
-source-bound admission check.
+checked-in JSON/CSV now reflect the candidate v4 contract and current
+historical-source audit. The manifest is seed-allocation and audit metadata,
+not run admission; current-source admission still requires the remaining
+interface/profile/bootstrap contract review and an independent source-bound
+admission check. Regenerate the metadata if tracked historical audit inputs
+change again.
 
-Study execution, integration of the Julia executor with runtime identity
-evidence, and final contract/manifest review remain pending. No campaign results
+Study execution and integration of the Julia executor with runtime identity evidence remain pending; current-source admission must still be independently reviewed. No campaign results
 are represented by these candidate manifests.

@@ -1,0 +1,36 @@
+{
+  "assessment_performed": true,
+  "draft_sha256": "32bef1ec5a02d889d4ab70eef0b4c483692fb3384231caea767e6116d0925f4b",
+  "draft_version": "v3",
+  "requested_mode": "independent",
+  "assessor_type": "self",
+  "reviewer": "Codex self-assessment",
+  "method": "Manual post-draft review against current source, focused test output, ledger updates, and interruption record; no extra model call.",
+  "genre": "Software-engineering after-task report",
+  "coverage": "Whole report",
+  "score": 2,
+  "style_status": "scored",
+  "score_reason": "The report separates verified fixes and test results from the interrupted broader test and the still-open scientific gates.",
+  "confidence": "medium",
+  "confidence_reason": "Changed claims were checked against current source and command outputs; the full executor test did not complete and is explicitly excluded.",
+  "examples": [
+    {
+      "location": "Follow-up section",
+      "cue": "The full-file run is not a pass",
+      "impact": "The unresolved broader test result stays explicit alongside the focused passing tests.",
+      "repair": "No change needed.",
+      "line": null,
+      "quote": "A direct attempt to run the entire executor test file was interrupted after its subprocess-heavy first testset remained active; it is not a passing full-file result."
+    }
+  ],
+  "evidence_none_reason": null,
+  "science_gate": "not_applicable",
+  "science_gate_reason": "The report makes no biological inference or scientific coverage claim.",
+  "facts_gate": "pass",
+  "facts_gate_reason": "Updated implementation, tests, and run interruption were compared with current code and recorded outputs.",
+  "references_gate": "not_applicable",
+  "references_gate_reason": "The report contains no external references.",
+  "date": "2026-10-11",
+  "calibration_status": "No style calibration controls were reviewed this turn; the score is an uncertain self-judgment.",
+  "interpretation": "perceived_style_not_authorship"
+}

@@ -183,6 +183,42 @@ def passing_reference(attempt, identity, *, variance=0.1):
         "phenotypic_variance_method": "retained_Y_sample_variance_nonpositive_fallback_1"}
 
 
+def underflowed_k0_anchor(audit):
+    """Carry the retained K0 residual-factor coordinates through the K1 schedule."""
+    k0_best = next(row for row in audit["rows"] if row["rank"] == 0 and
+                   row["stage"] == "bfgs_initial" and row["schedule_index"] == 1)
+    params = list(k0_best["params"])
+    for index in (4, 8, 11, 13):
+        params[index] = -400.0
+    residual = gates._reference_cholesky_covariance(params[4:14])
+    k0_best["params"] = list(params)
+    k0_best["intermediate_best"]["params"] = list(params)
+    for maximum in k0_best["intermediate_maxima"]:
+        maximum["params"] = list(params)
+    audit["refinement_selection"]["k0_nelder_mead"] = [
+        {**selected, "params": list(selected["params"])}
+        for selected in audit["refinement_selection"]["k0_nelder_mead"]]
+    for selected in audit["refinement_selection"]["k0_initial"]:
+        if selected["schedule_index"] == 1:
+            selected["params"] = list(params)
+    for row in audit["rows"]:
+        if (row["rank"] == 0 and row["stage"] == "nelder_mead" and
+                row["schedule_index"] == 1):
+            row["start_params"] = list(params)
+    audit["k0_anchor"]["residual_covariance"] = residual
+    residual_params = params[4:14]
+    for row in audit["rows"]:
+        if row["rank"] != 1:
+            continue
+        row["start_params"][-10:] = residual_params
+        if isinstance(row.get("start_definition"), dict):
+            row["start_definition"]["params"][-10:] = residual_params
+        row["intermediate_best"]["params"][-10:] = residual_params
+        for maximum in row["intermediate_maxima"]:
+            maximum["params"][-10:] = residual_params
+    return residual_params
+
+
 def tagged_matrix(matrix):
     return {"__arc1_array__": True, "dims": [len(matrix), len(matrix[0])],
             "layout": "julia_column_major",
@@ -311,6 +347,87 @@ class Arc1ScientificGateTests(unittest.TestCase):
                 attempt["reference_audit"] = passing_reference(attempt, identity)
                 mutate(attempt["reference_audit"])
                 self.assertFalse(gates._check_reference_audit(attempt)[0])
+
+    def test_reference_audit_accepts_underflowed_covariance_from_retained_factor_params(self):
+        attempt = rank_attempt()
+        identity = "9" * 64
+        attempt["data_identity_sha256"] = identity
+        audit = passing_reference(attempt, identity)
+        residual_params = underflowed_k0_anchor(audit)
+        self.assertTrue(all(value == -400.0 for value in
+                            (residual_params[0], residual_params[4],
+                             residual_params[7], residual_params[9])))
+        self.assertEqual(audit["k0_anchor"]["residual_covariance"][0][0], 0.0)
+        attempt["reference_audit"] = audit
+        self.assertEqual(gates._check_reference_audit(attempt), (True, None))
+
+    def test_reference_audit_rejects_k1_start_that_changes_underflowed_k0_factor_params(self):
+        attempt = rank_attempt()
+        identity = "8" * 64
+        attempt["data_identity_sha256"] = identity
+        audit = passing_reference(attempt, identity)
+        underflowed_k0_anchor(audit)
+        row = next(row for row in audit["rows"] if row["rank"] == 1 and
+                   row["stage"] == "bfgs_initial" and row["schedule_index"] == 1)
+        for params in (row["params"], row["start_params"], row["start_definition"]["params"],
+                       row["intermediate_best"]["params"],
+                       *(maximum["params"] for maximum in row["intermediate_maxima"])):
+            params[-1] += 0.01
+        attempt["reference_audit"] = audit
+        ok, reason = gates._check_reference_audit(attempt)
+        self.assertFalse(ok)
+        self.assertIn("initialization", reason)
+
+    def test_reference_audit_rejects_unmatched_underflow_anchor_identity(self):
+        for mutation in ("row", "maximum"):
+            with self.subTest(mutation=mutation):
+                attempt = rank_attempt()
+                identity = "7" * 64
+                attempt["data_identity_sha256"] = identity
+                audit = passing_reference(attempt, identity)
+                underflowed_k0_anchor(audit)
+                if mutation == "row":
+                    audit["k0_anchor"]["start_name"] = "not-a-retained-start"
+                else:
+                    audit["k0_anchor"]["observation_order"] += 100
+                attempt["reference_audit"] = audit
+                ok, reason = gates._check_reference_audit(attempt)
+                self.assertFalse(ok)
+                expected = ("K0 anchor does not identify one retained optimizer row"
+                            if mutation == "row" else
+                            "K0 anchor does not identify one retained maximum")
+                self.assertEqual(reason, expected)
+
+    def test_reference_audit_rejects_malformed_underflow_anchor_maximum_ledger(self):
+        attempt = rank_attempt()
+        identity = "6" * 64
+        attempt["data_identity_sha256"] = identity
+        audit = passing_reference(attempt, identity)
+        underflowed_k0_anchor(audit)
+        anchor_row = next(row for row in audit["rows"] if row["rank"] == 0 and
+                          row["start_name"] == audit["k0_anchor"]["start_name"] and
+                          row["stage"] == audit["k0_anchor"]["source_stage"])
+        anchor_row["intermediate_maxima"][0]["params"] = [0.0] * 13
+        attempt["reference_audit"] = audit
+        self.assertFalse(gates._check_reference_audit(attempt)[0])
+
+    def test_reference_audit_rejects_one_drifted_k1_underflow_parameter_copy(self):
+        attempt = rank_attempt()
+        identity = "5" * 64
+        attempt["data_identity_sha256"] = identity
+        audit = passing_reference(attempt, identity)
+        underflowed_k0_anchor(audit)
+        row = next(row for row in audit["rows"] if row["rank"] == 1 and
+                   row["stage"] == "bfgs_initial" and row["schedule_index"] == 1)
+        start_params = list(row["start_params"])
+        start_params[-1] += 0.01
+        row["start_params"] = start_params
+        row["start_definition"]["params"] = list(start_params)
+        attempt["reference_audit"] = audit
+        ok, reason = gates._check_reference_audit(attempt)
+        self.assertFalse(ok)
+        self.assertEqual(reason,
+            "K1 optimizer start parameters differ from retained initialization")
 
     def test_reference_audit_rejects_nonchronological_retained_maxima(self):
         attempt = rank_attempt()

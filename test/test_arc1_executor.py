@@ -8,6 +8,7 @@ import subprocess
 import sys
 import threading
 import tempfile
+import time
 import unittest
 from pathlib import Path
 
@@ -17,6 +18,37 @@ import run_cell
 
 
 class ExecutorTransportTests(unittest.TestCase):
+    def test_cleanup_kills_descendant_after_group_leader_exits(self):
+        script = (
+            "import subprocess,sys; "
+            "subprocess.Popen([sys.executable,'-c','import time; time.sleep(30)'], "
+            "stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)"
+        )
+        leader = subprocess.Popen([sys.executable, "-c", script], start_new_session=True)
+        try:
+            leader.wait(timeout=3)
+            self.assertIsNotNone(leader.poll())
+            run_cell._stop_process_group(leader, grace_seconds=0.2)
+
+            deadline = time.monotonic() + 1.0
+            while True:
+                try:
+                    os.killpg(leader.pid, 0)
+                    group_exists = True
+                except ProcessLookupError:
+                    group_exists = False
+                except PermissionError:
+                    group_exists = True
+                if not group_exists or time.monotonic() >= deadline:
+                    break
+                time.sleep(0.01)
+            self.assertFalse(group_exists, "descendant survived cleanup after its group leader exited")
+        finally:
+            try:
+                os.killpg(leader.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+
     def test_child_profile_method_is_crossbound_without_relabeling_returned_results(self):
         returned = {"schema": "arc1-attempt-result-v1",
                     "requested_profile_method_version": "arc1_profile_v3"}

@@ -1227,18 +1227,19 @@ function fit_multivariate_reml(
             initial, iterations = niter, ids = ids === nothing ? pedigree.ids : ids,
             traits, genetic_structure, rank)
     end
-    optimizer_policy in ("arc1_v1", :arc1_v1) || throw(ArgumentError(
-        "unknown optimizer_policy: $(repr(optimizer_policy)); supported value is \"arc1_v1\""))
+    optimizer_policy in ("arc1_v1", :arc1_v1, "arc1_v2", :arc1_v2) || throw(ArgumentError(
+        "unknown optimizer_policy: $(repr(optimizer_policy)); supported values are \"arc1_v1\" and \"arc1_v2\""))
+    policy = optimizer_policy in ("arc1_v2", :arc1_v2) ? "arc1_v2" : "arc1_v1"
     genetic_structure == :factor_analytic && rank == 1 || throw(ArgumentError(
-        "arc1_v1 fixed-fit dispatch requires genetic_structure=:factor_analytic and rank=1"))
+        "$(policy) fixed-fit dispatch requires genetic_structure=:factor_analytic and rank=1"))
     initial === nothing || throw(ArgumentError(
-        "arc1_v1 does not accept user-supplied initial values or truth starts"))
+        "$(policy) does not accept user-supplied initial values or truth starts"))
     niter = iterations === nothing ? 2_000 : iterations
-    niter == 2_000 || throw(ArgumentError("arc1_v1 fixes iterations at 2,000 per start"))
+    niter == 2_000 || throw(ArgumentError("$(policy) fixes iterations at 2,000 per start"))
     result = _arc1_select_fa_rank(Y, X, Z, pedigree; ids, traits,
-        iterations = 2_000, fixed_rank = 1, ledger_sink)
+        iterations = 2_000, fixed_rank = 1, ledger_sink, optimizer_policy = policy)
     if result.selection_status != :fixed_rank_fit || result.selected_fit === nothing
-        throw(ArgumentError("arc1_v1 fixed K1 fit unavailable: $(result.reason)"))
+        throw(ArgumentError("$(policy) fixed K1 fit unavailable: $(result.reason)"))
     end
     return result.selected_fit
 end

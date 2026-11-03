@@ -50,7 +50,8 @@ function arc1_reference_k0_start(engine::Module, phenotypic_covariance, split)
     rchol = getfield(engine, :_cov_to_chol_params)(R, 4)
     params = vcat(getfield(engine, :_fa_uniqueness_to_unconstrained)(g), rchol)
     return (; rank=0, name=Symbol("split_$(split)"), split, params,
-            genetic_diagonal=Vector{Float64}(g), residual_covariance=R)
+            genetic_diagonal=Vector{Float64}(g), residual_covariance=R,
+            residual_factor_params=copy(rchol))
 end
 
 function arc1_reference_k1_starts(engine::Module, anchor)
@@ -59,7 +60,14 @@ function arc1_reference_k1_starts(engine::Module, anchor)
     R = Matrix{Float64}(anchor.residual_covariance)
     all(x -> isfinite(x) && x > floor, g) ||
         throw(ArgumentError("K1 anchor genetic variances must exceed the uniqueness floor"))
-    rchol = getfield(engine, :_cov_to_chol_params)(R, 4)
+    rchol = if hasproperty(anchor, :residual_factor_params)
+        factor_params = Float64.(anchor.residual_factor_params)
+        length(factor_params) == 10 && all(isfinite, factor_params) ||
+            throw(ArgumentError("K1 anchor residual factor parameters must be ten finite values"))
+        factor_params
+    else
+        getfield(engine, :_cov_to_chol_params)(R, 4)
+    end
     starts = NamedTuple[]
     for amplitude in ARC1_REFERENCE_K1_AMPLITUDES,
         signs in arc1_reference_sign_patterns()
@@ -481,6 +489,7 @@ function arc1_fa_expanded_reference(engine::Module, Y, X, B;
             if best_k0 !== nothing
                 anchor[] = (; genetic_diagonal=getfield(engine, :_fa_uniqueness_from_unconstrained)(best_k0.params[1:4]),
                     residual_covariance=getfield(engine, :_chol_params_to_cov)(best_k0.params[5:14], 4),
+                    residual_factor_params=copy(best_k0.params[5:14]),
                     loglik=best_k0.loglik, source=best_k0.start_name,
                     source_stage=best_k0.stage,
                     observation_source=best_k0.observation_source,

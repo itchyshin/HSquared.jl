@@ -1,0 +1,22 @@
+{
+  "schema": "hsquared-arc1-check-result-v1",
+  "recorded_at_utc": "2026-10-12T07:33:25Z",
+  "execution_time_capture": "recorded immediately after successful command completion",
+  "cwd": "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl",
+  "environment": {
+    "PYTHONDONTWRITEBYTECODE": "1"
+  },
+  "python_executable": "/Users/z3437171/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+  "python_version": "3.12.14",
+  "argv": [
+    "/Users/z3437171/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+    "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/test/test_arc1_scientific_gates.py",
+    "Arc1ScientificGateTests.test_repeatability_pilot_checks_each_estimand_and_counts_failures",
+    "Arc1ScientificGateTests.test_complete_repeatability_pilot_emits_only_pilot_qualification",
+    "Arc1ScientificGateTests.test_complete_repeatability_confirmation_uses_coverage_confidence_interval"
+  ],
+  "exit_code": 0,
+  "stdout": "...\n----------------------------------------------------------------------\nRan 3 tests in 0.049s\n\nOK\n",
+  "stderr": "",
+  "scope_note": "Three synthetic aggregator tests passed: every repeatability estimand is checked with failures retained in denominators; a complete pilot emits pilot qualification only; confirmation applies the Wilson coverage interval. No study datasets or fits ran; G5 remains open pending admitted pilot and confirmation evidence."
+}

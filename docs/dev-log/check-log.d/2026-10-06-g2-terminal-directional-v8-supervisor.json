@@ -1,0 +1,32 @@
+{
+  "attempts": [
+    {
+      "command": [
+        "/Users/z3437171/.juliaup/bin/julia",
+        "--startup-file=no",
+        "--project=/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl",
+        "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/LOOP/lanes/arc1-gaussian-reliability-20261002/evidence/g2-bfgs-state-telemetry-v1/audit_terminal_directional_v8.jl",
+        "1102af5d6aba77f8c68eb8b8664f08ca7f00e5ebdcab17539d2b25a83fda515c",
+        "c1c9eaae0033fb9a420975d38de460d14e316a07bea83efc91081c72709cb82b"
+      ],
+      "elapsed_seconds": 69.946,
+      "exit_code": 0,
+      "output": "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/LOOP/lanes/arc1-gaussian-reliability-20261002/evidence/g2-bfgs-state-telemetry-v1/terminal-directional-audit-v8.toml",
+      "output_sha256": "70efe8d9bde2d5755f723ccdf22c894b4976fa615a18e73c745d53eebde7dce4",
+      "process_group_gone": true,
+      "received_signal": null,
+      "status": "completed",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "fd8a55e3128f360a8128809c5d70f3d14866872cd15f9e8595ce8a61520477dc",
+      "timeout_seconds": 300
+    }
+  ],
+  "candidate_sha256": "1102af5d6aba77f8c68eb8b8664f08ca7f00e5ebdcab17539d2b25a83fda515c",
+  "candidate_unchanged": true,
+  "elapsed_seconds": 69.946,
+  "postrun_sources_match": true,
+  "schema": "arc1-terminal-directional-supervisor-v8",
+  "source_lock_sha256": "c1c9eaae0033fb9a420975d38de460d14e316a07bea83efc91081c72709cb82b",
+  "source_lock_unchanged": true,
+  "status": "complete"
+}

@@ -29,6 +29,7 @@ REPEATABILITY_TRUTHS = {
 PHASES = ("development", "pilot", "confirmation")
 STREAMS = ("data", "bootstrap", "reference")
 PROTOCOL_VERSION = "arc1-seed-manifest-v1"
+FA_RANK_DEVELOPMENT_COUNT = 60
 CSV_FIELDS = ("programme", "phase", "N", "signal", "outer", "inner", "stream", "seed")
 def discover_admission_source_paths(root: Path) -> list[str]:
     """Discover engine includes and Arc1 runner, protocol, and test sources."""
@@ -46,7 +47,10 @@ def discover_admission_source_paths(root: Path) -> list[str]:
                            (root / "LOOP/lanes/arc1-gaussian-reliability-20261002", ("*.md",))):
         if base.exists():
             for pattern in patterns:
-                paths.update(path.relative_to(root).as_posix() for path in base.rglob(pattern) if path.is_file())
+                discovered = (path for path in base.rglob(pattern) if path.is_file())
+                if base == root / "sim/arc1":
+                    discovered = (path for path in discovered if path.name != "manifest-revisions.md")
+                paths.update(path.relative_to(root).as_posix() for path in discovered)
     return sorted(paths)
 
 # This is the stable protocol identity. Mutable execution notes, manifest file
@@ -68,7 +72,10 @@ SCIENTIFIC_CONTRACT = {
     },
     "allocation": {
         "fa_rank": {"N": [80, 160, 320], "signals": {"null": 0.0, "weak": 0.15, "strong": 0.7},
-                                      "development": 30, "pilot": 30, "confirmation": 400},
+                    "development": FA_RANK_DEVELOPMENT_COUNT,
+                    "development_tranche": {"historical_source_indices": [1, 30],
+                                             "amended_source_indices": [31, 60]},
+                    "pilot": 30, "confirmation": 400},
         "fa_rank_reference": {
             "preselected_pilot_and_confirmation_outer": [1, 20],
             "additional_flags": ["unusable selector or guard refusal", "selection.near_tie",
@@ -183,14 +190,39 @@ SCIENTIFIC_CONTRACT = {
                                "statuses": ["unconverged", "nuisance_unresolved", "singular", "unbracketed"],
                                "disconnected_profile_sets": "report all components"},
     "profile_search": {
-        "method_version": "arc1_profile_v3",
+        "method_version": "arc1_profile_v4",
         "default_method_version": "arc1_profile_v1",
-        "study_admission_method_version": "arc1_profile_v3",
+        "study_admission_method_version": "arc1_profile_v4",
         "method_version_policy": {
             "explicit_request_required": True,
             "refuse_mismatch": True,
             "preserve_v1_implementation_and_artifacts": True,
             "preserve_v2_implementation_and_artifacts": True,
+            "preserve_v3_implementation_and_artifacts": True,
+        },
+        "v4_uniform_tail_bound": {
+            "objective": "ell(D)=-0.5*(logdet(D)+logdet(H'inv(D)H)+z'P_D*z), without Gaussian 2pi constant",
+            "determinant_identity": "det(D)*det(H'inv(D)H)=det(H'H)*det(C'DC), C spans orthogonal complement of H",
+            "domain": "finite stored Float64 H; 1<=p<=8; p<n<=4096; nonnegative additive and permanent-environment variances; Ve>0",
+            "gram_determinant": "exact rational representation of stored Float64 H entries and exact rational det(H'H); use actual transformed H",
+            "upper_bound": "U(E)=-0.5*((n-p)*log(E)+logdet(H'H)); for every Ve>=E",
+            "precision_bits": 256,
+            "arithmetic": "directed MPFR bounds at 256 bits; lower-bound the threshold; upper-bound U",
+            "strict_gap_minimum": 1e-8,
+            "membership_only": True,
+            "failure_behavior": "certificate unavailable or any invalid assumption retains the existing search; no clipping",
+            "does_not_prove": ["global optimum", "convergence", "profile score", "coverage", "interior membership", "connected confidence set"],
+            "retain_certificate_with_attempt": True,
+        },
+        "v4_candidate_history": {
+            "retain": ["native", "callback", "continuation", "probe", "exact-face", "intersection"],
+            "preserve_global_history_guard": True,
+            "candidate_owns_comparison_history": True,
+            "shared_co_winner_requires": ["same target", "same Ve", "same source identity", "same centering tag", "accepted status", "explicit convergence", "absolute likelihood comparison <=1e-8 with zero relative tolerance"],
+            "shared_certified_winner_only_exemption": True,
+            "unknown_or_unresolved_shared_evidence_refuses": True,
+            "aliases": ["arc1_profile_v3_evaluations", "arc1_profile_v4_evaluations"],
+            "alias_identity_required_in_native_artifact": True,
         },
         "confidence": 0.95,
         "lr_chisq1_cutoff": 3.841458820694124,
@@ -463,8 +495,8 @@ def build_run_admission(root: Path, cell: dict[str, object], *, source_paths: li
     if julia_threads < 1 or blas_threads < 1:
         raise ValueError("thread counts must be positive integers")
     profile_programme = cell.get("programme") in {"repeatability", "boundary"}
-    if profile_programme and profile_method_version != "arc1_profile_v3":
-        raise ValueError("repeatability/boundary admission requires explicit arc1_profile_v3")
+    if profile_programme and profile_method_version != "arc1_profile_v4":
+        raise ValueError("repeatability/boundary admission requires explicit arc1_profile_v4")
     if not profile_programme and profile_method_version is not None:
         raise ValueError("profile method version is only valid for repeatability/boundary cells")
     confirmation_authorization = None
@@ -642,7 +674,8 @@ def _cell_outer_count(cell: dict[str, object]) -> int:
     n, signal = cell.get("N"), cell.get("signal")
     if programme == "fa_rank":
         valid = n in {80, 160, 320} and signal in FA_SIGNALS
-        allowed_phases = {"development": 30, "pilot": 30, "confirmation": 400}
+        allowed_phases = {"development": FA_RANK_DEVELOPMENT_COUNT,
+                          "pilot": 30, "confirmation": 400}
     elif programme == "repeatability":
         valid = n in {80, 160, 320} and signal in REPEATABILITY_SIGNALS
         allowed_phases = {"development": 30, "pilot": 30, "confirmation": 400}
@@ -704,8 +737,8 @@ def verify_run_admission(root: Path, admission: dict[str, object], *, julia_vers
     if not isinstance(cell, dict):
         raise ValueError("admission lacks a pinned cell")
     profile_programme = cell.get("programme") in {"repeatability", "boundary"}
-    if profile_programme and admission.get("profile_method_version") != "arc1_profile_v3":
-        raise ValueError("profile run admission lacks the frozen arc1_profile_v3 method pin")
+    if profile_programme and admission.get("profile_method_version") != "arc1_profile_v4":
+        raise ValueError("profile run admission lacks the frozen arc1_profile_v4 method pin")
     if not profile_programme and admission.get("profile_method_version") is not None:
         raise ValueError("non-profile run admission carries an unexpected profile method pin")
     if cell.get("phase") == "confirmation":
@@ -753,6 +786,29 @@ def fa_sign_patterns() -> list[list[int]]:
 _INTEGER_LITERAL = re.compile(r"(?<![\w.])(?:0[xX][0-9a-fA-F]{1,16}|\d{1,20})(?![\w.])")
 _SEED_CONTEXT = re.compile(r"\b(seed|seeds|rng|mersenne.?twister)\b", re.IGNORECASE)
 
+# The only historical-context overlap admitted by the frozen Arc1 seed namespace
+# is the completed outer33 observation. Its exact allocation was reviewed and
+# admitted before execution; the later check-log mention is provenance for that
+# same key, not a second historical seed. Keep this binding narrow and fail
+# closed if any receipt, source, audit, or logged context changes.
+_OUTER33_CONSUMPTION = {
+    "kind": "outer",
+    "key": ("fa_rank", "development", 80, "null", 33, 0, "data"),
+    "seed": 11447647806120141284,
+    "candidate_sha256": "0efa941c2a6ae177012a03282bbeea03cd8bdd7dc8760165bcf23e7534324cd0",
+    "source_lock_sha256": "f4500848f22e1282c3f1db263fd528b6041603c585aa3780006a161854c737f2",
+    "review_sha256": "43cf0323f2231842ff48fba778b7adea2ec4680971cf7707946f4879dcdd4c6c",
+    "owner_approval_sha256": "b564d7fa1f08b31b584a87e08aa891766c60f6bcde5b74dbb4eb978b3bf8d51c",
+    "preflight_sha256": "6e30071ddc972bb84b6664121d190c580436e81abbf44d5256be8b7db9f9b864",
+    "receipt_sha256": "8d38cd9f6277bd26504d7a17603ab59da7906bacc66ddc9d242a39ab5c88c776",
+    "result_sha256": "b0da86cb3b854d5e3be212aa10ded52ef26e3a142188fe1180b42aeabbef1529",
+    "original_manifest_sha256": "c8ee07ea73b98cbffa669709a434ef840d45a518c717ba11b2100f61489d7999",
+    "original_audit_sha256": "d86012a3887641cf9e7c8d1c9998f6ad3d8ea06b73560a84fef064c131d7e8c5",
+    "logged_path": "docs/dev-log/check-log.md",
+    "logged_line_sha256": "06da7b5a4ad050c4271c6abe6dba1f94af9f2b2a62619dbf69d1b764cfcfe390",
+    "occurrence_count": 1,
+}
+
 
 def _sha256_file(path: Path) -> str:
     digest = hashlib.sha256()
@@ -760,6 +816,111 @@ def _sha256_file(path: Path) -> str:
         for block in iter(lambda: stream.read(1024 * 1024), b""):
             digest.update(block)
     return digest.hexdigest()
+
+
+def _seed_context_occurrences(root: Path, audit: dict[str, object], seed: int) -> list[dict[str, object]]:
+    occurrences: list[dict[str, object]] = []
+    for item in audit.get("scanned_paths", []):
+        if not isinstance(item, dict) or not isinstance(item.get("path"), str):
+            raise ValueError("historical seed audit contains a malformed scanned path")
+        rel = item["path"]
+        lexical = root / rel
+        if lexical.is_symlink():
+            raise ValueError(f"unsafe historical seed audit path: {rel}")
+        path = lexical.resolve()
+        if not path.is_relative_to(root.resolve()) or not path.is_file():
+            raise ValueError(f"unsafe historical seed audit path: {rel}")
+        if _sha256_file(path) != item.get("sha256"):
+            raise ValueError(f"historical seed audit source changed during collision check: {rel}")
+        for line_number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+            if not _SEED_CONTEXT.search(line):
+                continue
+            values = {int(match.group(0), 16 if match.group(0).lower().startswith("0x") else 10)
+                      for match in _INTEGER_LITERAL.finditer(line)}
+            if seed in values:
+                occurrences.append({"path": rel, "line": line_number,
+                                    "context_sha256": hashlib.sha256(line.encode("utf-8")).hexdigest(),
+                                    "source_sha256": item["sha256"]})
+    return occurrences
+
+
+def _documented_consumed_seed_exceptions(root: Path, audit: dict[str, object]) -> list[dict[str, object]]:
+    """Verify the one reviewed allocated-seed reference recorded after its run."""
+    pin = _OUTER33_CONSUMPTION
+    lane = root / "LOOP/lanes/arc1-gaussian-reliability-20261002/evidence/g2-development-nine-cell-admission-v17"
+    paths = {
+        "candidate": lane / "candidate.json",
+        "source_lock": lane / "source-lock.tsv",
+        "review": lane / "independent-review-receipt-v17.json",
+        "approval": lane / "owner-approval-v17-outer33.json",
+        "preflight": lane / "totoro-current-state-preflight-v17.json",
+        "receipt": lane / "retained-attempt-outer33-v17-ingest.json",
+        "result": lane / "0033.result.json",
+        "log": root / str(pin["logged_path"]),
+    }
+    expected_hashes = {"candidate": pin["candidate_sha256"], "source_lock": pin["source_lock_sha256"],
+                       "review": pin["review_sha256"], "approval": pin["owner_approval_sha256"],
+                       "preflight": pin["preflight_sha256"], "receipt": pin["receipt_sha256"],
+                       "result": pin["result_sha256"]}
+    for name, expected in expected_hashes.items():
+        if not paths[name].is_file() or paths[name].is_symlink() or _sha256_file(paths[name]) != expected:
+            return []
+    candidate = json.loads(paths["candidate"].read_text(encoding="utf-8"))
+    review = json.loads(paths["review"].read_text(encoding="utf-8"))
+    approval = json.loads(paths["approval"].read_text(encoding="utf-8"))
+    preflight = json.loads(paths["preflight"].read_text(encoding="utf-8"))
+    receipt = json.loads(paths["receipt"].read_text(encoding="utf-8"))
+    result = json.loads(paths["result"].read_text(encoding="utf-8"))
+    original_audit = candidate.get("manifest_preflight", {}).get("verified", {}).get("historical_seed_audit")
+    source_hashes = candidate.get("source_hashes", {})
+    lock_text = paths["source_lock"].read_text(encoding="utf-8")
+    expected_lock_line = ("sim/arc1/manifests/arc1_seed_manifest.json\t" +
+                          str(pin["original_manifest_sha256"]) + "\n")
+    if (candidate.get("status") != "review_only_not_executable" or
+            candidate.get("manifest_preflight", {}).get("status") != "PASS" or
+            candidate.get("seed_manifest_sha256") != pin["original_manifest_sha256"] or
+            source_hashes.get("sim/arc1/manifests/arc1_seed_manifest.json") != pin["original_manifest_sha256"] or
+            expected_lock_line not in lock_text or
+            hashlib.sha256(json.dumps(original_audit, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+                != pin["original_audit_sha256"] or
+            pin["seed"] in original_audit.get("unique_integer_literals", [])):
+        return []
+    if (review.get("verdict") != "PASS" or review.get("candidate_sha256") != pin["candidate_sha256"] or
+            review.get("source_lock_sha256") != pin["source_lock_sha256"] or
+            preflight.get("status") != "PASS_READ_ONLY_NO_LAUNCH" or
+            preflight.get("candidate_sha256") != pin["candidate_sha256"] or
+            preflight.get("source_lock_sha256") != pin["source_lock_sha256"]):
+        return []
+    scope = approval.get("scope", {})
+    if (approval.get("candidate_sha256") != pin["candidate_sha256"] or
+            approval.get("source_lock_sha256") != pin["source_lock_sha256"] or
+            scope.get("cell_key") != "N80-null" or scope.get("outer") != 33 or
+            scope.get("seed") != pin["seed"] or scope.get("gate_credit") is not False or
+            scope.get("counts_in_all_attempt_denominator") is not True):
+        return []
+    if (receipt.get("status") != "complete_success" or receipt.get("outer") != 33 or
+            receipt.get("seed") != pin["seed"] or receipt.get("candidate_sha256") != pin["candidate_sha256"] or
+            receipt.get("source_lock_sha256") != pin["source_lock_sha256"] or
+            receipt.get("result_sha256") != pin["result_sha256"] or
+            receipt.get("gate_credit") is not False or
+            receipt.get("counts_in_all_attempt_denominator") is not True or
+            result.get("outer") != 33 or result.get("seed") != pin["seed"] or
+            result.get("status") != "ok" or result.get("success") is not True):
+        return []
+    occurrences = _seed_context_occurrences(root, audit, int(pin["seed"]))
+    if (len(occurrences) != pin["occurrence_count"] or
+            occurrences[0].get("path") != pin["logged_path"] or
+            occurrences[0].get("context_sha256") != pin["logged_line_sha256"]):
+        return []
+    if int(pin["seed"]) not in audit.get("unique_integer_literals", []):
+        return []
+    return [{"kind": pin["kind"], "key": list(pin["key"]), "seed": pin["seed"],
+             "candidate_sha256": pin["candidate_sha256"], "source_lock_sha256": pin["source_lock_sha256"],
+             "review_receipt_sha256": pin["review_sha256"], "owner_approval_sha256": pin["owner_approval_sha256"],
+             "preflight_receipt_sha256": pin["preflight_sha256"], "consumed_receipt_sha256": pin["receipt_sha256"],
+             "result_sha256": pin["result_sha256"], "original_manifest_sha256": pin["original_manifest_sha256"],
+             "original_audit_sha256": pin["original_audit_sha256"],
+             "logged_occurrence": occurrences[0], "occurrence_count": pin["occurrence_count"]}]
 
 
 def historical_seed_audit(root: Path) -> dict[str, object]:
@@ -827,7 +988,7 @@ def historical_seed_audit(root: Path) -> dict[str, object]:
         literals.update(found)
         scanned.append({"path": rel, "sha256": file_hash, "bytes": size,
                         "distinct_seed_context_literals": len(found)})
-    return {
+    audit = {
         "scope": "tracked sim/ and test/ source plus tracked docs/dev-log Markdown/text; only seed-context integer literals",
         "inclusion_rules": ["tracked sim/ and test/ source files with extensions .jl/.r/.py/.sh, excluding fixtures and the current Arc1 manifest/tests",
                             "tracked sim/ and test/ seed/manifest files with extensions .jl/.r/.py/.sh/.md/.txt/.csv/.tsv/.json/.yaml/.yml",
@@ -840,6 +1001,8 @@ def historical_seed_audit(root: Path) -> dict[str, object]:
                         "code literals in compound expressions may be conservatively included",
                         "this audit establishes no complete historical seed inventory"],
     }
+    audit["documented_allocated_seed_consumptions"] = _documented_consumed_seed_exceptions(root, audit)
+    return audit
 
 
 def seed_for(programme: str, phase: str, n: int, signal: str,
@@ -882,7 +1045,8 @@ def outer_rows() -> Iterator[dict[str, str | int]]:
         signals = FA_SIGNALS if programme == "fa_rank" else REPEATABILITY_SIGNALS
         for n in (80, 160, 320):
             for signal in signals:
-                for phase, count in (("development", 30), ("pilot", 30), ("confirmation", 400)):
+                development_count = FA_RANK_DEVELOPMENT_COUNT if programme == "fa_rank" else 30
+                for phase, count in (("development", development_count), ("pilot", 30), ("confirmation", 400)):
                     for outer in range(1, count + 1):
                         yield _row(programme, phase, n, signal, outer, 0, "data")
     for signal in FA_SIGNALS:
@@ -938,11 +1102,15 @@ def validate(root: Path | None = None) -> dict[str, object]:
     root = root or Path(__file__).resolve().parents[1]
     historical = historical_seed_audit(root)
     historical_seeds = set(historical["unique_integer_literals"])
+    documented_consumptions = {
+        (item["kind"], tuple(item["key"]), item["seed"])
+        for item in historical.get("documented_allocated_seed_consumptions", [])
+    }
     keys: set[tuple[object, ...]] = set()
     seeds: dict[int, tuple[object, ...]] = {}
     counts = {"outer": 0, "nested": 0}
     for kind, key, seed in iter_all_seed_records():
-        if seed in historical_seeds:
+        if seed in historical_seeds and (kind, key, seed) not in documented_consumptions:
             raise ValueError(f"fresh seed collides with historical seed-context literal {seed}")
         if key in keys:
             raise ValueError(f"duplicate manifest key: {key}")

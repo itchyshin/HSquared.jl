@@ -25,6 +25,17 @@ function _arc1_fa_v2_gradient_failure(raw, df, state, beta, gradient)
             observations = [likelihood_observation, gradient_observation])
 end
 
+"""Classify strict positive definiteness of a finite symmetric Float64 matrix exactly."""
+function _arc1_fa_v2_exact_float64_pd(matrix)
+    size(matrix) == (4, 4) || return false
+    all(isfinite, matrix) && issymmetric(matrix) || return false
+    exact = Rational{BigInt}.(matrix)
+    for n in 1:4
+        det(exact[1:n, 1:n]) > 0 || return false
+    end
+    return true
+end
+
 """Decode optimizer coordinates without recovering the excess from rounded `c + delta`."""
 function _arc1_fa_v2_factor_state(params, k)
     (k isa Integer && !(k isa Bool) && k in (0, 1)) ||
@@ -62,8 +73,8 @@ function _arc1_fa_v2_factor_state(params, k)
              floor = c, psi, residual_factor = L, G = Matrix{Float64}(G),
              R = Matrix{Float64}(R), factor_order = _ARC1_FA_V2_FACTOR_ORDER,
              factor_valid = true,
-             pd_genetic = isposdef(Symmetric(Matrix{Float64}(G))),
-             pd_residual = isposdef(Symmetric(Matrix{Float64}(R))),
+             pd_genetic = _arc1_fa_v2_exact_float64_pd(Matrix{Float64}(G)),
+             pd_residual = _arc1_fa_v2_exact_float64_pd(Matrix{Float64}(R)),
              rounded_floor_distance = psi .- c,
              floor_rounding = any(iszero, psi .- c))
     return (; status = :ok, reason = nothing, state)

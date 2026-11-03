@@ -16,7 +16,7 @@ engine reality.
 > Authoritative elsewhere, and always more current than this: phase state → `ROADMAP.md` · what is
 > actually fitted → `docs/design/capability-status.md` · history → `docs/dev-log/phase-snapshot-archive.md`.
 
-- **As of 2026-10-03 (non-GPU H2 Ultra Plan handoff).** The bounded automatic FA-rank design contract and validation plan are complete. The wider Gaussian-reliability Arc 1 remains incomplete with G0–G8 open. Latest fork stopped after profile-v4 Astra HOLD and a canonical G7 preflight failure before tests; three engineering attempts are consumed, with no pilot or confirmation study. Preserve Julia, isolated R, and protected settings state. Capability remains experimental; covered count stays seven. START HERE: `docs/dev-log/coordination-board.md` Active Lane Split and `docs/dev-log/handover/2026-10-03-codex-handover.md`.
+- **As of 2026-10-11 (non-GPU Arc 1 continuation).** The bounded automatic FA-rank design contract and validation plan are complete. Arc 1 G0, G1, G6, and G7 are met; G2-G5 and G8 remain open. The approved v14 N80/null outer32 attempt failed during serialization and remains counted with no gate credit. No pilot or confirmation study has passed. The v17 outer33 candidate has an independent review PASS and a fresh read-only Totoro source/runtime/output-path preflight PASS, but remains non-executable pending separate owner approval. Capability remains experimental; covered count stays seven. START HERE: `docs/dev-log/coordination-board.md` Active Lane Split, `LOOP/lanes/arc1-gaussian-reliability-20261002/checkpoint.md`, and `.unlazy/arc1-gaussian-reliability/GATES.md`.
 ## Core Scope
 
 - Sparse pedigree, genomic, and custom relationship precision matrices.

@@ -1,0 +1,10 @@
+Test Summary:                          | Pass  Total     Time
+Arc1 source-bound one-attempt executor |  447    447  9m35.3s
+Test Summary:                                               | Pass  Total  Time
+Arc1 reference-admission flags and rank comparison receipts |   17     17  0.6s
+Test Summary:                                                            | Pass  Total  Time
+Arc1 receipt diagnostic identity hashes exact UTF-8 representation bytes |   15     15  0.6s
+Test Summary:                                                 | Pass  Total  Time
+Arc1 container framing rejects malformed header and directory |    7      7  0.2s
+Test Summary:                                                 | Pass  Total  Time
+Arc1 container framing rejects malformed header and directory |    7      7  0.2s
