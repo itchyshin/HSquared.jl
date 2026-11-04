@@ -90,3 +90,9 @@ For the separate FA retry-fixture failure, a no-fit matrix check confirmed on
 Julia 1.10.12 and 1.13.3 that zero FA loadings reproduce the diagonal covariance
 under the current parameterization. This supports the proposed fixture repair
 but does not exercise the selector or establish that its test passes.
+
+A candidate test-only change now uses zero loadings for the balanced start in
+the FA retry fixture. The full `test/test_auto_fa_rank.jl` file passed with 249 assertions on both
+Julia 1.10.12 and 1.13.3, including the previously failing retry case. The
+Julia 1.13 run used the freshly resolved manifest identified above. Native
+Windows and the full package suite remain to be checked in PR CI.

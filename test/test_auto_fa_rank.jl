@@ -694,8 +694,7 @@ end
 @testset "automatic FA better-unconverged retry trigger and bounded refusal" begin
     d = _auto_fa_fixture()
     calls = Tuple{Int,Symbol}[]
-    diagonal_G = Ref{Any}(nothing)
-    diagonal_R = Ref{Any}(nothing)
+    diagonal_params = Ref{Any}(nothing)
     diagonal_objective = Ref(NaN)
     best_fa_params = function (objective, start)
         candidates = Vector{Vector{Float64}}()
@@ -722,8 +721,7 @@ end
             p = copy(params0)
             p[1:4] .-= 2.0
             p[5:end] .+= 1.5
-            diagonal_G[] = HSquared._fa_rank_cov(p[1:4], 0)[1]
-            diagonal_R[] = HSquared._chol_params_to_cov(p[5:end], 4)
+            diagonal_params[] = copy(p)
             value = objective(p)
             diagonal_objective[] = value
             return (; phat=p, objective=value, converged=true,
@@ -735,12 +733,9 @@ end
             return (; phat=p, objective=value, converged=false,
                     iterations=1, optimizer_status="injected better unconverged")
         elseif rank == 1 && start_id == :balanced
-            g = diag(diagonal_G[])
-            c = HSquared.FA_UNIQUENESS_FLOOR
-            loading = [0.1 * (-1.0)^(i - 1) * sqrt(g[i] - c) for i in 1:4]
-            psi = g .- loading.^2
-            p = vcat(loading, log.(psi .- c),
-                     HSquared._cov_to_chol_params(diagonal_R[], 4))
+            # Use the same K0 parameters and zero loadings. This avoids
+            # covariance round trips and keeps the nested start reproducible.
+            p = vcat(zeros(4), diagonal_params[])
             return (; phat=p, objective=objective(p), converged=true,
                     iterations=1, optimizer_status="injected nested diagonal")
         end
