@@ -2,6 +2,7 @@
   "rows": 56,
   "covered": 15,
   "covered_external": 3,
+  "covered_incl_external": 18,
   "partial": 37,
   "planned": 1,
   "public_covered_count": 7,

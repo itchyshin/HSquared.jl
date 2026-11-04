@@ -768,6 +768,7 @@ block** — nor does DRM.jl, nor the R twin `hsquared`, whose `AGENTS.md` carrie
 
 
 ## Archived during V3 live refresh, 2026-10-01
+## Archived snapshot, 2026-10-01
 
 - **As of 2026-09-07 (Path FULL 0.9 finish — R-lane Layer B honesty PRs #191/#192 MERGED;
   Julia lane owes FA/SS honesty + bridge fences + a merge-when-green pass on #313; owner
@@ -822,3 +823,7 @@ block** — nor does DRM.jl, nor the R twin `hsquared`, whose `AGENTS.md` carrie
 - **As of 2026-10-02 (automatic FA rank final O1 repair; G8 pending).** The human extended work until all original gates pass. The bounded Gaussian T4 pedigree K0/K1 Julia selector and explicit R expert route are implemented. Focused acceptance passes 249 assertions across 13 testsets at Julia 3ef362b1/R 2108c0d. Fresh V7 numerical, bridge and evidence reviewers all PASS at eighteen matched source pins. Core engine/R files are unchanged; full paired replay passed G1-G6; mechanical/reconciliation/report closeout remains pending. Public covered count stays 7; no campaign, default activation, promotion, release, registry, submission, push or deployment. START HERE: `docs/dev-log/after-task/2026-10-01-auto-fa-rank-implementation.md` and the current lane checkpoint.
 
 - **As of 2026-10-02 (automatic FA rank bounded paired programme COMPLETE locally).** All eight original gates pass: 249 focused Julia assertions across 13 testsets, full Julia and clean R checks, mandatory live twin parity/interruption, three fresh V7 source judgments, final mechanical reconciliation and whole report CLI exit zero. Tested source is Julia 3ef362b1/R 2108c0d; final commits contain docs/receipts only. Protected original R and Julia configuration work is preserved. Capability stays experimental; covered count stays 7. Ordinary optimizer-driven K1 selection, reliability and selection-adjusted coverage remain untested. No campaign, default activation, promotion, release, registry, push or deployment. START HERE: `docs/dev-log/after-task/2026-10-01-auto-fa-rank-implementation.md` and `docs/dev-log/handover/2026-10-02-auto-fa-rank-final.md`.
+
+## Archived from origin/main during the 2026-11-04 handover merge trial
+
+- **As of 2026-10-01 (bounded FA/GLLVM twin programme closed; auto-rank design next).** Julia PR #401 landed at `829e86ce`; closeout PR #402 merged at `570f49ba`, closing V3 with the exact hosted receipts in `docs/dev-log/after-task/2026-10-01-bounded-twin-final-closeout.md`. Gaussian FA T4/K1 and Poisson-log genetic GLLVM T3/K2 remain experimental; `public_covered_count` remains 7. No GPU, new submission, registry action, release tag, or capability promotion. Next: a separate automatic FA rank design/coordination arc, beginning with read-only GLLVM.jl and gllvmTMB contract refresh; HSquared implementation and validation remain queued. START HERE: `docs/dev-log/handover/2026-10-01-codex-handover.md`.

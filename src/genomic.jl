@@ -539,7 +539,8 @@ end
 
 """
     fit_gblup_reml(y, X, Z, Ginv; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0),
-                   target = :ai_reml, iterations = nothing, ids = nothing)
+                   target = :ai_reml, iterations = nothing, ids = nothing,
+                   solver = :spectral)
 
 GBLUP with REML-estimated variance components: build the genomic animal-model
 spec (genomic precision `Ginv` in the `Ainv` slot) and estimate `(sigma_a2,
@@ -556,6 +557,14 @@ and `fit_variance_components`'s is 1000) via [`fit_animal_model`](@ref)'s
 call is byte-identical to the pre-#212-fix behaviour (each target's own
 hardcoded default).
 
+`solver = :spectral` (default, hsquared issue 420) fits the single-genomic-effect model
+(`Z = I`, `target = :ai_reml`) by one eigen-decomposition of `Ginv` and a bounded 1-D
+Brent profile on `Vg / (Vg + Ve)`; `optimizer_status` is `"spectral_converged"` and
+`iterations` counts Brent iterations. It hands the fit to the dense AI-REML route
+whenever the model is not of that form, the spectrum is non-positive or non-finite, or
+the optimum sits on the `Vg` / `Ve` boundary. `solver = :dense_ai_reml` forces the dense
+route for validation. `target = :sparse_reml` is always dense, and the single-step wrappers pin `:dense_ai_reml`.
+
 Experimental, dense/validation-scale (the dense `Ginv` path gains no sparse
 selected-inversion advantage); no external comparator, no R model-spec.
 """
@@ -568,10 +577,89 @@ function fit_gblup_reml(
     target::Symbol = :ai_reml,
     iterations::Union{Nothing,Integer} = nothing,
     ids = nothing,
+    solver::Symbol = :spectral,
 )
+    solver in (:spectral, :dense_ai_reml) ||
+        throw(ArgumentError("solver must be :spectral or :dense_ai_reml"))
     spec = animal_model_spec(y, X, Z, Ginv; ids = ids, method = :REML)
+    if solver == :spectral && target == :ai_reml
+        # `initial` is unused by the spectral profile; validate it as the dense route would.
+        sigma_a2, sigma_e2 = _coerce_initial_variances(initial)
+        _finite_positive_variance_float64("initial sigma_a2", sigma_a2)
+        _finite_positive_variance_float64("initial sigma_e2", sigma_e2)
+        fit = _fit_genomic_spectral_reml(spec)
+        fit === nothing || return fit
+    end
     iterations === nothing && return fit_animal_model(spec; target = target, initial = initial)
     return fit_animal_model(spec; target = target, initial = initial, iterations = iterations)
+end
+
+# Spectral REML for y = Xb + g + e, g ~ N(0, Vg K), K = Ginv^-1 (hsquared issue 420).
+# Q = Ginv = U L U' gives K = U L^-1 U'; the REML loglik then depends only on L, U'y and
+# U'X, so each evaluation is O(n p^2). Profile on r = Vg / (Vg + Ve) in [0, 1]
+# (delta = Ve / Vg = (1 - r) / r, bounded for Brent), then Vg = r T, Ve = (1 - r) T with
+# T the closed-form total variance and beta the GLS estimate.
+const _GENOMIC_EIGEN_CALLS = Ref(0)
+
+# Counted O(n^3) factorisation; `nothing` when the spectrum is not finite and positive.
+function _genomic_eigen(M::AbstractMatrix)
+    _GENOMIC_EIGEN_CALLS[] += 1
+    decomposition = try
+        eigen(Symmetric(Matrix{Float64}(M)))
+    catch
+        return nothing
+    end
+    all(isfinite, decomposition.values) && all(>(0), decomposition.values) || return nothing
+    return decomposition
+end
+
+const _GENOMIC_SPECTRAL_RATIO_EDGE = 1e-6
+
+# Returns an `AnimalModelFit`, or `nothing` whenever the dense AI-REML route must decide
+# (ineligible model, non-positive/non-finite spectrum, failed profile, or an optimum on
+# or next to the Vg / Ve boundary, so boundary behaviour is the dense route's).
+function _fit_genomic_spectral_reml(spec::AnimalModelSpec)
+    n = length(spec.y)
+    p = size(spec.X, 2)
+    spec.method == :REML && n > p || return nothing
+    size(spec.Z) == (n, n) && size(spec.Ainv) == (n, n) || return nothing
+    Z = spec.Z
+    (Z isa SparseMatrixCSC ? Z == sparse(1.0I, n, n) : Z == I(n)) || return nothing
+    y = try Vector{Float64}(spec.y) catch; return nothing end
+    X = try Matrix{Float64}(spec.X) catch; return nothing end
+    Q = try Matrix{Float64}(spec.Ainv) catch; return nothing end
+    all(isfinite, y) && all(isfinite, X) && all(isfinite, Q) || return nothing
+    isapprox(Q, transpose(Q); atol = 1e-12, rtol = 0) || return nothing
+    decomposition = _genomic_eigen(Q)
+    decomposition === nothing && return nothing
+    kernel_eigenvalues = 1 ./ decomposition.values
+    vectors_t = transpose(decomposition.vectors)
+    context = (eigenvalues = kernel_eigenvalues, y = vectors_t * y, X = vectors_t * X,
+               n = n, p = p)
+    value(r) = (part = _genomic_profile_reml(context, r); part === nothing ? Inf : -part.loglik)
+    grid = collect(0.0:0.05:1.0)
+    values = value.(grid)
+    best = argmin(values)
+    isfinite(values[best]) || return nothing
+    (best == 1 || best == length(grid)) && return nothing
+    lo, hi = grid[best - 1], grid[best + 1]
+    optimum = Optim.optimize(value, lo, hi, Optim.Brent(); rel_tol = 1e-12, abs_tol = 1e-12)
+    ratio = Optim.minimizer(optimum)
+    part = _genomic_profile_reml(context, ratio)
+    part === nothing && return nothing
+    _GENOMIC_SPECTRAL_RATIO_EDGE < ratio < 1 - _GENOMIC_SPECTRAL_RATIO_EDGE || return nothing
+    sigma_a2 = ratio * part.t_hat
+    sigma_e2 = (1 - ratio) * part.t_hat
+    all(isfinite, (sigma_a2, sigma_e2)) && sigma_a2 > 0 && sigma_e2 > 0 || return nothing
+    weights = 1 ./ (ratio .* kernel_eigenvalues .+ (1 - ratio))
+    beta = Symmetric(transpose(context.X) * (weights .* context.X)) \
+           (transpose(context.X) * (weights .* context.y))
+    all(isfinite, beta) || return nothing
+    likelihood = GaussianLikelihoodResult(part.loglik, Vector{Float64}(beta), sigma_a2,
+                                          sigma_e2, :REML, n, p)
+    return AnimalModelFit(spec, likelihood, (sigma_a2 = sigma_a2, sigma_e2 = sigma_e2),
+                          true, "spectral_converged", Optim.iterations(optimum),
+                          :variance_components, false, false, :estimated_spectral_reml)
 end
 
 """
@@ -654,20 +742,38 @@ function fit_snp_blup_reml(
             loglik = fit.likelihood.loglik, converged = fit.converged)
 end
 
+function _resolve_scan_sigma_e2(sigma_e2, y_resid::AbstractVector, n::Int, p::Int)
+    if sigma_e2 === nothing
+        df = n - p
+        df > 0 ||
+            throw(ArgumentError("single-marker scan requires more observations than fixed effects"))
+        estimated = dot(y_resid, y_resid) / df
+        isfinite(estimated) && estimated > 0 ||
+            throw(ArgumentError("estimated residual variance must be finite and positive"))
+        return estimated, :estimated
+    end
+    sigma_e2_f = Float64(sigma_e2)
+    isfinite(sigma_e2_f) && sigma_e2_f > 0 ||
+        throw(ArgumentError("sigma_e2 must be finite and positive"))
+    return sigma_e2_f, :supplied
+end
+
 """
     single_marker_scan(y, X, markers; allele_frequencies = nothing,
-                       sigma_e2 = 1.0, marker_ids = nothing)
+                       sigma_e2 = nothing, marker_ids = nothing)
 
-Fixed-effect single-marker scan for biallelic marker dosages at a supplied
-residual variance.
+Fixed-effect single-marker scan for biallelic marker dosages.
 
 Each marker column is centered with [`centered_markers`](@ref), residualized
 against the fixed-effect design `X`, and tested one marker at a time in the
-Gaussian linear model `y = Xβ + marker * α + e`. The returned `NamedTuple`
-contains `marker_ids`, `effects`, `standard_errors`, `z_scores`, `chisq`,
+Gaussian linear model `y = Xβ + marker * α + e`. If `sigma_e2` is omitted, the
+residual variance is the OLS residual mean square of `y` on `X`. A supplied
+value must be finite and positive. The returned `NamedTuple` contains
+`marker_ids`, `effects`, `standard_errors`, `z_scores`, `chisq`,
 `p_values`, `bonferroni_p_values`, `bh_q_values`, `lod_scores`,
-`denominators`, `p`, and `k`. `p_values` are approximate two-sided
-Gaussian/Wald p-values implied by the supplied residual variance.
+`denominators`, `p`, `k`, `sigma_e2_used`, and
+`sigma_e2_source = :supplied | :estimated`. `p_values` are approximate
+two-sided Gaussian/Wald p-values implied by `sigma_e2_used`.
 `bonferroni_p_values` and `bh_q_values` are deterministic Bonferroni and
 Benjamini-Hochberg adjustments over the returned marker set. `lod_scores` are
 known-variance fixed-effect LOD-equivalent scores, computed as
@@ -684,7 +790,7 @@ function single_marker_scan(
     X::AbstractMatrix,
     markers::AbstractMatrix;
     allele_frequencies::Union{Nothing,AbstractVector} = nothing,
-    sigma_e2::Real = 1.0,
+    sigma_e2::Union{Nothing,Real} = nothing,
     marker_ids = nothing,
 )
     yv = Float64.(y)
@@ -695,9 +801,6 @@ function single_marker_scan(
     n > p || throw(ArgumentError("single-marker scan requires more observations than fixed effects"))
     all(isfinite, yv) || throw(ArgumentError("y must contain only finite values"))
     all(isfinite, Xmat) || throw(ArgumentError("X must contain only finite values"))
-    sigma_e2_f = Float64(sigma_e2)
-    isfinite(sigma_e2_f) && sigma_e2_f > 0 ||
-        throw(ArgumentError("sigma_e2 must be finite and positive"))
 
     cm = centered_markers(markers; allele_frequencies = allele_frequencies)
     size(cm.W, 1) == n ||
@@ -715,6 +818,7 @@ function single_marker_scan(
         throw(ArgumentError("X must have full column rank"))
     Xty = transpose(Xmat) * yv
     y_resid = yv - Xmat * (XtX \ Xty)
+    sigma_e2_f, sigma_e2_source = _resolve_scan_sigma_e2(sigma_e2, y_resid, n, p)
 
     effects = zeros(Float64, size(cm.W, 2))
     standard_errors = similar(effects)
@@ -757,6 +861,8 @@ function single_marker_scan(
         denominators = denominators,
         p = cm.p,
         k = cm.k,
+        sigma_e2_used = sigma_e2_f,
+        sigma_e2_source = sigma_e2_source,
     )
 end
 
@@ -2514,6 +2620,8 @@ optionally blended/ridged genomic relationship among them.
 Critically, `A₂₂⁻¹` is the inverse of the *submatrix* `A[g, g]`, **not** the
 submatrix `(A⁻¹)[g, g]` — the two differ.
 
+`G` and `A₂₂` are assumed to share a genetic base. The default sample-frequency `G` (no `allele_frequencies` argument, `blend_weight = ridge = 0`, `tau = omega = 1`) is not guaranteed to, and no scaling step is applied here; `metafounder_single_step_inverse` is the route that handles the base through a supplied `Gamma`. This is a documentation note only: no scaling step or default changes, and which side is right is not adjudicated here (the underlying theory is AGENT-INFERRED; see issue 53).
+
 Internal validation-only construction utility: dense, not exported, and **not**
 wired into fitting. The `blend_weight` / `tau` / `omega` / `ridge` knobs are not
 comparator-validated; defaults are `blend_weight = ridge = 0`, `tau = omega = 1`.
@@ -2612,6 +2720,8 @@ must also be positive definite.
 Experimental, dense/validation-scale. The `blend_weight`/`tau`/`omega`/`ridge`
 knobs are not comparator-validated (defaults `blend_weight = ridge = 0`,
 `tau = omega = 1`); a singular raw `G` requires blending/ridging.
+
+`G` and `A₂₂` are assumed to share a genetic base. The default sample-frequency `G` (no `allele_frequencies` argument, `blend_weight = ridge = 0`, `tau = omega = 1`) is not guaranteed to, and no scaling step is applied here; [`metafounder_single_step_inverse`](@ref) is the route that handles the base through a supplied `Gamma`. This is a documentation note only: no scaling step or default changes, and which side is right is not adjudicated here (the underlying theory is AGENT-INFERRED; see issue 53).
 """
 single_step_inverse(Ainv::AbstractMatrix, A::AbstractMatrix, G::AbstractMatrix,
                     genotyped_rows::AbstractVector{<:Integer}; kwargs...) =
@@ -2666,7 +2776,7 @@ function fit_single_step_reml(
     Hinv = _single_step_Hinv(Ainv, A, G, genotyped_rows;
                              tau = tau, omega = omega, blend_weight = blend_weight, ridge = ridge)
     return fit_gblup_reml(y, X, Z, Hinv; initial = initial, target = target,
-                          iterations = iterations, ids = ids)
+                          iterations = iterations, ids = ids, solver = :dense_ai_reml)
 end
 
 """
@@ -2776,7 +2886,7 @@ function fit_metafounder_single_step_reml(
                                             blend_weight = blend_weight, ridge = ridge,
                                             max_relationship_cache = max_relationship_cache)
     return fit_gblup_reml(y, X, Z, Hγinv; initial = initial, target = target,
-                          iterations = iterations, ids = ids)
+                          iterations = iterations, ids = ids, solver = :dense_ai_reml)
 end
 
 # ---------------------------------------------------------------------------
@@ -2912,7 +3022,7 @@ end
 
 """
     genome_wide_marker_scan(y, X, markers; n_permutations = 1000, alpha = 0.05,
-                            sigma_e2 = 1.0, allele_frequencies = nothing,
+                            sigma_e2 = nothing, allele_frequencies = nothing,
                             marker_ids = nothing, rng = Random.default_rng())
 
 Fixed-effect single-marker scan with a per-dataset residual-permutation null.
@@ -2921,6 +3031,9 @@ then builds a PER-DATASET residual-permutation null of the per-scan MAXIMUM chi-
 (permute the residuals of `y` on `X`, re-scan `n_permutations` times) and returns the
 add-one empirical genome-wide p-value ([`genome_wide_pvalue`](@ref)) for the
 observed maximum AND for each marker, plus the `(1 - alpha)` permutation threshold.
+`sigma_e2` follows [`single_marker_scan`](@ref): omitted means the OLS residual
+mean square of `y` on `X`. The returned fields include `sigma_e2_used` and
+`sigma_e2_source`. Permutation scans reuse that same residual variance.
 
 The null is rebuilt for each dataset. Exact/conservative permutation interpretation
 requires exchangeability under the permitted permutations. The evidenced calibration
@@ -2944,14 +3057,13 @@ function genome_wide_marker_scan(
     markers::AbstractMatrix;
     n_permutations::Integer = 1000,
     alpha::Real = 0.05,
-    sigma_e2::Real = 1.0,
+    sigma_e2::Union{Nothing,Real} = nothing,
     allele_frequencies::Union{Nothing,AbstractVector} = nothing,
     marker_ids = nothing,
     rng::AbstractRNG = Random.default_rng(),
 )
     n_permutations > 0 || throw(ArgumentError("n_permutations must be positive"))
     alpha_value = _checked_genome_wide_alpha(alpha)
-    sigma_e2 > 0 || throw(ArgumentError("sigma_e2 must be positive"))
 
     scan = single_marker_scan(y, X, markers; sigma_e2 = sigma_e2,
                               allele_frequencies = allele_frequencies,
@@ -2967,7 +3079,7 @@ function genome_wide_marker_scan(
     null_max = Vector{Float64}(undef, n_permutations)
     for i in 1:n_permutations
         yp = fitted .+ resid[randperm(rng, n)]
-        sc = single_marker_scan(yp, Xmat, markers; sigma_e2 = sigma_e2,
+        sc = single_marker_scan(yp, Xmat, markers; sigma_e2 = scan.sigma_e2_used,
                                 allele_frequencies = allele_frequencies,
                                 marker_ids = marker_ids)
         null_max[i] = _scan_max_statistic(sc; statistic = :chisq)
@@ -2991,6 +3103,8 @@ function genome_wide_marker_scan(
         denominators = scan.denominators,
         p = scan.p,
         k = scan.k,
+        sigma_e2_used = scan.sigma_e2_used,
+        sigma_e2_source = scan.sigma_e2_source,
         genome_wide_p_values = genome_wide_p_values,
         genome_wide_threshold = thr.threshold,
         genome_wide_p_min = genome_wide_p_min,

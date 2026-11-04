@@ -552,12 +552,15 @@ function fit_random_regression_reml(y::AbstractVector, X::AbstractMatrix, Phi::A
     isfinite(sigma_e2hat) && sigma_e2hat > 0 || throw(ArgumentError("random-regression optimizer did not return a finite positive residual variance"))
 
     beta, coeffs = _rr_gls_blup(yv, Xm, W, A, K_ghat, sigma_e2hat, n, q, k)
+    rr_scale = max(_log_cholesky_scale(phat[1:nkg], k), sigma_e2hat)
+    rr_free = vcat(_log_cholesky_interior(phat[1:nkg], k; scale = rr_scale),
+                   sigma_e2hat > _NELDER_MEAD_BOUNDARY_SHARE * rr_scale)
     return (
         variance_components = (K_g = K_ghat, sigma_e2 = sigma_e2hat),
         beta = beta,
         random_coefficients = (ids = aids, values = coeffs),
         loglik = -Optim.minimum(result),
-        converged = Optim.converged(result),
+        converged = _nelder_mead_converged(negloglik, result; free = rr_free),
         iterations = Optim.iterations(result),
         basis = (ncoef = k,),
     )

@@ -69,7 +69,14 @@ using Test
         @test_nowarn gaussian_loglik(spec, 1.0, 1.0; max_dense_cells = 10_000)
         @test_throws ArgumentError gaussian_loglik(spec, 1.0, 1.0; max_dense_cells = 50)
 
-        fit = fit_variance_components(spec)
+        # Two records per animal separate sigma_a2 from sigma_e2. With one record
+        # per unrelated animal (`spec`) REML is a ridge and the fit reports
+        # converged = false (#424), which the bootstrap refuses.
+        Zr = vcat(Z, Z)
+        yr = vcat(y, y .+ 0.5 .* cos.(1.0:n))
+        rspec = HSquared.animal_model_spec(yr, ones(2n, 1), Zr, Ainv; method = :REML)
+        fit = fit_variance_components(rspec)
+        @test fit.converged
         @test_nowarn bootstrap_variance_component_interval(fit; n_boot = 2, max_dense_cells = 10_000)
     end
 end

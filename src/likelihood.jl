@@ -52,7 +52,17 @@ function _likelihood_block_ids(ids, qs)
             for i in eachindex(qs)]
 end
 
+# Counts validations so tests can assert hoisting (e.g. profile intervals).
+const _VALIDATED_SPEC_CALLS = Ref(0)
+# Counts MME factorisations in the sparse REML evaluator, for the same purpose.
+const _SPARSE_REML_EVALS = Ref(0)
+# Counts full sparse MME assemblies (`_sparse_mme_system`) and dense inverses of a
+# relationship precision (#409, #411), for the same purpose.
+const _SPARSE_MME_ASSEMBLIES = Ref(0)
+const _DENSE_RELATIONSHIP_INVERSES = Ref(0)
+
 function _likelihood_validated_spec(spec::AnimalModelSpec; method = spec.method, supplied::Bool = false)
+    _VALIDATED_SPEC_CALLS[] += 1
     spec.family isa GaussianFamily || throw(ArgumentError("family must be GaussianFamily()"))
     normalized_method = _coerce_method(method)
     normalized_method in (:ML, :REML) || throw(ArgumentError("method must be :ML or :REML"))
@@ -214,8 +224,14 @@ end
 
 function _dense_relationship_covariance(Ainv_input::AbstractMatrix)
     canonical, _ = _validate_matrix_free_precision(sparse(Float64.(Ainv_input)), 1)
-    A = inv(Symmetric(Matrix{Float64}(canonical)))
+    A = _dense_relationship_inverse(canonical)
     return _likelihood_check_finite("relationship covariance", A)
+end
+
+# Dense `A = inv(Ainv)` with no validation (the interval paths' historical form).
+function _dense_relationship_inverse(Ainv::AbstractMatrix)
+    _DENSE_RELATIONSHIP_INVERSES[] += 1
+    return inv(Symmetric(Matrix{Float64}(Ainv)))
 end
 
 function _gaussian_loglik_with_covariance(
@@ -308,6 +324,18 @@ function _sparse_reml_loglik(
     Ainv::SparseMatrixCSC{Float64,Ti},
     logdet_Ainv::Real,
 ) where {Ti<:Integer}
+    return _sparse_reml_loglik_parts(spec, sigma_a2, sigma_e2, Ainv, logdet_Ainv).result
+end
+
+# The REML evaluation plus the generalised residual sum of squares
+# `quad` = y'Py, which the total-variance profile needs.
+function _sparse_reml_loglik_parts(
+    spec::AnimalModelSpec,
+    sigma_a2::Real,
+    sigma_e2::Real,
+    Ainv::SparseMatrixCSC{Float64,Ti},
+    logdet_Ainv::Real,
+) where {Ti<:Integer}
     (isfinite(sigma_a2) && sigma_a2 > 0) ||
         throw(ArgumentError("sigma_a2 must be positive and finite"))
     (isfinite(sigma_e2) && sigma_e2 > 0) ||
@@ -316,8 +344,20 @@ function _sparse_reml_loglik(
     n = length(spec.y)
     p = size(spec.X, 2)
     p < n || throw(ArgumentError("REML requires fewer fixed-effect columns than observations"))
+    _SPARSE_REML_EVALS[] += 1
     lhs, rhs, _ = _sparse_mme_system(spec, sigma_a2, sigma_e2)
     lhs_factor = cholesky(Symmetric(lhs); check = true)
+    return _sparse_reml_loglik_from_factor(
+        spec, sigma_a2, sigma_e2, Ainv, logdet_Ainv, lhs_factor, rhs)
+end
+
+# The REML evaluation from a factorised MME coefficient matrix and its right-hand side.
+function _sparse_reml_loglik_from_factor(
+    spec::AnimalModelSpec, sigma_a2::Real, sigma_e2::Real,
+    Ainv::SparseMatrixCSC{Float64,Ti}, logdet_Ainv::Real, lhs_factor, rhs,
+) where {Ti<:Integer}
+    n = length(spec.y)
+    p = size(spec.X, 2)
     solution = lhs_factor \ rhs
 
     logdetR = n * log(Float64(sigma_e2))
@@ -334,7 +374,7 @@ function _sparse_reml_loglik(
     loglik = -0.5 * ((n - p) * log(2 * pi) + logdetR + logdetG + logdetC + quad)
 
     _likelihood_result_finite(loglik, beta, u)
-    return GaussianLikelihoodResult(
+    result = GaussianLikelihoodResult(
         loglik,
         Vector{Float64}(solution[1:p]),
         Float64(sigma_a2),
@@ -343,7 +383,156 @@ function _sparse_reml_loglik(
         n,
         p,
     )
+    return (result = result, quad = quad)
 end
+
+# HSquared.jl #429: on log-variances the objective goes flat as a variance goes
+# to zero, even when the linear-scale score points back into the interior. The
+# NelderMead simplex spread then falls below g_tol and Optim reports
+# convergence at a false boundary, many log-likelihood units below the interior
+# optimum. When a fit ends with a variance share at or below this, refit once
+# from a start on the scale of y and keep the better objective.
+const _NELDER_MEAD_BOUNDARY_SHARE = 1e-6
+
+# Log of (v / 2, v / 2), with v the residual variance of y after the fixed
+# effects; `nothing` when no positive finite v exists.
+function _residual_scale_log_start(spec::AnimalModelSpec)
+    df = length(spec.y) - size(spec.X, 2)
+    df > 0 || return nothing
+    residual = spec.y - spec.X * (spec.X \ spec.y)
+    v = dot(residual, residual) / df
+    (isfinite(v) && v > 0) || return nothing
+    return log.([v / 2, v / 2])
+end
+
+function _optimize_two_variances(objective, logstart, spec::AnimalModelSpec, iterations::Integer)
+    options = Optim.Options(iterations = iterations)
+    result = optimize(objective, logstart, NelderMead(), options)
+    theta = exp.(Optim.minimizer(result))
+    minimum(theta) / sum(theta) <= _NELDER_MEAD_BOUNDARY_SHARE ||
+        return result, Optim.iterations(result)
+    rescue_start = _residual_scale_log_start(spec)
+    rescue_start === nothing && return result, Optim.iterations(result)
+    rescue = optimize(objective, rescue_start, NelderMead(), options)
+    total_iterations = Optim.iterations(result) + Optim.iterations(rescue)
+    Optim.minimum(rescue) < Optim.minimum(result) && return rescue, total_iterations
+    return result, total_iterations
+end
+
+# HSquared.jl #424: one convergence check shared by every NelderMead fitter.
+# `Optim.converged` for NelderMead only says that the spread of the objective
+# values over the simplex fell below `g_tol`. A flat REML ridge, or a simplex
+# that contracted onto a non-stationary point, passes that rule, so on its own
+# it is not a convergence certificate. The NelderMead fitters report
+# `converged = true` only when Optim's rule holds AND a central
+# finite-difference gradient `g` and Hessian `H` of the objective (minus the
+# log-likelihood) at the returned minimizer show:
+#   * curvature along every coordinate: each `H[i, i]` is positive and above
+#     `_NM_FLAT_CURVATURE_TOL` times the largest one;
+#   * no ridge and no saddle: the smallest eigenvalue of the scaled Hessian
+#     `S = D^(-1/2) H D^(-1/2)`, `D = Diagonal(H)`, exceeds `_NM_RIDGE_TOL`.
+#     `S` is the information matrix in correlation form, so the check does not
+#     change when a parameter is rescaled (a log-variance and the variance give
+#     the same answer). A near-zero eigenvalue means some combination of the
+#     parameters is not determined by the data (a ridge, such as `Va + Ve`
+#     when only the sum is estimable); a negative one is a saddle; and
+#   * a gradient that is numerically zero: the Newton decrement
+#     `g' H⁻¹ g / 2`, the gradient norm in the inverse-Hessian metric and the
+#     objective decrease a Newton step still predicts (log-likelihood units),
+#     is at most `_NM_STATIONARY_GAIN_TOL`.
+# `free` picks the coordinates that are checked. A fitter passes `false` for a
+# coordinate it already treats as a boundary (a variance driven toward zero on
+# the log scale, a covariance that lost rank, or a parameter on a safety
+# rail), where the objective is flat or penalized by construction. `null_dims`
+# sets aside that many eigenvalues of `S` of smallest magnitude for a known
+# exact invariance of the objective (the `r(r-1)/2` rotations of rank-`r` free
+# loadings).
+const _NM_FD_STEP = 1e-3
+const _NM_STATIONARY_GAIN_TOL = 1e-3
+const _NM_RIDGE_TOL = 1e-3
+const _NM_FLAT_CURVATURE_TOL = 1e-8
+
+function _nelder_mead_stationarity(objective, x::AbstractVector;
+                                   free = trues(length(x)), null_dims::Integer = 0)
+    base = Vector{Float64}(x)
+    idx = findall(collect(Bool, free))
+    d = length(idx)
+    0 <= null_dims <= d ||
+        throw(ArgumentError("null_dims must be between 0 and the number of free coordinates"))
+    d == 0 && return (stationary = true, gain = 0.0, ridge = Inf, gradient_norm = 0.0)
+    function f(z)
+        trial = copy(base)
+        trial[idx] = z
+        return objective(trial)
+    end
+    z = base[idx]
+    h = _NM_FD_STEP .* max.(1.0, abs.(z))
+    g = zeros(d)
+    for i in 1:d
+        e = zeros(d)
+        e[i] = h[i]
+        g[i] = (f(z + e) - f(z - e)) / (2 * h[i])
+    end
+    H = _direct_maternal_fd_hessian(f, z, h)
+    gradient_norm = maximum(abs, g)
+    flat = (stationary = false, gain = Inf, ridge = NaN, gradient_norm = gradient_norm)
+    (all(isfinite, g) && all(isfinite, H)) || return flat
+    curvature = diag(H)
+    minimum(curvature) > _NM_FLAT_CURVATURE_TOL * max(1.0, maximum(curvature)) || return flat
+    scale = 1 ./ sqrt.(curvature)
+    E = eigen(Symmetric(scale .* H .* transpose(scale)))
+    kept = sort(sortperm(abs.(E.values))[(null_dims + 1):end])
+    isempty(kept) && return (stationary = true, gain = 0.0, ridge = Inf, gradient_norm = gradient_norm)
+    ridge = minimum(E.values[kept])
+    ridge > 0 || return (stationary = false, gain = Inf, ridge = ridge, gradient_norm = gradient_norm)
+    gs = transpose(E.vectors[:, kept]) * (scale .* g)
+    gain = 0.5 * sum(gs .^ 2 ./ E.values[kept])
+    stationary = ridge > _NM_RIDGE_TOL && gain <= _NM_STATIONARY_GAIN_TOL
+    return (stationary = stationary, gain = gain, ridge = ridge, gradient_norm = gradient_norm)
+end
+
+# `converged` for a NelderMead `result` of `objective`: Optim's simplex rule AND
+# the gradient and curvature check above at `Optim.minimizer(result)`.
+function _nelder_mead_converged(objective, result; kwargs...)
+    Optim.converged(result) || return false
+    return _nelder_mead_stationarity(objective, Optim.minimizer(result); kwargs...).stationary
+end
+
+# Coordinates of a log-variance vector that are not at the zero-variance
+# boundary, the `free` mask for `_nelder_mead_converged`.
+_nelder_mead_interior(variances) =
+    [v / sum(variances) > _NELDER_MEAD_BOUNDARY_SHARE for v in variances]
+
+# The same mask for a log-Cholesky vector in `_chol_params_to_cov` order. Column
+# `j` is at the boundary when its squared diagonal factor is at most
+# `_NELDER_MEAD_BOUNDARY_SHARE` of row `j`'s variance (the covariance lost rank, a
+# correlation at +-1) or row `j`'s variance is at most that share of `scale` (a
+# variance driven to zero; by default the largest variance in the block). The
+# entries below that diagonal are then not identified separately from the later
+# columns, so the whole column is left out of the check.
+function _log_cholesky_interior(v, t::Integer; scale = nothing)
+    L = zeros(t, t)
+    idx = 1
+    for j in 1:t, i in j:t
+        L[i, j] = i == j ? exp(v[idx]) : v[idx]
+        idx += 1
+    end
+    rowvar = [sum(abs2, @view L[i, 1:i]) for i in 1:t]
+    reference = scale === nothing ? maximum(rowvar) : scale
+    edge = [L[j, j]^2 <= _NELDER_MEAD_BOUNDARY_SHARE * rowvar[j] ||
+            rowvar[j] <= _NELDER_MEAD_BOUNDARY_SHARE * reference for j in 1:t]
+    free = trues(length(v))
+    idx = 1
+    for j in 1:t, i in j:t
+        free[idx] = !edge[j]
+        idx += 1
+    end
+    return free
+end
+
+# Largest variance in the covariance that a log-Cholesky vector encodes, the
+# common `scale` of `_log_cholesky_interior` across the blocks of one model.
+_log_cholesky_scale(v, t::Integer) = maximum(diag(_chol_params_to_cov(v, t)))
 
 """
     fit_variance_components(spec; initial = (sigma_a2 = 1.0, sigma_e2 = 1.0),
@@ -360,6 +549,18 @@ dense path (hsquared#214): if `nobs^2 + nanimals^2` exceeds it, this throws an
 `ArgumentError` naming the observed cell count and the effective cap. This is
 also the path the R default `animal()` route reaches, via
 `fit_animal_model(...; kwargs...)` forwarding `max_dense_cells` here.
+
+If the fit ends with a variance share at or below `1e-6`, it refits once from
+`(v/2, v/2)`, with `v` the residual variance of `y` after the fixed effects,
+and keeps the higher log-likelihood. From the unit-scale default start, a
+response with variance far below 1 can otherwise stop at a false `σ²e → 0`
+boundary with `converged = true` (HSquared.jl #429). `iterations` caps each
+run; the reported count is the sum over both runs.
+
+`converged = true` needs both the NelderMead simplex rule and the shared
+gradient and curvature check at the optimum (HSquared.jl #424): a numerically
+zero REML score and no flat or negative direction of the REML surface. A
+variance share at or below `1e-6` is a boundary and is left out of that check.
 """
 function fit_variance_components(
     spec::AnimalModelSpec;
@@ -391,14 +592,17 @@ function fit_variance_components(
         end
     end
 
-    result = optimize(
+    result, optimizer_iterations = _optimize_two_variances(
         objective,
         log.([sigma_a2_start, sigma_e2_start]),
-        NelderMead(),
-        Optim.Options(iterations = iterations),
+        spec,
+        iterations,
     )
 
     isfinite(Optim.minimum(result)) || throw(ArgumentError("dense optimizer did not find a finite objective"))
+    # Checked before any local that `objective` also assigns is read again (#424).
+    converged = _nelder_mead_converged(objective, result;
+                                       free = _nelder_mead_interior(exp.(Optim.minimizer(result))))
     variances = _try_positive_exp(Optim.minimizer(result))
     variances === nothing && throw(ArgumentError("dense optimizer did not return finite positive variances"))
     sigma_a2, sigma_e2 = variances
@@ -409,7 +613,6 @@ function fit_variance_components(
         A,
         normalized_method,
     )
-    converged = Optim.converged(result)
     status = converged ? "converged" : "not_converged"
 
     return AnimalModelFit(
@@ -418,7 +621,7 @@ function fit_variance_components(
         (sigma_a2 = sigma_a2, sigma_e2 = sigma_e2),
         converged,
         status,
-        Optim.iterations(result),
+        optimizer_iterations,
     )
 end
 
@@ -434,10 +637,17 @@ The optimizer works on log-variance parameters and uses
 path toward sparse fitting. It is REML-only, not AI-REML, not the default
 fitting path, and not a production sparse solver.
 
-`converged` is the optimizer stopping flag for a finite returned result. It does
-not certify score stationarity or a closed-boundary optimum. Exact zero
+`converged` is the optimizer stopping flag combined with the shared gradient and
+curvature check at the optimum (HSquared.jl #424). A variance share at or below
+`1e-6` is a boundary and is left out of that check, so `converged` does not
+certify a closed-boundary optimum. Exact zero
 components are unavailable in this positive log-variance parameterization;
 nonfinite proposals are rejected and nonfinite final results raise an error.
+
+If the fit ends with a variance share at or below `1e-6`, it refits once from
+`(v/2, v/2)`, with `v` the residual variance of `y` after the fixed effects,
+and keeps the higher REML log-likelihood (HSquared.jl #429). `iterations` caps
+each run; the reported count is the sum over both runs.
 """
 function fit_sparse_reml(
     spec::AnimalModelSpec;
@@ -477,21 +687,23 @@ function fit_sparse_reml(
         end
     end
 
-    result = optimize(
+    result, optimizer_iterations = _optimize_two_variances(
         objective,
         log.([sigma_a2_start, sigma_e2_start]),
-        NelderMead(),
-        Optim.Options(iterations = iterations),
+        spec,
+        iterations,
     )
 
     isfinite(Optim.minimum(result)) || throw(ArgumentError("sparse optimizer did not find a finite objective"))
+    # Checked before any local that `objective` also assigns is read again (#424).
+    converged = _nelder_mead_converged(objective, result;
+                                       free = _nelder_mead_interior(exp.(Optim.minimizer(result))))
     variances = _try_positive_exp(Optim.minimizer(result))
     variances === nothing && throw(ArgumentError("sparse optimizer did not return finite positive variances"))
     sigma_a2, sigma_e2 = variances
     _finite_positive_variance_update((sigma_a2,), sigma_e2) ||
         throw(ArgumentError("sparse optimizer returned variances outside the finite precision range"))
     likelihood = _sparse_reml_loglik(spec, sigma_a2, sigma_e2, Ainv, logdet_Ainv)
-    converged = Optim.converged(result)
     status = converged ? "converged" : "not_converged"
 
     return AnimalModelFit(
@@ -500,7 +712,7 @@ function fit_sparse_reml(
         (sigma_a2 = sigma_a2, sigma_e2 = sigma_e2),
         converged,
         status,
-        Optim.iterations(result),
+        optimizer_iterations,
         :sparse_reml,
         false,
         true,
@@ -538,8 +750,33 @@ an *identified* problem this is **optimum-invariant** (the converged estimates a
 unchanged) and improves robustness to poor starting values; `em_warmup = 0` is
 byte-identical to the pre-warm-start path. It does NOT change the σ²→0 /
 non-identified boundary behaviour (there the fit still returns `converged = false`),
-and on a non-identified surface the warm-start can shift the non-converged
-estimate — read the `converged` flag, not the value.
+and on a non-identified surface the warm-start can shift the non-converged estimate.
+If a warm-start update makes the next mixed-model system non-positive-definite,
+the fitter returns the last factorable variances with `converged = false` and
+`optimizer_status = "non_positive_definite"` — read the flag, not the value.
+
+When the selected-inverse score is cancellation-dominated and the pedigree has
+more than 512 animals (`_AI_REML_BOUNDARY_TRACE_MAX_COLUMNS`), AI-REML stops
+with `optimizer_status = "boundary_score_unresolved"` and returns the iterate.
+That iterate is not a certified REML optimum. Use [`fit_sparse_reml`](@ref) or
+raise `em_warmup` on the same spec when the optimum is at or near `σ²a = 0`
+(HSquared.jl #407).
+
+When the REML optimum is on the residual boundary (`σ²e → 0`), AI-REML often
+does not converge. The iterate can sit at a start-dependent point and the REML
+log-likelihood can get worse with more iterations. If the returned residual
+share is at or near zero, the fitter warns and still returns the iterate with
+`converged = false`. Use [`fit_sparse_reml`](@ref) on the same spec
+(HSquared.jl #412). This is a different failure from the q > 512
+`boundary_score_unresolved` abort (#407).
+
+A founders-only pedigree (`A = I`) with one record per animal does not identify
+`σ²a` separately from `σ²e`. The REML surface is then a ridge in `σ²a + σ²e`,
+and the reported `h²` follows the start ratio. The fitter warns and returns the
+iterate with `converged = false` and `optimizer_status = "unidentified_ridge"`.
+[`heritability`](@ref) is then `NaN`, and so are the heritability standard error
+and interval (the interval carries a `reason`). The total `σ²a + σ²e` is
+identified and stays in `variance_components` (HSquared.jl #422).
 """
 function fit_ai_reml(
     spec::AnimalModelSpec;
@@ -564,6 +801,68 @@ end
 # type and every fitted value while the study can consume counters recorded at
 # the point where the corresponding event actually occurs.
 const _AI_REML_BOUNDARY_TRACE_MAX_COLUMNS = 512
+
+function _is_identity_precision(Ainv)
+    A = sparse(Float64.(Ainv))
+    n = size(A, 1)
+    size(A, 2) == n || return false
+    n == 0 && return false
+    return A == sparse(1.0I, n, n)
+end
+
+function _single_record_incidence(Z)
+    Zs = sparse(Z)
+    n, q = size(Zs)
+    row_nz = zeros(Int, n)
+    col_nz = zeros(Int, q)
+    rows = rowvals(Zs)
+    vals = nonzeros(Zs)
+    for col in 1:q
+        for idx in nzrange(Zs, col)
+            iszero(vals[idx]) && continue
+            row_nz[rows[idx]] += 1
+            col_nz[col] += 1
+        end
+    end
+    return all(==(1), row_nz) && all(c -> c == 0 || c == 1, col_nz)
+end
+
+function _animal_residual_split_unidentifiable(Z, Ainv)
+    return _is_identity_precision(Ainv) && _single_record_incidence(Z)
+end
+
+const _ANIMAL_RESIDUAL_UNIDENTIFIABLE_MSG =
+    "animal and residual variances are not separately identifiable when the " *
+    "relationship is the identity (founders-only pedigree, A = I) and each " *
+    "animal has one record. The REML log-likelihood depends only on Va + Ve, " *
+    "so h2 follows the start ratio rescaled to the phenotypic total. Read " *
+    "converged as a stationary point on that ridge, not as an identified " *
+    "heritability."
+
+const _UNIDENTIFIED_RIDGE_STATUS = "unidentified_ridge"
+
+# The ridge fit is not certified: heritability, its standard error and its
+# interval are NaN (HSquared.jl #422).
+_is_unidentified_ridge(fit::AnimalModelFit) =
+    fit.optimizer_status == _UNIDENTIFIED_RIDGE_STATUS
+
+const _BOUNDARY_SCORE_UNRESOLVED_MSG =
+    "AI-REML stopped with boundary_score_unresolved: the selected-inverse " *
+    "score became cancellation-dominated and the pedigree has more than " *
+    string(_AI_REML_BOUNDARY_TRACE_MAX_COLUMNS) *
+    " animals, so the fallback boundary score was not run. The returned " *
+    "variances and log-likelihood are the iterate at abort, not a certified " *
+    "REML optimum. Use fit_sparse_reml on the same spec when the optimum " *
+    "is at or near Va = 0."
+
+const _AI_REML_RESIDUAL_BOUNDARY_SHARE = 1e-6
+
+const _RESIDUAL_BOUNDARY_UNRESOLVED_MSG =
+    "AI-REML did not converge with residual variance at or near zero. The " *
+    "returned variances and log-likelihood are the last iterate, not a " *
+    "certified REML optimum; more iterations can make the log-likelihood " *
+    "worse. Use fit_sparse_reml on the same spec when the REML optimum is " *
+    "on the residual boundary (Ve -> 0)."
 
 function _fit_ai_reml_diagnostics(
     spec::AnimalModelSpec;
@@ -592,6 +891,10 @@ function _fit_ai_reml_diagnostics(
     nfixed = size(X, 2)
     nrandom = size(Z, 2)
     nobs = length(y)
+    ridge = _animal_residual_split_unidentifiable(Z, Ainv)
+    if ridge
+        @warn _ANIMAL_RESIDUAL_UNIDENTIFIABLE_MSG
+    end
     cp = _sparse_mme_cross_products(sparse(X), Z, Ainv, y)
     factorizations = 0
     em_steps = 0
@@ -603,6 +906,8 @@ function _fit_ai_reml_diagnostics(
     last_newton_step = (NaN, NaN)
     boundary_score_fallbacks = 0
     termination_reason = "iteration_limit"
+    last_factorable_sigma_a2 = sigma_a2
+    last_factorable_sigma_e2 = sigma_e2
 
     # EM-REML warm-start (Wave F scout lead). The EM update is the closed form that ZEROES the
     # REML score: σ²a = (u'A⁻¹u + tr(A⁻¹C^uu))/q and σ²e = e'e/(n − p − q + tr(A⁻¹C^uu)/σ²a).
@@ -621,6 +926,8 @@ function _fit_ai_reml_diagnostics(
             err isa LinearAlgebra.PosDefException && break
             rethrow(err)
         end
+        last_factorable_sigma_a2 = sigma_a2
+        last_factorable_sigma_e2 = sigma_e2
         solution = factor \ rhs
         u = solution[(nfixed + 1):end]
         e = y .- X * solution[1:nfixed] .- Z * u
@@ -641,7 +948,19 @@ function _fit_ai_reml_diagnostics(
         iters = it
         lhs, rhs, _ = _sparse_mme_from_cross_products(cp, sigma_a2, sigma_e2)
         factorizations += 1
-        factor = cholesky(Symmetric(lhs); check = true)
+        factor = try
+            cholesky(Symmetric(lhs); check = true)
+        catch err
+            if err isa LinearAlgebra.PosDefException && em_steps > 0
+                sigma_a2 = last_factorable_sigma_a2
+                sigma_e2 = last_factorable_sigma_e2
+                termination_reason = "non_positive_definite"
+                break
+            end
+            rethrow(err)
+        end
+        last_factorable_sigma_a2 = sigma_a2
+        last_factorable_sigma_e2 = sigma_e2
         solution = factor \ rhs
         beta = solution[1:nfixed]
         u = solution[(nfixed + 1):end]
@@ -661,6 +980,7 @@ function _fit_ai_reml_diagnostics(
             if nrandom > _AI_REML_BOUNDARY_TRACE_MAX_COLUMNS
                 ai_score_a = ai_score_e = ai_score_norm = NaN
                 termination_reason = "boundary_score_unresolved"
+                @warn _BOUNDARY_SCORE_UNRESOLVED_MSG
                 break
             end
             boundary_score_fallbacks += 1
@@ -733,9 +1053,23 @@ function _fit_ai_reml_diagnostics(
         sigma_a2, sigma_e2 = a_new, e_new
     end
 
+    residual_share = sigma_e2 / (sigma_a2 + sigma_e2)
+    if !converged &&
+       termination_reason != "boundary_score_unresolved" &&
+       isfinite(residual_share) &&
+       residual_share <= _AI_REML_RESIDUAL_BOUNDARY_SHARE
+        @warn _RESIDUAL_BOUNDARY_UNRESOLVED_MSG
+    end
+
     likelihood = sparse_reml_loglik(spec, sigma_a2, sigma_e2)
-    status = termination_reason == "boundary_score_unresolved" ? termination_reason :
+    status = termination_reason in ("boundary_score_unresolved", "non_positive_definite") ? termination_reason :
              (converged ? "converged" : "not_converged")
+    if ridge
+        # A = I with one record per animal: the REML surface is flat in the
+        # split, so a stationary point is not an identified optimum.
+        converged = false
+        status = _UNIDENTIFIED_RIDGE_STATUS
+    end
     fit = AnimalModelFit(
         result_spec,
         likelihood,
@@ -1297,8 +1631,11 @@ BLUPs/EBVs at supplied positive variance components.
 
 This forms the sparse equation system
 `[X'R^-1X  X'R^-1Z; Z'R^-1X  Z'R^-1Z + Ainv / sigma_a2]` with
-`R = sigma_e2 I`. It is a supplied-variance solver and does not optimize
-variance components.
+`R = sigma_e2 I`. The coefficient matrix is symmetric positive definite by
+construction, so the solve uses `cholesky(Symmetric(lhs))`, the same factor
+[`sparse_reml_loglik`](@ref) and [`fit_ai_reml`](@ref) already use. A
+non-positive-definite coefficient matrix throws `PosDefException`. It is a
+supplied-variance solver and does not optimize variance components.
 """
 function henderson_mme(spec::AnimalModelSpec, sigma_a2::Real, sigma_e2::Real)
     sigma_a2 = _likelihood_positive("sigma_a2", sigma_a2; precision = true)
@@ -1308,8 +1645,7 @@ function henderson_mme(spec::AnimalModelSpec, sigma_a2::Real, sigma_e2::Real)
     result_spec = _likelihood_result_spec(original_spec, spec)
 
     lhs, rhs, _ = _sparse_mme_system(spec, sigma_a2, sigma_e2)
-
-    solution = lhs \ rhs
+    solution = cholesky(Symmetric(lhs); check = true) \ rhs
     _likelihood_check_finite("MME solution", solution)
     nfixed = size(spec.X, 2)
     beta = Vector{Float64}(solution[1:nfixed])
@@ -1593,6 +1929,58 @@ function _two_effect_dense(y, X, Z1, A1, Z2, A2, sigma1, sigma2, sigma_e2)
     return loglik, Vector{Float64}(beta), u1, u2
 end
 
+const _TWO_EFFECT_UNIT_START_OFF_SCALE_MSG =
+    "two-effect starts are (sigma1, sigma2, sigma_e2) = (1, 1, 1) (passed explicitly; " *
+    "the default start is scale-aware). " *
+    "NelderMead from that unit-scale start can stop at a wrong near-zero-h2 " *
+    "point when the response variance is far from 1, still with converged = true. " *
+    "Pass initial on the scale of y, or rescale y. REML itself is " *
+    "scale-equivariant; the green flag is not."
+
+function _two_effect_unit_start_off_scale(y, sigma1, sigma2, sigma_e2)
+    sigma1 == 1.0 && sigma2 == 1.0 && sigma_e2 == 1.0 || return false
+    n = length(y)
+    n < 2 && return false
+    μ = 0.0
+    for yi in y
+        μ += Float64(yi)
+    end
+    μ /= n
+    ss = 0.0
+    for yi in y
+        d = Float64(yi) - μ
+        ss += d * d
+    end
+    v = ss / (n - 1)
+    return isfinite(v) && (v >= 100.0 || (v > 0 && v <= 1e-4))
+end
+
+# Scale-aware default start for the dense two-effect and repeatability fitters
+# (HSquared.jl #413): half of the response variance to the residual, the other half
+# split evenly over the `K` random effects, the same rule as
+# `fit_sparse_multi_effect_aireml(...; initial = :auto)`. REML is scale-equivariant,
+# so a start that scales with `var(y)` makes the whole NelderMead path scale
+# equivariant (the start moves by exactly `log(c^2)` when `y` is multiplied by `c`).
+# A constant, non-finite or single-record response has no usable variance and falls
+# back to the unit start, so the fitter's own validation reports the real problem.
+function _scale_aware_start(y, K::Integer)
+    n = length(y)
+    n >= 2 || return ones(Float64, K + 1)
+    μ = 0.0
+    for yi in y
+        μ += Float64(yi)
+    end
+    μ /= n
+    ss = 0.0
+    for yi in y
+        d = Float64(yi) - μ
+        ss += d * d
+    end
+    v = ss / (n - 1)
+    (isfinite(v) && v > 0) || return ones(Float64, K + 1)
+    return vcat(fill(0.5 * v / K, K), 0.5 * v)
+end
+
 """
     fit_two_effect_reml(y, X, Z1, Ainv1, Z2, Ainv2; initial, iterations = 200,
                         ids1 = nothing, ids2 = nothing)
@@ -1612,6 +2000,27 @@ AIC / LRT against sparse / `gaussian_loglik` routes.
 Experimental, dense/validation-scale, REML-only; uncertainty intervals and the R
 model-spec mapping are not part of this function. On small data the optimum can
 sit on a boundary (a variance → 0).
+
+`converged` needs the NelderMead simplex rule (the objective spread fell below
+`g_tol`) and the shared gradient and curvature check at the optimum
+(HSquared.jl #424): a flat or negative direction of the REML surface reports
+`converged = false`. It is not a multi-start check.
+When the two random effects are linearly dependent on the residual (the usual
+animal + dam case where each dam has one sire, so A = 0.5 I + 0.5 D among
+phenotyped animals), only two combinations of (Va, Vdam, Ve) are identified.
+Different starts can then return different h2 values at the same log-likelihood,
+and the curvature check reports `converged = false` on that exact ridge.
+Read `ratio1` as one point on that ridge, not a unique heritability
+(HSquared.jl #416).
+
+Default start (`initial = nothing`) is scale-aware: `sigma_e2 = var(y) / 2` and
+`sigma1 = sigma2 = var(y) / 4`. REML is scale-equivariant, but NelderMead from a
+fixed unit-scale start `(1, 1, 1)` can stop at a wrong near-zero-h2 point when
+`var(y)` is far from 1, still with `converged = true` (HSquared.jl #413); the
+scale-aware start removes that. A constant response falls back to `(1, 1, 1)`.
+An explicit `initial` is used as given, and the fitter still warns when
+`(1, 1, 1)` is passed with `var(y)` far from 1. Recorded recovery evidence used
+the unit-scale start; the `sim/` harnesses pass it explicitly.
 """
 function fit_two_effect_reml(
     y::AbstractVector,
@@ -1620,13 +2029,38 @@ function fit_two_effect_reml(
     Ainv1::AbstractMatrix,
     Z2::AbstractMatrix,
     Ainv2::AbstractMatrix;
-    initial = (sigma1 = 1.0, sigma2 = 1.0, sigma_e2 = 1.0),
+    initial = nothing,
     iterations::Integer = 200,
     ids1 = nothing,
     ids2 = nothing,
 )
+    return _fit_two_effect_reml_dense(y, X, Z1, Ainv1, Z2, Ainv2; initial = initial,
+        iterations = iterations, ids1 = ids1, ids2 = ids2).fit
+end
+
+# The fit plus the dense inputs it built, so a refitting interval reuses `A1`/`A2`
+# instead of inverting `Ainv1`/`Ainv2` again (#411).
+function _fit_two_effect_reml_dense(
+    y::AbstractVector,
+    X::AbstractMatrix,
+    Z1::AbstractMatrix,
+    Ainv1::AbstractMatrix,
+    Z2::AbstractMatrix,
+    Ainv2::AbstractMatrix;
+    initial = nothing,
+    iterations::Integer = 200,
+    ids1 = nothing,
+    ids2 = nothing,
+)
+    if initial === nothing
+        s0 = _scale_aware_start(y, 2)
+        initial = (sigma1 = s0[1], sigma2 = s0[2], sigma_e2 = s0[3])
+    end
     starts = [_likelihood_positive("initial sigma1", initial.sigma1), _likelihood_positive("initial sigma2", initial.sigma2), _likelihood_positive("initial sigma_e2", initial.sigma_e2)]
     iterations >= 1 || throw(ArgumentError("iterations must be at least 1"))
+    if _two_effect_unit_start_off_scale(y, starts[1], starts[2], starts[3])
+        @warn _TWO_EFFECT_UNIT_START_OFF_SCALE_MSG
+    end
     n = length(y)
     size(X, 1) == n || throw(ArgumentError("X must have one row per record"))
     size(Z1, 1) == n || throw(ArgumentError("Z1 must have one row per record"))
@@ -1652,6 +2086,7 @@ function fit_two_effect_reml(
     Z2d = Matrix{Float64}(Z2s)
     e1ids = _likelihood_effect_ids(e1ids, n1, "ids1")
     e2ids = _likelihood_effect_ids(e2ids, n2, "ids2")
+    _warn_weak_identifiability((Z1d, Z2d), (A1, A2), n, ("effect 1", "effect 2"))
     function objective(p)
         variances = _try_positive_exp(p)
         variances === nothing && return Inf
@@ -1666,6 +2101,8 @@ function fit_two_effect_reml(
     p0 = log.(starts)
     result = optimize(objective, p0, NelderMead(), Optim.Options(iterations = iterations))
     isfinite(Optim.minimum(result)) || throw(ArgumentError("two-effect optimizer did not find a finite objective"))
+    converged = _nelder_mead_converged(objective, result;
+                                       free = _nelder_mead_interior(exp.(Optim.minimizer(result))))
     variances = _try_positive_exp(Optim.minimizer(result))
     variances === nothing && throw(ArgumentError("two-effect optimizer did not return finite positive variances"))
     sigma1, sigma2, sigma_e2 = variances
@@ -1673,7 +2110,7 @@ function fit_two_effect_reml(
     total = sigma1 + sigma2 + sigma_e2
     isfinite(total) && total > 0 || throw(ArgumentError("two-effect optimizer returned a nonfinite total variance"))
     p = size(Xd, 2)
-    return merge((
+    fit = merge((
         variance_components = (sigma1 = sigma1, sigma2 = sigma2, sigma_e2 = sigma_e2),
         ratio1 = sigma1 / total,
         ratio2 = sigma2 / total,
@@ -1681,8 +2118,9 @@ function fit_two_effect_reml(
         effect1 = (ids = e1ids, values = u1),
         effect2 = (ids = e2ids, values = u2),
         loglik = loglik,
-        converged = Optim.converged(result),
+        converged = converged,
     ), loglik_convention_fields(LOGLIK_CONVENTION_OMIT_2PI, n, p))
+    return (fit = fit, dense = (yv = yv, Xd = Xd, Z1d = Z1d, A1 = A1, Z2d = Z2d, A2 = A2))
 end
 
 # One variance ratio `theta[keep_num] / total` and its logit-delta CI from the
@@ -1716,7 +2154,10 @@ end
 
 function _uncertainty_component_steps(theta::AbstractVector, fd_step::Real)
     step = _validate_uncertainty_fd_step(fd_step)
-    h = step .* max.(abs.(theta), 1e-3)
+    component_scale = maximum(abs, theta)
+    (isfinite(component_scale) && component_scale > 0) ||
+        throw(ArgumentError("variance components must have a finite positive scale"))
+    h = step .* max.(abs.(theta), 1e-3 * component_scale)
     all(x -> isfinite(x) && x > 0, h) ||
         throw(ArgumentError("fd_step must produce finite positive component steps"))
     return h
@@ -1795,8 +2236,8 @@ end
 
 # Observed REML information = −Hessian of the REML loglik `f` at the variance
 # vector `theta` (length `d`), by central finite differences with a
-# component-relative step `fd_step · max(|θ_i|, 1e-3)`. Shared by the two-effect
-# and K-effect ratio-interval paths.
+# component-relative step `fd_step · max(|θ_i|, 1e-3 max_j |θ_j|)`. Shared by
+# the two-effect and K-effect ratio-interval paths.
 #
 # PERFORMANCE. The loop runs the UPPER TRIANGLE only (`j in i:d`) and mirrors
 # each cell, cutting `4·d²` evaluations of `f` to `4·d·(d+1)/2` — at `d = K+1 = 3`
@@ -1838,6 +2279,8 @@ end
                               which = :both, initial = ..., iterations = 200,
                               ids1 = nothing, ids2 = nothing, fd_step = 1e-4,
                               boundary_tol = 1e-6)
+    two_effect_ratio_interval(fit, y, X, Z1, Ainv1, Z2, Ainv2; level = 0.95,
+                              which = :both, fd_step = 1e-4, boundary_tol = 1e-6)
 
 Asymptotic delta-method confidence interval(s) for the variance ratios of the
 general two-effect REML model ([`fit_two_effect_reml`](@ref)):
@@ -1866,6 +2309,13 @@ The reported ratio and its gradient retain the full denominator, so e.g. `ratio1
 `σ2² → 0`; in that reduction it recovers [`heritability_interval`](@ref) on the
 underlying animal model. `converged` is carried from the REML fit.
 
+The second form takes an ALREADY-FITTED [`fit_two_effect_reml`](@ref) result
+(`fit`) with the same `y, X, Z1, Ainv1, Z2, Ainv2` it was fitted on and does NOT
+refit; only the finite-difference information at `fit.variance_components` is
+computed. The first form repeats the whole dense Nelder-Mead fit (#411), so a
+caller that has just fitted should use the second. The fit must come from these
+inputs; this is not checked.
+
 Experimental, asymptotic, delta-method, REML only; the interval is a large-sample
 approximation and is NOT coverage-calibrated — on small samples the REML surface
 is flat and the interval is unreliable (the parametric bootstrap,
@@ -1876,7 +2326,7 @@ function two_effect_ratio_interval(
     y::AbstractVector, X::AbstractMatrix, Z1::AbstractMatrix, Ainv1::AbstractMatrix,
     Z2::AbstractMatrix, Ainv2::AbstractMatrix;
     level::Real = 0.95, which::Symbol = :both,
-    initial = (sigma1 = 1.0, sigma2 = 1.0, sigma_e2 = 1.0),
+    initial = nothing,
     iterations::Integer = 200, ids1 = nothing, ids2 = nothing,
     fd_step::Real = 1e-4, boundary_tol::Real = 1e-6,
 )
@@ -1885,16 +2335,42 @@ function two_effect_ratio_interval(
     fd_step = _validate_uncertainty_fd_step(fd_step)
     which in (:both, :ratio1, :ratio2) ||
         throw(ArgumentError("which must be :both, :ratio1, or :ratio2"))
-    fit = fit_two_effect_reml(y, X, Z1, Ainv1, Z2, Ainv2;
-                              initial = initial, iterations = iterations,
-                              ids1 = ids1, ids2 = ids2)
+    fit, dense = _fit_two_effect_reml_dense(y, X, Z1, Ainv1, Z2, Ainv2;
+                                            initial = initial, iterations = iterations,
+                                            ids1 = ids1, ids2 = ids2)
+    return _two_effect_ratio_interval_from_fit(fit, y, X, Z1, Ainv1, Z2, Ainv2;
+        level = level, which = which, fd_step = fd_step, boundary_tol = boundary_tol,
+        dense = dense)
+end
+
+function two_effect_ratio_interval(
+    fit::NamedTuple,
+    y::AbstractVector, X::AbstractMatrix, Z1::AbstractMatrix, Ainv1::AbstractMatrix,
+    Z2::AbstractMatrix, Ainv2::AbstractMatrix;
+    level::Real = 0.95, which::Symbol = :both,
+    fd_step::Real = 1e-4, boundary_tol::Real = 1e-6,
+)
+    0 < level < 1 || throw(ArgumentError("level must be in (0, 1)"))
+    boundary_tol = _validate_boundary_tol(boundary_tol)
+    fd_step = _validate_uncertainty_fd_step(fd_step)
+    which in (:both, :ratio1, :ratio2) ||
+        throw(ArgumentError("which must be :both, :ratio1, or :ratio2"))
+    return _two_effect_ratio_interval_from_fit(fit, y, X, Z1, Ainv1, Z2, Ainv2;
+        level = level, which = which, fd_step = fd_step, boundary_tol = boundary_tol)
+end
+
+# Interval from an already-fitted two-effect REML result (no refit); arguments are
+# validated by the two public methods.
+function _two_effect_ratio_interval_from_fit(
+    fit, y, X, Z1, Ainv1, Z2, Ainv2; level, which, fd_step, boundary_tol, dense = nothing,
+)
     vc = fit.variance_components
     theta = [vc.sigma1, vc.sigma2, vc.sigma_e2]
 
-    A1 = inv(Symmetric(Matrix{Float64}(Ainv1)))
-    A2 = inv(Symmetric(Matrix{Float64}(Ainv2)))
-    Xd = Matrix{Float64}(X); Z1d = Matrix{Float64}(Z1); Z2d = Matrix{Float64}(Z2)
-    yv = Float64.(y)
+    yv, Xd, Z1d, A1, Z2d, A2 = dense === nothing ?
+        (Float64.(y), Matrix{Float64}(X), Matrix{Float64}(Z1), _dense_relationship_inverse(Ainv1),
+         Matrix{Float64}(Z2), _dense_relationship_inverse(Ainv2)) :
+        (dense.yv, dense.Xd, dense.Z1d, dense.A1, dense.Z2d, dense.A2)
     loglik(t) = _two_effect_dense(yv, Xd, Z1d, A1, Z2d, A2, t[1], t[2], t[3])[1]
 
     # observed information = −Hessian of the REML loglik (central finite differences)
@@ -2058,11 +2534,27 @@ an `n×n` `V` (guarded by `max_dense_cells`); it is an oracle for small `K`
 (≲4) and `n` (≲2000), NOT a production sparse estimator — that is the owed sparse
 AI-REML `K`-component path. On small/uninformative data the optimum can sit on a
 boundary (a variance → 0), reported via `converged` / `boundary`, never hidden.
-Non-identifiability (e.g. two `A=I` effects on the same grouping) can produce a
-flat ridge even when the optimizer reports `converged = true`. Optimizer
+Non-identifiability (e.g. two `A=I` effects on the same grouping) produces a
+flat ridge, which the shared curvature check reports as `converged = false`
+(HSquared.jl #424); a nearly flat direction can still pass that check. Optimizer
 convergence and boundary flags do not certify identifiability.
 """
 function fit_multi_effect_reml(
+    y::AbstractVector,
+    X::AbstractMatrix,
+    effects::AbstractVector;
+    initial = nothing,
+    iterations::Integer = 200,
+    ids = nothing,
+    max_dense_cells::Integer = DEFAULT_MAX_DENSE_CELLS,
+)
+    return _fit_multi_effect_reml_dense(y, X, effects; initial = initial,
+        iterations = iterations, ids = ids, max_dense_cells = max_dense_cells).fit
+end
+
+# The fit plus the dense inputs it built (`yv`, `Xd`, `ZAs`), so the refitting
+# `multi_effect_ratio_interval` reuses each `A_i` instead of inverting again (#411).
+function _fit_multi_effect_reml_dense(
     y::AbstractVector,
     X::AbstractMatrix,
     effects::AbstractVector;
@@ -2105,6 +2597,7 @@ function fit_multi_effect_reml(
     yv, Xs = _likelihood_design(y, X)
     Xd = Matrix{Float64}(Xs)
     ZAs = [(Zds[i], As[i]) for i in 1:K]
+    _warn_weak_identifiability(Zds, As, n, ["effect $i" for i in 1:K])
     function objective(p)
         variances = _try_positive_exp(p)
         variances === nothing && return Inf
@@ -2118,6 +2611,8 @@ function fit_multi_effect_reml(
     end
     result = optimize(objective, p0, NelderMead(), Optim.Options(iterations = iterations))
     isfinite(Optim.minimum(result)) || throw(ArgumentError("multi-effect optimizer did not find a finite objective"))
+    converged = _nelder_mead_converged(objective, result;
+                                       free = _nelder_mead_interior(exp.(Optim.minimizer(result))))
     popt = _try_positive_exp(Optim.minimizer(result))
     popt === nothing && throw(ArgumentError("multi-effect optimizer did not return finite positive variances"))
     sigmas = popt[1:K]
@@ -2127,17 +2622,18 @@ function fit_multi_effect_reml(
     isfinite(total) && total > 0 || throw(ArgumentError("multi-effect optimizer returned a nonfinite total variance"))
     effects_out = [(ids = eids[i], values = us[i]) for i in 1:K]
     p = size(Xd, 2)
-    return merge((
+    fit = merge((
         variance_components = (sigmas = sigmas, sigma_e2 = se2),
         ratios = sigmas ./ total,
         beta = beta,
         effects = effects_out,
         loglik = loglik,
-        converged = Optim.converged(result),
+        converged = converged,
         iterations = Optim.iterations(result),
         f_calls = Optim.f_calls(result),
         boundary = [s / total < 1e-6 for s in sigmas],
     ), loglik_convention_fields(LOGLIK_CONVENTION_OMIT_2PI, n, p))
+    return (fit = fit, dense = (yv = yv, Xd = Xd, ZAs = ZAs))
 end
 
 """
@@ -2209,16 +2705,14 @@ function multi_effect_ratio_interval(
             throw(ArgumentError("which must be :all or an integer component index 1..$K"))
     end
 
-    fit = fit_multi_effect_reml(y, X, effects; initial = initial,
-                                iterations = iterations, ids = ids)
+    # The fit's own dense `A_i`, `Z_i`, `X`, `y` are reused for the information (#411).
+    fit, dense = _fit_multi_effect_reml_dense(y, X, effects; initial = initial,
+                                              iterations = iterations, ids = ids)
     sigmas = fit.variance_components.sigmas
     se2 = fit.variance_components.sigma_e2
     theta = vcat(collect(sigmas), se2)        # [σ_1², …, σ_K², σ_e²], length K+1
 
-    As = [inv(Symmetric(Matrix{Float64}(pair[2]))) for pair in effects]
-    Zds = [Matrix{Float64}(pair[1]) for pair in effects]
-    ZAs = [(Zds[i], As[i]) for i in 1:K]
-    Xd = Matrix{Float64}(X); yv = Float64.(y)
+    ZAs = dense.ZAs; Xd = dense.Xd; yv = dense.yv
     loglik(t) = _multi_effect_dense(yv, Xd, ZAs, t[1:K], t[K + 1])[1]
 
     # observed information = −Hessian of the K-effect REML loglik (central FD),
@@ -2959,6 +3453,10 @@ checks, but its scale/performance is NOT yet benchmarked (measure-first;
 `sim/phase5_sparse_aireml_benchmark.jl` is the opt-in scaffold) and it is NOT the
 public default fit path. On uninformative/non-identified data a component can
 approach the `σ²→0` boundary; numerical score accuracy there is unresolved.
+When boundary-triggered streamed scores would exceed the column budget, the
+iterate takes an EM step instead of aborting (#441). If that EM step cannot
+stay finite and positive, `status` is `boundary_score_unresolved` and
+`boundary` is missing rather than a share-rule verdict from that iterate.
 Inspect `converged` before using a returned estimate.
 """
 function fit_sparse_multi_effect_aireml(
@@ -3092,8 +3590,29 @@ function fit_sparse_multi_effect_aireml(
         # as fit_ai_reml, generalized to K blocks + a joint effective residual df).
         score = _multi_reml_scores(ws, factor, sigmas, sigma_e2, e, traces, us)
         if score === nothing
-            boundary_score_unresolved = true
-            break
+            # Streamed AI scores would exceed the column budget. Take the same
+            # closed-form EM update as the warmup so non-boundary components
+            # keep moving instead of returning this iterate (#441).
+            newsig = similar(sigmas)
+            ok = true
+            for i in 1:K
+                uAu = dot(us[i], Ainvs[i] * us[i])
+                newsig[i] = (uAu + traces[i]) / qs[i]
+                (isfinite(newsig[i]) && newsig[i] > 0) || (ok = false)
+            end
+            dfe = n - nfixed - nrandom + sum(traces[i] / sigmas[i] for i in 1:K)
+            newe = dot(e, e) / dfe
+            if !(ok && isfinite(newe) && newe > 0 &&
+                 _finite_positive_variance_update(newsig, newe))
+                boundary_score_unresolved = true
+                break
+            end
+            last_relative_change = max(maximum(abs.(newsig .- sigmas) ./ sigmas),
+                                       abs(newe - sigma_e2) / sigma_e2)
+            sigmas = newsig
+            sigma_e2 = newe
+            last_relative_change < tol && break
+            continue
         end
 
         if last_relative_change < tol &&
@@ -3153,7 +3672,9 @@ function fit_sparse_multi_effect_aireml(
         loglik = loglik,
         converged = converged,
         iterations = iters,
-        boundary = [s / total < 1e-6 for s in sigmas],
+        boundary = boundary_score_unresolved ?
+            Union{Missing, Bool}[missing for _ in 1:K] :
+            [s / total < 1e-6 for s in sigmas],
         status = status,
         estimator = :sparse_multi_effect_aireml,
     ), loglik_convention_fields(LOGLIK_CONVENTION_FULL, n, nfixed))
@@ -3263,6 +3784,23 @@ function fit_direct_maternal_reml(
     ids = nothing,
     max_dense_cells::Integer = DEFAULT_MAX_DENSE_CELLS,
 )
+    return _fit_direct_maternal_reml_dense(y, X, Zd, Zm, Ainv; initial = initial,
+        iterations = iterations, ids = ids, max_dense_cells = max_dense_cells).fit
+end
+
+# The fit plus the dense inputs it built, so a refitting interval reuses `A`
+# instead of inverting `Ainv` again (#411).
+function _fit_direct_maternal_reml_dense(
+    y::AbstractVector,
+    X::AbstractMatrix,
+    Zd::AbstractMatrix,
+    Zm::AbstractMatrix,
+    Ainv::AbstractMatrix;
+    initial = nothing,
+    iterations::Integer = 200,
+    ids = nothing,
+    max_dense_cells::Integer = DEFAULT_MAX_DENSE_CELLS,
+)
     initial === nothing || hasproperty(initial, :G_dm) || hasproperty(initial, :sigma_e2) ||
         throw(ArgumentError("initial must supply G_dm or sigma_e2"))
     iterations >= 1 || throw(ArgumentError("iterations must be at least 1"))
@@ -3321,6 +3859,11 @@ function fit_direct_maternal_reml(
     result = optimize(negloglik, p0, NelderMead(), Optim.Options(iterations = iterations))
     popt = Optim.minimizer(result)
     isfinite(Optim.minimum(result)) || throw(ArgumentError("direct-maternal optimizer did not find a finite objective"))
+    # Checked before `se2`, which `negloglik` also assigns, is set below (#424).
+    dm_scale = max(_log_cholesky_scale(popt[1:3], 2), exp(popt[4]))
+    converged = _nelder_mead_converged(negloglik, result;
+        free = vcat(_log_cholesky_interior(popt[1:3], 2; scale = dm_scale),
+                    exp(popt[4]) > _NELDER_MEAD_BOUNDARY_SHARE * dm_scale))
     Graw = _try_chol_params_to_cov(popt[1:3], 2)
     Graw === nothing && throw(ArgumentError("direct-maternal optimizer did not return a finite positive-definite genetic covariance"))
     G_dm = Matrix(Symmetric(Graw))
@@ -3328,7 +3871,7 @@ function fit_direct_maternal_reml(
     isfinite(se2) && se2 > 0 || throw(ArgumentError("direct-maternal optimizer did not return a finite positive residual variance"))
     loglik, beta, ad, am = _direct_maternal_dense(yv, Xd, Zdd, Zmd, A, G_dm, se2)
     r_am = G_dm[1, 2] / sqrt(G_dm[1, 1] * G_dm[2, 2])
-    return (
+    fit = (
         variance_components = (
             G_dm = G_dm,
             sigma_ad = G_dm[1, 1],
@@ -3341,13 +3884,31 @@ function fit_direct_maternal_reml(
         direct_effects = (ids = aids, values = ad),
         maternal_effects = (ids = aids, values = am),
         loglik = loglik,
-        converged = Optim.converged(result),
+        converged = converged,
     )
+    return (fit = fit, dense = (yv = yv, Xd = Xd, Zdd = Zdd, Zmd = Zmd, A = A))
+end
+
+# Central-difference Hessian of `f` at `theta` with per-coordinate steps `h`. Fills the upper
+# triangle only and mirrors it (10 cells x 4 evaluations = 40 for d = 4, not 64; #411).
+function _direct_maternal_fd_hessian(f, theta::AbstractVector, h::AbstractVector)
+    d = length(theta)
+    H = zeros(d, d)
+    for i in 1:d, j in i:d
+        ei = zeros(d); ei[i] = h[i]
+        ej = zeros(d); ej[j] = h[j]
+        H[i, j] = (f(theta + ei + ej) - f(theta + ei - ej) -
+                   f(theta - ei + ej) + f(theta - ei - ej)) / (4 * h[i] * h[j])
+        H[j, i] = H[i, j]
+    end
+    return H
 end
 
 """
     direct_maternal_interval(y, X, Zd, Zm, Ainv; level = 0.95, initial = nothing,
                              iterations = 200, ids = nothing, fd_step = 1e-4,
+                             max_dense_cells = 1_000_000)
+    direct_maternal_interval(fit, y, X, Zd, Zm, Ainv; level = 0.95, fd_step = 1e-4,
                              max_dense_cells = 1_000_000)
 
 Asymptotic delta-method standard errors and confidence intervals for the
@@ -3366,6 +3927,12 @@ direct–maternal genetic correlation `r_am` (Fisher-`z` interval, so it stays i
 (`h²_T = (σ²_ad + 1.5·σ_dm + 0.5·σ²_am)/σ²_P`, Willham (1972), with
 `σ²_P = σ²_ad + σ²_am + σ_dm + σ²e` — the SAME convention as the R
 `total_heritability()` surface).
+
+The second form takes an ALREADY-FITTED [`fit_direct_maternal_reml`](@ref) result
+(`fit`) with the same `y, X, Zd, Zm, Ainv` it was fitted on and does NOT refit;
+only the finite-difference Hessian at `fit.variance_components` is computed. The
+first form repeats the whole dense fit (#411), which is the dominant cost. The fit
+must come from these inputs; this is not checked beyond the dense-size guard.
 
 INTERVALS ARE ASYMPTOTIC / UNCALIBRATED (normal-`z` Wald / delta on the observed
 REML information; Fisher-`z` for `r_am`), NOT coverage-calibrated — the same house
@@ -3387,15 +3954,42 @@ function direct_maternal_interval(
     max_dense_cells::Integer = DEFAULT_MAX_DENSE_CELLS,
 )
     0 < level < 1 || throw(ArgumentError("level must be in (0, 1)"))
-    fit = fit_direct_maternal_reml(y, X, Zd, Zm, Ainv; initial = initial,
-                                   iterations = iterations, ids = ids,
-                                   max_dense_cells = max_dense_cells)
+    fit, dense = _fit_direct_maternal_reml_dense(y, X, Zd, Zm, Ainv; initial = initial,
+                                                 iterations = iterations, ids = ids,
+                                                 max_dense_cells = max_dense_cells)
+    return _direct_maternal_interval_from_fit(fit, y, X, Zd, Zm, Ainv;
+        level = level, fd_step = fd_step, dense = dense)
+end
+
+function direct_maternal_interval(
+    fit::NamedTuple,
+    y::AbstractVector, X::AbstractMatrix, Zd::AbstractMatrix, Zm::AbstractMatrix,
+    Ainv::AbstractMatrix;
+    level::Real = 0.95,
+    fd_step::Real = 1e-4,
+    max_dense_cells::Integer = DEFAULT_MAX_DENSE_CELLS,
+)
+    0 < level < 1 || throw(ArgumentError("level must be in (0, 1)"))
+    n = length(y)
+    max_dense_cells > 0 ||
+        throw(ArgumentError("max_dense_cells must be a positive integer"))
+    n * n <= max_dense_cells ||
+        throw(ArgumentError("dense direct-maternal REML would form an $(n)×$(n) covariance " *
+            "($(n * n) cells) exceeding max_dense_cells=$(max_dense_cells)"))
+    return _direct_maternal_interval_from_fit(fit, y, X, Zd, Zm, Ainv;
+        level = level, fd_step = fd_step)
+end
+
+# Interval from an already-fitted direct-maternal REML result (no refit).
+function _direct_maternal_interval_from_fit(fit, y, X, Zd, Zm, Ainv; level, fd_step,
+                                            dense = nothing)
     vc = fit.variance_components
     theta = [vc.sigma_ad, vc.sigma_am, vc.sigma_dm, vc.sigma_e2]
 
-    A = inv(Symmetric(Matrix{Float64}(Ainv)))
-    Xd = Matrix{Float64}(X); Zdd = Matrix{Float64}(Zd); Zmd = Matrix{Float64}(Zm)
-    yv = Float64.(y)
+    yv, Xd, Zdd, Zmd, A = dense === nothing ?
+        (Float64.(y), Matrix{Float64}(X), Matrix{Float64}(Zd), Matrix{Float64}(Zm),
+         _dense_relationship_inverse(Ainv)) :
+        (dense.yv, dense.Xd, dense.Zdd, dense.Zmd, dense.A)
     # REML loglik as a function of the natural VCs (G = [σ²_ad σ_dm; σ_dm σ²_am]).
     function loglik(t)
         G = [t[1] t[3]; t[3] t[2]]
@@ -3410,14 +4004,8 @@ function direct_maternal_interval(
     end
 
     # observed information = −Hessian of the REML loglik (central finite differences)
-    h = fd_step .* max.(abs.(theta), 1e-3)
-    H = zeros(4, 4)
-    for i in 1:4, j in 1:4
-        ei = zeros(4); ei[i] = h[i]
-        ej = zeros(4); ej[j] = h[j]
-        H[i, j] = (loglik(theta + ei + ej) - loglik(theta + ei - ej) -
-                   loglik(theta - ei + ej) + loglik(theta - ei - ej)) / (4 * h[i] * h[j])
-    end
+    h = _uncertainty_component_steps(theta, fd_step)
+    H = _direct_maternal_fd_hessian(loglik, theta, h)
     all(isfinite, H) ||
         throw(ArgumentError("direct–maternal interval undefined: the REML surface is not " *
             "finite under perturbation (boundary optimum / non-PD G_dm; e.g. |r_am| → 1)"))
@@ -3521,11 +4109,31 @@ function fit_repeatability_reml(
     X::AbstractMatrix,
     Z::AbstractMatrix,
     Ainv::AbstractMatrix;
-    initial = (sigma_a2 = 1.0, sigma_pe2 = 1.0, sigma_e2 = 1.0),
+    initial = nothing,
     iterations::Integer = 200,
     ids = nothing,
     max_dense_cells::Integer = DEFAULT_MAX_DENSE_CELLS,
 )
+    return _fit_repeatability_reml_dense(y, X, Z, Ainv; initial = initial,
+        iterations = iterations, ids = ids, max_dense_cells = max_dense_cells).fit
+end
+
+# The fit plus the dense inputs it built (`yv`, `Xd`, `Zd`, `A`), so a refitting
+# interval reuses `A` instead of inverting `Ainv` again (#411).
+function _fit_repeatability_reml_dense(
+    y::AbstractVector,
+    X::AbstractMatrix,
+    Z::AbstractMatrix,
+    Ainv::AbstractMatrix;
+    initial = nothing,
+    iterations::Integer = 200,
+    ids = nothing,
+    max_dense_cells::Integer = DEFAULT_MAX_DENSE_CELLS,
+)
+    if initial === nothing
+        s0 = _scale_aware_start(y, 2)
+        initial = (sigma_a2 = s0[1], sigma_pe2 = s0[2], sigma_e2 = s0[3])
+    end
     starts = [_likelihood_positive("initial sigma_a2", initial.sigma_a2), _likelihood_positive("initial sigma_pe2", initial.sigma_pe2), _likelihood_positive("initial sigma_e2", initial.sigma_e2)]
     iterations >= 1 || throw(ArgumentError("iterations must be at least 1"))
     n = length(y)
@@ -3559,6 +4167,8 @@ function fit_repeatability_reml(
     p0 = log.(starts)
     result = optimize(objective, p0, NelderMead(), Optim.Options(iterations = iterations))
     isfinite(Optim.minimum(result)) || throw(ArgumentError("repeatability optimizer did not find a finite objective"))
+    converged = _nelder_mead_converged(objective, result;
+                                       free = _nelder_mead_interior(exp.(Optim.minimizer(result))))
     variances = _try_positive_exp(Optim.minimizer(result))
     variances === nothing && throw(ArgumentError("repeatability optimizer did not return finite positive variances"))
     sigma_a2, sigma_pe2, sigma_e2 = variances
@@ -3567,7 +4177,7 @@ function fit_repeatability_reml(
     total = sigma_a2 + sigma_pe2 + sigma_e2
     isfinite(total) && total > 0 || throw(ArgumentError("repeatability optimizer returned a nonfinite total variance"))
     p = size(Xd, 2)
-    return merge((
+    fit = merge((
         variance_components = (sigma_a2 = sigma_a2, sigma_pe2 = sigma_pe2, sigma_e2 = sigma_e2),
         repeatability = (sigma_a2 + sigma_pe2) / total,
         heritability = sigma_a2 / total,
@@ -3575,67 +4185,152 @@ function fit_repeatability_reml(
         animal_effects = (ids = encoded_ids, values = ahat),
         permanent_effects = (ids = encoded_ids, values = pehat),
         loglik = loglik,
-        converged = Optim.converged(result),
+        converged = converged,
     ), loglik_convention_fields(LOGLIK_CONVENTION_OMIT_2PI, n, p))
+    return (fit = fit, dense = (yv = yv, Xd = Xd, Zd = Zd, A = A))
+end
+
+function _repeatability_boundary_interval(t, level, converged)
+    return (
+        repeatability = t,
+        lower = NaN,
+        upper = NaN,
+        level = level,
+        se = NaN,
+        converged = converged,
+        boundary = true,
+        lower_clamped = false,
+        upper_clamped = false,
+    )
+end
+
+# Interval from an already-fitted repeatability REML result. The public
+# function refits, then lands here so a constructed near-boundary or
+# non-converged fit can be checked without relying on NelderMead.
+function _repeatability_interval_from_fit(
+    fit,
+    y::AbstractVector,
+    X::AbstractMatrix,
+    Z::AbstractMatrix,
+    Ainv::AbstractMatrix;
+    level::Real,
+    fd_step::Real,
+    boundary_tol::Real,
+    dense = nothing,
+)
+    vc = fit.variance_components
+    theta = Float64[vc.sigma_a2, vc.sigma_pe2, vc.sigma_e2]
+    total = sum(theta)
+    t = (theta[1] + theta[2]) / total
+    converged = fit.converged === true
+    converged || return _repeatability_boundary_interval(t, level, false)
+    (all(isfinite, theta) && isfinite(total) && total > 0) ||
+        return _repeatability_boundary_interval(t, level, true)
+    h = _uncertainty_component_steps(theta, fd_step)
+    on_boundary = any(theta[i] / total <= boundary_tol for i in eachindex(theta)) ||
+                  !all(theta .- 2 .* h .> 0) ||
+                  !(boundary_tol < t < 1 - boundary_tol)
+    on_boundary && return _repeatability_boundary_interval(t, level, true)
+
+    yv, Xd, Zd, A = dense === nothing ?
+        (Float64.(y), Matrix{Float64}(X), Matrix{Float64}(Z), _dense_relationship_inverse(Ainv)) :
+        (dense.yv, dense.Xd, dense.Zd, dense.A)
+    loglik(p) = _repeatability_dense(yv, Xd, Zd, A, p[1], p[2], p[3])[1]
+    info = _reml_fd_information(loglik, theta, fd_step)
+    if !(all(isfinite, info) && isposdef(info))
+        return _repeatability_boundary_interval(t, level, true)
+    end
+    covar = inv(info)
+    g = [theta[3] / total^2, theta[3] / total^2, -(theta[1] + theta[2]) / total^2]
+    se = sqrt(max(dot(g, covar * g), 0.0))
+    (isfinite(se) && se > 0) || return _repeatability_boundary_interval(t, level, true)
+
+    z = _standard_normal_quantile((1 + level) / 2)
+    eta = log(t / (1 - t))
+    se_eta = se / (t * (1 - t))
+    lower = 1 / (1 + exp(-(eta - z * se_eta)))
+    upper = 1 / (1 + exp(-(eta + z * se_eta)))
+    return (
+        repeatability = t,
+        lower = lower,
+        upper = upper,
+        level = level,
+        se = se,
+        converged = true,
+        boundary = false,
+        lower_clamped = lower <= 1e-6,
+        upper_clamped = upper >= 1 - 1e-6,
+    )
 end
 
 """
     repeatability_interval(y, X, Z, Ainv; level = 0.95, initial = ..., iterations = 200,
-                           ids = nothing, fd_step = 1e-4)
+                           ids = nothing, fd_step = 1e-4, boundary_tol = 1e-6,
+                           max_dense_cells = $(DEFAULT_MAX_DENSE_CELLS))
+    repeatability_interval(fit, y, X, Z, Ainv; level = 0.95, fd_step = 1e-4,
+                           boundary_tol = 1e-6, max_dense_cells = $(DEFAULT_MAX_DENSE_CELLS))
 
 Asymptotic delta-method confidence interval for the repeatability
 `t = (σ²a + σ²pe) / (σ²a + σ²pe + σ²e)` of the repeatability / permanent-environment
 animal model. Fits by REML ([`fit_repeatability_reml`](@ref)), forms the observed
 information as the central finite-difference Hessian of the REML log-likelihood at
 the optimum, and applies the delta method to `t` on the logit scale (so the
-interval lies in `(0, 1)`). Returns `(repeatability, lower, upper, level, se)`.
+interval lies in `(0, 1)`). Returns
+`(repeatability, lower, upper, level, se, converged, boundary, lower_clamped, upper_clamped)`.
+
+The second form takes an ALREADY-FITTED [`fit_repeatability_reml`](@ref) result
+(`fit`) together with the same `y, X, Z, Ainv` it was fitted on, and does NOT
+refit: only the finite-difference information at `fit.variance_components` is
+computed. A caller that has just fitted (for example the R bridge) should use it,
+because the first form repeats the whole dense Nelder-Mead fit (#411). The fit
+must come from these inputs; this is not checked beyond the dense-size guard.
+
+`max_dense_cells` is the same dense validation-size guard as
+[`fit_repeatability_reml`](@ref). Both forms form a dense `A = inv(Ainv)` and
+refuse, before doing so, a model with `nobs² + nanimals² > max_dense_cells`; the
+refitting form forwards the cap to its fit, so a cap raised for the fit is honoured
+by the interval too.
 
 Experimental, asymptotic. `t` is the well-identified summary of this model (the
 `σ²a`/`σ²pe` split is weakly identified, so a per-component SE is unreliable, but
-`t` is stable). Throws if the REML information is not positive definite (a flat
-surface / boundary optimum), or if `t` is on the `(0, 1)` boundary.
+`t` is stable). A non-converged fit, a component too close to zero for a
+finite-difference step that stays positive, or a repeatability on the `(0, 1)`
+rail returns `NaN` limits with `boundary = true` rather than a number from
+outside the parameter space.
 """
 function repeatability_interval(
     y::AbstractVector, X::AbstractMatrix, Z::AbstractMatrix, Ainv::AbstractMatrix;
     level::Real = 0.95,
-    initial = (sigma_a2 = 1.0, sigma_pe2 = 1.0, sigma_e2 = 1.0),
+    initial = nothing,
     iterations::Integer = 200, ids = nothing, fd_step::Real = 1e-4,
+    boundary_tol::Real = 1e-6,
+    max_dense_cells::Integer = DEFAULT_MAX_DENSE_CELLS,
 )
     0 < level < 1 || throw(ArgumentError("level must be in (0, 1)"))
-    fit = fit_repeatability_reml(y, X, Z, Ainv; initial = initial, iterations = iterations, ids = ids)
-    vc = fit.variance_components
-    theta = [vc.sigma_a2, vc.sigma_pe2, vc.sigma_e2]
+    fd_step = _validate_uncertainty_fd_step(fd_step)
+    boundary_tol = _validate_boundary_tol(boundary_tol)
+    fit, dense = _fit_repeatability_reml_dense(y, X, Z, Ainv; initial = initial,
+        iterations = iterations, ids = ids, max_dense_cells = max_dense_cells)
+    return _repeatability_interval_from_fit(
+        fit, y, X, Z, Ainv;
+        level = level, fd_step = fd_step, boundary_tol = boundary_tol, dense = dense,
+    )
+end
 
-    A = inv(Symmetric(Matrix{Float64}(Ainv)))
-    Xd = Matrix{Float64}(X); Zd = Matrix{Float64}(Z); yv = Float64.(y)
-    loglik(t) = _repeatability_dense(yv, Xd, Zd, A, t[1], t[2], t[3])[1]
-
-    # observed information = −Hessian of the REML loglik (central finite differences)
-    h = fd_step .* max.(theta, 1e-3)
-    H = zeros(3, 3)
-    for i in 1:3, j in 1:3
-        ei = zeros(3); ei[i] = h[i]
-        ej = zeros(3); ej[j] = h[j]
-        H[i, j] = (loglik(theta + ei + ej) - loglik(theta + ei - ej) -
-                   loglik(theta - ei + ej) + loglik(theta - ei - ej)) / (4 * h[i] * h[j])
-    end
-    info = Symmetric(-H)
-    isposdef(info) ||
-        throw(ArgumentError("repeatability interval undefined: REML information is not positive definite (flat surface / boundary optimum)"))
-    covar = inv(info)
-
-    total = sum(theta)
-    t = (theta[1] + theta[2]) / total
-    0 < t < 1 || throw(ArgumentError("repeatability estimate is on the (0, 1) boundary; interval undefined"))
-    # delta-method gradient of t = (σ²a + σ²pe)/total wrt (σ²a, σ²pe, σ²e)
-    g = [theta[3] / total^2, theta[3] / total^2, -(theta[1] + theta[2]) / total^2]
-    se = sqrt(max(dot(g, covar * g), 0.0))
-
-    z = _standard_normal_quantile((1 + level) / 2)
-    eta = log(t / (1 - t)); se_eta = se / (t * (1 - t))
-    lower = 1 / (1 + exp(-(eta - z * se_eta)))
-    upper = 1 / (1 + exp(-(eta + z * se_eta)))
-    return (repeatability = t, lower = lower, upper = upper, level = level, se = se)
+function repeatability_interval(
+    fit::NamedTuple,
+    y::AbstractVector, X::AbstractMatrix, Z::AbstractMatrix, Ainv::AbstractMatrix;
+    level::Real = 0.95, fd_step::Real = 1e-4, boundary_tol::Real = 1e-6,
+    max_dense_cells::Integer = DEFAULT_MAX_DENSE_CELLS,
+)
+    0 < level < 1 || throw(ArgumentError("level must be in (0, 1)"))
+    fd_step = _validate_uncertainty_fd_step(fd_step)
+    boundary_tol = _validate_boundary_tol(boundary_tol)
+    _check_dense_validation_size(length(y), size(Ainv, 1), max_dense_cells)
+    return _repeatability_interval_from_fit(
+        fit, y, X, Z, Ainv;
+        level = level, fd_step = fd_step, boundary_tol = boundary_tol,
+    )
 end
 
 """
@@ -3853,12 +4548,16 @@ end
 """
     heritability(fit)
 
-Return simple narrow-sense heritability for the Phase 1 univariate Gaussian
-animal model: `sigma_a2 / (sigma_a2 + sigma_e2)`.
+Return narrow-sense heritability for the univariate Gaussian animal model:
+`sigma_a2 / (sigma_a2 + sigma_e2)`. Fixed-effect variance is not included in
+the denominator. For fit types that estimate permanent-environment,
+common-environment, or maternal variance, those fitted components are included
+in the corresponding heritability denominator.
 Components must be finite and nonnegative, with at least one positive. The
 ratio is scaled before summation to avoid overflow in the total variance.
 """
 function heritability(fit::AnimalModelFit)
+    _is_unidentified_ridge(fit) && return NaN
     vc = fit.variance_components
     return _gaussian_variance_fraction(vc.sigma_a2, vc.sigma_e2)
 end
@@ -4070,6 +4769,33 @@ function _reml_information_matrix(spec::AnimalModelSpec, sigma_a2::Real, sigma_e
     return Symmetric(0.5 .* [dot(wa, Pwa) dot(wa, Pwe); dot(we, Pwa) dot(we, Pwe)])
 end
 
+function _require_converged_univariate_uncertainty(
+    fit::AnimalModelFit,
+    caller::AbstractString,
+)
+    fit.converged === true ||
+        throw(ArgumentError(
+            "$caller requires a fit with converged = true; " *
+            "optimizer_status = $(repr(fit.optimizer_status))",
+        ))
+    return nothing
+end
+
+# A singular information matrix (founders-only ridge, HSquared.jl #422) gives an
+# `inv` that throws, or a finite inverse of arbitrary sign: SE 0.0 or 1e7. Refuse
+# it instead. The threshold is far above rounding (about 1e-16) and far below any
+# identified fit.
+function _require_identified_information(info, caller::AbstractString)
+    ev = eigvals(Symmetric(Matrix(info)))
+    (all(isfinite, ev) && first(ev) > 1e-10 * last(ev)) ||
+        throw(ArgumentError(
+            "$caller: the average-information matrix is singular, so the " *
+            "variance components are not identified (for example a " *
+            "founders-only pedigree, A = I); no standard error is reported",
+        ))
+    return nothing
+end
+
 """
     variance_component_covariance(fit)
 
@@ -4079,6 +4805,7 @@ large-sample approximation and is unreliable on small samples, where the REML
 surface is flat and the matrix is ill-conditioned. Experimental; REML only.
 """
 function variance_component_covariance(fit::AnimalModelFit)
+    _require_converged_univariate_uncertainty(fit, "variance_component_covariance")
     fit.spec.method == :REML ||
         throw(ArgumentError("variance_component_covariance requires a REML fit"))
     info = _reml_information_matrix(
@@ -4086,6 +4813,7 @@ function variance_component_covariance(fit::AnimalModelFit)
         fit.variance_components.sigma_a2,
         fit.variance_components.sigma_e2,
     )
+    _require_identified_information(info, "variance_component_covariance")
     return inv(info)
 end
 
@@ -4096,6 +4824,7 @@ Asymptotic standard errors of `(sigma_a2, sigma_e2)` for a REML fit, as a
 `NamedTuple`. See [`variance_component_covariance`](@ref) for the caveats.
 """
 function variance_component_standard_errors(fit::AnimalModelFit)
+    _require_converged_univariate_uncertainty(fit, "variance_component_standard_errors")
     cov = variance_component_covariance(fit)
     return (sigma_a2 = sqrt(cov[1, 1]), sigma_e2 = sqrt(cov[2, 2]))
 end
@@ -4108,9 +4837,14 @@ for a REML fit, from [`variance_component_covariance`](@ref). Asymptotic; see th
 caveats there.
 """
 function heritability_standard_error(fit::AnimalModelFit)
+    _is_unidentified_ridge(fit) && return NaN
+    _require_converged_univariate_uncertainty(fit, "heritability_standard_error")
+    return _heritability_se_from_cov(fit, variance_component_covariance(fit))
+end
+
+function _heritability_se_from_cov(fit::AnimalModelFit, cov)
     sigma_a2 = fit.variance_components.sigma_a2
     sigma_e2 = fit.variance_components.sigma_e2
-    cov = variance_component_covariance(fit)
     denom = (sigma_a2 + sigma_e2)^2
     g = [sigma_e2 / denom, -sigma_a2 / denom]
     return sqrt(max(0.0, dot(g, cov * g)))
@@ -4122,23 +4856,128 @@ end
 # `sparse_reml_loglik`; the search bracket is anchored on the phenotypic-variance
 # scale of `y`. `h2` must be strictly interior to `(0, 1)`. Used by the
 # profile-likelihood heritability interval.
-function _profile_reml_loglik(spec::AnimalModelSpec, h2::Real)
+# Validate the spec once per interval and reuse the validated spec, Ainv and
+# log|Ainv| across every profile evaluation (mirrors the hoist in `fit_sparse_reml`).
+function _profile_reml_context(spec::AnimalModelSpec)
+    p = size(spec.X, 2)
+    p < length(spec.y) ||
+        throw(ArgumentError("REML requires fewer fixed-effect columns than observations"))
+    validated, factor = _likelihood_validated_spec(spec)
+    Ainv = sparse(Float64.(validated.Ainv))
+    return (spec = validated, Ainv = Ainv, logdet_Ainv = logdet(factor),
+            mme = _profile_mme_workspace(validated, Ainv))
+end
+
+# One MME workspace per profile interval (#409). The coefficient matrix is
+# C = [X'X X'Z; Z'X Z'Z] / sigma_e2 + blockdiag(0, Ainv) / sigma_a2; the two
+# variance-free parts are stored once on one shared sparsity pattern, so each
+# evaluation fills `lhs` in place and refactors with the cached symbolic analysis
+# (`cholesky!`) instead of re-forming cross products, concatenating blocks and
+# reordering. The entries are the same products `_sparse_mme_system` forms.
+# Not thread-safe: `lhs` and the cached factor are mutated on every evaluation,
+# so one workspace (and the profile context that owns it) must not be shared
+# across tasks or threads; build a separate context per thread instead.
+mutable struct _ProfileMMEWorkspace
+    C::SparseMatrixCSC{Float64,Int}
+    G::SparseMatrixCSC{Float64,Int}
+    lhs::SparseMatrixCSC{Float64,Int}
+    b::Vector{Float64}
+    factor::Any
+end
+
+function _profile_mme_workspace(spec::AnimalModelSpec, Ainv::SparseMatrixCSC)
+    y = Float64.(spec.y)
+    X = sparse(Float64.(spec.X))
+    Z = sparse(Float64.(spec.Z))
+    Xt = transpose(X)
+    Zt = transpose(Z)
+    p = size(X, 2)
+    C0 = [(Xt * X) (Xt * Z); (Zt * X) (Zt * Z)]
+    G0 = blockdiag(spzeros(Float64, p, p), SparseMatrixCSC{Float64,Int}(Ainv))
+    N = size(C0, 1)
+    Ic, Jc, Vc = findnz(C0)
+    Ig, Jg, Vg = findnz(G0)
+    rows = vcat(Ic, Ig)
+    cols = vcat(Jc, Jg)
+    # Building both from the same (row, col) list gives identical colptr/rowval.
+    C = sparse(rows, cols, vcat(Vc, zeros(length(Vg))), N, N)
+    G = sparse(rows, cols, vcat(zeros(length(Vc)), Vg), N, N)
+    (C.colptr == G.colptr && C.rowval == G.rowval) ||
+        error("internal: profile MME workspace patterns differ")
+    b = vcat(Vector{Float64}(Xt * y), Vector{Float64}(Zt * y))
+    return _ProfileMMEWorkspace(C, G, copy(C), b, nothing)
+end
+
+# Factorise the workspace MME at (sigma_a2, sigma_e2); returns (factor, rhs).
+function _profile_mme_factor!(ws::_ProfileMMEWorkspace, sigma_a2::Real, sigma_e2::Real)
+    residual_precision = inv(Float64(sigma_e2))
+    relationship_precision = inv(Float64(sigma_a2))
+    nonzeros(ws.lhs) .= residual_precision .* nonzeros(ws.C) .+
+                        relationship_precision .* nonzeros(ws.G)
+    rhs = residual_precision .* ws.b
+    _likelihood_check_finite("MME coefficient matrix", ws.lhs)
+    _likelihood_check_finite("MME right-hand side", rhs)
+    sym = Symmetric(ws.lhs)
+    if ws.factor === nothing
+        ws.factor = cholesky(sym; check = true)
+    else
+        try
+            cholesky!(ws.factor, sym; check = true)
+        catch err
+            err isa LinearAlgebra.PosDefException || rethrow(err)
+            # As in `_factorize!`: a failed refactorisation is retried fresh, so a
+            # cache artefact is never reported as a property of the data.
+            ws.factor = cholesky(sym; check = true)
+        end
+    end
+    return ws.factor, rhs
+end
+
+# `_sparse_reml_loglik_parts` on the context's workspace.
+function _profile_reml_parts(ctx, sigma_a2::Real, sigma_e2::Real)
+    _SPARSE_REML_EVALS[] += 1
+    factor, rhs = _profile_mme_factor!(ctx.mme, sigma_a2, sigma_e2)
+    return _sparse_reml_loglik_from_factor(
+        ctx.spec, sigma_a2, sigma_e2, ctx.Ainv, ctx.logdet_Ainv, factor, rhs)
+end
+
+# Same numerics as the public `sparse_reml_loglik`, minus the per-call validation.
+function _profile_reml_eval(ctx, sigma_a2::Real, sigma_e2::Real)
+    sigma_a2 = _likelihood_positive("sigma_a2", sigma_a2; precision = true)
+    sigma_e2 = _likelihood_positive("sigma_e2", sigma_e2; precision = true)
+    return _profile_reml_parts(ctx, sigma_a2, sigma_e2).result
+end
+
+_profile_reml_loglik(spec::AnimalModelSpec, h2::Real) =
+    _profile_reml_loglik(_profile_reml_context(spec), h2)
+
+# With (sigma_a2, sigma_e2) = (h2*V, (1-h2)*V) the REML objective is a scale family
+# in V: the MME matrix scales as 1/V, so
+#   loglik(V) = loglik(1) - 0.5 * ((n - p) * log(V) + quad(1) / V - quad(1)),
+# with quad(1) = y'Py at V = 1. It is maximised at V = quad(1) / (n - p), so one
+# factorisation per h2 replaces a 1-D search. The maximiser is clamped to the
+# bracket the search used (1e-4 to 1e4 times the phenotypic variance of y); the
+# objective is unimodal in V, so the clamp is the bracket maximum. A system that
+# is not positive definite gives -Inf, as before.
+function _profile_reml_loglik(ctx::NamedTuple, h2::Real)
+    spec = ctx.spec
     0 < h2 < 1 || throw(ArgumentError("h2 must be in (0, 1)"))
     y = Float64.(spec.y)
     n = length(y)
+    df = n - size(spec.X, 2)
     ybar = sum(y) / n
     v0 = max(sum(abs2, y .- ybar) / max(1, n - 1), eps())
-    function objective(logV)
-        V = exp(logV)
-        try
-            return -sparse_reml_loglik(spec, h2 * V, (1 - h2) * V).loglik
-        catch err
-            err isa PosDefException && return Inf
-            rethrow()
-        end
+    sigma_a2 = _likelihood_positive("sigma_a2", h2; precision = true)
+    sigma_e2 = _likelihood_positive("sigma_e2", 1 - h2; precision = true)
+    parts = try
+        _profile_reml_parts(ctx, sigma_a2, sigma_e2)
+    catch err
+        err isa PosDefException && return -Inf
+        rethrow()
     end
-    result = optimize(objective, log(v0 * 1e-4), log(v0 * 1e4))
-    return -Optim.minimum(result)
+    quad = parts.quad
+    V = clamp(quad / df, v0 * 1e-4, v0 * 1e4)
+    return parts.result.loglik - 0.5 * (df * log(V) + quad / V - quad)
 end
 
 # Profile REML log-likelihood at a fixed additive variance `sigma_a2`: maximize
@@ -4146,7 +4985,11 @@ end
 # `_profile_reml_loglik` (which profiles total variance at fixed h²); a 1-D
 # maximization reusing `sparse_reml_loglik`, bracketed on the phenotypic variance
 # of `y`. Used by `variance_component_interval`.
-function _profile_reml_loglik_sigma_a2(spec::AnimalModelSpec, sigma_a2::Real)
+_profile_reml_loglik_sigma_a2(spec::AnimalModelSpec, sigma_a2::Real) =
+    _profile_reml_loglik_sigma_a2(_profile_reml_context(spec), sigma_a2)
+
+function _profile_reml_loglik_sigma_a2(ctx::NamedTuple, sigma_a2::Real)
+    spec = ctx.spec
     sigma_a2 > 0 || throw(ArgumentError("sigma_a2 must be positive"))
     y = Float64.(spec.y)
     n = length(y)
@@ -4155,7 +4998,7 @@ function _profile_reml_loglik_sigma_a2(spec::AnimalModelSpec, sigma_a2::Real)
     function objective(logE)
         sigma_e2 = exp(logE)
         try
-            return -sparse_reml_loglik(spec, sigma_a2, sigma_e2).loglik
+            return -_profile_reml_eval(ctx, sigma_a2, sigma_e2).loglik
         catch err
             err isa PosDefException && return Inf
             rethrow()
@@ -4192,6 +5035,13 @@ function _profile_root(target, bound::Real, anchor::Real)
     throw(ArgumentError("profile root did not resolve within the bisection budget"))
 end
 
+# Memoize a profile target so the bound/anchor values `_profile_root` already
+# evaluated are not recomputed for the clamped flags.
+function _memoized_profile_target(f)
+    cache = Dict{Float64,Float64}()
+    return x -> get!(() -> Float64(f(x)), cache, Float64(x))
+end
+
 function _heritability_interval_profile(fit::AnimalModelFit; level::Real)
     fit.spec.method == :REML ||
         throw(ArgumentError("profile heritability interval requires a REML fit"))
@@ -4199,13 +5049,20 @@ function _heritability_interval_profile(fit::AnimalModelFit; level::Real)
     0 < h2 < 1 ||
         throw(ArgumentError("heritability estimate is on the (0, 1) boundary; interval undefined"))
     spec = fit.spec
-    llmax = _profile_reml_loglik(spec, h2)
+    ctx = _profile_reml_context(spec)
+    llmax = fit.likelihood.loglik
     z = _standard_normal_quantile((1 + level) / 2)
     q = z * z
-    target(h) = 2 * (llmax - _profile_reml_loglik(spec, h)) - q
-    lower = _profile_root(target, 1e-6, h2)
-    upper = _profile_root(target, 1 - 1e-6, h2)
-    return (heritability = h2, lower = lower, upper = upper, level = level, method = :profile)
+    target = _memoized_profile_target(h -> 2 * (llmax - _profile_reml_loglik(ctx, h)) - q)
+    lo_bound = 1e-6
+    up_bound = 1 - 1e-6
+    lower = _profile_root(target, lo_bound, h2)
+    upper = _profile_root(target, up_bound, h2)
+    lower_clamped = target(lo_bound) <= 0
+    upper_clamped = target(up_bound) <= 0
+    return (heritability = h2, lower = lower, upper = upper, level = level,
+            lower_clamped = lower_clamped, upper_clamped = upper_clamped,
+            method = :profile)
 end
 
 """
@@ -4216,13 +5073,15 @@ Experimental two-sided confidence interval for `h²` of a REML
 
 `method = :delta` (default) builds the interval on the logit scale (delta method)
 and back-transforms, so it always lies in `(0, 1)`; it returns
-`(heritability, lower, upper, level, se, method)`.
+`(heritability, lower, upper, level, se, lower_clamped, upper_clamped, method)`.
 
 `method = :profile` inverts the REML likelihood-ratio statistic: it profiles the
 REML log-likelihood over the total variance at each fixed `h²` and reports the
 `h²` range where `2·(ℓmax − ℓprofile(h²)) ≤ χ²₁,level`. Endpoints that reach the
 `(0, 1)` search bounds are clamped. It returns
-`(heritability, lower, upper, level, method)` (no `se`).
+`(heritability, lower, upper, level, lower_clamped, upper_clamped, method)` (no
+`se`). The `*_clamped` flags report endpoints that reached the numerical search
+rails rather than a likelihood-ratio crossing.
 Nonfinite profile targets or an invalid point-estimate anchor throw an
 `ArgumentError`; they are not reported as numeric endpoints.
 
@@ -4231,21 +5090,42 @@ so the intervals are wide.
 """
 function heritability_interval(fit::AnimalModelFit; level::Real = 0.95, method::Symbol = :delta)
     0 < level < 1 || throw(ArgumentError("level must be in (0, 1)"))
+    method in (:delta, :profile) ||
+        throw(ArgumentError("method must be :delta or :profile"))
+    if _is_unidentified_ridge(fit)
+        base = (heritability = NaN, lower = NaN, upper = NaN, level = level)
+        return method === :delta ?
+               (; base..., se = NaN, lower_clamped = false, upper_clamped = false,
+                  method = method, reason = _ANIMAL_RESIDUAL_UNIDENTIFIABLE_MSG) :
+               (; base..., lower_clamped = false, upper_clamped = false,
+                  method = method, reason = _ANIMAL_RESIDUAL_UNIDENTIFIABLE_MSG)
+    end
+    _require_converged_univariate_uncertainty(fit, "heritability_interval")
     if method === :profile
         return _heritability_interval_profile(fit; level = level)
     end
     method === :delta ||
         throw(ArgumentError("method must be :delta or :profile"))
+    return _heritability_interval_delta(
+        fit, level, () -> variance_component_covariance(fit))
+end
+
+# Delta-method interval with the covariance supplied lazily, so a caller that
+# already holds it (variance_components_plot_data) does not rebuild the
+# information matrix. The boundary check still runs before the covariance is read.
+function _heritability_interval_delta(fit::AnimalModelFit, level::Real, covfun)
     h2 = heritability(fit)
     0 < h2 < 1 ||
         throw(ArgumentError("heritability estimate is on the (0, 1) boundary; interval undefined"))
-    se = heritability_standard_error(fit)
+    se = _heritability_se_from_cov(fit, covfun())
     z = _standard_normal_quantile((1 + level) / 2)
     eta = log(h2 / (1 - h2))
     se_eta = se / (h2 * (1 - h2))
     lower = 1 / (1 + exp(-(eta - z * se_eta)))
     upper = 1 / (1 + exp(-(eta + z * se_eta)))
-    return (heritability = h2, lower = lower, upper = upper, level = level, se = se, method = :delta)
+    return (heritability = h2, lower = lower, upper = upper, level = level, se = se,
+            lower_clamped = lower <= 1e-6, upper_clamped = upper >= 1 - 1e-6,
+            method = :delta)
 end
 
 function _variance_component_interval_profile(fit::AnimalModelFit; level::Real)
@@ -4255,10 +5135,11 @@ function _variance_component_interval_profile(fit::AnimalModelFit; level::Real)
     sigma_a2 > 0 ||
         throw(ArgumentError("sigma_a2 estimate is on the boundary; interval undefined"))
     spec = fit.spec
-    llmax = _profile_reml_loglik_sigma_a2(spec, sigma_a2)
+    ctx = _profile_reml_context(spec)
+    llmax = fit.likelihood.loglik
     z = _standard_normal_quantile((1 + level) / 2)
     q = z * z
-    target(v) = 2 * (llmax - _profile_reml_loglik_sigma_a2(spec, v)) - q
+    target = _memoized_profile_target(v -> 2 * (llmax - _profile_reml_loglik_sigma_a2(ctx, v)) - q)
     lo_bound = sigma_a2 * 1e-4
     up_bound = sigma_a2 * 1e4
     lower = _profile_root(target, lo_bound, sigma_a2)
@@ -4299,10 +5180,24 @@ Experimental, asymptotic, REML only; no coverage calibration.
 """
 function variance_component_interval(fit::AnimalModelFit; level::Real = 0.95,
                                      method::Symbol = :profile)
+    _require_converged_univariate_uncertainty(fit, "variance_component_interval")
     0 < level < 1 || throw(ArgumentError("level must be in (0, 1)"))
     method === :profile ||
         throw(ArgumentError("variance_component_interval supports method = :profile only"))
     return _variance_component_interval_profile(fit; level = level)
+end
+
+function _plot_interval_failure_reason(err)
+    if err isa ArgumentError
+        return "argument_error: $(sprint(showerror, err))"
+    elseif err isa PosDefException
+        return "non_positive_definite_information"
+    elseif err isa SingularException
+        return "singular_information"
+    elseif err isa DomainError
+        return "domain_error: $(sprint(showerror, err))"
+    end
+    rethrow(err)
 end
 
 """
@@ -4310,12 +5205,14 @@ end
 
 Plot-ready data for the variance-component + heritability forest figure (plotting
 set B): tidy parallel vectors `(term, estimate, lo, hi, panel, level,
-interval_method, interval_status, supplied = false)` shaped to drop directly into
-the R `hs_gg_forest` contract. The variance-component rows (`sigma_a2`, `sigma_e2`)
+interval_method, interval_status, interval_reason, supplied = false)` shaped to
+drop directly into the R `hs_gg_forest` contract. The variance-component rows (`sigma_a2`, `sigma_e2`)
 carry asymptotic `estimate ± z·SE` — NOT clamped, since an asymptotic CI can cross
 zero (surfaced, never hidden); the `h2` row carries the logit-delta
 [`heritability_interval`](@ref) (always in `(0,1)`). `lo`/`hi` are `NaN` where the
-interval is unavailable (no fabricated whiskers); `interval_status` is
+interval is unavailable (no fabricated whiskers); `interval_reason` records `"ok"`
+or the expected numerical/argument failure for each row. Unexpected exceptions,
+including interrupts and programming errors, are rethrown. `interval_status` is
 `"experimental_asymptotic"` (NOT coverage-calibrated) when any interval is present,
 else `"none"`. `interval_method` is a coarse roll-up tag (`"asymptotic_reml"`):
 the VC-row whiskers are normal-Wald on the raw variance scale, the `h2`-row whisker
@@ -4326,25 +5223,39 @@ fit degrades gracefully to points-only (`lo`/`hi` all `NaN`, `interval_status =
 "none"`).
 """
 function variance_components_plot_data(fit::AnimalModelFit; level::Real = 0.95)
+    return _variance_components_plot_data(fit, level, variance_component_covariance)
+end
+
+function _variance_components_plot_data(fit::AnimalModelFit, level, covariance_builder)
+    _require_converged_univariate_uncertainty(fit, "variance_components_plot_data")
     0 < level < 1 || throw(ArgumentError("level must be in (0, 1)"))
     vc = variance_components(fit)
     h2 = heritability(fit)
     z = _standard_normal_quantile((1 + level) / 2)
     vc_lo = [NaN, NaN]
     vc_hi = [NaN, NaN]
+    vc_reason = "ok"
+    # One information matrix feeds both the variance-component and h2 intervals (#408);
+    # a failure is kept and re-thrown at each use so the per-panel reasons are unchanged.
+    cov_result = try covariance_builder(fit) catch err; err end
+    cov_get() = cov_result isa Exception ? throw(cov_result) : cov_result
     try
-        se = variance_component_standard_errors(fit)
+        cov = cov_get()
+        se = (sigma_a2 = sqrt(cov[1, 1]), sigma_e2 = sqrt(cov[2, 2]))
         vc_lo = [vc.sigma_a2 - z * se.sigma_a2, vc.sigma_e2 - z * se.sigma_e2]
         vc_hi = [vc.sigma_a2 + z * se.sigma_a2, vc.sigma_e2 + z * se.sigma_e2]
-    catch
+    catch err
+        vc_reason = _plot_interval_failure_reason(err)
     end
     h2_lo = NaN
     h2_hi = NaN
+    h2_reason = "ok"
     try
-        ci = heritability_interval(fit; level = level)
+        ci = _heritability_interval_delta(fit, level, cov_get)
         h2_lo = ci.lower
         h2_hi = ci.upper
-    catch
+    catch err
+        h2_reason = _plot_interval_failure_reason(err)
     end
     has_interval = any(isfinite, vc_lo) || isfinite(h2_lo)
     return (term = ["sigma_a2", "sigma_e2", "h2"],
@@ -4355,6 +5266,7 @@ function variance_components_plot_data(fit::AnimalModelFit; level::Real = 0.95)
             level = Float64(level),
             interval_method = has_interval ? "asymptotic_reml" : "none",
             interval_status = has_interval ? "experimental_asymptotic" : "none",
+            interval_reason = [vc_reason, vc_reason, h2_reason],
             supplied = false)
 end
 
@@ -4401,8 +5313,10 @@ tracking fill-in; no dense matrix is formed),
 which matches the dense MME inverse diagonal to machine precision for
 well-conditioned validation-scale fits (`V1-SELINV-PEV`). The R twin unpacks
 these top-level fields directly via `hs_julia_id_values()` (`hsquared#21`), so
-the opportunistic per-extractor enrichment is no longer required. The PEV is
-computed once here and reused by `reliability` (no second factorization). Since
+the opportunistic per-extractor enrichment is no longer required. The Henderson
+MME is solved once here and shared by `breeding_values` and `fitted_values`
+(no second factorization). The PEV is computed once here and reused by
+`reliability` (no second factorization). Since
 #350 the `reliability` denominator also reads the animal self-relationships
 `diag(inv(Ainv))` through the sparse selected inverse of `Ainv`, so for a sparse
 (pedigree) `Ainv` no dense matrix is formed anywhere in this payload; a dense
@@ -4412,8 +5326,9 @@ claim, not a production large-pedigree reliability claim.
 function result_payload(fit::AnimalModelFit)
     vc = variance_components(fit)
     beta = fixed_effects(fit)
-    bv = breeding_values(fit)
-    predictions = fitted_values(fit)
+    mme = henderson_mme(fit.spec, vc.sigma_a2, vc.sigma_e2)
+    bv = breeding_values(mme)
+    predictions = fitted_values(mme)
     pev = prediction_error_variance(fit; method = :auto)
     rel = reliability(fit; method = :auto, pev = pev)
 
@@ -4514,6 +5429,7 @@ function _dense_marginal_covariance(Z::AbstractMatrix, A::AbstractMatrix, sigma_
 end
 
 function _sparse_mme_system(spec::AnimalModelSpec, sigma_a2::Real, sigma_e2::Real)
+    _SPARSE_MME_ASSEMBLIES[] += 1
     y = Float64.(spec.y)
     X = sparse(Float64.(spec.X))
     Z = sparse(Float64.(spec.Z))
@@ -4776,17 +5692,47 @@ function _relationship_diag(spec::AnimalModelSpec, method::Symbol = :auto)
     return _relationship_diag(spec.Ainv, method)
 end
 
-function _bootstrap_usable_refit(fit)
-    fit.converged || return false
+function _bootstrap_refit_status(fit)
+    fit.converged || return :nonconverged
     sa = Float64(fit.variance_components.sigma_a2)
     se = Float64(fit.variance_components.sigma_e2)
-    return isfinite(sa) && isfinite(se) && sa > 0 && se > 0
+    (isfinite(sa) && isfinite(se)) || return :invalid
+    (sa > 0 && se > 0) || return :boundary
+    return :usable
+end
+
+_bootstrap_usable_refit(fit) = _bootstrap_refit_status(fit) === :usable
+
+# Only expected numerical failures are dropped. Anything else, including
+# InterruptException, MethodError, and BoundsError, is rethrown.
+function _bootstrap_handle_refit_error(err)
+    _likelihood_proposal_failure(err) || rethrow(err)
+    return nothing
+end
+
+function _bootstrap_require_enough_replicates(
+    n_converged::Integer,
+    n_boot::Integer;
+    min_converged::Integer,
+    min_converged_rate::Real,
+)
+    n_converged >= min_converged || throw(ArgumentError(
+        "bootstrap interval requires at least min_converged = $min_converged " *
+        "interior replicates; n_converged = $n_converged of n_boot = $n_boot",
+    ))
+    rate = n_boot == 0 ? 0.0 : n_converged / n_boot
+    rate >= min_converged_rate || throw(ArgumentError(
+        "bootstrap interval requires n_converged / n_boot >= min_converged_rate = " *
+        "$min_converged_rate; n_converged = $n_converged of n_boot = $n_boot",
+    ))
+    return nothing
 end
 
 """
     bootstrap_variance_component_interval(fit::AnimalModelFit; level = 0.95,
         n_boot = 1000, estimator = :sparse_reml,
-        rng = Random.MersenneTwister(0x48324352), max_dense_cells = $(DEFAULT_MAX_DENSE_CELLS))
+        rng = Random.MersenneTwister(0x48324352), max_dense_cells = $(DEFAULT_MAX_DENSE_CELLS),
+        min_converged = 2, min_converged_rate = 0.0)
 
 Parametric (Gaussian) bootstrap percentile confidence intervals for `sigma_a2`,
 `sigma_e2`, and `h² = σ²a/(σ²a+σ²e)` of a fitted univariate Gaussian REML animal
@@ -4797,16 +5743,21 @@ Mechanism: at the fitted `(β, σ²a, σ²e)`, simulate Gaussian responses over 
 SUPPLIED relationship — `a* = chol(inv(Ainv)).L · randn · √σ²a`,
 `e* = randn · √σ²e`, `y* = Xβ + Za* + e*` — refit each replicate with the SAME REML
 estimator (`:sparse_reml` → [`fit_sparse_reml`](@ref); `:ai_reml` →
-[`fit_ai_reml`](@ref)), and take percentile endpoints from the converged replicate
+[`fit_ai_reml`](@ref)), and take percentile endpoints from the interior replicate
 vectors via the in-package type-7 `_empirical_upper_quantile` (no `Statistics`
-dependency). A replicate whose refit throws (`PosDefException`, etc.) or returns a
-non-finite/boundary variance is DROPPED and counted: `n_converged` reports how many
-of `n_boot` survived (non-convergence is surfaced, not hidden).
+dependency). A replicate is dropped only for an expected numerical failure
+(the same predicate as `_likelihood_proposal_failure`), a non-converged refit, or
+a non-finite/boundary variance. Any other exception is rethrown. The returned
+tuple reports `n_converged` plus `n_dropped_error`, `n_dropped_boundary`, and
+`n_dropped_nonconverged`. The percentile interval is therefore conditional on
+interior refits; the call throws when `n_converged < min_converged` (default 2)
+or when `n_converged / n_boot < min_converged_rate` (default 0).
 
 Returns a `NamedTuple`: `sigma_a2`, `sigma_e2`, `heritability` (the point estimates
 from `fit`); `sigma_a2_ci`, `sigma_e2_ci`, `heritability_ci` (each `(lower, upper)`);
-`level`, `n_boot`, `n_converged`, `method = :parametric_bootstrap_percentile`; and
-`replicates` (the per-component converged-replicate vectors).
+`level`, `n_boot`, `n_converged`, the three drop counts,
+`method = :parametric_bootstrap_percentile`; and `replicates` (the per-component
+interior-replicate vectors).
 
 The interval FUNCTION is deterministic: `rng` defaults to a fixed-seed
 `MersenneTwister`, so the result is reproducible at the call site (only opt-in sim
@@ -4826,9 +5777,18 @@ function bootstrap_variance_component_interval(fit::AnimalModelFit; level::Real 
                                                n_boot::Integer = 1000,
                                                estimator::Symbol = :sparse_reml,
                                                rng::AbstractRNG = Random.MersenneTwister(0x48324352),
-                                               max_dense_cells::Integer = DEFAULT_MAX_DENSE_CELLS)
+                                               max_dense_cells::Integer = DEFAULT_MAX_DENSE_CELLS,
+                                               min_converged::Integer = 2,
+                                               min_converged_rate::Real = 0.0)
+    _require_converged_univariate_uncertainty(fit, "bootstrap_variance_component_interval")
     0 < level < 1 || throw(ArgumentError("level must be in (0, 1)"))
     n_boot > 0 || throw(ArgumentError("n_boot must be a positive integer"))
+    min_converged > 0 || throw(ArgumentError("min_converged must be a positive integer"))
+    0 <= min_converged_rate <= 1 ||
+        throw(ArgumentError("min_converged_rate must be in [0, 1]"))
+    min_converged <= n_boot || throw(ArgumentError(
+        "min_converged = $min_converged cannot exceed n_boot = $n_boot",
+    ))
     estimator in (:sparse_reml, :ai_reml) ||
         throw(ArgumentError("estimator must be :sparse_reml or :ai_reml"))
     spec = fit.spec
@@ -4849,28 +5809,88 @@ function bootstrap_variance_component_interval(fit::AnimalModelFit; level::Real 
     refit = estimator === :sparse_reml ? fit_sparse_reml : fit_ai_reml
 
     sa = Float64[]; se = Float64[]; hh = Float64[]
+    n_dropped_error = 0
+    n_dropped_boundary = 0
+    n_dropped_nonconverged = 0
     for _ in 1:n_boot
         ystar = mu .+ Z * (LA * randn(rng, q) .* sqrt(s2a)) .+ randn(rng, n) .* sqrt(s2e)
         try
             spec_b = animal_model_spec(ystar, X, Z, spec.Ainv; ids = spec.ids, method = :REML,
                                        relationship_diag = spec.relationship_diag)
             fb = refit(spec_b)
-            _bootstrap_usable_refit(fb) || continue
-            sab = fb.variance_components.sigma_a2; seb = fb.variance_components.sigma_e2
-            hhb = _gaussian_variance_fraction(sab, seb)
-            push!(sa, sab); push!(se, seb); push!(hh, hhb)
-        catch
-            # PosDefException / non-converged refit → dropped, surfaced via n_converged
+            status = _bootstrap_refit_status(fb)
+            if status === :usable
+                sab = fb.variance_components.sigma_a2; seb = fb.variance_components.sigma_e2
+                hhb = _gaussian_variance_fraction(sab, seb)
+                push!(sa, sab); push!(se, seb); push!(hh, hhb)
+            elseif status === :nonconverged
+                n_dropped_nonconverged += 1
+            elseif status === :boundary
+                n_dropped_boundary += 1
+            else
+                n_dropped_error += 1
+            end
+        catch err
+            _bootstrap_handle_refit_error(err)
+            n_dropped_error += 1
         end
     end
     n_conv = length(sa)
-    n_conv > 0 ||
-        throw(ArgumentError("no bootstrap replicate converged to a finite interior optimum; no interval is reported"))
+    _bootstrap_require_enough_replicates(
+        n_conv,
+        Int(n_boot);
+        min_converged = Int(min_converged),
+        min_converged_rate = Float64(min_converged_rate),
+    )
     plo = (1 - level) / 2; phi = (1 + level) / 2
     _ci(v) = (lower = _empirical_upper_quantile(v, plo), upper = _empirical_upper_quantile(v, phi))
     return (sigma_a2 = s2a, sigma_e2 = s2e, heritability = h2,
             sigma_a2_ci = _ci(sa), sigma_e2_ci = _ci(se), heritability_ci = _ci(hh),
             level = Float64(level), n_boot = Int(n_boot), n_converged = n_conv,
+            n_dropped_error = n_dropped_error,
+            n_dropped_boundary = n_dropped_boundary,
+            n_dropped_nonconverged = n_dropped_nonconverged,
             method = :parametric_bootstrap_percentile,
             replicates = (sigma_a2 = sa, sigma_e2 = se, heritability = hh))
+end
+
+# --- #416 fit-free identifiability pre-check (warning only; no result fields) ---
+#
+# Stack vec(Z_i K_i Z_i') for each random effect plus the identity over the observed
+# records. If the stack has numerical rank below K + 1, the variance components are
+# not all separable and REML sits on a flat ridge (for example animal + dam when each
+# dam has one sire and only offspring are phenotyped: A = 0.5 I + 0.5 D).
+const _WEAK_IDENTIFIABILITY_RELTOL = 1e-8
+const _WEAK_IDENTIFIABILITY_MAX_CELLS = 4e7
+
+function _weak_identifiability_rank(Zs, Ks, n::Integer)
+    K = length(Zs)
+    n^2 * (K + 1) > _WEAK_IDENTIFIABILITY_MAX_CELLS && return nothing
+    M = zeros(Float64, n^2, K + 1)
+    for i in 1:K
+        Zi = Matrix{Float64}(Zs[i])
+        M[:, i] = vec(Zi * Matrix{Float64}(Ks[i]) * transpose(Zi))
+    end
+    M[:, K + 1] = vec(Matrix{Float64}(I, n, n))
+    s = svdvals(M)
+    isempty(s) && return nothing
+    smax = first(s)
+    (isfinite(smax) && smax > 0) || return nothing
+    return count(>(_WEAK_IDENTIFIABILITY_RELTOL * smax), s)
+end
+
+function _warn_weak_identifiability(Zs, Ks, n::Integer, names)
+    K = length(Zs)
+    r = _weak_identifiability_rank(Zs, Ks, n)
+    (r === nothing || r >= K + 1) && return nothing
+    comps = join(names, ", ")
+    @warn "variance components ($(comps), residual) are not all identifiable from " *
+          "these records: the stacked vec(Z K Z') matrices have numerical rank " *
+          "$(r) < $(K + 1). V_A cannot be separated from the confounded component " *
+          "(for example a dam effect when each dam has one sire and only " *
+          "offspring are phenotyped). REML is flat along a ridge, so heritability " *
+          "along it is arbitrary and start-dependent, and converged = true does " *
+          "not mean a unique optimum. Cross-fostering or repeated records are " *
+          "needed to separate them (HSquared.jl #416)."
+    return nothing
 end

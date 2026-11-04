@@ -60,8 +60,11 @@ end
     @test score < -1
     @test !result.fit.converged
     @test result.diagnostics.termination_reason == "boundary_score_unresolved"
-    @test result.fit.optimizer_status == "boundary_score_unresolved"
-    @test fit_diagnostics(result.fit).optimizer_status == "boundary_score_unresolved"
+    # This fixture is a founders-only ridge (A = I, one record each), so the
+    # public status is "unidentified_ridge" (HSquared.jl #422); the abort reason
+    # stays in the diagnostics above.
+    @test result.fit.optimizer_status == "unidentified_ridge"
+    @test fit_diagnostics(result.fit).optimizer_status == "unidentified_ridge"
     @test result.fit.variance_components == (sigma_a2 = a, sigma_e2 = e)
     @test isnan(result.diagnostics.ai_score_norm)
     @test isfinite(result.fit.likelihood.loglik)
@@ -73,15 +76,17 @@ end
     Z = sparse(1.0I, q, q)
     Q = sparse(1.0I, q, q)
     y = sin.(collect(1:q))
-    initial = [1e-16, 1e-16, 1.7]
-    result = fit_sparse_multi_effect_aireml(
-        y, X, [(Z, Q), (Z, Q)]; initial = initial, iterations = 1)
+    sigmas = [1e-16, 1e-16]
+    evar = 1.7
+    ws = HSquared._multi_reml_workspace(y, X, [(Z, Q), (Z, Q)])
+    _, rhs = HSquared._assemble_lhs_rhs!(ws, sigmas, evar)
+    factor = HSquared._factorize!(ws)
+    solution = factor \ rhs
+    residual = y - ws.Xs * solution[1:ws.nfixed] - ws.Zf * solution[(ws.nfixed + 1):end]
+    us = [solution[(ws.offsets[i] + 1):(ws.offsets[i] + ws.qs[i])] for i in 1:2]
+    traces = HSquared.selinv_block_traces(factor, ws.Ainvs, ws.offsets)
     # Each block fits the budget separately; their combined trace work does not.
-    @test !result.converged
-    @test result.status == "boundary_score_unresolved"
-    @test result.variance_components.sigmas == initial[1:2]
-    @test result.variance_components.sigma_e2 == initial[3]
-    @test isfinite(result.loglik)
+    @test HSquared._multi_reml_scores(ws, factor, sigmas, evar, residual, traces, us) === nothing
 end
 
 @testset "W1-09 fixed-point additive-boundary score ladder" begin

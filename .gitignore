@@ -15,6 +15,7 @@
 /coverage/
 /tmp/
 /comparator/Manifest.toml
+/comparator/mixedmodels_lmm/Manifest.toml
 /comparator/_jwas_pedigree.csv
 /comparator/IDs_for_individuals_with_pedigree.txt
 /comparator/results/

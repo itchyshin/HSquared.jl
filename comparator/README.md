@@ -37,6 +37,56 @@ does not import JWAS).
 `comparator/Manifest.toml` is git-ignored (instantiate locally); only
 `Project.toml` is committed.
 
+## MixedModels.jl Julia-native comparator (#275)
+
+Every other comparator here crosses an R-to-Julia boundary, so none of them separates "our
+engine is slow" from "the bridge is slow". `MixedModels.jl` runs in the same language and
+runtime, so this lane compares engines on the **shared Gaussian LMM surface** only:
+
+```text
+y = X*beta + Z1*u1 [+ Z2*u2] + e,   u_k ~ N(0, s_k^2 I),   e ~ N(0, s_e^2 I),   REML
+```
+
+One or two crossed iid random-intercept factors and a fixed-effect covariate. HSquared's side
+is `fit_sparse_multi_effect_aireml` with identity relationship precision. MixedModels.jl has
+no pedigree or relationship-matrix API, so every animal-model term is outside the surface and
+stays with sommer, BLUPF90 and the other lanes.
+
+```sh
+julia +1.12 --project=comparator/mixedmodels_lmm -e 'using Pkg; Pkg.instantiate()'
+OPENBLAS_NUM_THREADS=1 HSQUARED_RUN_MIXEDMODELS=true \
+  julia +1.12 --project=comparator/mixedmodels_lmm comparator/mixedmodels_lmm/run_mixedmodels_lmm.jl
+```
+
+Without `HSQUARED_RUN_MIXEDMODELS=true` the runner prints a skip notice and exits 0 before
+importing MixedModels. The environment is `comparator/mixedmodels_lmm/` (own `Project.toml`,
+git-ignored `Manifest.toml`); MixedModels is never a dependency of HSquared.jl.
+
+What it records per predeclared scenario (`lmm_surface.jl`, `SCENARIOS`): agreement of the
+variance components and fixed effects against predeclared tolerances (variance relative
+tolerance `1e-3`, fixed effects `1e-6`), convergence of both engines (either one not
+converged fails the scenario), and wall time (model set-up plus fit, median and minimum over
+repeated fits after a warm-up).
+
+The test suite (`test/test_issue_275_mixedmodels_surface.jl`) does not need MixedModels. It
+checks that the scenarios are deterministic, that the engine matches the closed-form
+balanced one-way ANOVA REML oracle, and that the agreement arithmetic refuses non-converged
+or out-of-tolerance fits.
+
+### Honesty
+
+- This is a **performance and correctness benchmark on the shared surface**. It is not a
+  claim of superiority, not a replacement for the sommer agreement gate, and it moves no
+  capability row to `covered`.
+- Timings are one machine, one run, 2 Julia threads, 1 BLAS thread, in the millisecond range
+  at these sizes; read them as a rough comparison on this surface only. They say nothing about
+  pedigree or genomic models, where MixedModels.jl has no counterpart.
+- First recorded run (Totoro, MixedModels 5.9.1, Julia 1.12.7, HSquared `f91337de`):
+  all 5 scenarios agree within tolerance (variance relative difference at most 7.5e-7, fixed
+  effects at most 1.1e-10), and MixedModels.jl was 1.2 to 2.4 times faster in median wall
+  time (ratio HSquared over MixedModels). Receipts:
+  `docs/dev-log/evidence/2026-10-25-mixedmodels-lmm/`.
+
 ## Unified comparator harness (A11)
 
 `run_targets.jl` reads `test/fixtures/comparator_targets.toml` and runs

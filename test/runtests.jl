@@ -11,6 +11,26 @@ using JSON3   # P0.5 payload-v2 cross-lane parity testset
 include(joinpath(@__DIR__, "..", "comparator", "prepare_blupf90_multitrait.jl"))
 include("test_selinv_trace_contracts.jl")
 include("test_pedigree_inbred_known_parent.jl")
+include("test_ordered_probit_cutpoint_rails.jl")
+include("test_ai_reml_em_warmup_posdef.jl")
+include("test_issue_404_readme_install.jl")
+include("test_issue_405_quickstart_docs.jl")
+include("test_issue_406_quickstart_h2_caveat.jl")
+include("test_issue_414_heritability_docs.jl")
+include("test_issue_417_api_reference_docs.jl")
+include("test_issue_418_changelog_claims.jl")
+include("test_issue_419_docs_fragment.jl")
+include("test_issue_430_laplace_caveat_docs.jl")
+include("test_issue_421_sparse_laplace.jl")
+include("test_issue_357_henderson_mme_cholesky.jl")
+include("test_issue_357_result_payload_reuse.jl")
+include("test_issue_413_two_effect_scale_warning.jl")
+include("test_issue_413_scale_aware_start.jl")
+include("test_issue_429_false_residual_boundary.jl")
+include("test_issue_424_nelder_mead_convergence.jl")
+include("test_issue_416_weak_identifiability_warning.jl")
+include("test_issue_407_docs_note.jl")
+include("test_issue_275_mixedmodels_surface.jl")
 
 # dense NRM helper lives in src now: HSquared._numerator_relationship (src/pedigree.jl)
 
@@ -3850,7 +3870,8 @@ end
     @test pd.supplied === false                                   # ESTIMATED, not supplied
     @test pd.level == 0.95
     @test propertynames(pd) ==
-          (:term, :estimate, :lo, :hi, :panel, :level, :interval_method, :interval_status, :supplied)
+          (:term, :estimate, :lo, :hi, :panel, :level, :interval_method, :interval_status,
+           :interval_reason, :supplied)
     # interval consistency: matches the extractors when available, else NaN / "none"
     local h2ci
     try
@@ -4778,12 +4799,12 @@ end
     @test scan.k ≈ 0.98 atol = 1e-12
     @test scan.denominators ≈ [2.8, 4.0] atol = 1e-12
     @test scan.effects ≈ [17 / 14, 0.5] atol = 1e-12
-    @test scan.standard_errors ≈ [sqrt(1 / 2.8), 0.5] atol = 1e-12
-    @test scan.z_scores ≈ [(17 / 14) / sqrt(1 / 2.8), 1.0] atol = 1e-12
+    @test scan.standard_errors ≈ [sqrt(1.3 / 2.8), sqrt(1.3 / 4.0)] atol = 1e-12
+    @test scan.z_scores ≈ [(17 / 14) / sqrt(1.3 / 2.8), 0.5 / sqrt(1.3 / 4.0)] atol = 1e-12
     @test scan.chisq ≈ scan.z_scores .^ 2 atol = 1e-12
-    @test scan.p_values ≈ [0.042164931253363, 0.3173105078629141] atol = 1e-6
-    @test scan.bonferroni_p_values ≈ [0.084329862506726, 0.6346210157258282] atol = 1e-6
-    @test scan.bh_q_values ≈ [0.084329862506726, 0.3173105078629141] atol = 1e-6
+    @test scan.p_values ≈ [0.07473539790247391, 0.3804550407754143] atol = 1e-6
+    @test scan.bonferroni_p_values ≈ [0.14947079580494782, 0.7609100815508286] atol = 1e-6
+    @test scan.bh_q_values ≈ [0.14947079580494782, 0.3804550407754143] atol = 1e-6
     @test scan.lod_scores ≈ scan.chisq ./ (2 * log(10)) atol = 1e-12
     scan_table = marker_scan_table(scan)
     @test scan_table.target == :direct_marker_scan
@@ -4823,17 +4844,17 @@ end
     @test significance.adjusted_p_threshold == 0.1
     @test significance.bh_q_threshold == 0.1
     @test significance.raw_significant == [true, false]
-    @test significance.bonferroni_significant == [true, false]
-    @test significance.bh_significant == [true, false]
+    @test significance.bonferroni_significant == [false, false]
+    @test significance.bh_significant == [false, false]
     @test significance.n_raw_significant == 1
-    @test significance.n_bonferroni_significant == 1
-    @test significance.n_bh_significant == 1
+    @test significance.n_bonferroni_significant == 0
+    @test significance.n_bh_significant == 0
     @test significance.raw_marker_ids == ["m1"]
-    @test significance.bonferroni_marker_ids == ["m1"]
-    @test significance.bh_marker_ids == ["m1"]
+    @test significance.bonferroni_marker_ids == String[]
+    @test significance.bh_marker_ids == String[]
     @test significance.raw_scan_indices == [1]
-    @test significance.bonferroni_scan_indices == [1]
-    @test significance.bh_scan_indices == [1]
+    @test significance.bonferroni_scan_indices == Int[]
+    @test significance.bh_scan_indices == Int[]
     @test significance.min_p_value ≈ minimum(scan.p_values) atol = 1e-12
     @test significance.min_bonferroni_p_value ≈ minimum(scan.bonferroni_p_values) atol = 1e-12
     @test significance.min_bh_q_value ≈ minimum(scan.bh_q_values) atol = 1e-12
@@ -4937,11 +4958,11 @@ end
         Matrix{Float64}(I, 1, 1),
         M,
         2.0,
-        1.0;
+        1.3;
         marker_ids = ["m1", "m2"],
     )
     @test fixed_reduction.target == :mixed_model_marker_scan
-    @test fixed_reduction.variance_components == (sigma_a2 = 2.0, sigma_e2 = 1.0)
+    @test fixed_reduction.variance_components == (sigma_a2 = 2.0, sigma_e2 = 1.3)
     @test fixed_reduction.marker_ids == scan.marker_ids
     @test fixed_reduction.effects ≈ scan.effects atol = 1e-12
     @test fixed_reduction.standard_errors ≈ scan.standard_errors atol = 1e-12
@@ -5976,6 +5997,7 @@ end
     @test ph[end] == "genome_wide_p_value"
     sf = genome_wide_marker_scan(yf, ones(length(yf), 1), Mf;
                                  n_permutations = 300, alpha = 0.05,
+                                 sigma_e2 = 1.0,
                                  marker_ids = fmids, rng = MersenneTwister(20264200))
     @test sf.marker_ids == vec(pr[:, 1])
     @test sf.chisq ≈ parse.(Float64, pr[:, 5]) rtol = 1e-8          # deterministic
@@ -6803,8 +6825,12 @@ end
     fit = fit_repeatability_reml(y, X, Z, Ainv; initial = (sigma_a2 = 1.0, sigma_pe2 = 1.0, sigma_e2 = 1.0))
     @test ci.repeatability ≈ fit.repeatability               # point estimate matches the fit
     # higher confidence ⇒ wider interval
-    ci90 = repeatability_interval(y, X, Z, Ainv; level = 0.90)
-    ci99 = repeatability_interval(y, X, Z, Ainv; level = 0.99)
+    # (same explicit start as `ci`: the REML surface is flat in the sigma_a2/sigma_pe2
+    # split, so a different start (the scale-aware default, #413) stops at a different
+    # point and the widths would not be comparable)
+    unit = (sigma_a2 = 1.0, sigma_pe2 = 1.0, sigma_e2 = 1.0)
+    ci90 = repeatability_interval(y, X, Z, Ainv; level = 0.90, initial = unit)
+    ci99 = repeatability_interval(y, X, Z, Ainv; level = 0.99, initial = unit)
     @test ci99.lower < ci90.lower && ci99.upper > ci90.upper
     # guard
     @test_throws ArgumentError repeatability_interval(y, X, Z, Ainv; level = 1.5)
@@ -7069,7 +7095,10 @@ end
 
     # K=2 REML byte-identical to fit_two_effect_reml on identified data
     gen2 = fit_multi_effect_reml(yf, Xf, [(Zf, Ainv), (Z2f, Matrix(1.0I, 2, 2))])
-    two = fit_two_effect_reml(yf, Xf, Zf, Ainv, Z2f, Matrix(1.0I, 2, 2))
+    # (explicit unit start: `fit_multi_effect_reml` starts at (1, ..., 1); the two-effect
+    # default is scale-aware since #413, so the same start is passed to compare optima)
+    two = fit_two_effect_reml(yf, Xf, Zf, Ainv, Z2f, Matrix(1.0I, 2, 2);
+                              initial = (sigma1 = 1.0, sigma2 = 1.0, sigma_e2 = 1.0))
     @test gen2.variance_components.sigmas[1] ≈ two.variance_components.sigma1 atol = 1e-10
     @test gen2.variance_components.sigmas[2] ≈ two.variance_components.sigma2 atol = 1e-10
     @test gen2.variance_components.sigma_e2 ≈ two.variance_components.sigma_e2 atol = 1e-10
@@ -7166,7 +7195,10 @@ end
     # information, same estimand — only iteration path differs).
     eff2 = [(sparse(Z1), Ainv), (sparse(Z2), I2)]
     m2 = multi_effect_ratio_interval(y, X, eff2)
-    t2 = two_effect_ratio_interval(y, X, sparse(Z1), Ainv, sparse(Z2), I2)
+    # (explicit unit start: `multi_effect_ratio_interval` starts at (1, ..., 1); the
+    # two-effect default is scale-aware since #413)
+    t2 = two_effect_ratio_interval(y, X, sparse(Z1), Ainv, sparse(Z2), I2;
+                                   initial = (sigma1 = 1.0, sigma2 = 1.0, sigma_e2 = 1.0))
     @test m2.ratios[1].estimate ≈ t2.ratio1.estimate rtol = 1e-6
     @test m2.ratios[2].estimate ≈ t2.ratio2.estimate rtol = 1e-6
     @test m2.ratios[1].lower ≈ t2.ratio1.lower rtol = 1e-4
@@ -7453,12 +7485,38 @@ end
     hi = direct_maternal_interval(y, X, Zd, Zm, Ainv; level = 0.99).variance_components.sigma_ad
     @test (hi.upper - hi.lower) > (lo.upper - lo.lower)
 
+    # This generated fit varies across supported platforms, so check its internal
+    # point/interval relationships above rather than pinning one platform's values.
+    # The deterministic Hessian test below compares the new fill with the old full loop.
+
     # argument guard: level ∈ (0, 1)
     @test_throws ArgumentError direct_maternal_interval(y, X, Zd, Zm, Ainv; level = 0.0)
     @test_throws ArgumentError direct_maternal_interval(y, X, Zd, Zm, Ainv; level = 1.0)
     # boundary/flat-surface guard: tiny uninformative data → information not PD
     @test_throws ArgumentError direct_maternal_interval([1.0, 2.0, 1.5, 2.5], ones(4, 1),
         Matrix(1.0I, 4, 4), Matrix(1.0I, 4, 4), Matrix(1.0I, 4, 4))
+end
+
+@testset "direct_maternal FD information fills the upper triangle only (#411)" begin
+    # A smooth non-quadratic surface with off-diagonal curvature; calls are counted.
+    ncalls = Ref(0)
+    f(t) = (ncalls[] += 1; -0.5 * (t[1]^2 + 2t[2]^2 + 3t[3]^2 + 4t[4]^2) +
+            0.3 * t[1] * t[2] - 0.2 * t[2] * t[3] + 0.1 * t[3] * t[4] + 0.05 * t[1]^2 * t[4])
+    theta = [1.5, 0.7, -0.6, 0.8]
+    h = HSquared._uncertainty_component_steps(theta, 1e-4)
+    H = HSquared._direct_maternal_fd_hessian(f, theta, h)
+    # 10 upper-triangle cells x 4 evaluations, not 16 x 4
+    @test ncalls[] == 40
+    @test H == transpose(H)
+    # agrees with the full d x d central-difference loop it replaces
+    Hfull = zeros(4, 4)
+    for i in 1:4, j in 1:4
+        ei = zeros(4); ei[i] = h[i]
+        ej = zeros(4); ej[j] = h[j]
+        Hfull[i, j] = (f(theta + ei + ej) - f(theta + ei - ej) -
+                       f(theta - ei + ej) + f(theta - ei - ej)) / (4 * h[i] * h[j])
+    end
+    @test H ≈ Hfull rtol = 1e-8
 end
 
 @testset "Phase 4 multivariate (multi-trait) animal model (supplied covariance)" begin
@@ -9029,7 +9087,7 @@ end
     @test pp.breeding_values.ids == ped.ids
     @test pp.breeding_values.values == fp.breeding_values
     @test pp.loglik == fp.marginal_loglik
-    @test pp.converged == fp.converged
+    @test pp.converged == (fp.converged && !fp.boundary)   # #345: boundary fits report converged = false
     # HONESTY: NO heritability field (the payload shape is family-uniform)
     @test !hasproperty(pp, :heritability)
 
@@ -10508,7 +10566,9 @@ end
     #     [Λ | diag(√Ψ)] (so G_lat = Λ̂Λ̂' + diag(Ψ̂)), reusing the marginal unchanged ---
     fa = fitr(Yg, Ainv, HSquared.GaussianResponse(σe); rank = 1, structure = :factor_analytic,
               initial = reshape([0.8, 0.6], 2, 1), initial_uniqueness = [0.3, 0.3])
-    @test fa.converged
+    # T = 2, K = 1 FA: four parameters for three G_lat entries, an exact ridge (#424)
+    @test fa.mode_converged
+    @test !fa.converged
     @test fa.uniqueness !== nothing && length(fa.uniqueness) == 2 && all(fa.uniqueness .> 0)
     @test all(0 .< fa.latent_structure.communality .< 1)             # Ψ > 0 ⇒ communality < 1
     @test fa.loglik ≈ HSquared._multivariate_reml_loglik(Yg, X, Z, Ainv,
@@ -10516,7 +10576,8 @@ end
     @test fa.loglik ≥ gg.loglik - 1e-4                               # FA nests low-rank (Ψ → 0)
     fap = fitr(Yp2, Ainv, HSquared.PoissonResponse(); rank = 1, structure = :factor_analytic,
                initial = reshape([0.5, 0.4], 2, 1), initial_uniqueness = [0.2, 0.2])
-    @test fap.converged && all(fap.uniqueness .> 0)
+    @test !fap.converged                                             # same T = 2, K = 1 ridge (#424)
+    @test all(fap.uniqueness .> 0)
 
     # --- guards ---
     @test_throws ArgumentError fitr(Yg, Ainv, HSquared.GaussianResponse(1.0); rank = 0)
@@ -11152,6 +11213,9 @@ include(joinpath(@__DIR__, "test_331_structured_lrt_df.jl"))
 # P0.5 cross-lane payload-v2 round-trip parity (fixtures emitted by R, read by Julia).
 include(joinpath(@__DIR__, "test_payload_v2_parity.jl"))
 
+# #436: payload-v2 arms must error when they ignore fit kwargs.
+include(joinpath(@__DIR__, "test_payload_v2_ignored_kwargs.jl"))
+
 # hsquared#212 (engine half): initial/iterations threading through payload-v2
 # multi_effect/direct_maternal dispatch and single-step/metafounder-single-step fitters.
 include(joinpath(@__DIR__, "test_212_engine_controls.jl"))
@@ -11179,12 +11243,23 @@ end
 # hsquared#214, #217): generalized guard + fit_repeatability_reml now guarded.
 include("test_214_217_dense_cells.jl")
 include("test_352_multi_effect_se.jl")
+include("test_issue_352_pe_recovery.jl")
 include("test_multivariate_repeatability.jl")
 include("test_multivariate_fa_multistart.jl")
 include("test_fa_weak_direction.jl")
 include("test_fa_ordinary_start_driver.jl")
 include("test_365_loglik_convention.jl")
 include("test_post_fit_uncertainty_reuse.jl")
+include("test_issue_432_bootstrap_interval.jl")
+include("test_issue_422_ridge_se_refused.jl")
+include("test_issue_433_plot_interval_errors.jl")
+include("test_issue_434_repeatability_interval.jl")
+include("test_issue_425_fd_step_scale.jl")
+include("test_issue_428_heritability_profile_clamping.jl")
+include("test_issue_437_nonconverged_uncertainty.jl")
+include("test_issue_415_two_effect_sparse_route.jl")
+include("test_issue_438_marker_scan_sigma_e2.jl")
+include("test_issue_427_mc_reml_status.jl")
 include("test_api_docstrings.jl")
 include("test_aireml_workspace_reuse.jl")
 
@@ -11226,9 +11301,15 @@ include(joinpath(@__DIR__, "bootstrap_convergence_contract.jl"))
 include(joinpath(@__DIR__, "wave1_numerical_contracts.jl"))
 include(joinpath(@__DIR__, "wave1_stationarity_contracts.jl"))
 include(joinpath(@__DIR__, "wave1_boundary_score_contracts.jl"))
+include(joinpath(@__DIR__, "test_issue_441_keffect_boundary_cap.jl"))
 include(joinpath(@__DIR__, "wave1_simd_fit_parity.jl"))
 include(joinpath(@__DIR__, "wave1_workspace_pattern_contracts.jl"))
 include(joinpath(@__DIR__, "wave2_nongaussian_contracts.jl"))
+include(joinpath(@__DIR__, "test_sweep_dense_and_newton.jl"))
+# #439: fit_laplace_reml must error when a family does not use a supplied control.
+include(joinpath(@__DIR__, "test_laplace_reml_unused_controls.jl"))
+# #435: fit_multi_effect must error when the :exact route is given a dropped keyword.
+include(joinpath(@__DIR__, "test_fit_multi_effect_exact_unused_keywords.jl"))
 include(joinpath(@__DIR__, "wave2_precision_contracts.jl"))
 include(joinpath(@__DIR__, "wave3_payload_pedigree_order.jl"))
 include(joinpath(@__DIR__, "wave4_covariance_contracts.jl"))
@@ -11237,6 +11318,7 @@ include(joinpath(@__DIR__, "test_data_empty_marker_status.jl"))
 include(joinpath(@__DIR__, "test_data_dict_id_lengths.jl"))
 include(joinpath(@__DIR__, "test_sparse_reml_finite_variances.jl"))
 include(joinpath(@__DIR__, "test_evolvability_stability.jl"))
+include(joinpath(@__DIR__, "test_fit_snp_blup_reml_options.jl"))
 include(joinpath(@__DIR__, "test_pedigree_constructor_contract.jl"))
 include(joinpath(@__DIR__, "test_sparse_aireml_input_contracts.jl"))
 
@@ -11276,6 +11358,10 @@ module E1GenomicContracts
     include(joinpath(@__DIR__, "test_genomic_variance_boundary.jl"))
 end
 
+module E1Issue420SpectralGreml
+    include(joinpath(@__DIR__, "test_issue_420_spectral_greml.jl"))
+end
+
 module E1MultivariateContracts
     include(joinpath(@__DIR__, "multivariate_contract_regression.jl"))
 end
@@ -11312,6 +11398,8 @@ module E1EvolvabilityFinite
     include(joinpath(@__DIR__, "evolvability_finite_output_regression.jl"))
 end
 
+include("test_issue_410_mv_se_hoist.jl")
+
 # Preserve original specification identity while computing validated buffers.
 include("likelihood_original_spec_regression.jl")
 
@@ -11327,3 +11415,22 @@ end
 module HostedPCGTrueResidual
 include("pcg_true_residual_regression.jl")
 end
+include(joinpath(@__DIR__, "test_issue_345_payload_boundary_converged.jl"))
+
+# qtl_table marker_spec / HSData / total_variance / trait paths, isolated namespace.
+include("test_qtl_table_marker_paths.jl")
+include("test_hsdata_idmap_specs_status_rows.jl")
+
+include("test_issue_409_profile_interval_hoist.jl")
+include("test_issue_409_profile_h2_closed_form.jl")
+include("test_issue_340_lowrank_rotation.jl")
+include("test_issue_408_plot_data_single_information.jl")
+# Thin-coverage pins: g_max (repeated eigenvalue), legendre_design, diagonal_covariance.
+include("test_builders_gmax_legendre.jl")
+include("test_metafounder_animal_model_guards.jl")
+include("test_status_row_types.jl")
+include("test_genetic_gllvm_mme_options.jl")
+include(joinpath(@__DIR__, "test_fit_metafounder_single_step_kwargs.jl"))
+include(joinpath(@__DIR__, "test_issue_50_genetic_gllvm_export_payload.jl"))
+include("test_issue_411_interval_from_fit.jl")
+include("test_issue_411_409_no_redensify_no_rebuild.jl")

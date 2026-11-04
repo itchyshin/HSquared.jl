@@ -263,15 +263,27 @@ end
 # Dispatch resolution — §6 dispatch table
 # ---------------------------------------------------------------------------
 
-# Determine dispatch symbol from the resolved block list.
-# §6:
-#   one pedigree/identity block → :animal
-#   two independent blocks → :two_effect
-#   K ≥ 3 independent blocks → :multi_effect
-#   one correlated block (+ optional independent) → :direct_maternal
-#   multivariate Y (one pedigree) → :multivariate
-#   multivariate Y (pedigree + iid PE) → :multivariate_repeatability
-#   one coefcov block → :coefcov (frozen slot, parser validates but doesn't run)
+"""
+    _resolve_dispatch(blocks, is_multivariate) → Symbol
+
+Choose the existing payload-v2 estimator from the resolved block list
+(HSquared.jl #352). This adds no estimator.
+
+Univariate independent blocks:
+
+- 1 pedigree block → `:animal`
+- 2 independent blocks → `:two_effect` (animal + permanent environment when
+  the second block is iid; also common environment / maternal environment)
+- 3 or more independent blocks → `:multi_effect`
+
+Two effects are not rejected. `fit_repeatability_reml` is the dedicated
+`Z2 = Z1`, `A2 = I` special case of that two-effect kernel.
+
+Other existing arms: one correlated block → `:direct_maternal`; multivariate
+`Y` with one pedigree block → `:multivariate`; multivariate `Y` with pedigree
++ iid → `:multivariate_repeatability`; one `coefcov` block → `:coefcov`
+(frozen slot).
+"""
 function _resolve_dispatch(blocks, is_multivariate::Bool)
     types = [b.type for b in blocks]
     n_correlated = count(==("correlated"), types)
@@ -362,6 +374,11 @@ but no `random_effects` is lifted to a two-block list.
 
 The §2 grammar table governs which block types are accepted; unknown types
 raise an `ArgumentError`.
+
+Independent-block count (HSquared.jl #352): 1 pedigree block → `:animal`;
+2 independent blocks → `:two_effect` (animal + permanent environment when
+the second block is iid); 3 or more independent blocks → `:multi_effect`.
+Two effects are not rejected.
 
 CONTRACT-ONLY (docs/design/21-payload-v2-multiblock-schema.md §6):
 no new estimator is added here.
@@ -600,9 +617,9 @@ estimator's raw `NamedTuple` result.  For a single-pedigree-block payload
 this is exactly the result of `fit_animal_model(…)`.
 
 `initial` and `iterations` (hsquared#212) are forwarded ONLY to the
-`:multi_effect` and `:direct_maternal` dispatch arms — the two engine calls
-this dispatcher previously hardcoded with neither, silently discarding
-`engine_control\$initial`/`\$iterations` from the R side. Default `nothing`
+`:multi_effect` and `:direct_maternal` dispatch arms (and to `:two_effect` when
+`scale_method = :auto`, #415) — the two engine calls
+this dispatcher previously hardcoded with neither. Default `nothing`
 for both reproduces the exact pre-#212-fix call (each underlying fitter's own
 default: `fit_multi_effect_reml`'s `initial = nothing` / `iterations = 200`,
 `fit_direct_maternal_reml`'s `initial = nothing` / `iterations = 200`). For
@@ -610,10 +627,13 @@ default: `fit_multi_effect_reml`'s `initial = nothing` / `iterations = 200`,
 default `:dense` fitter `fit_multi_effect_reml`, and the opt-in `:auto` route's
 `fit_multi_effect`, which itself forwards `kwargs...` to whichever engine it
 selects (`fit_sparse_multi_effect_aireml`'s `initial = nothing` / `iterations = 100`,
-or `fit_multi_effect_mc_reml`'s `initial = nothing` / `iterations = 200`). Every
-other dispatch arm (`:animal`, `:two_effect`, `:multivariate`; `:coefcov` still raises
-`Phase0NotImplementedError`) is unaffected; passing either kwarg for those payloads is
-silently ignored, matching the pre-existing byte-identical default path.
+or `fit_multi_effect_mc_reml`'s `initial = nothing` / `iterations = 200`). A
+supplied `initial`, `iterations`, or non-default `scale_method` on any other
+wired arm (`:animal`, `:two_effect` on its default dense route,
+`:multivariate_repeatability`; also
+non-default `scale_method` on `:direct_maternal`) raises `ArgumentError` and
+names the unsupported keyword (HSquared.jl#436). `:multivariate` and
+`:coefcov` still raise `Phase0NotImplementedError`.
 
 The `:coefcov` dispatch is a frozen slot: `fit_payload_v2` raises
 `Phase0NotImplementedError` for it (§6: "no coefcov payload fitting route is
@@ -625,12 +645,52 @@ function fit_payload_v2(payload; scale_method::Symbol = :dense,
     return _dispatch_fit(parsed; scale_method = scale_method, initial = initial, iterations = iterations)
 end
 
+# Honour table for fit_payload_v2 kwargs (HSquared.jl#436). A supplied
+# initial / iterations / non-default scale_method is either forwarded by the
+# arm or rejected here with the keyword named.
+function _reject_unsupported_fit_kwargs(dispatch::Symbol;
+                                        scale_method::Symbol,
+                                        initial,
+                                        iterations)
+    # `:two_effect` honours `scale_method = :auto` (sparse AI-REML, #415) and then
+    # forwards `initial` / `iterations` to it; its default dense route honours none.
+    two_effect_sparse = dispatch === :two_effect && scale_method === :auto
+    honours_initial = dispatch in (:multi_effect, :direct_maternal) || two_effect_sparse
+    honours_iterations = dispatch in (:multi_effect, :direct_maternal) || two_effect_sparse
+    honours_scale_method = dispatch === :multi_effect || two_effect_sparse
+    unsupported = String[]
+    !honours_initial && initial !== nothing && push!(unsupported, "initial")
+    !honours_iterations && iterations !== nothing && push!(unsupported, "iterations")
+    !honours_scale_method && scale_method !== :dense && push!(unsupported, "scale_method")
+    isempty(unsupported) && return nothing
+    throw(ArgumentError(
+        "payload-v2 $dispatch dispatch does not support $(join(unsupported, ", "))"))
+end
+
+# Map a K = 2 `fit_multi_effect` result onto the `fit_two_effect_reml` field names that
+# `result_payload_v2` reads (#415). `loglik` and its convention fields are passed through
+# in the sparse route's own convention (`:reml_full_constant`), so they stay self-describing.
+function _two_effect_from_multi_effect(res)
+    vc = res.variance_components
+    total = vc.sigmas[1] + vc.sigmas[2] + vc.sigma_e2
+    rest = Base.structdiff(res, NamedTuple{(:variance_components, :ratios, :effects)})
+    return merge(rest, (
+        variance_components = (sigma1 = vc.sigmas[1], sigma2 = vc.sigmas[2], sigma_e2 = vc.sigma_e2),
+        ratio1 = vc.sigmas[1] / total,
+        ratio2 = vc.sigmas[2] / total,
+        effect1 = res.effects[1],
+        effect2 = res.effects[2],
+    ))
+end
+
 function _dispatch_fit(parsed::ParsedPayloadV2; scale_method::Symbol = :dense,
                        initial = nothing, iterations::Union{Nothing,Integer} = nothing)
     dispatch = parsed.dispatch
     blocks   = parsed.blocks
     X        = parsed.X
     method   = parsed.method
+    _reject_unsupported_fit_kwargs(dispatch; scale_method = scale_method,
+                                   initial = initial, iterations = iterations)
 
     if dispatch in (:two_effect, :multi_effect, :direct_maternal,
                     :multivariate_repeatability) && method !== :REML
@@ -650,6 +710,19 @@ function _dispatch_fit(parsed::ParsedPayloadV2; scale_method::Symbol = :dense,
         # §6 row 2: two independent blocks → fit_two_effect_reml.
         b1, b2 = blocks[1], blocks[2]
         y = parsed.y
+        if scale_method === :auto
+            # #415 opt-in: the two blocks go through the SPARSE AI-REML (`fit_multi_effect`,
+            # K = 2) and the result is mapped back to the two_effect field names. Default
+            # (`:dense`, absent) is the untouched dense call below. `initial` is the
+            # K+1 vector `fit_multi_effect` takes (sigma1, sigma2, sigma_e2).
+            kwargs = iterations === nothing ?
+                (initial === nothing ? NamedTuple() : (initial = initial,)) :
+                (initial === nothing ? (iterations = iterations,) : (initial = initial, iterations = iterations))
+            effects = [(sparse(Matrix{Float64}(b.Z)), sparse(Matrix{Float64}(b.relmat_inverse))) for b in (b1, b2)]
+            res = fit_multi_effect(y, X, effects; method = :auto, ids = [b1.ids, b2.ids],
+                                   kwargs...)
+            return _two_effect_from_multi_effect(res)
+        end
         return fit_two_effect_reml(y, X,
                                    Matrix{Float64}(b1.Z), Matrix{Float64}(b1.relmat_inverse),
                                    Matrix{Float64}(b2.Z), Matrix{Float64}(b2.relmat_inverse);
@@ -675,8 +748,17 @@ function _dispatch_fit(parsed::ParsedPayloadV2; scale_method::Symbol = :dense,
             (initial === nothing ? (iterations = iterations,) : (initial = initial, iterations = iterations))
         if scale_method === :auto
             effects = [(sparse(Matrix{Float64}(b.Z)), sparse(Matrix{Float64}(b.relmat_inverse))) for b in blocks]
-            return fit_multi_effect(y, X, effects; method = :auto, ids = per_block_ids,
-                                    compute_loglik = true, verbose = false, multi_effect_kwargs...)
+            # compute_loglik and verbose are matrix-free-only (#435). :auto still
+            # selects :exact at validation scale (K == 1 or N <= direct_max_n).
+            K = length(effects)
+            N = size(X, 2) + sum(size(pair[2], 1) for pair in effects)
+            if K == 1 || N <= 200_000
+                return fit_multi_effect(y, X, effects; method = :auto, ids = per_block_ids,
+                                        multi_effect_kwargs...)
+            else
+                return fit_multi_effect(y, X, effects; method = :auto, ids = per_block_ids,
+                                        compute_loglik = true, verbose = false, multi_effect_kwargs...)
+            end
         elseif scale_method === :dense
             effects = [(Matrix{Float64}(b.Z), Matrix{Float64}(b.relmat_inverse)) for b in blocks]
             return fit_multi_effect_reml(y, X, effects; ids = per_block_ids, multi_effect_kwargs...)
@@ -735,30 +817,6 @@ end
 # Public: result_payload_v2
 # ---------------------------------------------------------------------------
 
-"""
-    result_payload_v2(fit, parsed::ParsedPayloadV2) → NamedTuple
-
-Build the block-structured result payload (§5) from an estimator fit and the
-`ParsedPayloadV2` produced by `parse_payload_v2`.
-
-**Single-pedigree-block fast path (§5):** when `dispatch == :animal`, the
-fitter must return `AnimalModelFit`; the wrapper delegates to `result_payload`
-to preserve the complete flat v0.1 fields and current R extractors. Partial
-raw tuples are rejected rather than exposed as incomplete legacy results.
-
-For multi-block fits the result carries:
-- `variance_components.blocks` — ordered list of per-block variance records.
-- `variance_components.residual` — scalar σ²e for univariate fits; the
-  experimental multivariate-repeatability route carries a trait covariance matrix.
-- `random_effects` — ordered list of `(name, ids, values)` records.
-- `loglik`, `df`, `nobs`, `diagnostics`, `converged` — top-level fields.
-
-The experimental multivariate-repeatability extension labels its matrix columns
-with top-level `traits`. It is Julia-only until the R normalizer and parity tests
-support that extension (docs/design/21-payload-v2-multiblock-schema.md §5).
-
-CONTRACT-ONLY (docs/design/21-payload-v2-multiblock-schema.md §5, §6).
-"""
 function _v2_structured_result_metadata(fit, parsed::ParsedPayloadV2, n_variance::Integer;
                                         direct_maternal::Bool = false)
     parsed.method === :REML || throw(ArgumentError(
@@ -800,6 +858,30 @@ function _v2_structured_result_metadata(fit, parsed::ParsedPayloadV2, n_variance
     return (df = p + n_variance, nobs = n, diagnostics = diagnostics)
 end
 
+"""
+    result_payload_v2(fit, parsed::ParsedPayloadV2) → NamedTuple
+
+Build the block-structured result payload (§5) from an estimator fit and the
+`ParsedPayloadV2` produced by `parse_payload_v2`.
+
+**Single-pedigree-block fast path (§5):** when `dispatch == :animal`, the
+fitter must return `AnimalModelFit`; the wrapper delegates to `result_payload`
+to preserve the complete flat v0.1 fields and current R extractors. Partial
+raw tuples are rejected rather than exposed as incomplete legacy results.
+
+For multi-block fits the result carries:
+- `variance_components.blocks` — ordered list of per-block variance records.
+- `variance_components.residual` — scalar σ²e for univariate fits; the
+  experimental multivariate-repeatability route carries a trait covariance matrix.
+- `random_effects` — ordered list of `(name, ids, values)` records.
+- `loglik`, `df`, `nobs`, `diagnostics`, `converged` — top-level fields.
+
+The experimental multivariate-repeatability extension labels its matrix columns
+with top-level `traits`. It is Julia-only until the R normalizer and parity tests
+support that extension (docs/design/21-payload-v2-multiblock-schema.md §5).
+
+CONTRACT-ONLY (docs/design/21-payload-v2-multiblock-schema.md §5, §6).
+"""
 function result_payload_v2(fit, parsed::ParsedPayloadV2)
     dispatch = parsed.dispatch
     blocks = parsed.blocks
@@ -826,12 +908,13 @@ function result_payload_v2(fit, parsed::ParsedPayloadV2)
             (name=b1.name, ids=fit.effect1.ids, values=fit.effect1.values),
             (name=b2.name, ids=fit.effect2.ids, values=fit.effect2.values),
         ]
+        two_effect_extra = hasproperty(fit, :boundary) ? (boundary = fit.boundary,) : NamedTuple()
         return merge((
             variance_components = (residual=vc.sigma_e2, blocks=variance_blocks),
             random_effects = re_blocks,
             loglik = fit.loglik,
             converged = fit.converged,
-        ), _v2_structured_result_metadata(fit, parsed, 3))
+        ), two_effect_extra, _v2_structured_result_metadata(fit, parsed, 3))
     end
 
     if dispatch == :multi_effect

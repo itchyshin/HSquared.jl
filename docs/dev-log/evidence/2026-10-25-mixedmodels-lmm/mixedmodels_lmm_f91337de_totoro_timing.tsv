@@ -1,0 +1,6 @@
+scenario	n	ngroups	hsquared_median_s	hsquared_min_s	mixedmodels_median_s	mixedmodels_min_s	ratio_hs_over_mm	hsquared_iter	mixedmodels_feval	hsquared_converged	mixedmodels_converged	mixedmodels_singular	agree
+oneway_balanced_small	2000	100	0.0007	0.0006	0.0006	0.0005	1.174	6	20	true	true	false	true
+oneway_cov_2k	2000	100	0.0011	0.0009	0.0006	0.0006	1.647	9	31	true	true	false	true
+oneway_cov_20k	20000	1000	0.0087	0.0074	0.0054	0.0042	1.602	8	22	true	true	false	true
+oneway_cov_100k	100000	5000	0.0423	0.0358	0.0302	0.0274	1.402	8	22	true	true	false	true
+crossed_cov_20k	20000	200x100	0.0304	0.0263	0.0126	0.0109	2.405	9	40	true	true	false	true

@@ -1,0 +1,36 @@
+MixedModels.jl comparator lane (HSquared.jl #275)
+host=totoro julia=1.12.7 MixedModels=5.9.1 HSquared@f91337de julia_threads=2 blas_threads=1
+tolerances: variance rtol=0.001, fixed-effect rtol=1.0e-6; reps=9
+
+[oneway_balanced_small] n=2000 groups=[100]  HSquared median 0.001s (min 0.001s, 6 iter)  MixedModels median 0.001s (min 0.000s, 20 feval)  ratio HS/MM 1.17  agree=true
+  sigma_g1_2     HSquared 0.83437892     MixedModels 0.83437892     reldiff 8.31e-09 (tol 1e-03) ok
+  sigma_e2       HSquared 0.99714547     MixedModels 0.99714547     reldiff 4.07e-10 (tol 1e-03) ok
+  beta0          HSquared 1.8417569      MixedModels 1.8417569      reldiff 1.11e-13 (tol 1e-06) ok
+
+[oneway_cov_2k] n=2000 groups=[100]  HSquared median 0.001s (min 0.001s, 9 iter)  MixedModels median 0.001s (min 0.001s, 31 feval)  ratio HS/MM 1.65  agree=true
+  sigma_g1_2     HSquared 0.5966665      MixedModels 0.59666651     reldiff 2.12e-08 (tol 1e-03) ok
+  sigma_e2       HSquared 1.017553       MixedModels 1.017553       reldiff 1.01e-09 (tol 1e-03) ok
+  beta0          HSquared 1.9050651      MixedModels 1.9050651      reldiff 6.22e-12 (tol 1e-06) ok
+  beta1          HSquared 0.49562829     MixedModels 0.49562829     reldiff 1.04e-10 (tol 1e-06) ok
+
+[oneway_cov_20k] n=20000 groups=[1000]  HSquared median 0.009s (min 0.007s, 8 iter)  MixedModels median 0.005s (min 0.004s, 22 feval)  ratio HS/MM 1.60  agree=true
+  sigma_g1_2     HSquared 0.62750211     MixedModels 0.62750211     reldiff 7.17e-09 (tol 1e-03) ok
+  sigma_e2       HSquared 0.99348609     MixedModels 0.99348609     reldiff 3.47e-10 (tol 1e-03) ok
+  beta0          HSquared 1.9990061      MixedModels 1.9990061      reldiff 1.77e-12 (tol 1e-06) ok
+  beta1          HSquared 0.50535409     MixedModels 0.50535409     reldiff 4.36e-12 (tol 1e-06) ok
+
+[oneway_cov_100k] n=100000 groups=[5000]  HSquared median 0.042s (min 0.036s, 8 iter)  MixedModels median 0.030s (min 0.027s, 22 feval)  ratio HS/MM 1.40  agree=true
+  sigma_g1_2     HSquared 0.62509803     MixedModels 0.62509803     reldiff 2.87e-09 (tol 1e-03) ok
+  sigma_e2       HSquared 1.0024578      MixedModels 1.0024578      reldiff 1.39e-10 (tol 1e-03) ok
+  beta0          HSquared 2.0005543      MixedModels 2.0005543      reldiff 8.46e-14 (tol 1e-06) ok
+  beta1          HSquared 0.48973321     MixedModels 0.48973321     reldiff 3.81e-13 (tol 1e-06) ok
+
+[crossed_cov_20k] n=20000 groups=[200, 100]  HSquared median 0.030s (min 0.026s, 9 iter)  MixedModels median 0.013s (min 0.011s, 40 feval)  ratio HS/MM 2.41  agree=true
+  sigma_g1_2     HSquared 0.49959825     MixedModels 0.49959807     reldiff 3.76e-07 (tol 1e-03) ok
+  sigma_g2_2     HSquared 0.38128776     MixedModels 0.38128747     reldiff 7.51e-07 (tol 1e-03) ok
+  sigma_e2       HSquared 1.0002155      MixedModels 1.0002155      reldiff 7.44e-09 (tol 1e-03) ok
+  beta0          HSquared 1.8346922      MixedModels 1.8346922      reldiff 3.53e-11 (tol 1e-06) ok
+  beta1          HSquared 0.49971286     MixedModels 0.49971286     reldiff 5.22e-11 (tol 1e-06) ok
+
+Wrote /home/snakagaw/lanes/t1025/fix-HSquared.jl-275/comparator/mixedmodels_lmm/../results/mixedmodels_lmm_f91337de_totoro_{agreement,timing}.tsv and _provenance.txt
+ALL SCENARIOS AGREE within the predeclared tolerances (agreement, not parity).

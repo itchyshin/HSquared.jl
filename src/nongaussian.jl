@@ -686,7 +686,9 @@ only genetic effects. The integral must be proper; current necessary guards
 and local mode convergence do not establish propriety for every design.
 
 Returns `(loglik, beta, u, converged, gradient_norm, iterations)`.
-Experimental, dense, validation-scale. For `GaussianResponse` the integral is
+Experimental, validation-scale. `Z`, `Ainv` and the joint Hessian are held as
+sparse matrices and factored with CHOLMOD (dense inputs are accepted and
+converted). For `GaussianResponse` the integral is
 exact and equals `sparse_reml_loglik` under the same fixed-effect measure and
 likelihood normalization. That Gaussian REML reduction does not define a
 non-Gaussian REML or AI-REML objective. The historical `fit_laplace_reml` name
@@ -696,6 +698,141 @@ function laplace_marginal_loglik(y::AbstractVector, X::AbstractMatrix, Z::Abstra
                                  Ainv::AbstractMatrix, sigma_a2::Real,
                                  family::ResponseFamily;
                                  tol::Real = 1e-10, maxiter::Integer = 100)
+    sigma_a2 = _finite_positive_variance_float64("sigma_a2", sigma_a2)
+    tol = _finite_positive_float64("tol", tol)
+    maxiter >= 1 || throw(ArgumentError("maxiter must be positive"))
+    yv = Float64.(y)
+    Xd = Matrix{Float64}(X)
+    Zs = SparseMatrixCSC{Float64,Int}(sparse(Z))
+    n = length(yv)
+    p = size(Xd, 2)
+    q = size(Zs, 2)
+    size(Xd, 1) == n || throw(ArgumentError("X must have one row per record"))
+    size(Zs, 1) == n || throw(ArgumentError("Z must have one row per record"))
+    size(Ainv, 1) == q == size(Ainv, 2) || throw(ArgumentError("Ainv must be q×q with q = size(Z,2)"))
+    Ai, logdet_Ainv = _sparse_relationship_precision(Ainv, q)
+    _check_counts(family, yv)
+    _check_flat_effect_integral(family, yv, Xd)
+
+    Xs = sparse(Xd)
+    Xt = sparse(transpose(Xd))
+    Zt = sparse(transpose(Zs))
+    Aiu = Ai ./ sigma_a2                    # sparse prior precision
+    # `Zt * (w .* Zs)` stores every structural entry whatever the weights, so the
+    # pattern of H is fixed and the CHOLMOD symbolic analysis is reused.
+    function joint_hessian(w)
+        WZ = Diagonal(w) * Zs
+        return [Xt*(Diagonal(w)*Xs) Xt*WZ
+                Zt*(Diagonal(w)*Xs) (Zt*WZ + Aiu)]
+    end
+    fac = nothing
+    function factor!(H)
+        HS = Symmetric(H)
+        if fac === nothing || !(fac isa SparseArrays.CHOLMOD.Factor)
+            fac = cholesky(HS; check = false)
+        else
+            fac = try
+                cholesky!(fac, HS; check = false)
+            catch
+                cholesky(HS; check = false)
+            end
+        end
+        return fac
+    end
+
+    beta = zeros(p)
+    u = zeros(q)
+    gnorm = Inf
+    iters = 0
+    converged = false
+    for it in 1:maxiter
+        iters = it
+        η = Xd * beta .+ Zs * u
+        s = [_fam_score(_fam_record(family, i), yv[i], η[i]) for i in 1:n]
+        w = [_fam_weight(_fam_record(family, i), yv[i], η[i]) for i in 1:n]
+        Aiu_vec = (Ai * u) ./ sigma_a2
+        grad = vcat(transpose(Xd) * s, Zt * s .- Aiu_vec)
+        gnorm = norm(grad)
+        H = joint_hessian(w)
+        f = factor!(H)
+        step = issuccess(f) ? (f \ grad) : (Symmetric(Matrix(H)) \ grad)
+        step_u = step[(p + 1):end]
+        step_eta = Xd * step[1:p] .+ Zs * step_u
+        step_penalty = sqrt(max(dot(step_u, Ai * step_u) / sigma_a2, 0.0))
+        current_penalty = sqrt(max(dot(u, Ai * u) / sigma_a2, 0.0))
+        # Scale the stopping rule in predictor and random-effect penalty units,
+        # not raw coefficients, so rescaling a fixed-effect column is harmless.
+        step_scale = hypot(norm(step_eta), step_penalty)
+        current_scale = hypot(norm(η), current_penalty)
+        if step_scale <= tol * (1 + current_scale)
+            converged = true
+            break
+        end
+        current_objective = sum(_fam_loglik(_fam_record(family, i), yv[i], η[i]) for i in 1:n) -
+                            0.5 * dot(u, Ai * u) / sigma_a2
+        alpha = 1.0
+        accepted = false
+        for _ in 1:64
+            beta_candidate = beta .+ alpha .* step[1:p]
+            u_candidate = u .+ alpha .* step_u
+            eta_candidate = Xd * beta_candidate .+ Zs * u_candidate
+            objective_candidate = sum(_fam_loglik(_fam_record(family, i), yv[i], eta_candidate[i]) for i in 1:n) -
+                                  0.5 * dot(u_candidate, Ai * u_candidate) / sigma_a2
+            allowance = 1e-12 * (1 + abs(current_objective))
+            if isfinite(objective_candidate) && objective_candidate >= current_objective - allowance
+                beta .= beta_candidate
+                u .= u_candidate
+                accepted = true
+                break
+            end
+            alpha *= 0.5
+        end
+        accepted || break
+    end
+
+    η = Xd * beta .+ Zs * u
+    w = [_fam_observed_weight(_fam_record(family, i), yv[i], η[i]) for i in 1:n]
+    f = factor!(joint_hessian(w))
+    issuccess(f) || throw(PosDefException(0))
+    cond = sum(_fam_loglik(_fam_record(family, i), yv[i], η[i]) for i in 1:n)
+    quad_u = dot(u, Ai * u) / sigma_a2
+    logdet_H = logdet(f)
+    loglik = cond - 0.5 * quad_u - 0.5 * q * log(sigma_a2) + 0.5 * logdet_Ainv +
+             0.5 * p * log(2π) - 0.5 * logdet_H
+    return (loglik = converged ? loglik : NaN, beta = beta, u = u, converged = converged,
+            gradient_norm = gnorm, iterations = iters)
+end
+
+# Sparse-aware twin of `_check_relationship_precision`: the same finiteness,
+# symmetry (relative 1e-10) and positive-definiteness checks, with the accepted
+# matrix averaged with its transpose, but without densifying a sparse `Ainv`.
+# Dense input keeps the dense checks, then is converted. Returns the sparse
+# precision and `logdet(Ainv)` from the same Cholesky factor.
+function _sparse_relationship_precision(Ainv::AbstractMatrix, q::Integer)
+    if !(Ainv isa SparseMatrixCSC)
+        Ad = _check_relationship_precision(Ainv, q)
+        return sparse(Ad), logdet(cholesky(Symmetric(Ad)))
+    end
+    size(Ainv) == (q, q) || throw(ArgumentError("Ainv must be $q×$q"))
+    q > 0 || throw(ArgumentError("Ainv must have positive dimension"))
+    all(isfinite, nonzeros(Ainv)) || throw(ArgumentError("Ainv must not contain Inf or NaN"))
+    As = SparseMatrixCSC{Float64,Int}(Ainv)
+    scale = isempty(nonzeros(As)) ? 0.0 : maximum(abs, nonzeros(As))
+    dif = As - sparse(transpose(As))
+    all(<=(1e-10 * scale), abs.(nonzeros(dif))) ||
+        throw(ArgumentError("Ainv must be symmetric (relative tolerance 1e-10)"))
+    Ms = (As + sparse(transpose(As))) ./ 2
+    fa = cholesky(Symmetric(Ms); check = false)
+    issuccess(fa) || throw(ArgumentError("Ainv must be positive definite"))
+    return Ms, logdet(fa)
+end
+
+# Dense reference implementation retained for `test/test_issue_421_sparse_laplace.jl`
+# (the pre-#421 algorithm: dense Z, Ainv and joint Hessian). Not used by the engine.
+function _laplace_marginal_loglik_dense(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatrix,
+                                        Ainv::AbstractMatrix, sigma_a2::Real,
+                                        family::ResponseFamily;
+                                        tol::Real = 1e-10, maxiter::Integer = 100)
     sigma_a2 = _finite_positive_variance_float64("sigma_a2", sigma_a2)
     tol = _finite_positive_float64("tol", tol)
     maxiter >= 1 || throw(ArgumentError("maxiter must be positive"))
@@ -945,12 +1082,40 @@ function variational_marginal_loglik(y::AbstractVector, X::AbstractMatrix, Z::Ab
         H = [transpose(Xd)*WX transpose(Xd)*WZ
              transpose(Zd)*WX (transpose(Zd)*WZ .+ P0)]
         step = Symmetric(H) \ grad
-        beta .+= step[1:p]
-        m .+= step[(p + 1):end]
-        if gnorm < tol && covariance_result.converged
+        step_beta = step[1:p]
+        step_m = step[(p + 1):end]
+        # Same scaled step test and backtracking line search as
+        # laplace_marginal_loglik. An absolute gradient test from beta = 0,
+        # m = 0 takes a full Newton step that can leave the ELBO.
+        step_eta = Xd * step_beta .+ Zd * step_m
+        step_penalty = sqrt(max(dot(step_m, P0 * step_m), 0.0))
+        current_penalty = sqrt(max(dot(m, P0 * m), 0.0))
+        step_scale = hypot(norm(step_eta), step_penalty)
+        current_scale = hypot(norm(ηbar), current_penalty)
+        if step_scale <= tol * (1 + current_scale) && covariance_result.converged
             converged = true
             break
         end
+        current_objective = sum(_fam_expected_loglik(_fam_record(family, i), yv[i], ηbar[i], v[i]) for i in 1:n) -
+                            0.5 * dot(m, P0 * m)
+        alpha = 1.0
+        accepted = false
+        for _ in 1:64
+            beta_candidate = beta .+ alpha .* step_beta
+            m_candidate = m .+ alpha .* step_m
+            eta_candidate = Xd * beta_candidate .+ Zd * m_candidate
+            objective_candidate = sum(_fam_expected_loglik(_fam_record(family, i), yv[i], eta_candidate[i], v[i]) for i in 1:n) -
+                                  0.5 * dot(m_candidate, P0 * m_candidate)
+            allowance = 1e-12 * (1 + abs(current_objective))
+            if isfinite(objective_candidate) && objective_candidate >= current_objective - allowance
+                beta .= beta_candidate
+                m .= m_candidate
+                accepted = true
+                break
+            end
+            alpha *= 0.5
+        end
+        accepted || break
     end
 
     # ELBO and gradient at the returned mode
@@ -960,7 +1125,7 @@ function variational_marginal_loglik(y::AbstractVector, X::AbstractMatrix, Z::Ab
     S, v = covariance_result.S, covariance_result.v
     g = [_fam_expected_score(_fam_record(family, i), yv[i], ηbar[i], v[i]) for i in 1:n]
     gnorm = norm(vcat(transpose(Xd) * g, transpose(Zd) * g .- P0 * m))
-    converged = converged && covariance_result.converged && gnorm < tol
+    converged = converged && covariance_result.converged
     Ell = sum(_fam_expected_loglik(_fam_record(family, i), yv[i], ηbar[i], v[i]) for i in 1:n)
     logdet_Ainv = logdet(cholesky(Symmetric(Ai)))
     logdet_S = covariance === :diagonal ? sum(log, diag(S)) : logdet(cholesky(Symmetric(S)))
@@ -1056,7 +1221,10 @@ the negative-binomial `theta` is ESTIMATED and rides in `variance_components`),
 `method` (`"laplace"`/`"variational"`,
 resolved through the internal `MarginalMethod` dispatch from the stored marginal
 symbol), `variance_components`, `fixed_effects`, `breeding_values = (ids, values)`,
-`loglik`, and `converged`.
+`loglik`, and `converged`. `converged` is `fit.converged && !fit.boundary`: the 11-field
+shape cannot carry `boundary`, so a fit whose variance estimate sits at the search
+boundary reports `converged = false` rather than a start-value-dependent estimate as
+converged (#345; see [`fit_laplace_reml`](@ref) and #327).
 
 The payload shape is deliberately **family-uniform** and therefore carries NO
 `heritability` field: a `NonGaussianFit` computes none, and h² is left to the
@@ -1081,7 +1249,7 @@ function nongaussian_result_payload(fit::NonGaussianFit)
         fixed_effects = copy(fit.beta),
         breeding_values = (ids = copy(fit.ids), values = copy(fit.breeding_values)),
         loglik = fit.marginal_loglik,
-        converged = fit.converged,
+        converged = fit.converged && !fit.boundary,
     )
 end
 
@@ -1215,6 +1383,24 @@ function _three_field_binomial_trials(
     return copy(n_trials)
 end
 
+function _unused_laplace_family_controls(family::Symbol, n_trials, rho, theta_init, initial)
+    unused = String[]
+    family === :beta_binomial || rho === nothing || push!(unused, "rho")
+    (family === :binomial || family === :beta_binomial) || n_trials === nothing ||
+        push!(unused, "n_trials")
+    (family === :nbinom || family === :gamma) || theta_init === nothing ||
+        push!(unused, "theta_init")
+    if family !== :gaussian && initial !== nothing && hasproperty(initial, :sigma_e2)
+        push!(unused, "initial.sigma_e2")
+    end
+    return unused
+end
+
+# Coordinates of a NelderMead minimizer `p` that sit clear of the ±8-log-unit
+# safety rails around `centers` (#327). Coordinates on or next to a rail are a
+# reported boundary, so the #424 gradient and curvature check skips them.
+_laplace_rail_free(p, centers) = abs.(p .- centers) .< 8.0 - 0.1
+
 """
     fit_laplace_reml(y, X, Z, Ainv; family = :gaussian, marginal = :laplace,
                      initial = nothing, ids = nothing, iterations = 200,
@@ -1233,6 +1419,9 @@ keyword — a common scalar denominator OR a per-record integer vector of length
 (`BetaBinomialResponse`); it requires BOTH `n_trials` (scalar) and `rho`
 (the fixed overdispersion `ρ ∈ (0,1)`), estimates `sigma_a2` (Brent) at that supplied
 fixed ρ, and is Laplace-only (`marginal = :variational` is rejected).
+A control this family does not use (`rho` outside `:beta_binomial`, `n_trials`
+outside `:binomial`/`:beta_binomial`, `theta_init` outside `:nbinom`/`:gamma`,
+`initial.sigma_e2` outside `:gaussian`) is an error, not a silent drop.
 `family = :bernoulli_probit` is the binary threshold / liability-scale model
 (`BernoulliProbitResponse`, probit link `Φ(η)`); it estimates the single `sigma_a2`
 (Brent) and is also Laplace-only (its variational expected information is
@@ -1292,10 +1481,12 @@ function fit_laplace_reml(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatri
                           Ainv::AbstractMatrix; family::Symbol = :gaussian,
                           marginal::Symbol = :laplace, initial = nothing,
                           n_trials = nothing, rho = nothing, ids = nothing,
-                          theta_init::Real = 1.0, iterations::Integer = 200,
+                          theta_init = nothing, iterations::Integer = 200,
                           restart_check::Bool = false)
     family in (:gaussian, :poisson, :bernoulli, :binomial, :nbinom, :beta_binomial, :bernoulli_probit, :ordered_probit, :gamma) ||
         throw(ArgumentError("family must be :gaussian, :poisson, :bernoulli, :binomial, :nbinom, :beta_binomial, :bernoulli_probit, :ordered_probit, or :gamma"))
+    unused = _unused_laplace_family_controls(family, n_trials, rho, theta_init, initial)
+    isempty(unused) || throw(ArgumentError("family = :$(family) does not use $(join(unused, ", "))"))
     # probit (threshold) is Laplace-only at this slice: its variational expected
     # information is response-dependent (−E[ℓ″] varies with the sign s = 2y−1), which
     # the y-free `_fam_expected_weight` signature cannot carry — a VA kernel is
@@ -1330,7 +1521,8 @@ function fit_laplace_reml(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatri
     # then store the canonical symbol. Value-preserving for :laplace/:variational.
     mm = _marginal_method(marginal)
     marginal = _marginal_method_symbol(mm)
-    Ainv = _check_relationship_precision(Ainv, size(Z, 2))
+    Ainv = Ainv isa SparseMatrixCSC ? first(_sparse_relationship_precision(Ainv, size(Z, 2))) :
+           _check_relationship_precision(Ainv, size(Z, 2))
     margfun = mm isa Variational ? variational_marginal_loglik : laplace_marginal_loglik
     val(r) = mm isa Variational ? r.elbo : r.loglik
     aids = ids === nothing ? collect(1:size(Z, 2)) : collect(ids)
@@ -1356,30 +1548,33 @@ function fit_laplace_reml(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatri
         pmin = Optim.minimizer(res); sa2, se2 = exp.(pmin)
         fit = margfun(y, X, Z, Ainv, sa2, GaussianResponse(se2))
         boundary = abs(pmin[1] - lsa0) >= 8.0 - 1e-6 || abs(pmin[2] - lse0) >= 8.0 - 1e-6
+        nm_converged = _nelder_mead_converged(objgs, res; free = _laplace_rail_free(pmin, [lsa0, lse0]))
         NonGaussianFit((sigma_a2 = sa2, sigma_e2 = se2), val(fit), fit.beta,
                        marginal === :variational ? fit.m : fit.u, aids,
-                       Optim.converged(res) && fit.converged, :gaussian, marginal, nothing, nothing,
+                       nm_converged && fit.converged, :gaussian, marginal, nothing, nothing,
                        boundary, nothing)
     elseif family === :nbinom
         # negative-binomial: TWO estimable scalars (sigma_a2 + the overdispersion theta),
         # profiled jointly by NelderMead. Laplace-only (the NB ELBO has no closed form).
         mm isa Laplace ||
             throw(ArgumentError("family = :nbinom supports only marginal = :laplace at this slice (the NB variational ELBO has no closed form); got :$(marginal)"))
-        (sa0 > 0 && theta_init > 0) || throw(ArgumentError("initial sigma_a2 and theta_init must be positive"))
+        theta0 = theta_init === nothing ? 1.0 : Float64(theta_init)
+        (sa0 > 0 && theta0 > 0) || throw(ArgumentError("initial sigma_a2 and theta_init must be positive"))
         # ±8-log-unit safety rail on BOTH (log σ²a, log θ), matching :gamma (#327): an
         # uninformative design can otherwise run θ to the degenerate Poisson limit.
-        lsa0 = log(sa0); lth0 = log(Float64(theta_init))
+        lsa0 = log(sa0); lth0 = log(theta0)
         function objnb(p)
             (abs(p[1] - lsa0) > 8.0 || abs(p[2] - lth0) > 8.0) && return 1.0e12   # σ²a + θ safety rails
             -laplace_marginal_loglik(y, X, Z, Ainv, exp(p[1]), NegativeBinomialResponse(exp(p[2]))).loglik
         end
-        res = optimize(objnb, log.([sa0, Float64(theta_init)]), NelderMead(),
+        res = optimize(objnb, log.([sa0, theta0]), NelderMead(),
                        Optim.Options(iterations = iterations))
         pmin = Optim.minimizer(res); sa2, theta = exp.(pmin)
         fit = laplace_marginal_loglik(y, X, Z, Ainv, sa2, NegativeBinomialResponse(theta))
         boundary = abs(pmin[1] - lsa0) >= 8.0 - 1e-6 || abs(pmin[2] - lth0) >= 8.0 - 1e-6
+        nm_converged = _nelder_mead_converged(objnb, res; free = _laplace_rail_free(pmin, [lsa0, lth0]))
         NonGaussianFit((sigma_a2 = sa2, theta = theta), fit.loglik, fit.beta,
-                       fit.u, aids, Optim.converged(res) && fit.converged, :nbinom, :laplace, nothing, nothing,
+                       fit.u, aids, nm_converged && fit.converged, :nbinom, :laplace, nothing, nothing,
                        boundary, nothing)
     elseif family === :ordered_probit
         # ordered-categorical probit: JOINTLY estimate σ²a AND the K-1 cutpoints θ.
@@ -1401,15 +1596,15 @@ function fit_laplace_reml(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatri
         # configurations where the penalized-IRLS Hessian degenerates (a category with
         # ~0 probability under every record); return a large finite penalty so the
         # optimizer walks away from those regions rather than throwing.
-        # Safety rail on σ²a: threshold models weakly identify the breeding-value
-        # variance on uninformative data (it is confounded with the fixed unit probit
-        # residual absent relatedness/replication), so the MLE can run to the boundary.
-        # Confine the search to log(sa0) ± 8 (σ²a within ~3000× of the start) — the same
-        # bounded-search spirit as the single-component Brent path. A returned estimate
-        # at the rail is a self-describing "not credibly identified at this design" signal.
+        # Safety rails on every jointly estimated coordinate: threshold models weakly
+        # identify both the breeding-value variance and cutpoint increments on
+        # uninformative data. Confine log(σ²a) to log(sa0) ± 8 and every log-increment
+        # δ to its zero start ± 8. A returned estimate at any rail is a self-describing
+        # "not credibly identified at this design" signal.
         logsa0 = log(sa0)
         function objord(p)
-            abs(p[1] - logsa0) > 8.0 && return 1.0e12    # σ²a safety rail
+            (abs(p[1] - logsa0) > 8.0 || any(abs.(p[2:end]) .> 8.0)) &&
+                return 1.0e12                           # σ²a + cutpoint-increment rails
             m = try
                 laplace_marginal_loglik(y, X, Z, Ainv, exp(p[1]),
                                         OrderedProbitResponse(_cuts(@view p[2:end])))
@@ -1422,16 +1617,22 @@ function fit_laplace_reml(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatri
         boundary = if ndelta == 0                        # K = 2: only σ²a (1-D Brent), θ = [0]
             res = optimize(s -> objord([s]), log(sa0) - 6.0, log(sa0) + 6.0)
             sa2 = exp(Optim.minimizer(res)); thetahat = [0.0]
+            nm_converged = Optim.converged(res)
             abs(log(sa2) - logsa0) >= 6.0 - 1e-6
         else
             res = optimize(objord, vcat(log(sa0), zeros(ndelta)), NelderMead(),
                            Optim.Options(iterations = iterations))
             pmin = Optim.minimizer(res); sa2 = exp(pmin[1]); thetahat = _cuts(pmin[2:end])
-            abs(pmin[1] - logsa0) >= 8.0 - 1e-6
+            nm_converged = _nelder_mead_converged(objord, res;
+                                                  free = _laplace_rail_free(pmin, vcat(logsa0, zeros(ndelta))))
+            abs(pmin[1] - logsa0) >= 8.0 - 1e-6 ||
+                # NelderMead can settle just inside a discontinuous penalty rail
+                # once objective differences are below its stopping tolerance.
+                any(abs.(pmin[2:end]) .>= 8.0 - 1e-3)
         end
         fit = laplace_marginal_loglik(y, X, Z, Ainv, sa2, OrderedProbitResponse(thetahat))
         NonGaussianFit((sigma_a2 = sa2, cutpoints = thetahat), fit.loglik, fit.beta,
-                       fit.u, aids, Optim.converged(res) && fit.converged,
+                       fit.u, aids, nm_converged && fit.converged,
                        :ordered_probit, :laplace, nothing, nothing, boundary, nothing)
     elseif family === :gamma
         # Gamma (log link): TWO estimable scalars (σ²a + the shape ν), profiled jointly by
@@ -1446,8 +1647,9 @@ function fit_laplace_reml(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatri
             throw(ArgumentError("family = :gamma supports only marginal = :laplace at this slice (no variational kernel); got :$(marginal)"))
         all(yi -> yi > 0, y) ||
             throw(ArgumentError("family = :gamma requires strictly positive responses"))
-        (sa0 > 0 && theta_init > 0) || throw(ArgumentError("initial sigma_a2 and theta_init (shape) must be positive"))
-        lsa0 = log(sa0); lth0 = log(Float64(theta_init))
+        theta0 = theta_init === nothing ? 1.0 : Float64(theta_init)
+        (sa0 > 0 && theta0 > 0) || throw(ArgumentError("initial sigma_a2 and theta_init (shape) must be positive"))
+        lsa0 = log(sa0); lth0 = log(theta0)
         function objg(p)
             (abs(p[1] - lsa0) > 8.0 || abs(p[2] - lth0) > 8.0) && return 1.0e12   # σ²a + ν safety rails
             m = try
@@ -1458,13 +1660,14 @@ function fit_laplace_reml(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatri
             end
             (m === nothing || !isfinite(m.loglik)) ? 1.0e12 : -m.loglik
         end
-        res = optimize(objg, log.([sa0, Float64(theta_init)]), NelderMead(),
+        res = optimize(objg, log.([sa0, theta0]), NelderMead(),
                        Optim.Options(iterations = iterations))
         pmin = Optim.minimizer(res); sa2, shape = exp.(pmin)
         fit = laplace_marginal_loglik(y, X, Z, Ainv, sa2, GammaResponse(shape))
         boundary = abs(pmin[1] - lsa0) >= 8.0 - 1e-6 || abs(pmin[2] - lth0) >= 8.0 - 1e-6
+        nm_converged = _nelder_mead_converged(objg, res; free = _laplace_rail_free(pmin, [lsa0, lth0]))
         NonGaussianFit((sigma_a2 = sa2, shape = shape), fit.loglik, fit.beta,
-                       fit.u, aids, Optim.converged(res) && fit.converged, :gamma, :laplace, nothing, nothing,
+                       fit.u, aids, nm_converged && fit.converged, :gamma, :laplace, nothing, nothing,
                        boundary, nothing)
     else
         # single-variance-component families: Poisson (log link), Bernoulli/Binomial

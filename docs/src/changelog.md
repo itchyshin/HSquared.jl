@@ -7,31 +7,110 @@
   and Documenter `authors`; Shinichi Nakagawa remains primary contact. No
   version or capability change.
 
-None of the entries below change any capability status, row count, or
-package version. `public_covered_count` stays **7**, and no entry below touches `Project.toml`.
-(`Project.toml` on `main` already reads `version = "0.9.0"`, which no entry here set and which
-is not reconciled with this file's newest released section, `0.8.0`; that discrepancy predates
-this pass and belongs to the release owner.)
+- Genetic GLLVM (#50, owner decision 25 Oct 2026): `fit_gllvm_laplace_reml`, the
+  `GeneticGLLVMFit` fit object and a new `genetic_gllvm_result_payload(fit)` are now
+  exported so the R lane can bridge them. Both are labelled partial and experimental
+  (the payload carries `status = "partial"`, `experimental = true`, `scale = "latent"`).
+  The payload reports only rotation-invariant functionals of `G_lat` (never raw
+  loadings) and no heritability. `GeneticGLLVMFit` gains a trailing `families` field
+  (per-trait response family tokens). No capability status, row count or version changes.
 
+- Changed #413: the dense `fit_two_effect_reml` and `fit_repeatability_reml` fitters
+  (and `two_effect_ratio_interval`, `repeatability_interval`, which call them) default to
+  scale-aware starting variances set from the response variance: `sigma_e2 = var(y)/2`
+  and the two random-effect variances `var(y)/4` each, the same rule as
+  `initial = :auto` on the sparse multi-effect fitter. The default start was
+  `(1, 1, 1)`, which is blind to the unit of `y`: on a response with variance near
+  1e7 (milk yield in kg x 1000) NelderMead stopped at a wrong near-zero-heritability
+  point with `converged = true`, while `y / 1000` gave the correct REML answer. The
+  optimum now no longer depends on the unit of the response. A constant response
+  falls back to `(1, 1, 1)`. An explicit `initial` is used as given, and passing
+  `(1, 1, 1)` explicitly with `var(y)` far from 1 still emits the unit-scale start
+  warning (#447). The default start changes the NelderMead path, so estimates on
+  unit-variance data can differ from earlier releases in the last digits and the
+  reported optimum can differ where the old start stopped early; the `sim/`
+  recovery harnesses pass the unit start explicitly and are unchanged. `converged`
+  still means only that the simplex tolerance was met, not that the REML score is
+  small (superseded by #424 below).
+
+- Changed #424: the eleven NelderMead fitters (`fit_variance_components`,
+  `fit_sparse_reml`, `fit_two_effect_reml`, `fit_multi_effect_reml`,
+  `fit_direct_maternal_reml`, `fit_repeatability_reml`,
+  `fit_random_regression_reml`, `fit_multivariate_reml`,
+  `fit_multivariate_repeatability_reml`, `fit_gllvm_laplace_reml`, and the
+  NelderMead branches of `fit_laplace_reml`) no longer take `converged` from
+  `Optim.converged` alone. One shared helper in `src/likelihood.jl` also requires,
+  at the returned optimum, a numerically zero gradient (Newton decrement at most
+  1e-3 log-likelihood units) and curvature in every direction (smallest eigenvalue
+  of the finite-difference Hessian in correlation form above 1e-3). Coordinates
+  already at a boundary (a variance share at or below 1e-6, a covariance that
+  lost rank or a variance in it, an FA uniqueness at its floor, a #327 safety
+  rail) are left out of the check, and the rotation directions of free loadings
+  are set aside. A flat REML ridge, such as Va and Ve with one record per
+  unrelated animal, or a rank-1 factor-analytic G_lat for two traits in
+  `fit_gllvm_laplace_reml`, now reports `converged = false`, and so does a
+  simplex that stopped short of the optimum. The check costs `2d^2 + 4d` extra
+  objective evaluations for `d` checked parameters. Point estimates of a single
+  fit are unchanged; the multivariate FA two-start search now prefers a start
+  that passes the check, and bootstrap refits that fail it count as not
+  converged.
+
+None of the entries below change any capability status, row count, or
+package version. `public_covered_count` stays **7**, and no entry below touches
+`Project.toml`. The package version is `0.9.0`; its released section is recorded
+below.
+
+- #411 and #409 (no result change; outputs are bitwise identical to before on the test
+  fixtures). The refitting forms of `repeatability_interval`, `two_effect_ratio_interval`,
+  `direct_maternal_interval` and `multi_effect_ratio_interval` now reuse the dense
+  `A = inv(Ainv)` (and dense `X`, `Z`, `y`) that their fit already built, instead of
+  inverting each `Ainv` a second time for the finite-difference information. The profile
+  intervals (`heritability_interval(fit; method = :profile)` and
+  `variance_component_interval`) keep one mixed-model-equation workspace per interval: the
+  cross products and the sparsity pattern are formed once, each evaluation refills the
+  coefficient matrix in place and refactors it with the cached symbolic analysis
+  (`cholesky!`), where before every evaluation re-formed the cross products, concatenated
+  the blocks and reordered. The number of evaluations is unchanged.
+- Part of #411: `repeatability_interval`, `two_effect_ratio_interval` and
+  `direct_maternal_interval` each gain a method that takes an already-fitted result
+  (`repeatability_interval(fit, y, X, Z, Ainv; ...)`, and likewise for the other two) and
+  computes only the finite-difference information at `fit.variance_components`, so a caller
+  that has just fitted no longer repeats the whole dense Nelder-Mead fit inside the interval.
+  The existing refitting methods now call the same code and return identical values.
+  `repeatability_interval` also accepts `max_dense_cells` and forwards it to its fit; before,
+  a cap raised for `fit_repeatability_reml` was ignored by the interval, which refused any
+  model over the default 1,000,000 cells. Still open: the R bridge calls these functions
+  with the refitting form, the sparse `multi_effect_*` route is not yet used for the
+  repeatability and direct-maternal bridge targets, and each interval still forms one dense
+  `inv(Ainv)`.
 - `reliability`'s denominator `diag(inv(Ainv))` comes from `1 .+ F` when Julia builds `Ainv`
   from pedigree rows: `pedigree_inverse` already computes the inbreeding coefficients `F`
   (Meuwissen & Luo) for Henderson's rules, so the spec now carries them
-  (`animal_model_spec(...; relationship_diag)`, attached by the payload-v2 bridge) and
-  `method = :auto` reads them instead of a selected inverse of `Ainv`. Values unchanged to
+  (`animal_model_spec(...; relationship_diag)`) and `method = :auto` reads them instead of
+  a selected inverse of `Ainv`. The payload-v2 route carries this diagonal when it builds a
+  pedigree block in Julia; callers that pass only `Ainv`, including the current R
+  formula bridge, still obtain it through the selected inverse. Values are unchanged to
   1e-10; explicit `:selinv` and `:dense` keep their own paths. Szymon Drobniak.
 - Fixed #350: `prediction_error_variance` and `reliability` default to `method = :auto`,
   which takes the sparse Takahashi selected-inverse path for a sparse `Ainv` and the
   dense path for a dense genomic `Ginv` (`:selinv` and `:dense` stay explicit; the
   recursion over a dense factor is 67x slower than `inv`), and `reliability` reads `diag(inv(Ainv))` through the selected inverse of
   `Ainv` instead of forming the dense inverse, so `result_payload` and
-  `breeding_values_plot_data` no longer form any dense inverse for a sparse `Ainv` (q = 5,000:
-  5.9 s / 832 MB → 0.008 s / 33 MB and 11.4 s / 1.8 GB → 0.004 s / 20 MB; numerics
-  unchanged to machine precision). Szymon Drobniak (finding). The selected-inverse path
+  `breeding_values_plot_data` no longer form any dense inverse for a sparse `Ainv`.
+  The original q = 5,000 timing was removed because its pedigree generator, call script,
+  and hardware were not recorded; it was not a reproducible package benchmark. Numerics
+  are unchanged to machine precision. Szymon Drobniak (finding). The selected-inverse path
   refuses a numerically singular coefficient matrix (e.g. a duplicated column of `X`) with a
   named `ArgumentError`, using a relative-pivot test (`L_ii² / C_ii`) that is invariant to the
   units of a covariate: a well-posed fit with a covariate stored at magnitude 10⁶ or more is
   not refused, and neither is a degenerate-but-well-posed boundary fit (the guard's floor is
   `eps`-level, 1e-15; a duplicated column of `X` measures 7.4e-18).
+- Fixed #370/#371: K-effect post-fit uncertainty can call
+  `multi_effect_uncertainty` once and reuse one covariance calculation for component
+  standard errors, ratio standard errors, and sum-ratio intervals. This applies only to
+  the multi-effect K-effect route; the univariate animal-model route is unchanged.
+  Performance figures from an undistributed great-tit dataset are intentionally omitted
+  here because readers cannot reproduce them from this repository.
 - Fixed #334: `tools/write_validation_status_page.jl` no longer stamps a
   `<!-- regenerated: <timestamp> -->` comment into `docs/src/validation-status.md`.
   The stamp came from `now(UTC)` on every call and was rewritten unconditionally,
@@ -96,6 +175,13 @@ this pass and belongs to the release owner.)
   `boundary` stricter, never clear it. Both now name the actual lever: a
   different `initial`, which recentres the log-scale search bracket/rail.
   Inside the payload builder the family gate now runs before the boundary gate, so the message's ± 6 bracket is exact for every family that can reach it (the jointly-estimated families stop on a ±8-log-unit rail instead); a boundary-flagged fit of an unsupported family is now refused by the family message rather than the boundary message. Wording plus that one refusal-order change; no numerical behaviour change.
+
+## 0.9.0 (experimental)
+
+This release retained the experimental package status and did not authorize a
+new covered-capability count. It consolidated the Julia engine and R-bridge
+contracts present at the 0.9.0 tag; subsequent development remains under
+Unreleased above.
 
 ## 0.8.0 (experimental)
 
