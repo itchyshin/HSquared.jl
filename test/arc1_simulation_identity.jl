@@ -23,6 +23,33 @@ using SHA
         using Test, SHA
         include(ARGS[2])
         source_root = ARGS[1]
+        # Exercise either separator on every host, including CI on Unix.
+        @test _arc1_path_escapes(raw"..\outside.jl")
+        @test _arc1_path_escapes("../outside.jl")
+        @test !_arc1_path_escapes("src/HSquared.jl")
+        @test _arc1_path_escapes(abspath(joinpath(source_root, "src")))
+        write(joinpath(dirname(source_root), "outside.jl"), "outside")
+        escaped = try
+            _arc1_snapshot(source_root, Dict("src/../../outside.jl" => repeat("0", 64)))
+            nothing
+        catch err
+            err
+        end
+        @test escaped isa ErrorException
+        @test occursin("source path escaped admitted root", sprint(showerror, escaped))
+        wrong_dir = try
+            _arc1_snapshot(source_root, Dict("src/../Project.toml" => repeat("0", 64)))
+            nothing
+        catch err
+            err
+        end
+        @test wrong_dir isa ErrorException
+        @test occursin("source path escaped admitted src directory", sprint(showerror, wrong_dir))
+        if !Sys.iswindows()
+            symlink(joinpath(dirname(source_root), "outside.jl"), joinpath(source_root, "src", "link.jl"))
+            @test_throws ErrorException _arc1_snapshot(source_root, Dict("src/link.jl" => repeat("0", 64)))
+            rm(joinpath(source_root, "src", "link.jl"))
+        end
         hashfile(path) = bytes2hex(sha256(read(path)))
         engine_hashes = Dict("src/HSquared.jl" => hashfile(joinpath(source_root, "src", "HSquared.jl")))
         environment_hashes = Dict("Project.toml" => hashfile(joinpath(source_root, "Project.toml")),
@@ -64,7 +91,10 @@ end
     include(ARGS[1])
     root = ARGS[2]
     src = joinpath(root, "src")
-    engine_hashes = Dict(relpath(joinpath(dir, name), root) =>
+    # Source manifests use forward slashes on every platform.
+    canonical_source_path(path) = replace(path, '\\' => '/')
+    @test canonical_source_path(raw"src\HSquared.jl") == "src/HSquared.jl"
+    engine_hashes = Dict(canonical_source_path(relpath(joinpath(dir, name), root)) =>
         bytes2hex(sha256(read(joinpath(dir, name))))
         for (dir, _, names) in walkdir(src) for name in names if endswith(name, ".jl"))
     environment_hashes = Dict(name => bytes2hex(sha256(read(joinpath(root, name))))

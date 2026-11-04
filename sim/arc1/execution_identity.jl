@@ -19,6 +19,12 @@ function _arc1_sha256(path::AbstractString)
     return bytes2hex(sha256(read(path)))
 end
 
+# `relpath` uses the host separator; treat either separator as a parent escape.
+function _arc1_path_escapes(relative::AbstractString)
+    parts = split(replace(relative, '\\' => '/'), '/')
+    return isabspath(relative) || (!isempty(parts) && first(parts) == "..")
+end
+
 function _arc1_snapshot(root::AbstractString, hashes::Dict{String,String})
     source = realpath(root)
     actual = Dict{String,String}()
@@ -26,7 +32,10 @@ function _arc1_snapshot(root::AbstractString, hashes::Dict{String,String})
         startswith(relative, "src/") || error("engine source identity paths must start with src/")
         full = realpath(joinpath(source, relative))
         rel = relpath(full, source)
-        (rel == ".." || startswith(rel, "../")) && error("source path escaped admitted root")
+        _arc1_path_escapes(rel) && error("source path escaped admitted root")
+        resolved_parts = split(replace(rel, '\\' => '/'), '/')
+        (length(resolved_parts) > 1 && first(resolved_parts) == "src") ||
+            error("source path escaped admitted src directory")
         actual[relative] = _arc1_sha256(full)
     end
     return actual
