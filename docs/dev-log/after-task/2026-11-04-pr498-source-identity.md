@@ -73,3 +73,8 @@ containment. Independent review checked the patch and its test boundaries.
 Covered: no-fit source identity and containment on macOS Julia 1.10 and 1.12,
 plus both separator strings. This does NOT cover native Windows execution,
 Windows symlinks, real cross-drive paths, numerical fits or scientific gates.
+
+A focused Julia 1.13.3 attempt using a copied Julia 1.10 manifest refused a
+loaded `Statistics` extension absent from that manifest. That run does not
+establish a defect in a freshly resolved Julia 1.13 environment. It records a
+source/environment mismatch; Windows and latest-Julia CI are still required.
