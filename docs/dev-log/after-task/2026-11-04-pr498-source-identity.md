@@ -41,7 +41,8 @@ real cross-drive case are not covered.
 
 PR #498 has a Julia 1.10 Windows source-path failure and separate latest-Julia
 FA retry-fixture failures. This patch targets the former and strengthens source
-containment. It does not resolve the FA fixture or the seed guards.
+containment. The FA fixture candidate passed focused local checks; Windows CI and the seed
+guards remain open.
 
 ## 8. Consistency Audit
 
@@ -72,7 +73,8 @@ containment. Independent review checked the patch and its test boundaries.
 
 Covered: no-fit source identity and containment on macOS Julia 1.10 and 1.12,
 plus both separator strings. This does NOT cover native Windows execution,
-Windows symlinks, real cross-drive paths, numerical fits or scientific gates.
+Windows symlinks, real cross-drive paths, broad numerical fit parity or
+scientific gates.
 
 A focused Julia 1.13.3 attempt using a copied Julia 1.10 manifest refused a
 loaded `Statistics` extension absent from that manifest. That run does not
