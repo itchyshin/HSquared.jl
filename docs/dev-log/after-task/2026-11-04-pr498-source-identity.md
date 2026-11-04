@@ -85,3 +85,8 @@ Julia 1.13-resolved manifest with SHA-256
 The source was an export of code commit `db48d9754af1a6f9b06b304925a2022778e01174`.
 Package-manager precompilation briefly exceeded the intended Mac CPU budget;
 future runs should cap precompile tasks as well as Julia and BLAS threads.
+
+For the separate FA retry-fixture failure, a no-fit matrix check confirmed on
+Julia 1.10.12 and 1.13.3 that zero FA loadings reproduce the diagonal covariance
+under the current parameterization. This supports the proposed fixture repair
+but does not exercise the selector or establish that its test passes.
