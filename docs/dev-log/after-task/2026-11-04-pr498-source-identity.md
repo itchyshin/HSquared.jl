@@ -78,3 +78,10 @@ A focused Julia 1.13.3 attempt using a copied Julia 1.10 manifest refused a
 loaded `Statistics` extension absent from that manifest. That run does not
 establish a defect in a freshly resolved Julia 1.13 environment. It records a
 source/environment mismatch; Windows and latest-Julia CI are still required.
+
+A rerun on Julia 1.13.3 passed both focused no-fit testsets using a fresh
+Julia 1.13-resolved manifest with SHA-256
+`272ce679b561dedde1d733b783905cc6201cd9ed08b99acc1f87082e5454597b`.
+The source was an export of code commit `db48d9754af1a6f9b06b304925a2022778e01174`.
+Package-manager precompilation briefly exceeded the intended Mac CPU budget;
+future runs should cap precompile tasks as well as Julia and BLAS threads.
