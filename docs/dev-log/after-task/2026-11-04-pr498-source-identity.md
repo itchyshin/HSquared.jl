@@ -20,8 +20,10 @@ inside the admitted `src` directory, as the existing path contract states.
 
 ## 4. Files Touched
 
-`sim/arc1/execution_identity.jl`, `test/arc1_simulation_identity.jl`, and
-this report.
+`sim/arc1/execution_identity.jl`, `sim/arc1/execute_attempt.jl`,
+`test/arc1_simulation_identity.jl`, `test/arc1_optimizer_contracts.jl`,
+`test/test_auto_fa_rank.jl`, `test/test_arc1_cross_drive_paths.py`,
+`tools/arc1_package_checks.py`, `.github/workflows/CI.yml`, and this report.
 
 ## 5. Checks Run
 
@@ -98,3 +100,16 @@ the FA retry fixture. The full `test/test_auto_fa_rank.jl` file passed with 249 
 Julia 1.10.12 and 1.13.3, including the previously failing retry case. The
 Julia 1.13 run used the freshly resolved manifest identified above. Native
 Windows and the full package suite remain to be checked in PR CI.
+
+The 1.13 CI run also exposed two optimizer contract tests whose seeded data
+differ across Julia versions. Only those two tests now use the captured Julia
+1.10.12 test matrix. The complete optimizer contract file passed 668 assertions
+on Julia 1.10.12 and 1.13.3; the original thresholds and guard assertions
+were retained. This is test evidence, not a scientific gate.
+
+A separate cross-drive correction rejects absolute escaped symlink targets
+and recognizes a disjoint output root on another drive. It also normalizes
+nested directory-symlink rows and restores the generated self-check extraction.
+The no-fit path tests passed under Julia 1.10 and 1.13, and the existing
+no-install preflight self-test passed. Windows CI now includes the path tests.
+Real second-drive and Windows symlink cases remain unverified.

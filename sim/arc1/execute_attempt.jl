@@ -551,13 +551,19 @@ function arc1_execute_attempt(engine::Module, loaded_engine,
             execution_identity=identity, result=model.result, artifact_payload=model)
 end
 
+# Different Windows volumes yield an absolute result from `relpath`.
+function arc1_output_relative_disjoint(relative::AbstractString)
+    parts = splitpath(relative)
+    return isabspath(relative) || (!isempty(parts) && first(parts) == "..")
+end
+
 if abspath(PROGRAM_FILE) == @__FILE__
     config_path = abspath(ARGS[1])
     config = TOML.parsefile(config_path)
     root = realpath(config["source_root"])
     output_root = realpath(config["attempt_output"])
     rel_output = relpath(output_root, root)
-    (rel_output == "." || !(rel_output == ".." || startswith(rel_output, ".." * string(Base.Filesystem.path_separator)))) &&
+    arc1_output_relative_disjoint(rel_output) ||
         error("Arc1 output directory must be disjoint from the source root")
     global engine_hashes = Dict{String,String}(String(k) => String(v) for (k,v) in config["engine_hashes"])
     global environment_hashes = Dict{String,String}(String(k) => String(v) for (k,v) in config["environment_hashes"])

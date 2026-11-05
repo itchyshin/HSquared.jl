@@ -441,6 +441,11 @@ const PF_EXPECTED_WEAKDEPS = Set(["AlgebraOfGraphics", "CUDA", "Makie"])
 pf_sha(path) = bytes2hex(sha256(read(path)))
 pf_tree(path) = bytes2hex(Pkg.GitTools.tree_hash(path))
 pf_uuid(value) = string(UUID(string(value)))
+# `relpath` can return an absolute path when Windows volumes differ.
+function pf_relative_escapes(rel)
+    parts = splitpath(rel)
+    return isabspath(rel) || (!isempty(parts) && first(parts) == "..")
+end
 function pf_content_tree(path)
     rows = String[]
     for (directory, dirs, files) in walkdir(path; follow_symlinks=false)
@@ -452,9 +457,9 @@ function pf_content_tree(path)
                 target = readlink(entry)
                 resolved = realpath(entry)
                 rel_resolved = relpath(resolved, realpath(path))
-                (rel_resolved == ".." || startswith(rel_resolved, "..$(Base.Filesystem.path_separator)")) &&
+                pf_relative_escapes(rel_resolved) &&
                     error("escaping symlink in package content tree")
-                push!(rows, relpath(entry, path) * "\0symlink\0" * target)
+                push!(rows, replace(relpath(entry, path), Base.Filesystem.path_separator => '/') * "\0symlink\0" * target)
             end
         end
         for name in files
@@ -464,7 +469,7 @@ function pf_content_tree(path)
                 target = readlink(file)
                 resolved = realpath(file)
                 rel_resolved = relpath(resolved, realpath(path))
-                (rel_resolved == ".." || startswith(rel_resolved, "..$(Base.Filesystem.path_separator)")) &&
+                pf_relative_escapes(rel_resolved) &&
                     error("escaping symlink in package content tree")
                 push!(rows, replace(rel, Base.Filesystem.path_separator => '/') * "\0symlink\0" * target)
             else
@@ -3338,12 +3343,18 @@ def _self_test_julia_noinstall_preflight() -> None:
         assert symlink_hash == hashlib.sha256((
             f"link.bin\0symlink\0target.bin\ntarget.bin\0file\0{sha256_file(symlink_tree / 'target.bin')}"
         ).encode("utf-8")).hexdigest()
+        # Include a nested directory link: its path must use the same slash
+        # representation as Python's relative_path.as_posix() on Windows.
+        (symlink_tree / "nested").mkdir()
+        (symlink_tree / "inside-dir").mkdir()
+        (symlink_tree / "nested" / "dir-link").symlink_to("../inside-dir", target_is_directory=True)
+        symlink_hash = _content_tree_sha256(symlink_tree)
         preflight = julia_noinstall_preflight_source(
             {"project_path": str(project), "manifest_path": str(manifest),
              "project_sha256": sha256_file(project), "manifest_sha256": sha256_file(manifest)},
             root / "capture", "c" * 64, expected_julia_executable=launcher,
             expected_julia_version="1.10.0", source_file_inventory=hsquared_inventory)
-        content_start = preflight.index("function pf_content_tree(path)")
+        content_start = preflight.index("function pf_relative_escapes(rel)")
         content_end = preflight.index("\nfunction pf_source_snapshot(root)", content_start)
         julia_tree_source = "using SHA\npf_sha(path) = bytes2hex(sha256(read(path)))\n" + \
             preflight[content_start:content_end] + "\nprintln(pf_content_tree(ARGS[1]))\n"

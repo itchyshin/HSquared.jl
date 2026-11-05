@@ -28,6 +28,23 @@ function _arc1_optimizer_fixture()
     (; Y, X, Z, Ainv, A, B, ped, λ, ψ, G, R)
 end
 
+# Captured from `_arc1_optimizer_fixture()` on Julia 1.10.12 with seed 810204.
+# Julia's seeded normal stream differs by version, so the two ranking-specific
+# tests use the same observed data without weakening their guard assertions.
+function _arc1_optimizer_fixed_fixture()
+    Y = [
+        -0.40140207525058874 2.559604366527611 0.8333169121961425 0.6704617581383823;
+        1.9068741079634872 1.1662718789008413 -0.3248133038090736 1.364759328617372;
+        0.08481432080100494 0.6851698976958058 -0.3546044389663982 1.4783444083769548;
+        -0.3296888810486585 0.4273958657578079 -1.020589712937248 1.8666001356852273;
+        0.6171536929192267 1.5792911149303972 -2.3586701402876407 1.8521925956824572;
+        -1.407588866109029 1.0807938526967908 -0.532642796689568 1.0212517691639607;
+        1.4684314692762959 1.043497495705527 0.7311767298254738 -0.5431312235017971;
+        0.11644743095380924 0.6907329195315112 -0.6331671664544012 1.2088708669483672
+    ]
+    return merge(_arc1_optimizer_fixture(), (; Y))
+end
+
 function _arc1_optimizer_params(λ, ψ, R)
     L = Matrix(cholesky(Symmetric(R)).L)
     rp = Float64[]
@@ -1485,7 +1502,7 @@ end
     end
 
     @testset "a better finite unaccepted K0 receipt blocks selection" begin
-        d = _arc1_optimizer_fixture()
+        d = _arc1_optimizer_fixed_fixture()
         runner = function (ctx, params0, rank, start_id)
             exact(p, k) = HSquared._arc1_fa_exact_objective_gradient(ctx, p, k)
             if rank == 0 && start_id == Symbol("split_0.05")
@@ -1517,7 +1534,7 @@ end
     end
 
     @testset "best later K0 start anchors all derived K1 starts" begin
-        d = _arc1_optimizer_fixture()
+        d = _arc1_optimizer_fixed_fixture()
         runner = function (ctx, params0, rank, start_id)
             fit = HSquared._arc1_fa_exact_objective_gradient(ctx, params0, rank)
             fit.status == :ok || error("injected objective failed")

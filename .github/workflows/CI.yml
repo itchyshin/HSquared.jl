@@ -47,6 +47,15 @@ jobs:
 
       - uses: julia-actions/cache@v2
 
+      - uses: actions/setup-python@v6
+        if: runner.os == 'Windows'
+        with:
+          python-version: '3.12'
+
+      - name: Arc 1 Windows path guard tests
+        if: runner.os == 'Windows'
+        run: python -B test/test_arc1_cross_drive_paths.py
+
       - uses: julia-actions/julia-buildpkg@v1
 
       - uses: julia-actions/julia-runtest@v1
