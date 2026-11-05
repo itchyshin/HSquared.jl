@@ -9,6 +9,34 @@ using HSquared
 
 const ARC1_EXECUTOR_REPO = normpath(joinpath(@__DIR__, ".."))
 
+@testset "Arc1 Julia CLI refuses unverified attempt history before reading inputs" begin
+    mktempdir() do dir
+        missing_input = joinpath(dir, "must-not-be-read.toml")
+        driver = joinpath(ARC1_EXECUTOR_REPO, "sim", "arc1", "execute_attempt.jl")
+        command = `$(Base.julia_cmd()) --startup-file=no $driver $missing_input`
+        combined = Pipe()
+        process = run(pipeline(ignorestatus(command), stdout=combined, stderr=combined); wait=false)
+        close(combined.in)
+        result = read(combined, String)
+        wait(process)
+        @test !success(process)
+        @test occursin("Arc1 study execution is disabled: authoritative attempt history is unverified", result)
+        @test isempty(readdir(dir))
+        # A caller-selected probe mode is not an escape hatch.
+        input = joinpath(dir, "input.toml")
+        write(input, "mode = \"engineering_probe\"\n")
+        combined2 = Pipe()
+        command2 = `$(Base.julia_cmd()) --startup-file=no $driver $input`
+        process2 = run(pipeline(ignorestatus(command2), stdout=combined2, stderr=combined2); wait=false)
+        close(combined2.in)
+        result2 = read(combined2, String)
+        wait(process2)
+        @test !success(process2)
+        @test occursin("Arc1 study execution is disabled: authoritative attempt history is unverified", result2)
+        @test readdir(dir) == ["input.toml"]
+    end
+end
+
 function _arc1_inject_projection_counter(source)
     signature = "function arc1_raw_result_projection_difference(payload, result, metadata)"
     length(findall(signature, source)) == 1 || error("raw-result projection hook missing or duplicated")
@@ -295,7 +323,11 @@ function _arc1_write_fake_engine(root)
         cp(joinpath(ARC1_EXECUTOR_REPO, "sim", "arc1", filename), target; force=true)
         if filename == "execute_attempt.jl"
             source = read(target, String)
-            write(target, _arc1_inject_projection_counter(source))
+            # This isolated fake-engine harness exercises the executor internals
+            # on a modified copy. The unmodified CLI refusal is tested above.
+            refusal = "    error(\"Arc1 study execution is disabled: authoritative attempt history is unverified\")\n"
+            length(findall(refusal, source)) == 1 || error("CLI refusal missing or duplicated")
+            write(target, _arc1_inject_projection_counter(replace(source, refusal => ""; count=1)))
         end
     end
 end

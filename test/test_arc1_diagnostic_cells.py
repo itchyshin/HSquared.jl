@@ -12,6 +12,7 @@ import tempfile
 import threading
 import time
 import unittest
+from unittest import mock
 from pathlib import Path
 from typing import Any
 
@@ -265,7 +266,9 @@ class DiagnosticLauncherTests(unittest.TestCase):
         def failed_spawn(*args, **kwargs):
             raise OSError("synthetic dispatch failure")
 
-        results = launcher.execute_plan(plan, popen=failed_spawn, version_probe=lambda _path: "1.10.0")
+        # This tests synthetic process-error handling below the execution pause.
+        with mock.patch.object(launcher, "require_verified_attempt_record"):
+            results = launcher.execute_plan(plan, popen=failed_spawn, version_probe=lambda _path: "1.10.0")
         self.assertEqual(len(results), 8)
         self.assertTrue(all(row["status"] == "launcher_error" for row in results))
         self.assertEqual(len(list(self.reservations.glob("seed-*.json"))), 8)
@@ -319,7 +322,8 @@ class DiagnosticLauncherTests(unittest.TestCase):
         def pinned_version(_path):
             return "1.10.0"
 
-        results = launcher.execute_plan(plan, popen=spawn, version_probe=pinned_version)
+        with mock.patch.object(launcher, "require_verified_attempt_record"):
+            results = launcher.execute_plan(plan, popen=spawn, version_probe=pinned_version)
         exceptional = [row for row in results if row.get("failure_reason", "").find("synthetic communicate failure") >= 0]
         self.assertGreaterEqual(len(exceptional), 1)
         grandchild_pid = int(pid_file.read_text())
@@ -342,7 +346,8 @@ class DiagnosticLauncherTests(unittest.TestCase):
                 spawned["process"] = process
                 return process
 
-        results = launcher.execute_plan(plan, popen=spawn, version_probe=lambda _path: "1.10.0")
+        with mock.patch.object(launcher, "require_verified_attempt_record"):
+            results = launcher.execute_plan(plan, popen=spawn, version_probe=lambda _path: "1.10.0")
         self.assertTrue(any(row["status"] == "runtime_estimate_exceeded" for row in results))
         self.assertFalse(launcher._group_exists(spawned["process"].pid))
 
@@ -372,7 +377,8 @@ class DiagnosticLauncherTests(unittest.TestCase):
 
         interrupter = threading.Thread(target=interrupt_when_ready, daemon=True)
         interrupter.start()
-        results = launcher.execute_plan(plan, popen=spawn, version_probe=lambda _path: "1.10.0")
+        with mock.patch.object(launcher, "require_verified_attempt_record"):
+            results = launcher.execute_plan(plan, popen=spawn, version_probe=lambda _path: "1.10.0")
         interrupter.join(timeout=5)
         self.assertTrue(any(row["status"] == "interrupted" for row in results))
         self.assertFalse(launcher._group_exists(spawned["process"].pid))

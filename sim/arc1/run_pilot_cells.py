@@ -32,6 +32,11 @@ manifest: Any
 runner: Any
 
 
+def require_verified_attempt_record() -> None:
+    """Refuse launches until a complete, rollback-protected record exists."""
+    raise PermissionError("Arc 1 attempt execution is paused: the authoritative attempt record is not verified")
+
+
 def configure_source_root(source_root: Path) -> None:
     """Load the runner and manifest from the explicitly selected engine tree."""
     global ENGINE_ROOT, manifest, runner, _ENGINE_IMPORT_PATHS
@@ -761,6 +766,7 @@ def _cancel_children(signum: int, _frame: Any) -> None:
 def _execute_cell(job: dict[str, Any], *, source_root: Path, julia: str,
                   output_root: Path, timeout: float, plan_sha256: str,
                   batch_sha256: str, launcher_sha256: str) -> dict[str, Any]:
+    require_verified_attempt_record()
     output_dir = Path(job["output_dir"])
     record_dir = _attempt_record_dir(output_dir)
     run_records = []
@@ -876,6 +882,7 @@ def execute_plan(plan: dict[str, Any], *, authorization: dict[str, Any],
                  max_workers: int = MAX_CELL_WORKERS) -> list[dict[str, Any]]:
     if not execution_authorized(authorization, plan):
         raise PermissionError("execution authorization is missing or not bound to this measured plan")
+    require_verified_attempt_record()
     if not math.isfinite(timeout) or timeout <= 0:
         raise ValueError("per-attempt timeout must be positive and finite")
     if max_workers != MAX_CELL_WORKERS:

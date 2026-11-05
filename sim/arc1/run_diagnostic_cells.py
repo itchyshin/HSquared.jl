@@ -47,6 +47,11 @@ _ACTIVE_PGIDS: set[int] = set()
 _STOP_REQUESTED = threading.Event()
 
 
+def require_verified_attempt_record() -> None:
+    """Refuse launches until a complete, rollback-protected record exists."""
+    raise PermissionError("Arc 1 attempt execution is paused: the authoritative attempt record is not verified")
+
+
 def canonical_bytes(value: Any) -> bytes:
     return json.dumps(value, sort_keys=True, separators=(",", ":"),
                       ensure_ascii=False, allow_nan=False).encode("utf-8")
@@ -562,6 +567,7 @@ def _stop_group(process: subprocess.Popen[str], grace: float = 3.0) -> None:
 
 def _launch_one(plan: dict[str, Any], job: dict[str, Any],
                 popen: Callable[..., subprocess.Popen[str]] = subprocess.Popen) -> dict[str, Any]:
+    require_verified_attempt_record()
     if _STOP_REQUESTED.is_set():
         result = {"schema": "arc1-diagnostic-result-v1", "cell": job["cell"],
                   "outer": 1, "seed": job["seed"], "success": False,
@@ -665,6 +671,7 @@ def execute_plan(plan: dict[str, Any], *, popen: Callable[..., subprocess.Popen[
                  version_probe: Callable[[str], str] | None = None) -> list[dict[str, Any]]:
     if plan["admission"].get("execution_authorized") is not True:
         raise ValueError("execution requires execution_authorized=true in the reviewed admission")
+    require_verified_attempt_record()
     if plan["output_root"].exists():
         raise ValueError("diagnostic output root already exists; refusing all retries")
     plan = _revalidate_plan(plan)

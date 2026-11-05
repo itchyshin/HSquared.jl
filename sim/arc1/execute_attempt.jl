@@ -558,6 +558,7 @@ function arc1_output_relative_disjoint(relative::AbstractString)
 end
 
 if abspath(PROGRAM_FILE) == @__FILE__
+    error("Arc1 study execution is disabled: authoritative attempt history is unverified")
     config_path = abspath(ARGS[1])
     config = TOML.parsefile(config_path)
     root = realpath(config["source_root"])

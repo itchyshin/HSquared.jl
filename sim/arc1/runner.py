@@ -22,6 +22,11 @@ class StoreBusyError(RuntimeError):
     """Another live worker owns this cell's evidence directory."""
 
 
+def require_verified_attempt_record() -> None:
+    """Refuse launches until a complete, rollback-protected record exists."""
+    raise PermissionError("Arc 1 attempt execution is paused: the authoritative attempt record is not verified")
+
+
 def validate_execution_scope(admission: dict[str, Any], outer: int) -> None:
     """Enforce an optional exact outer-index fence carried by the admission."""
     scope = admission.get("execution_scope")
@@ -246,6 +251,7 @@ def _pid_is_alive(pid: int) -> bool:
 def execute_one(store: Arc1AttemptStore, outer: int,
                 executor: Callable[[int, int], dict[str, Any]]) -> dict[str, Any]:
     """Execute once; retain ordinary errors and interrupts as failed outcomes."""
+    require_verified_attempt_record()
     if outer in store._executing:
         raise StoreBusyError("attempt is already executing in this worker")
     admitted = store.begin(outer)

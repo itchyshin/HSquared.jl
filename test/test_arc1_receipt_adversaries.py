@@ -455,6 +455,7 @@ class Arc1ReceiptAdversaries(unittest.TestCase):
                         "seed_string": "999", "exact_seed_string": "999"}
 
             with mock.patch.object(arc1_run_cell, "_julia_version", return_value="1.10.0"), \
+                    mock.patch.object(arc1_runner, "require_verified_attempt_record"), \
                     mock.patch.object(arc1_run_cell, "launch_julia_attempt", side_effect=wrong_child):
                 row = arc1_run_cell.execute_cli(args)
             self.assertFalse(row["success"])
@@ -1042,8 +1043,9 @@ arc1_write_artifact_container_new(ARGS[2], artifact)
             self.assertEqual(len(interrupted_rows), 1)
             self.assertEqual(interrupted_rows[0]["status"], "interrupted")
             self.assertEqual(resumed.rows()[1]["status"], "interrupted")
-            errored = arc1_runner.execute_one(resumed, 3,
-                lambda *_: (_ for _ in ()).throw(RuntimeError("fit failed")))
+            with mock.patch.object(arc1_runner, "require_verified_attempt_record"):
+                errored = arc1_runner.execute_one(resumed, 3,
+                    lambda *_: (_ for _ in ()).throw(RuntimeError("fit failed")))
             self.assertEqual(errored["status"], "error")
             self.assertIn("fit failed", errored["failure_reason"])
             resumed.close()

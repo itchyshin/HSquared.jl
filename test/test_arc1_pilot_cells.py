@@ -606,6 +606,8 @@ class PilotBatchContract(unittest.TestCase):
             os.kill(int(grandchild_pid), signal.SIGKILL)
         self.assertEqual(after, before, "grandchild continued running after parent timeout")
 
+    # These synthetic tests exercise lower-level handling below the temporary pause.
+    @patch.object(pilot, "require_verified_attempt_record", lambda: None)
     def test_unresolved_retained_outer_stops_later_outers(self):
         for record_kind in ("launcher_error", "launcher_started", "runner_failed",
                             "launcher_stale_success", "runner_identityless_success"):
@@ -658,6 +660,7 @@ class PilotBatchContract(unittest.TestCase):
                 self.assertFalse((record_dir / "0002.started.json").exists())
                 self.assertFalse((record_dir / "0002.result.json").exists())
 
+    @patch.object(pilot, "require_verified_attempt_record", lambda: None)
     def test_new_failed_outer_stops_later_outers(self):
         output_dir = self.root / "new-failure" / "cell"
         admission = {"fixture": "admission"}
@@ -680,6 +683,7 @@ class PilotBatchContract(unittest.TestCase):
         self.assertFalse((output_dir / "launcher-attempts" /
                           "0002.started.json").exists())
 
+    @patch.object(pilot, "require_verified_attempt_record", lambda: None)
     def test_zero_exit_without_runner_result_stops_later_outers(self):
         output_dir = self.root / "missing-runner-result" / "cell"
         admission = {"fixture": "admission"}
@@ -703,6 +707,7 @@ class PilotBatchContract(unittest.TestCase):
         self.assertFalse((output_dir / "launcher-attempts" /
                           "0002.started.json").exists())
 
+    @patch.object(pilot, "require_verified_attempt_record", lambda: None)
     def test_resume_accepts_source_verified_launcher_and_runner_pair(self):
         plan = authorization_plan(self.root)
         job = dict(plan["jobs"][0])

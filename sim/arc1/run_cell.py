@@ -235,6 +235,7 @@ def execute_cli(args: argparse.Namespace) -> dict[str, Any]:
         raise ValueError("source and result roots must be disjoint")
     admission = json.loads(args.admission.read_text(encoding="utf-8"))
     runner.validate_execution_scope(admission, args.outer)
+    runner.require_verified_attempt_record()
     julia_version = _julia_version(args.julia)
     cell = admission.get("cell")
     if not isinstance(cell, dict):
