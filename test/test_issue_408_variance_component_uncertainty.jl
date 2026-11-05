@@ -1,4 +1,4 @@
-using Test, HSquared, LinearAlgebra
+using Test, HSquared, LinearAlgebra, SparseArrays
 
 # #408: variance_component_uncertainty returns the variance-component covariance,
 # its standard errors, the h2 standard error and the logit-delta h2 interval from
@@ -40,4 +40,37 @@ using Test, HSquared, LinearAlgebra
 
     # Level guard, as in the standalone interval (the converged-fit guard is #437's).
     @test_throws ArgumentError variance_component_uncertainty(fit; level = 1.5)
+end
+
+@testset "uncertainty bundle rejects invalid fits before boundary covariance" begin
+    y = [1.0, 2.0, 3.0]
+    X = ones(3, 1)
+    Z = sparse(1.0I, 3, 3)
+    precision = spdiagm(0 => [1.0, 2.0, 4.0])
+    reml = animal_model_spec(y, X, Z, precision; method = :REML)
+    ml = animal_model_spec(y, X, Z, precision; method = :ML)
+    ridge = animal_model_spec(y, X, Z, sparse(1.0I, 3, 3); method = :REML)
+    likelihood = GaussianLikelihoodResult(-1.0, [0.0], 1.0, 1.0, :REML, 3, 1)
+    makefit(spec, a, e; converged = true) = AnimalModelFit(
+        spec, likelihood, (sigma_a2 = a, sigma_e2 = e), converged, "test", 0)
+    @test_throws ArgumentError variance_component_uncertainty(makefit(reml, 1.0, 1.0; converged = false))
+    @test_throws ArgumentError variance_component_uncertainty(makefit(ml, 1.0, 1.0))
+    @test_throws ArgumentError variance_component_uncertainty(makefit(ridge, 1.0, 1.0))
+
+    boundary = makefit(reml, 1.0, eps() / 4)
+    @test heritability(boundary) == 1.0
+    calls = Ref(0)
+    builder = fit -> (calls[] += 1; variance_component_covariance(fit))
+    @test_throws ArgumentError HSquared._variance_component_uncertainty(boundary, 0.95, builder)
+    @test calls[] == 0
+    for boundary_fit in (boundary, makefit(reml, 0.0, 1.0), makefit(reml, 1.0, 0.0))
+        err = try
+            variance_component_uncertainty(boundary_fit)
+            nothing
+        catch caught
+            caught
+        end
+        @test err isa ArgumentError
+        @test occursin("boundary", sprint(showerror, err))
+    end
 end

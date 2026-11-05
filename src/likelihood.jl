@@ -4865,8 +4865,11 @@ end
 function _variance_component_uncertainty(fit::AnimalModelFit, level::Real, covariance_builder)
     _require_converged_univariate_uncertainty(fit, "variance_component_uncertainty")
     0 < level < 1 || throw(ArgumentError("level must be in (0, 1)"))
-    cov = covariance_builder(fit)
-    interval = _heritability_interval_delta(fit, level, () -> cov)
+    # Let the interval helper reject boundary estimates before the information
+    # matrix is built, while retaining the single covariance calculation.
+    cov_ref = Ref{Any}()
+    interval = _heritability_interval_delta(fit, level, () -> (cov_ref[] = covariance_builder(fit)))
+    cov = cov_ref[]
     return (covariance = cov,
             standard_errors = (sigma_a2 = sqrt(cov[1, 1]), sigma_e2 = sqrt(cov[2, 2])),
             heritability_standard_error = _heritability_se_from_cov(fit, cov),
