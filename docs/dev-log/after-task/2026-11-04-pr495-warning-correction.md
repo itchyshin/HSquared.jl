@@ -73,3 +73,8 @@ Numerical rank alone cannot identify which component combination is deficient.
 This covers warning text for Julia dense, sparse, matrix-free, repeatability and
 direct-maternal paths that use the common helper. It does NOT cover R warning
 surfacing, changing the rank criterion, estimator recovery or calibration.
+
+Subsequent change on this PR: the numerical-rank columns were normalized to
+remove sensitivity to positive component scaling. That later change supersedes
+this report's statement that the raw-column rule remains unchanged; see
+`2026-11-04-pr495-scale-normalized-rank.md` for its evidence and limits.

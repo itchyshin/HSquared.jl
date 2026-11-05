@@ -12,10 +12,17 @@
   `fit_sparse_multi_effect_aireml`, `fit_multi_effect_mc_reml`, `fit_repeatability_reml`
   (one record per animal makes `sigma_pe2` and `sigma_e2` inseparable) and
   `fit_direct_maternal_reml`. The numerical rank check warns of possible weak
-  identification, but its raw-column threshold depends on covariance scaling and
-  does not prove structural non-identifiability. It cannot identify which components
-  are confounded. The check only logs: estimates, `converged` and result fields are
-  unchanged. The sparse and matrix-free routes skip it above 1e7 stacked cells.
+  identification. Nonzero covariance columns are now normalized before SVD, so
+  the unchanged `1e-8` relative tolerance applies to their directions rather than
+  their raw scales; this changes numerical warning decisions in the existing dense
+  routes as well. Rescaling invariance assumes the computed columns remain finite
+  and nonzero; overflow or underflow during covariance construction can lose information,
+  and nonfinite columns skip the check. No warning is not evidence of identification
+  or practical precision.
+  A warning does not prove structural non-identifiability or identify
+  which components are confounded. The check only logs: estimates, `converged` and
+  result fields are unchanged. The sparse and matrix-free routes skip it above
+  1e7 stacked cells.
 
 - Genetic GLLVM (#50, owner decision 25 Oct 2026): `fit_gllvm_laplace_reml`, the
   `GeneticGLLVMFit` fit object and a new `genetic_gllvm_result_payload(fit)` are now

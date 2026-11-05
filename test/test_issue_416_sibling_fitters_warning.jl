@@ -10,6 +10,36 @@ using SparseArrays
 using Test
 using Logging
 
+@testset "numerical rank is invariant to nonzero component scaling" begin
+    d1 = Matrix(Diagonal([1.0, 2.0, 3.0, 4.0]))
+    d2 = Matrix(Diagonal([1.0, 0.0, 0.0, 0.0]))
+    for scale in (-1e12, -1.0, -1e-12, 1e-12, 1.0, 1e12)
+        @test HSquared._weak_identifiability_stacked_rank([() -> scale .* d1, () -> d2], 4) == 3
+    end
+
+    # Missing components remain zero; two zero components and I have rank one.
+    zero_cov = zeros(4, 4)
+    @test HSquared._weak_identifiability_stacked_rank([() -> zero_cov, () -> d2], 4) == 2
+    @test HSquared._weak_identifiability_stacked_rank([() -> zero_cov, () -> zero_cov], 4) == 1
+
+    # The unchanged tolerance is relative to normalized column directions.
+    for (delta, expected) in ((1e-10, 2), (1e-5, 3))
+        almost = Matrix(Diagonal([1.0, delta, 0.0, 0.0]))
+        @test HSquared._weak_identifiability_stacked_rank([() -> d2, () -> almost], 4) == expected
+    end
+    for bad in (NaN, Inf, -Inf)
+        invalid = copy(d2)
+        invalid[1, 1] = bad
+        @test HSquared._weak_identifiability_stacked_rank([() -> invalid], 4) === nothing
+    end
+
+    # Normalization must not overflow for finite large columns or underflow
+    # for a nonzero subnormal column.
+    big = Matrix(Diagonal([1e308, 1e308, 0.0, 0.0]))
+    tiny = Matrix(Diagonal([0.0, 0.0, nextfloat(0.0), 0.0]))
+    @test HSquared._weak_identifiability_stacked_rank([() -> big, () -> tiny], 4) == 3
+end
+
 @testset "rank warning does not invent a confounded component" begin
     # Unrelated animals with two records each: animal and PE have equal
     # covariance, while PE and residual are distinguishable.
@@ -25,7 +55,7 @@ using Logging
     end
     warning = String(take!(io))
     @test occursin("numerical rank", warning)
-    @test occursin("Rank depends on covariance scaling", warning)
+    @test occursin("Rank is numerical and tolerance-dependent", warning)
     @test occursin("does not prove structural non-identifiability", warning)
     @test !occursin("V_A cannot be separated", warning)
     @test !occursin("Cross-fostering or repeated records are needed", warning)
@@ -37,7 +67,7 @@ using Logging
     end
     warning = String(take!(io))
     @test occursin("numerical rank", warning)
-    @test occursin("Rank depends on covariance scaling", warning)
+    @test occursin("Rank is numerical and tolerance-dependent", warning)
     @test !occursin("V_pe cannot be separated from V_e", warning)
     @test !occursin("Repeated records per animal are needed", warning)
     @test !occursin("REML is flat along a ridge", warning)

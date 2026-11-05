@@ -3405,9 +3405,11 @@ stay finite and positive, `status` is `boundary_score_unresolved` and
 Inspect `converged` before using a returned estimate. Before fitting, a fit-free
 rank check warns when the stacked `vec(Zᵢ Kᵢ Zᵢ')` and identity have rank below
 `K + 1` at a numerical tolerance (for example animal + dam with one sire per dam,
-#416). The raw-column rank depends on covariance scaling; the warning is not a
-proof of structural non-identifiability. It only logs and is skipped above `1e7`
-stacked cells.
+#416). Nonzero covariance columns are normalized before the rank check; the
+result depends on the tolerance and is not proof of structural non-identifiability.
+Covariances are formed before normalization and may overflow or underflow; a
+nonfinite column skips the check. It only logs and is skipped above `1e7` stacked
+cells. No warning is not evidence of identification or practical precision.
 """
 function fit_sparse_multi_effect_aireml(
     y::AbstractVector,
@@ -3725,8 +3727,11 @@ can sit on a boundary (`converged = false`); identifiability generally needs
 designed data (the direct–maternal/PE/cytoplasmic confound). Before fitting, a
 fit-free rank check of `vec(Zd A Zd')`, `vec(Zd A Zm' + Zm A Zd')`, `vec(Zm A Zm')`
 and the identity warns when the numerical rank is deficient (for example only
-offspring phenotyped, one sire per dam; #416). Its raw-column rank depends on
-covariance scaling and is not proof of structural non-identifiability. It only logs.
+offspring phenotyped, one sire per dam; #416). Nonzero columns are normalized;
+the tolerance-dependent warning is not proof of structural non-identifiability.
+Covariances are formed before normalization and may overflow or underflow; a
+nonfinite column skips the check. It only logs. No warning is not evidence of
+identification or practical precision.
 """
 function fit_direct_maternal_reml(
     y::AbstractVector,
@@ -4040,7 +4045,9 @@ so it is for small problems, not production. REML-only. Uncertainty intervals fo
 `sigma_a2` from `sigma_pe2` needs relationship contrast and replication; on small
 data the optimum can sit on a boundary (one variance → 0). With one record per
 animal `Z Z' = I`, so `sigma_pe2` and `sigma_e2` are not separable; a fit-free rank
-check warns before fitting (#416) and does not change the fit.
+check warns before fitting (#416) and does not change the fit. Covariances are
+formed before normalization and may overflow or underflow; nonfinite columns
+skip the check. No warning is not evidence of identification or practical precision.
 
 Unlike [`fit_variance_components`](@ref)/[`gaussian_loglik`](@ref), this function
 takes raw `y`/`X`/`Z`/`Ainv` (no `AnimalModelSpec`) and previously formed the dense
@@ -5711,9 +5718,10 @@ end
 # --- #416 fit-free identifiability pre-check (warning only; no result fields) ---
 #
 # Stack vec(Z_i K_i Z_i') for each random effect plus the identity over the observed
-# records. A numerical rank below K + 1 can indicate weak identification, but the
-# unnormalized threshold is also sensitive to covariance scale. Exact dependence
-# can create a flat ridge (e.g. animal + dam with A = 0.5 I + 0.5 D).
+# records. Normalize nonzero columns before SVD to make the numerical check
+# invariant to nonzero rescaling of finite, nonzero computed columns. Overflow
+# or underflow while forming a covariance can still lose information. Exact
+# dependence can create a flat ridge; tolerance-based rank is not proof.
 const _WEAK_IDENTIFIABILITY_RELTOL = 1e-8
 const _WEAK_IDENTIFIABILITY_MAX_CELLS = 4e7
 
@@ -5741,6 +5749,16 @@ function _weak_identifiability_stacked_rank(covs, n::Integer)
         M[:, j] = vec(Matrix{Float64}(covs[j]()))
     end
     M[:, m + 1] = vec(Matrix{Float64}(I, n, n))
+    # Scale by max(abs) before the Euclidean norm. This avoids overflow for
+    # large finite columns and preserves nonzero subnormal columns. A zero
+    # component remains zero, while nonfinite input skips the check.
+    for col in eachcol(M)
+        scale = maximum(abs, col; init = 0.0)
+        isfinite(scale) || return nothing
+        iszero(scale) && continue
+        col ./= scale
+        col ./= norm(col)
+    end
     s = svdvals(M)
     isempty(s) && return nothing
     smax = first(s)
@@ -5803,7 +5821,7 @@ function _warn_weak_identifiability_rank(r, npar::Integer, names;
     @warn "variance components ($(comps), residual) may be weakly identifiable " *
           "(not all identifiable at this numerical tolerance): " *
           "the stacked vec(Z K Z') matrices have numerical rank " *
-          "$(r) < $(npar). Rank depends on covariance scaling and this warning " *
+          "$(r) < $(npar). Rank is numerical and tolerance-dependent; this warning " *
           "does not prove structural non-identifiability. $(hint). A converged fit does not establish " *
           "a unique optimum. $(remedy) (HSquared.jl #416)."
     return nothing
