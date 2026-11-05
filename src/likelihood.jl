@@ -3404,8 +3404,10 @@ stay finite and positive, `status` is `boundary_score_unresolved` and
 `boundary` is missing rather than a share-rule verdict from that iterate.
 Inspect `converged` before using a returned estimate. Before fitting, a fit-free
 rank check warns when the stacked `vec(Zᵢ Kᵢ Zᵢ')` and identity have rank below
-`K + 1` (for example animal + dam with one sire per dam, #416); it only logs, and
-is skipped above `1e7` stacked cells.
+`K + 1` at a numerical tolerance (for example animal + dam with one sire per dam,
+#416). The raw-column rank depends on covariance scaling; the warning is not a
+proof of structural non-identifiability. It only logs and is skipped above `1e7`
+stacked cells.
 """
 function fit_sparse_multi_effect_aireml(
     y::AbstractVector,
@@ -3722,8 +3724,9 @@ never emit a bare h². On small/uninformative data or `|r_am| → 1` the optimum
 can sit on a boundary (`converged = false`); identifiability generally needs
 designed data (the direct–maternal/PE/cytoplasmic confound). Before fitting, a
 fit-free rank check of `vec(Zd A Zd')`, `vec(Zd A Zm' + Zm A Zd')`, `vec(Zm A Zm')`
-and the identity warns when the four (co)variances are not all separable (for
-example only offspring phenotyped, one sire per dam; #416). It only logs.
+and the identity warns when the numerical rank is deficient (for example only
+offspring phenotyped, one sire per dam; #416). Its raw-column rank depends on
+covariance scaling and is not proof of structural non-identifiability. It only logs.
 """
 function fit_direct_maternal_reml(
     y::AbstractVector,
@@ -3764,9 +3767,8 @@ function fit_direct_maternal_reml(
              () -> Zdd * A * transpose(Zmd) + Zmd * A * transpose(Zdd),
              () -> Zmd * A * transpose(Zmd)], n),
         4, ("direct genetic", "direct-maternal covariance", "maternal genetic");
-        hint = "direct and maternal genetic (co)variances cannot all be separated " *
-               "(for example when only offspring are phenotyped and each dam has one sire)",
-        remedy = "Phenotyped dams or records spanning more generations are")
+        hint = "the check does not identify which combinations are affected",
+        remedy = "Phenotyping dams or sampling more generations may help, depending on the design")
     mu = sum(yv) / n
     vp = n > 1 ? sum(abs2, yv .- mu) / (n - 1) : 1.0
     vp > 0 || (vp = 1.0)
@@ -4080,13 +4082,7 @@ function fit_repeatability_reml(
     A = _dense_relationship_covariance(Q)
     Xd = Matrix{Float64}(Xs)
     Zd = Matrix{Float64}(Zs)
-    _warn_weak_identifiability_rank(
-        _weak_identifiability_stacked_rank(
-            [() -> Zd * A * transpose(Zd), () -> Zd * transpose(Zd)], n),
-        3, ("sigma_a2", "sigma_pe2");
-        hint = "V_pe cannot be separated from V_e (for example when each animal " *
-               "has a single record)",
-        remedy = "Repeated records per animal are")
+    _warn_weak_identifiability_repeatability(Zd, A, n)
     function objective(p)
         variances = _try_positive_exp(p)
         variances === nothing && return Inf
@@ -5715,9 +5711,9 @@ end
 # --- #416 fit-free identifiability pre-check (warning only; no result fields) ---
 #
 # Stack vec(Z_i K_i Z_i') for each random effect plus the identity over the observed
-# records. If the stack has numerical rank below K + 1, the variance components are
-# not all separable and REML sits on a flat ridge (for example animal + dam when each
-# dam has one sire and only offspring are phenotyped: A = 0.5 I + 0.5 D).
+# records. A numerical rank below K + 1 can indicate weak identification, but the
+# unnormalized threshold is also sensitive to covariance scale. Exact dependence
+# can create a flat ridge (e.g. animal + dam with A = 0.5 I + 0.5 D).
 const _WEAK_IDENTIFIABILITY_RELTOL = 1e-8
 const _WEAK_IDENTIFIABILITY_MAX_CELLS = 4e7
 
@@ -5778,11 +5774,16 @@ function _weak_identifiability_rank_sparse(Zs, Ainvs, n::Integer)
     return _weak_identifiability_stacked_rank(covs, n)
 end
 
-const _WEAK_IDENTIFIABILITY_DAM_HINT =
-    "V_A cannot be separated from the confounded component " *
-    "(for example a dam effect when each dam has one sire and only " *
-    "offspring are phenotyped)"
-const _WEAK_IDENTIFIABILITY_DAM_REMEDY = "Cross-fostering or repeated records are"
+const _WEAK_IDENTIFIABILITY_DEFAULT_HINT =
+    "the check does not identify which combinations are affected"
+const _WEAK_IDENTIFIABILITY_DEFAULT_REMEDY =
+    "Review the design and covariance scaling"
+
+function _warn_weak_identifiability_repeatability(Z, A, n::Integer)
+    r = _weak_identifiability_stacked_rank(
+        [() -> Z * A * transpose(Z), () -> Z * transpose(Z)], n)
+    return _warn_weak_identifiability_rank(r, 3, ("sigma_a2", "sigma_pe2"))
+end
 
 function _warn_weak_identifiability(Zs, Ks, n::Integer, names)
     r = _weak_identifiability_rank(Zs, Ks, n)
@@ -5795,15 +5796,15 @@ function _warn_weak_identifiability_sparse(Zs, Ainvs, n::Integer, names)
 end
 
 function _warn_weak_identifiability_rank(r, npar::Integer, names;
-        hint = _WEAK_IDENTIFIABILITY_DAM_HINT,
-        remedy = _WEAK_IDENTIFIABILITY_DAM_REMEDY)
+        hint = _WEAK_IDENTIFIABILITY_DEFAULT_HINT,
+        remedy = _WEAK_IDENTIFIABILITY_DEFAULT_REMEDY)
     (r === nothing || r >= npar) && return nothing
     comps = join(names, ", ")
-    @warn "variance components ($(comps), residual) are not all identifiable from " *
-          "these records: the stacked vec(Z K Z') matrices have numerical rank " *
-          "$(r) < $(npar). $(hint). REML is flat along a ridge, so heritability " *
-          "along it is arbitrary and start-dependent, and converged = true does " *
-          "not mean a unique optimum. $(remedy) " *
-          "needed to separate them (HSquared.jl #416)."
+    @warn "variance components ($(comps), residual) may be weakly identifiable " *
+          "(not all identifiable at this numerical tolerance): " *
+          "the stacked vec(Z K Z') matrices have numerical rank " *
+          "$(r) < $(npar). Rank depends on covariance scaling and this warning " *
+          "does not prove structural non-identifiability. $(hint). A converged fit does not establish " *
+          "a unique optimum. $(remedy) (HSquared.jl #416)."
     return nothing
 end

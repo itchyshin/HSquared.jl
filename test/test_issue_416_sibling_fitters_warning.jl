@@ -8,6 +8,40 @@ using HSquared
 using LinearAlgebra
 using SparseArrays
 using Test
+using Logging
+
+@testset "rank warning does not invent a confounded component" begin
+    # Unrelated animals with two records each: animal and PE have equal
+    # covariance, while PE and residual are distinguishable.
+    Z = sparse([1, 2, 3, 4], [1, 1, 2, 2], ones(4), 4, 2)
+    A = Matrix{Float64}(I, 2, 2)
+    pe = Matrix(Z * transpose(Z))
+    @test HSquared._weak_identifiability_stacked_rank([() -> pe, () -> pe], 4) == 2
+    @test rank(hcat(vec(pe), vec(Matrix{Float64}(I, 4, 4)))) == 2
+    # Generic multi-effect warnings must not identify V_A as the cause.
+    io = IOBuffer()
+    with_logger(SimpleLogger(io, Logging.Warn)) do
+        HSquared._warn_weak_identifiability_rank(2, 3, ("effect 1", "effect 2"))
+    end
+    warning = String(take!(io))
+    @test occursin("numerical rank", warning)
+    @test occursin("Rank depends on covariance scaling", warning)
+    @test occursin("does not prove structural non-identifiability", warning)
+    @test !occursin("V_A cannot be separated", warning)
+    @test !occursin("Cross-fostering or repeated records are needed", warning)
+    @test !occursin("REML is flat along a ridge", warning)
+
+    io = IOBuffer()
+    with_logger(SimpleLogger(io, Logging.Warn)) do
+        HSquared._warn_weak_identifiability_repeatability(Matrix(Z), A, 4)
+    end
+    warning = String(take!(io))
+    @test occursin("numerical rank", warning)
+    @test occursin("Rank depends on covariance scaling", warning)
+    @test !occursin("V_pe cannot be separated from V_e", warning)
+    @test !occursin("Repeated records per animal are needed", warning)
+    @test !occursin("REML is flat along a ridge", warning)
+end
 
 @testset "issue 416 weak-identifiability pre-check: sibling fitters" begin
     # 12 dams, each mated to its own unrelated sire, 4 phenotyped offspring each.

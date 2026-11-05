@@ -11,10 +11,11 @@
   and `fit_multi_effect_reml` already ran now also runs in
   `fit_sparse_multi_effect_aireml`, `fit_multi_effect_mc_reml`, `fit_repeatability_reml`
   (one record per animal makes `sigma_pe2` and `sigma_e2` inseparable) and
-  `fit_direct_maternal_reml`. On animal + dam data with one sire per dam they now warn
-  before fitting instead of returning a start-dependent point silently. The check only
-  logs: estimates, `converged` and result fields are unchanged. The sparse and
-  matrix-free routes skip it above 1e7 stacked cells.
+  `fit_direct_maternal_reml`. The numerical rank check warns of possible weak
+  identification, but its raw-column threshold depends on covariance scaling and
+  does not prove structural non-identifiability. It cannot identify which components
+  are confounded. The check only logs: estimates, `converged` and result fields are
+  unchanged. The sparse and matrix-free routes skip it above 1e7 stacked cells.
 
 - Genetic GLLVM (#50, owner decision 25 Oct 2026): `fit_gllvm_laplace_reml`, the
   `GeneticGLLVMFit` fit object and a new `genetic_gllvm_result_payload(fit)` are now
