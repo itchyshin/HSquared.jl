@@ -11406,6 +11406,7 @@ include("test_issue_409_profile_interval_hoist.jl")
 include("test_issue_409_profile_h2_closed_form.jl")
 include("test_issue_340_lowrank_rotation.jl")
 include("test_issue_408_plot_data_single_information.jl")
+include("test_issue_408_variance_component_uncertainty.jl")
 # Thin-coverage pins: g_max (repeated eigenvalue), legendre_design, diagonal_covariance.
 include("test_builders_gmax_legendre.jl")
 include("test_metafounder_animal_model_guards.jl")
