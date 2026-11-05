@@ -1033,10 +1033,13 @@ the MIT DRM.jl VA dispatch idea; the correlated-prior kernel is reimplemented
 here.
 
 `Z`, `Ainv` and the Hessians are kept sparse and factored with CHOLMOD (dense
-inputs are accepted and converted); the per-record variances `diag(Z S Z')`,
-`tr(Ainv S)` and `logdet S` come from the Takahashi selected inverse, so no
-dense `q×q` matrix is formed while iterating. The returned `S` is still the
-dense covariance (`:full`) or a `Diagonal` (`:diagonal`), formed once at the end.
+inputs are accepted and converted); the per-record variances `diag(Z S Z')`
+and `tr(Ainv S)` use the Takahashi selected inverse, with sparse-factor solves
+for required entries outside its pattern. `logdet S` comes from the factor.
+The covariance iteration does not form a dense `q×q` matrix; the joint Newton
+step can form a dense matrix if its sparse factorization is unsuccessful.
+The returned `S` is still the dense covariance (`:full`) or a `Diagonal`
+(`:diagonal`), formed once at the end.
 """
 function variational_marginal_loglik(y::AbstractVector, X::AbstractMatrix, Z::AbstractMatrix,
                                      Ainv::AbstractMatrix, sigma_a2::Real,
@@ -1058,39 +1061,65 @@ function _va_selinv(fac)
     return (Zvals = Zvals, colptr = colptr, rowval = rowval, iperm = invperm(perm))
 end
 
-@inline function _va_selinv_entry(sel, j::Int, k::Int)
+@inline function _va_selinv_index(sel, j::Int, k::Int)
     a = sel.iperm[j]
     b = sel.iperm[k]
     lo, hi = minmax(a, b)
     idx = lo == hi ? sel.colptr[lo] : _csc_rowidx(sel.colptr, sel.rowval, lo, hi)
-    idx == -1 && throw(ArgumentError("entry ($j, $k) is outside the selected-inverse pattern"))
-    return sel.Zvals[idx]
+    return idx
 end
 
-# Per-record `v[i] = z_i' S z_i` for the rows of `Z` (columns of `Zt`). Every pair
-# (j, k) that shares a row of Z is a structural entry of Z'WZ, hence of the factor
-# pattern, so the selected-inverse values are exact there.
-function _va_row_quadratic(Zt::SparseMatrixCSC, sel)
+# Signed entries may cancel in Z'WZ, removing a pair from the selected inverse.
+# Use an exact sparse-factor solve for that record rather than assuming zero.
+function _va_row_quadratic(Zt::SparseMatrixCSC, sel, fac)
     rows = rowvals(Zt)
     vals = nonzeros(Zt)
     v = zeros(size(Zt, 2))
     @inbounds for i in 1:size(Zt, 2)
         acc = 0.0
+        missing = false
         for a in nzrange(Zt, i), b in nzrange(Zt, i)
-            acc += vals[a] * vals[b] * _va_selinv_entry(sel, rows[a], rows[b])
+            (iszero(vals[a]) || iszero(vals[b])) && continue
+            idx = _va_selinv_index(sel, rows[a], rows[b])
+            if idx == -1
+                missing = true
+                break
+            end
+            acc += vals[a] * vals[b] * sel.Zvals[idx]
+        end
+        if missing
+            rhs = zeros(size(Zt, 1))
+            for a in nzrange(Zt, i)
+                rhs[rows[a]] = vals[a]
+            end
+            acc = dot(rhs, fac \ rhs)
         end
         v[i] = acc
     end
     return v
 end
 
-# `tr(Ai S)` over the nonzeros of `Ai`, whose pattern lies inside Huu's.
-function _va_trace_selinv(Ai::SparseMatrixCSC, sel)
+# A prior precision entry may also cancel in Huu. Solve only affected columns.
+function _va_trace_selinv(Ai::SparseMatrixCSC, sel, fac)
     rows = rowvals(Ai)
     vals = nonzeros(Ai)
     acc = 0.0
-    @inbounds for j in 1:size(Ai, 2), k in nzrange(Ai, j)
-        acc += vals[k] * _va_selinv_entry(sel, rows[k], j)
+    @inbounds for j in 1:size(Ai, 2)
+        missing = any(k -> !iszero(vals[k]) && _va_selinv_index(sel, rows[k], j) == -1,
+                      nzrange(Ai, j))
+        if missing
+            rhs = zeros(size(Ai, 1))
+            rhs[j] = 1.0
+            column = fac \ rhs
+            for k in nzrange(Ai, j)
+                acc += vals[k] * column[rows[k]]
+            end
+        else
+            for k in nzrange(Ai, j)
+                iszero(vals[k]) && continue
+                acc += vals[k] * sel.Zvals[_va_selinv_index(sel, rows[k], j)]
+            end
+        end
     end
     return acc
 end
@@ -1100,7 +1129,8 @@ end
 # factor of Huu (`:full`).
 function _va_covariance_sparse(family, Zs, Zt, Zsq, P0, ηbar, v0, n, tol, covariance, maxiter)
     v = copy(v0)
-    local Huu, S, fac
+    local Huu, S
+    fac = nothing
     change = Inf
     converged = false
     iterations = 0
@@ -1114,7 +1144,7 @@ function _va_covariance_sparse(family, Zs, Zt, Zsq, P0, ηbar, v0, n, tol, covar
         else
             fac = iteration == 1 ? cholesky(Symmetric(Huu)) : cholesky!(fac, Symmetric(Huu))
             S = _va_selinv(fac)
-            vnew = _va_row_quadratic(Zt, S)
+            vnew = _va_row_quadratic(Zt, S, fac)
         end
         change = maximum(abs.(vnew .- v))
         v = vnew
@@ -1124,7 +1154,7 @@ function _va_covariance_sparse(family, Zs, Zt, Zsq, P0, ηbar, v0, n, tol, covar
         end
     end
     logdet_S = covariance === :diagonal ? sum(log, S.diag) : -logdet(fac)
-    return (S = S, Huu = Huu, logdet_S = logdet_S, v = v, converged = converged,
+    return (S = S, Huu = Huu, factor = fac, logdet_S = logdet_S, v = v, converged = converged,
             iterations = iterations, fixed_point_error = change)
 end
 
@@ -1250,7 +1280,7 @@ function _variational_marginal_loglik_sparse(y::AbstractVector, X::AbstractMatri
     gnorm = norm(vcat(transpose(Xd) * g, Zt * g .- P0 * m))
     converged = converged && covariance_result.converged
     Ell = sum(_fam_expected_loglik(_fam_record(family, i), yv[i], ηbar[i], v[i]) for i in 1:n)
-    trAiS = covariance === :diagonal ? dot(diag(Ai), S.diag) : _va_trace_selinv(Ai, S)
+    trAiS = covariance === :diagonal ? dot(diag(Ai), S.diag) : _va_trace_selinv(Ai, S, covariance_result.factor)
     kl = 0.5 * ((dot(m, Ai * m) + trAiS) / sigma_a2 + q * log(sigma_a2) -
                 logdet_Ainv - covariance_result.logdet_S - q)
     # β integrated under a flat prior by a local Laplace correction; see

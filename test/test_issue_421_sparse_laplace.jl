@@ -30,6 +30,47 @@ function _issue421_fixture(q::Int, n::Int; seed::Int, nfounders::Int = 30)
     return (; Ainv, Z, X, ybin, ypois)
 end
 
+@testset "issue 421: signed design with canceled Hessian entry" begin
+    Z = sparse([1.0 1.0; 1.0 -1.0])
+    Ainv = sparse(1.0I, 2, 2)
+    X = zeros(2, 0)
+    y = [1.0, 2.0]
+    family = HSquared.GaussianResponse(1.0)
+    dense = HSquared._variational_marginal_loglik_dense(y, X, Z, Ainv, 1.0, family)
+    sparse_result = HSquared.variational_marginal_loglik(y, X, Z, Ainv, 1.0, family)
+    @test dense.converged
+    @test sparse_result.converged
+    @test isapprox(sparse_result.elbo, dense.elbo; atol = 1e-10, rtol = 0)
+    @test isapprox(sparse_result.m, dense.m; atol = 1e-10, rtol = 0)
+    @test isapprox(sparse_result.S, dense.S; atol = 1e-10, rtol = 0)
+    fitpath = HSquared._variational_marginal_loglik_sparse(y, X, Z, Ainv, 1.0, family;
+                                                           dense_covariance = false)
+    @test fitpath.S === nothing
+    @test isapprox(fitpath.elbo, dense.elbo; atol = 1e-10, rtol = 0)
+end
+
+@testset "issue 421: missing selected entries can have nonzero inverse values" begin
+    H = sparse([4.0 1.0 0.0; 1.0 4.0 1.0; 0.0 1.0 4.0])
+    fac = cholesky(Symmetric(H); perm = 1:3)
+    selected = HSquared._va_selinv(fac)
+    dense_inverse = inv(Matrix(H))
+    @test HSquared._va_selinv_index(selected, 1, 3) == -1
+    @test !iszero(dense_inverse[1, 3])
+    Z = sparse([1.0 0.0 1.0; 1.0 0.0 -1.0])
+    got = HSquared._va_row_quadratic(sparse(transpose(Z)), selected, fac)
+    @test isapprox(got, diag(Matrix(Z) * dense_inverse * transpose(Matrix(Z))); atol = 1e-12)
+    Ai = sparse([2.0 0.0 0.5; 0.0 2.0 0.0; 0.5 0.0 2.0])
+    @test isapprox(HSquared._va_trace_selinv(Ai, selected, fac), tr(Matrix(Ai) * dense_inverse); atol = 1e-12)
+    # A stored zero must not require the missing (1, 3) inverse entry or a solve.
+    Zt_with_zero = sparse([1, 3], [1, 1], [1.0, 0.0], 3, 1)
+    @test nnz(Zt_with_zero) == 2
+    @test isapprox(HSquared._va_row_quadratic(Zt_with_zero, selected, nothing),
+                   [dense_inverse[1, 1]]; atol = 1e-12)
+    all_zero = sparse([1, 3], [1, 1], [0.0, 0.0], 3, 1)
+    @test nnz(all_zero) == 2
+    @test HSquared._va_row_quadratic(all_zero, selected, nothing) == [0.0]
+end
+
 function _issue421_poisson(rng, λ)
     L = exp(-λ)
     k = 0
