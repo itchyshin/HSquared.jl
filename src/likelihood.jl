@@ -3457,7 +3457,14 @@ When boundary-triggered streamed scores would exceed the column budget, the
 iterate takes an EM step instead of aborting (#441). If that EM step cannot
 stay finite and positive, `status` is `boundary_score_unresolved` and
 `boundary` is missing rather than a share-rule verdict from that iterate.
-Inspect `converged` before using a returned estimate.
+Inspect `converged` before using a returned estimate. Before fitting, a fit-free
+rank check warns when the stacked `vec(Zᵢ Kᵢ Zᵢ')` and identity have rank below
+`K + 1` at a numerical tolerance (for example animal + dam with one sire per dam,
+#416). Nonzero covariance columns are normalized before the rank check; the
+result depends on the tolerance and is not proof of structural non-identifiability.
+Covariances are formed before normalization and may overflow or underflow; a
+nonfinite column skips the check. It only logs and is skipped above `1e7` stacked
+cells. No warning is not evidence of identification or practical precision.
 """
 function fit_sparse_multi_effect_aireml(
     y::AbstractVector,
@@ -3483,6 +3490,7 @@ function fit_sparse_multi_effect_aireml(
     K = length(effects)
     Zs = ws.Zs; Ainvs = ws.Ainvs; qs = ws.qs
     yv = ws.yv; Xs = ws.Xs; n = ws.n; nfixed = ws.nfixed
+    _warn_weak_identifiability_sparse(Zs, Ainvs, n, ["effect $i" for i in 1:K])
 
     if ids === nothing
         eids = [collect(1:qs[i]) for i in 1:K]
@@ -3771,7 +3779,14 @@ direct heritability `σ²_ad/σ²_P` is NOT "the heritability" (the selection-re
 total additive variance involves `σ_dm`); callers must label direct-vs-total,
 never emit a bare h². On small/uninformative data or `|r_am| → 1` the optimum
 can sit on a boundary (`converged = false`); identifiability generally needs
-designed data (the direct–maternal/PE/cytoplasmic confound).
+designed data (the direct–maternal/PE/cytoplasmic confound). Before fitting, a
+fit-free rank check of `vec(Zd A Zd')`, `vec(Zd A Zm' + Zm A Zd')`, `vec(Zm A Zm')`
+and the identity warns when the numerical rank is deficient (for example only
+offspring phenotyped, one sire per dam; #416). Nonzero columns are normalized;
+the tolerance-dependent warning is not proof of structural non-identifiability.
+Covariances are formed before normalization and may overflow or underflow; a
+nonfinite column skips the check. It only logs. No warning is not evidence of
+identification or practical precision.
 """
 function fit_direct_maternal_reml(
     y::AbstractVector,
@@ -3823,6 +3838,14 @@ function _fit_direct_maternal_reml_dense(
     Xd = Matrix{Float64}(Xs)
     Zdd = Matrix{Float64}(Zds)
     Zmd = Matrix{Float64}(Zms)
+    _warn_weak_identifiability_rank(
+        _weak_identifiability_stacked_rank(
+            [() -> Zdd * A * transpose(Zdd),
+             () -> Zdd * A * transpose(Zmd) + Zmd * A * transpose(Zdd),
+             () -> Zmd * A * transpose(Zmd)], n),
+        4, ("direct genetic", "direct-maternal covariance", "maternal genetic");
+        hint = "the check does not identify which combinations are affected",
+        remedy = "Phenotyping dams or sampling more generations may help, depending on the design")
     mu = sum(yv) / n
     vp = n > 1 ? sum(abs2, yv .- mu) / (n - 1) : 1.0
     vp > 0 || (vp = 1.0)
@@ -4095,7 +4118,11 @@ Experimental and validation-scale: it forms the dense `n×n` marginal covariance
 so it is for small problems, not production. REML-only. Uncertainty intervals for
 `t` / `h²` and the R model-spec mapping are not part of this function. Separating
 `sigma_a2` from `sigma_pe2` needs relationship contrast and replication; on small
-data the optimum can sit on a boundary (one variance → 0).
+data the optimum can sit on a boundary (one variance → 0). With one record per
+animal `Z Z' = I`, so `sigma_pe2` and `sigma_e2` are not separable; a fit-free rank
+check warns before fitting (#416) and does not change the fit. Covariances are
+formed before normalization and may overflow or underflow; nonfinite columns
+skip the check. No warning is not evidence of identification or practical precision.
 
 Unlike [`fit_variance_components`](@ref)/[`gaussian_loglik`](@ref), this function
 takes raw `y`/`X`/`Z`/`Ainv` (no `AnimalModelSpec`) and previously formed the dense
@@ -4153,6 +4180,7 @@ function _fit_repeatability_reml_dense(
     A = _dense_relationship_covariance(Q)
     Xd = Matrix{Float64}(Xs)
     Zd = Matrix{Float64}(Zs)
+    _warn_weak_identifiability_repeatability(Zd, A, n)
     function objective(p)
         variances = _try_positive_exp(p)
         variances === nothing && return Inf
@@ -4842,6 +4870,40 @@ function heritability_standard_error(fit::AnimalModelFit)
     return _heritability_se_from_cov(fit, variance_component_covariance(fit))
 end
 
+"""
+    variance_component_uncertainty(fit; level = 0.95)
+
+All four delta-method uncertainty products of a converged REML
+[`AnimalModelFit`](@ref) from ONE average-information matrix, as a `NamedTuple`
+`(covariance, standard_errors, heritability_standard_error, heritability_interval)`.
+Each field is bit-identical to the standalone call
+([`variance_component_covariance`](@ref), [`variance_component_standard_errors`](@ref),
+[`heritability_standard_error`](@ref), [`heritability_interval`](@ref) with
+`method = :delta`), which each build and factorise their own matrix; calling them in a
+row costs three factorisations where this costs one. The guards are theirs as well: a
+non-converged or non-REML fit, a singular information matrix, or an `h²` estimate on
+the `(0, 1)` boundary throws an `ArgumentError`, so a caller that needs each product to
+fail independently should keep the standalone calls. Experimental; asymptotic, see
+[`variance_component_covariance`](@ref) for the caveats.
+"""
+function variance_component_uncertainty(fit::AnimalModelFit; level::Real = 0.95)
+    return _variance_component_uncertainty(fit, level, variance_component_covariance)
+end
+
+function _variance_component_uncertainty(fit::AnimalModelFit, level::Real, covariance_builder)
+    _require_converged_univariate_uncertainty(fit, "variance_component_uncertainty")
+    0 < level < 1 || throw(ArgumentError("level must be in (0, 1)"))
+    # Let the interval helper reject boundary estimates before the information
+    # matrix is built, while retaining the single covariance calculation.
+    cov_ref = Ref{Any}()
+    interval = _heritability_interval_delta(fit, level, () -> (cov_ref[] = covariance_builder(fit)))
+    cov = cov_ref[]
+    return (covariance = cov,
+            standard_errors = (sigma_a2 = sqrt(cov[1, 1]), sigma_e2 = sqrt(cov[2, 2])),
+            heritability_standard_error = _heritability_se_from_cov(fit, cov),
+            heritability_interval = interval)
+end
+
 function _heritability_se_from_cov(fit::AnimalModelFit, cov)
     sigma_a2 = fit.variance_components.sigma_a2
     sigma_e2 = fit.variance_components.sigma_e2
@@ -5297,7 +5359,7 @@ function breeding_values_plot_data(fit::AnimalModelFit; trait = 1)
 end
 
 """
-    result_payload(fit)
+    result_payload(fit; skip_pev_reliability = false)
 
 Return a bridge-facing result payload with field names aligned to the R
 `hsquared_fit` contract.
@@ -5322,15 +5384,28 @@ MME is solved once here and shared by `breeding_values` and `fitted_values`
 (pedigree) `Ainv` no dense matrix is formed anywhere in this payload; a dense
 genomic `Ginv` keeps its dense path (`:auto`). This remains a validation-scale
 claim, not a production large-pedigree reliability claim.
+
+`skip_pev_reliability = true` is an opt-in switch (hsquared#266) that skips the
+PEV and reliability computation, which dominates the post-fit cost on large
+pedigrees. The `prediction_error_variance` and `reliability` fields are then
+absent from the payload; every other field is unchanged. The default (`false`)
+returns the full payload above. Call [`prediction_error_variance`](@ref) or
+[`reliability`](@ref) on the fit to compute them later.
 """
-function result_payload(fit::AnimalModelFit)
+function result_payload(fit::AnimalModelFit; skip_pev_reliability::Bool = false)
     vc = variance_components(fit)
     beta = fixed_effects(fit)
     mme = henderson_mme(fit.spec, vc.sigma_a2, vc.sigma_e2)
     bv = breeding_values(mme)
     predictions = fitted_values(mme)
-    pev = prediction_error_variance(fit; method = :auto)
-    rel = reliability(fit; method = :auto, pev = pev)
+    pev_rel = if skip_pev_reliability
+        NamedTuple()
+    else
+        pev = prediction_error_variance(fit; method = :auto)
+        rel = reliability(fit; method = :auto, pev = pev)
+        (prediction_error_variance = (ids = pev.ids, values = pev.values),
+         reliability = (ids = rel.ids, values = rel.values))
+    end
 
     return (
         variance_components = vc,
@@ -5342,8 +5417,7 @@ function result_payload(fit::AnimalModelFit)
         df = fit.likelihood.nfixed + length(vc),
         nobs = fit.likelihood.nobs,
         predictions = predictions,
-        prediction_error_variance = (ids = pev.ids, values = pev.values),
-        reliability = (ids = rel.ids, values = rel.values),
+        pev_rel...,
         diagnostics = (
             converged = fit.converged,
             optimizer_status = fit.optimizer_status,
@@ -5857,21 +5931,47 @@ end
 # --- #416 fit-free identifiability pre-check (warning only; no result fields) ---
 #
 # Stack vec(Z_i K_i Z_i') for each random effect plus the identity over the observed
-# records. If the stack has numerical rank below K + 1, the variance components are
-# not all separable and REML sits on a flat ridge (for example animal + dam when each
-# dam has one sire and only offspring are phenotyped: A = 0.5 I + 0.5 D).
+# records. Normalize nonzero columns before SVD to make the numerical check
+# invariant to nonzero rescaling of finite, nonzero computed columns. Overflow
+# or underflow while forming a covariance can still lose information. Exact
+# dependence can create a flat ridge; tolerance-based rank is not proof.
 const _WEAK_IDENTIFIABILITY_RELTOL = 1e-8
 const _WEAK_IDENTIFIABILITY_MAX_CELLS = 4e7
 
 function _weak_identifiability_rank(Zs, Ks, n::Integer)
     K = length(Zs)
     n^2 * (K + 1) > _WEAK_IDENTIFIABILITY_MAX_CELLS && return nothing
-    M = zeros(Float64, n^2, K + 1)
+    covs = Function[]
     for i in 1:K
-        Zi = Matrix{Float64}(Zs[i])
-        M[:, i] = vec(Zi * Matrix{Float64}(Ks[i]) * transpose(Zi))
+        push!(covs, () -> begin
+            Zi = Matrix{Float64}(Zs[i])
+            Zi * Matrix{Float64}(Ks[i]) * transpose(Zi)
+        end)
     end
-    M[:, K + 1] = vec(Matrix{Float64}(I, n, n))
+    return _weak_identifiability_stacked_rank(covs, n)
+end
+
+# Rank of [vec(V_1) … vec(V_m) vec(I)], where each `covs[j]()` returns the n×n
+# record covariance that multiplies the j-th variance parameter. Returns `nothing`
+# when the stack would exceed the cell cap.
+function _weak_identifiability_stacked_rank(covs, n::Integer)
+    m = length(covs)
+    n^2 * (m + 1) > _WEAK_IDENTIFIABILITY_MAX_CELLS && return nothing
+    M = zeros(Float64, n^2, m + 1)
+    for j in 1:m
+        M[:, j] = vec(Matrix{Float64}(covs[j]()))
+    end
+    M[:, m + 1] = vec(Matrix{Float64}(I, n, n))
+    # Scale by max(abs) before the Euclidean norm. This avoids overflow for
+    # large finite columns and preserves nonzero subnormal columns. A zero
+    # component remains zero, while nonfinite input skips the check.
+    for col in eachcol(M)
+        scale = maximum(abs, col; init = 0.0)
+        isfinite(scale) || return nothing
+        iszero(scale) && continue
+        col ./= scale
+        col ./= norm(col)
+    end
     s = svdvals(M)
     isempty(s) && return nothing
     smax = first(s)
@@ -5879,18 +5979,63 @@ function _weak_identifiability_rank(Zs, Ks, n::Integer)
     return count(>(_WEAK_IDENTIFIABILITY_RELTOL * smax), s)
 end
 
-function _warn_weak_identifiability(Zs, Ks, n::Integer, names)
+# Sparse-precision variant for the sparse / matrix-free fitters: Z K Z' is formed
+# as Z (Ainv \ Z') from a sparse Cholesky of Ainv, never a dense q×q inverse.
+# These fitters never form an n×n matrix, so the cap is tighter: measured at the
+# dense cap (n = 3600, K = 2) the check took ~1 s against a ~0.7 s sparse fit; at
+# 1e7 cells (n ≈ 1800, K = 2) it is ~0.3 s. Skipped (no rank, no warning) past the
+# cap or if Ainv will not factorize.
+const _WEAK_IDENTIFIABILITY_SPARSE_MAX_CELLS = 1e7
+
+function _weak_identifiability_rank_sparse(Zs, Ainvs, n::Integer)
     K = length(Zs)
+    n^2 * (K + 1) > _WEAK_IDENTIFIABILITY_SPARSE_MAX_CELLS && return nothing
+    all(i -> size(Ainvs[i], 1) * n <= _WEAK_IDENTIFIABILITY_SPARSE_MAX_CELLS, 1:K) || return nothing
+    covs = Function[]
+    for i in 1:K
+        F = try
+            cholesky(Symmetric(SparseMatrixCSC{Float64,Int}(Ainvs[i])))
+        catch err
+            err isa Union{PosDefException,LinearAlgebra.SingularException,ArgumentError} || rethrow()
+            return nothing
+        end
+        Zi = SparseMatrixCSC{Float64,Int}(Zs[i])
+        push!(covs, () -> Matrix(Zi * (F \ Matrix{Float64}(transpose(Zi)))))
+    end
+    return _weak_identifiability_stacked_rank(covs, n)
+end
+
+const _WEAK_IDENTIFIABILITY_DEFAULT_HINT =
+    "the check does not identify which combinations are affected"
+const _WEAK_IDENTIFIABILITY_DEFAULT_REMEDY =
+    "Review the design and covariance scaling"
+
+function _warn_weak_identifiability_repeatability(Z, A, n::Integer)
+    r = _weak_identifiability_stacked_rank(
+        [() -> Z * A * transpose(Z), () -> Z * transpose(Z)], n)
+    return _warn_weak_identifiability_rank(r, 3, ("sigma_a2", "sigma_pe2"))
+end
+
+function _warn_weak_identifiability(Zs, Ks, n::Integer, names)
     r = _weak_identifiability_rank(Zs, Ks, n)
-    (r === nothing || r >= K + 1) && return nothing
+    return _warn_weak_identifiability_rank(r, length(Zs) + 1, names)
+end
+
+function _warn_weak_identifiability_sparse(Zs, Ainvs, n::Integer, names)
+    r = _weak_identifiability_rank_sparse(Zs, Ainvs, n)
+    return _warn_weak_identifiability_rank(r, length(Zs) + 1, names)
+end
+
+function _warn_weak_identifiability_rank(r, npar::Integer, names;
+        hint = _WEAK_IDENTIFIABILITY_DEFAULT_HINT,
+        remedy = _WEAK_IDENTIFIABILITY_DEFAULT_REMEDY)
+    (r === nothing || r >= npar) && return nothing
     comps = join(names, ", ")
-    @warn "variance components ($(comps), residual) are not all identifiable from " *
-          "these records: the stacked vec(Z K Z') matrices have numerical rank " *
-          "$(r) < $(K + 1). V_A cannot be separated from the confounded component " *
-          "(for example a dam effect when each dam has one sire and only " *
-          "offspring are phenotyped). REML is flat along a ridge, so heritability " *
-          "along it is arbitrary and start-dependent, and converged = true does " *
-          "not mean a unique optimum. Cross-fostering or repeated records are " *
-          "needed to separate them (HSquared.jl #416)."
+    @warn "variance components ($(comps), residual) may be weakly identifiable " *
+          "(not all identifiable at this numerical tolerance): " *
+          "the stacked vec(Z K Z') matrices have numerical rank " *
+          "$(r) < $(npar). Rank is numerical and tolerance-dependent; this warning " *
+          "does not prove structural non-identifiability. $(hint). A converged fit does not establish " *
+          "a unique optimum. $(remedy) (HSquared.jl #416)."
     return nothing
 end

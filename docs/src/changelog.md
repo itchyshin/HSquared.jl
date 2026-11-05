@@ -7,6 +7,23 @@
   and Documenter `authors`; Shinichi Nakagawa remains primary contact. No
   version or capability change.
 
+- Identifiability warning #416: the fit-free rank pre-check that `fit_two_effect_reml`
+  and `fit_multi_effect_reml` already ran now also runs in
+  `fit_sparse_multi_effect_aireml`, `fit_multi_effect_mc_reml`, `fit_repeatability_reml`
+  (one record per animal makes `sigma_pe2` and `sigma_e2` inseparable) and
+  `fit_direct_maternal_reml`. The numerical rank check warns of possible weak
+  identification. Nonzero covariance columns are now normalized before SVD, so
+  the unchanged `1e-8` relative tolerance applies to their directions rather than
+  their raw scales; this changes numerical warning decisions in the existing dense
+  routes as well. Rescaling invariance assumes the computed columns remain finite
+  and nonzero; overflow or underflow during covariance construction can lose information,
+  and nonfinite columns skip the check. No warning is not evidence of identification
+  or practical precision.
+  A warning does not prove structural non-identifiability or identify
+  which components are confounded. The check only logs: estimates, `converged` and
+  result fields are unchanged. The sparse and matrix-free routes skip it above
+  1e7 stacked cells.
+
 - Genetic GLLVM (#50, owner decision 25 Oct 2026): `fit_gllvm_laplace_reml`, the
   `GeneticGLLVMFit` fit object and a new `genetic_gllvm_result_payload(fit)` are now
   exported so the R lane can bridge them. Both are labelled partial and experimental
@@ -60,6 +77,12 @@ package version. `public_covered_count` stays **7**, and no entry below touches
 `Project.toml`. The package version is `0.9.0`; its released section is recorded
 below.
 
+- Part of #408: new `variance_component_uncertainty(fit; level = 0.95)` returns the
+  variance-component covariance, its standard errors, the `h²` standard error and the
+  logit-delta `h²` interval of a converged REML `AnimalModelFit` from one average-information
+  matrix. Every field is bit-identical to the standalone call, which each build and factorise
+  their own matrix, so the bundle saves two of three factorisations. The R bridge does not
+  call it yet. No estimand, interval or coverage claim changes.
 - #411 and #409 (no result change; outputs are bitwise identical to before on the test
   fixtures). The refitting forms of `repeatability_interval`, `two_effect_ratio_interval`,
   `direct_maternal_interval` and `multi_effect_ratio_interval` now reuse the dense
