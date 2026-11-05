@@ -4,17 +4,17 @@
     "postToolUse": [
       {
         "matcher": "Read|Grep|Glob|Search|Shell",
-        "command": "node \"/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/.cursor/hooks/graft-hooks.cjs\" cursor-post-tool"
+        "command": "node \".cursor/hooks/graft-hooks.cjs\" cursor-post-tool"
       }
     ],
     "afterMCPExecution": [
       {
-        "command": "node \"/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/.cursor/hooks/graft-hooks.cjs\" cursor-mcp"
+        "command": "node \".cursor/hooks/graft-hooks.cjs\" cursor-mcp"
       }
     ],
     "sessionEnd": [
       {
-        "command": "node \"/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/.cursor/hooks/graft-hooks.cjs\" cursor-session-end"
+        "command": "node \".cursor/hooks/graft-hooks.cjs\" cursor-session-end"
       }
     ]
   }
