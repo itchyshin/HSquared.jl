@@ -29,6 +29,7 @@ include("test_issue_413_scale_aware_start.jl")
 include("test_issue_429_false_residual_boundary.jl")
 include("test_issue_424_nelder_mead_convergence.jl")
 include("test_issue_416_weak_identifiability_warning.jl")
+include("test_issue_416_sibling_fitters_warning.jl")
 include("test_issue_407_docs_note.jl")
 include("test_issue_275_mixedmodels_surface.jl")
 
