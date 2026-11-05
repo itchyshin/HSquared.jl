@@ -37,6 +37,19 @@ const ARC1_EXECUTOR_REPO = normpath(joinpath(@__DIR__, ".."))
     end
 end
 
+function _arc1_strip_refusal_for_fake_engine(source)
+    refusal = "    error(\"Arc1 study execution is disabled: authoritative attempt history is unverified\")"
+    length(findall(refusal, source)) == 1 || error("CLI refusal missing or duplicated")
+    return replace(source, refusal => ""; count=1)
+end
+
+@testset "fake-engine copy accepts both line endings" begin
+    line = "    error(\"Arc1 study execution is disabled: authoritative attempt history is unverified\")"
+    @test _arc1_strip_refusal_for_fake_engine(line * "\n") == "\n"
+    @test _arc1_strip_refusal_for_fake_engine(line * "\r\n") == "\r\n"
+    @test_throws ErrorException _arc1_strip_refusal_for_fake_engine(line * "\n" * line)
+end
+
 function _arc1_inject_projection_counter(source)
     signature = "function arc1_raw_result_projection_difference(payload, result, metadata)"
     length(findall(signature, source)) == 1 || error("raw-result projection hook missing or duplicated")
@@ -325,9 +338,7 @@ function _arc1_write_fake_engine(root)
             source = read(target, String)
             # This isolated fake-engine harness exercises the executor internals
             # on a modified copy. The unmodified CLI refusal is tested above.
-            refusal = "    error(\"Arc1 study execution is disabled: authoritative attempt history is unverified\")\n"
-            length(findall(refusal, source)) == 1 || error("CLI refusal missing or duplicated")
-            write(target, _arc1_inject_projection_counter(replace(source, refusal => ""; count=1)))
+            write(target, _arc1_inject_projection_counter(_arc1_strip_refusal_for_fake_engine(source)))
         end
     end
 end

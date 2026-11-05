@@ -11,3 +11,12 @@
   for that test only. It does not exercise the production CLI's launch path.
 - Local pilot and receipt checks have the fixture and historical-collision
   limitations described in the after-task report. Full package CI is pending.
+- Windows CI on `d6d31ae3` exposed a CRLF-only failure in the fake-engine
+  harness. The original exact-newline match failed on a CRLF test (red); the
+  revised extracted helper passed LF, CRLF and duplicate-line checks (3/3)
+  on Julia 1.12.6. The production guard was not changed. Fresh CI is pending.
+- An isolated Julia 1.12.6 no-fit smoke passed the unmodified CLI refusal (6/6),
+  the line-ending helper checks (3/3), and one fake-engine subprocess using the
+  explicitly modified test-only copy. An earlier attempt from the source
+  worktree stopped before tests because that worktree lacks an instantiated
+  manifest; the passing run used the prepared isolated test environment.

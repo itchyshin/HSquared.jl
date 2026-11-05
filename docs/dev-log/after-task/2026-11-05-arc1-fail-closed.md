@@ -81,3 +81,13 @@ This pause covers the reviewed Python launchers and Julia command. It does NOT c
 direct engine calls, old checkouts or other custom launchers. No scientific fit,
 study attempt, R contract change, capability promotion or historical gate credit
 is claimed. The pause does not authorize resuming Arc 1 studies.
+
+## Windows line-ending correction
+
+The first CI run on the pause commit exposed a test-harness error on Windows:
+the fake-engine copy expected a newline after the refusal text, but checkout
+used CRLF. The test-only helper now matches the refusal text independently of
+line endings and requires exactly one occurrence. Three no-fit checks cover LF,
+CRLF and duplicate refusal text. The production refusal is unchanged. A new CI
+run is needed for the corrected commit; the original failed run remains part
+of the evidence.
