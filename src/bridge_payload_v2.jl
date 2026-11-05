@@ -859,7 +859,7 @@ function _v2_structured_result_metadata(fit, parsed::ParsedPayloadV2, n_variance
 end
 
 """
-    result_payload_v2(fit, parsed::ParsedPayloadV2) → NamedTuple
+    result_payload_v2(fit, parsed::ParsedPayloadV2; skip_pev_reliability = false) → NamedTuple
 
 Build the block-structured result payload (§5) from an estimator fit and the
 `ParsedPayloadV2` produced by `parse_payload_v2`.
@@ -868,6 +868,8 @@ Build the block-structured result payload (§5) from an estimator fit and the
 fitter must return `AnimalModelFit`; the wrapper delegates to `result_payload`
 to preserve the complete flat v0.1 fields and current R extractors. Partial
 raw tuples are rejected rather than exposed as incomplete legacy results.
+`skip_pev_reliability` is passed to `result_payload` on this path only
+(hsquared#266); the multi-block results carry no PEV or reliability.
 
 For multi-block fits the result carries:
 - `variance_components.blocks` — ordered list of per-block variance records.
@@ -882,7 +884,7 @@ support that extension (docs/design/21-payload-v2-multiblock-schema.md §5).
 
 CONTRACT-ONLY (docs/design/21-payload-v2-multiblock-schema.md §5, §6).
 """
-function result_payload_v2(fit, parsed::ParsedPayloadV2)
+function result_payload_v2(fit, parsed::ParsedPayloadV2; skip_pev_reliability::Bool = false)
     dispatch = parsed.dispatch
     blocks = parsed.blocks
 
@@ -893,7 +895,7 @@ function result_payload_v2(fit, parsed::ParsedPayloadV2)
         # return identical output.
         fit isa AnimalModelFit || throw(ArgumentError(
             "single-pedigree result_payload_v2 requires an AnimalModelFit to preserve the complete legacy result contract"))
-        return result_payload(fit)
+        return result_payload(fit; skip_pev_reliability = skip_pev_reliability)
     end
 
     if dispatch == :two_effect
