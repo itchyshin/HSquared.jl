@@ -26,7 +26,7 @@ jobs:
           $dest = Join-Path $env:RUNNER_TEMP 'pr496-diag'
           New-Item -ItemType Directory -Path $dest | Out-Null
           $expected = @{
-            'paired.jl' = 'bf973990799c8546e96fe73084cb8d9f2e34cf08385e9b11998910e42a65dbab'
+            'paired.jl' = '6b56a63fe0e99c8b8813f359decd5a14c5943ccf52af948d1e70aa05c44ff2c4'
             'provision.ps1' = '893b6dc8d569802436fbb2cecc24e4d5b56494078b4b47b6a77e7141b40eeab5'
             'run.ps1' = 'f22cca6164ad4a4976a0199b50f178e3124088ec95e7739c589e64586e3078a0'
             'pinned-Manifest-1.13.3.toml' = '272ce679b561dedde1d733b783905cc6201cd9ed08b99acc1f87082e5454597b'

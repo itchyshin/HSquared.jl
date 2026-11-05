@@ -11,6 +11,13 @@ q = n = 2000 package-test fixture, warms its own code, runs the public call,
 and times the fit call. Two observations per source are **exploratory** and
 cannot support a reliable statistical estimate of runner variability.
 
+Each child uses `--check-bounds=yes --compiled-modules=yes --depwarn=yes` and
+`--code-coverage=@<per-run-package-root>`, matching the relevant action flags.
+Coverage records remain in each retained per-run package copy. The original
+source trees are checked before and after, and copied source is checked after
+each child while allowing only `.jl[.<pid>].cov` records tied to existing files.
+This direct driver does not reproduce the full `Pkg.test` sandbox.
+
 Each run records Julia/OS/CPU and runner-image metadata, thread settings,
 project, manifest and `src/` SHA-256, a fixture fingerprint, elapsed time, GC,
 allocations, compilation time when available, convergence, objective and
@@ -101,15 +108,22 @@ study attempts or a simulation campaign.
 
 ## Local checks
 
-The final Julia 1.13.3 Mac run produced baseline fit times 0.686 and 0.644 s,
+An earlier no-coverage Julia 1.13.3 Mac run produced baseline fit times 0.686 and 0.644 s,
 and candidate times 0.678 and 0.685 s. All repeated original limits passed,
 objectives matched, and the unit-weight proxy reported zero missing entries.
 Each child result and stderr/stdout file was retained. This establishes harness
 operation on this Mac, not Windows performance or general scalability.
-The final driver rejected an incorrect source hash and wrong Julia version
-before a fit. An earlier driver rejected mismatched manifests; the final
+The earlier driver rejected an incorrect source hash and wrong Julia version
+before a fit. An earlier driver rejected mismatched manifests; the earlier
 version enforces the stricter pinned manifest hash, but that negative case was
 not rerun. A one-second local timeout test terminated and reaped its child.
 The Windows cleanup and PowerShell scripts remain untested. An earlier scratch
 version had a Julia world-age import error and was fixed before the final smoke
 run. No hosted job was launched.
+
+The revised bounds-and-coverage driver passed a local Julia 1.13.3 Mac smoke:
+baseline fit times 2.802 and 2.824 s, historical candidate 2.821 and 2.821 s.
+All repeated original time and allocation assertions passed. Four isolated
+package copies retained 16 generated coverage files in total; original source
+hashes and the copied source hashes passed the driver checks. This smoke does
+not test Windows, the PowerShell recipe, or full `Pkg.test` sandbox behavior.

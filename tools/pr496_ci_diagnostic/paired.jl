@@ -11,9 +11,17 @@ function filehash(path)
     return bytes2hex(open(sha256, path))
 end
 
-function sourcehash(root)
+function sourcehash(root; coverage=false)
     src = joinpath(root, "src")
     paths = sort!([relpath(joinpath(dir, f), root) for (dir, _, files) in walkdir(src) for f in files])
+    if coverage
+        filter!(paths) do path
+            m = match(r"^(.*\.jl)(?:\.\d+)?\.cov$", path)
+            m === nothing && return true
+            isfile(joinpath(root, m.captures[1])) || error("coverage file without source: $path")
+            return false
+        end
+    end
     io = IOBuffer()
     for path in paths
         # Normalize separator for a portable inventory identity, but not file bytes.
@@ -179,7 +187,16 @@ function main()
     deadline = time_ns() + UInt64(round(Int, EXECUTION_LIMIT_S * 1e9))
     for i in eachindex(labels)
         outfile=joinpath(output,"run-$i.toml")
-        command=`$(Base.julia_cmd()) --startup-file=no --project=$(roots[i]) $(@__FILE__) --worker $outfile`
+        # Isolate generated .cov records in the retained per-run package copy.
+        runroot=joinpath(output,"run-$i-package")
+        mkpath(runroot)
+        for item in ("Project.toml", "Manifest.toml", "src", "ext")
+            srcpath=joinpath(roots[i],item)
+            ispath(srcpath) && cp(srcpath,joinpath(runroot,item))
+        end
+        sourcehash(runroot) == expected_src[labels[i] == "baseline" ? 1 : 2] || error("copied source hash mismatch")
+        coverage_arg="--code-coverage=@$(runroot)"
+        command=`$(Base.julia_cmd()) --startup-file=no --check-bounds=yes --compiled-modules=yes --depwarn=yes $coverage_arg --project=$runroot $(@__FILE__) --worker $outfile`
         env=merge(ENV, Dict("OPENBLAS_NUM_THREADS"=>"1", "JULIA_NUM_THREADS"=>"2",
             "JULIA_NUM_PRECOMPILE_TASKS"=>"1", "JULIA_PKG_PRECOMPILE_AUTO"=>"0"))
         open(joinpath(output,"run-$i.started"),"w") do io
@@ -187,7 +204,9 @@ function main()
         end
         run_with_deadline(setenv(command,env),joinpath(output,"run-$i.stdout.log"),
                           joinpath(output,"run-$i.stderr.log"),deadline)
+        sourcehash(runroot; coverage=true) == expected_src[labels[i] == "baseline" ? 1 : 2] || error("copied source changed during run")
         row=TOML.parsefile(outfile); row["label"]=labels[i]; row["order"]=i
+        row["child_flags"]=["--check-bounds=yes", "--compiled-modules=yes", "--depwarn=yes", coverage_arg]
         push!(rows,row)
     end
     length(unique(r["fixture_sha256"] for r in rows)) == 1 || error("fixture mismatch")
@@ -196,6 +215,7 @@ function main()
         filehash(joinpath(root,"Manifest.toml")) == PINNED_MANIFEST || error("manifest changed during diagnostic")
         filehash(joinpath(root,"Project.toml")) == PINNED_PROJECT || error("project changed during diagnostic")
     end
+    all(sourcehash(root) == expected for (root,expected) in zip((baseline,candidate),expected_src)) || error("original source changed during diagnostic")
     all(r["converged"] && r["public_converged"] && r["returned_S_nothing"] && r["public_S_rows"] == 2000 && r["public_S_cols"] == 2000 for r in rows) || error("fit or output-shape failure")
     all(isapprox(r["elbo"],r["public_elbo"]; atol=1e-10,rtol=0) for r in rows) || error("public/fit objective mismatch")
     all(isapprox(r["elbo"],rows[1]["elbo"]; atol=1e-10,rtol=0) for r in rows) || error("baseline/candidate objective mismatch")
