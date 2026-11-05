@@ -32,6 +32,12 @@ jobs:
   test:
     name: Julia ${{ matrix.version }} - ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
+    # Keep the shared runners' thread usage predictable; the wall-time and
+    # allocation assertions remain unchanged. Default-thread and multi-BLAS
+    # configurations are not covered by this matrix.
+    env:
+      OPENBLAS_NUM_THREADS: 1
+      JULIA_NUM_THREADS: 2
     strategy:
       fail-fast: false
       matrix:
