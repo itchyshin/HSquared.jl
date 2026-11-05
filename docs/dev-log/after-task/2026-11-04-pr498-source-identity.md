@@ -113,3 +113,21 @@ nested directory-symlink rows and restores the generated self-check extraction.
 The no-fit path tests passed under Julia 1.10 and 1.13, and the existing
 no-install preflight self-test passed. Windows CI now includes the path tests.
 Real second-drive and Windows symlink cases remain unverified.
+
+The latest-Julia profile test generated different normal variates from the
+historical Julia 1.10 stream. The N80 test now reads a portable export of the
+retained engineering input, while keeping the original response fingerprint,
+likelihood checks and tolerances. The fixture README records input and TSV
+hashes and the limits of the provenance claim. Independent review matched the
+response, pedigree, incidence and record mappings against the retained input.
+The full profile test file passed 1,295 assertions on each of Julia 1.10.12
+and 1.13.3; the Julia 1.13.3 run used the fresh manifest recorded above.
+
+The Windows 1.10 job failed in a fake-engine test because the fixture searched
+for a function signature followed by LF, while the checkout used CRLF. The
+fixture now searches for the signature independently of line endings, rejects
+missing or duplicated signatures, and tests LF and CRLF. Native Windows CI is
+needed to confirm this fix. Neither change earns scientific gate credit.
+The isolated LF/CRLF and missing/duplicate-hook tests passed 6/6 on Julia
+1.10.12. A full local executor test was started separately; its result is not
+included in this commit's claims.

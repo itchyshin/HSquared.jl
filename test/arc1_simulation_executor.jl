@@ -9,6 +9,21 @@ using HSquared
 
 const ARC1_EXECUTOR_REPO = normpath(joinpath(@__DIR__, ".."))
 
+function _arc1_inject_projection_counter(source)
+    signature = "function arc1_raw_result_projection_difference(payload, result, metadata)"
+    length(findall(signature, source)) == 1 || error("raw-result projection hook missing or duplicated")
+    injection = """
+        function arc1_raw_result_projection_difference(payload, result, metadata)
+            counter_path = get(ENV, "ARC1_TEST_PROJECTION_COUNTER", "")
+            if !isempty(counter_path)
+                open(counter_path, "a") do io
+                    println(io, "called")
+                end
+            end
+    """
+    return replace(source, signature => injection; count=1)
+end
+
 struct Arc1ContainerUnsupportedInteger <: Integer
     value::Int
 end
@@ -280,18 +295,7 @@ function _arc1_write_fake_engine(root)
         cp(joinpath(ARC1_EXECUTOR_REPO, "sim", "arc1", filename), target; force=true)
         if filename == "execute_attempt.jl"
             source = read(target, String)
-            signature = "function arc1_raw_result_projection_difference(payload, result, metadata)\n"
-            occursin(signature, source) || error("raw-result projection hook not found")
-            injection = """
-                function arc1_raw_result_projection_difference(payload, result, metadata)
-                    counter_path = get(ENV, \"ARC1_TEST_PROJECTION_COUNTER\", \"\")
-                    if !isempty(counter_path)
-                        open(counter_path, \"a\") do io
-                            println(io, \"called\")
-                        end
-                    end
-            """
-            write(target, replace(source, signature => injection; count=1))
+            write(target, _arc1_inject_projection_counter(source))
         end
     end
 end
@@ -1374,6 +1378,14 @@ end
     end
 
     @testset "fresh-process fake-engine wiring and evidence" begin
+        signature = "function arc1_raw_result_projection_difference(payload, result, metadata)"
+        for newline in ("\n", "\r\n")
+            injected = _arc1_inject_projection_counter(signature * newline * "end" * newline)
+            @test occursin("ARC1_TEST_PROJECTION_COUNTER", injected)
+            @test length(findall(signature, injected)) == 1
+        end
+        @test_throws ErrorException _arc1_inject_projection_counter("missing")
+        @test_throws ErrorException _arc1_inject_projection_counter(signature * "\n" * signature)
         mktempdir(prefix="arc1-executor-fixture-") do temp
             root = joinpath(temp, "fake-engine")
             output = joinpath(temp, "outside-results")

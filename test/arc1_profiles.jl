@@ -2023,8 +2023,27 @@ end
     end
 
     @testset "retained N80 coordinates reproduce centered engine arithmetic" begin
-        data = Arc1ProfileEngineeringFixture.arc1_simulate_repeatability(
-            UInt64(2026100204), 80, :interior)
+        # Fixed inputs exported from the retained Julia 1.10 engineering
+        # artifact. The 12-digit fingerprint and numerical oracles below remain
+        # unchanged; see the fixture README for provenance and limitations.
+        fixture = joinpath(@__DIR__, "fixtures", "arc1_profile80")
+        rows(name) = [split(line, '\t') for line in readlines(joinpath(fixture, name))[2:end]]
+        pedigree_rows = rows("pedigree.tsv")
+        record_rows = rows("records.tsv")
+        observed_rows = rows("observed_ids.tsv")
+        ids = String[row[1] for row in pedigree_rows]
+        sire = Int[parse(Int, row[2]) for row in pedigree_rows]
+        dam = Int[parse(Int, row[3]) for row in pedigree_rows]
+        original_order = Int[parse(Int, row[4]) for row in pedigree_rows]
+        @test original_order == collect(eachindex(ids))
+        @test Int[parse(Int, row[5]) for row in record_rows] == collect(eachindex(record_rows))
+        observed_id_to_row = Dict(String(row[1]) => parse(Int, row[2]) for row in observed_rows)
+        @test all(row -> observed_id_to_row[String(row[2])] == parse(Int, row[4]), record_rows)
+        data = (; seed = UInt64(2026100204),
+            y = Float64[parse(Float64, row[3]) for row in record_rows],
+            pedigree = (; ids, sire, dam),
+            record_animal_ids = String[row[2] for row in record_rows],
+            observed_id_to_row)
         ped = H.Pedigree(copy(data.pedigree.ids), copy(data.pedigree.sire),
             copy(data.pedigree.dam), collect(eachindex(data.pedigree.ids)))
         record_ids = data.record_animal_ids
@@ -2037,6 +2056,7 @@ end
             H.pedigree_inverse(ped))
         rounded_response_fingerprint(values) = bytes2hex(sha256(join(
             string.(round.(Float64.(vec(values)); digits = 12)), ",")))
+        # The seed is recorded source metadata, not a fresh RNG check.
         @test data.seed == UInt64(2026100204)
         @test rounded_response_fingerprint(data.y) ==
             "2852964d10287545877a0396a5eacd72e5d9a54417a2929be846f5a701cd5708"
