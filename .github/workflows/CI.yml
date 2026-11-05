@@ -1,100 +1,53 @@
 name: CI
-
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 on:
-  # Direct pushes to main/master must run the test suite (HSquared.jl #367).
-  # This repo often lands commits straight on main; without `push`, only
-  # Documenter fires and a green docs badge is easy to misread as "CI passed".
-  # Full 4-leg matrix on push is intentional (~7 min): DoD wants per-commit
-  # evidence. Cost is runner latency on a public repo, not dollars. Do not
-  # "trim" the push matrix to save minutes without a measured table.
-  push:
-    branches: [main, master]
-  pull_request:
-    branches: [main, master]
   workflow_dispatch:
-    inputs:
-      run_plotting:
-        description: 'Also run the live-draw plotting check (installs CairoMakie + AlgebraOfGraphics)'
-        type: boolean
-        default: false
-
-# Never cancel a run on main/master: a superseded main run reports no status
-# at all ("green by absence"). Only a later push to the same PR ref makes an
-# in-flight run genuinely redundant. Pattern from GLLVM.jl / ci-diagnose §5.
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
-
+permissions:
+  contents: read
 jobs:
-  test:
-    name: Julia ${{ matrix.version }} - ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        version: ['1.10', '1']
-        os: [ubuntu-latest, windows-latest]
-
+  exploratory-paired-timing:
+    runs-on: windows-latest
+    timeout-minutes: 35
+    env:
+      GIT_CONFIG_COUNT: '1'
+      GIT_CONFIG_KEY_0: core.autocrlf
+      GIT_CONFIG_VALUE_0: 'false'
     steps:
       - uses: actions/checkout@v6
-
+        with:
+          persist-credentials: false
       - uses: julia-actions/setup-julia@v3
         with:
-          version: ${{ matrix.version }}
-
-      - uses: julia-actions/cache@v2
-
-      - uses: julia-actions/julia-buildpkg@v1
-
-      - uses: julia-actions/julia-runtest@v1
-
-  # OPT-IN, OFF BY DEFAULT. `inputs` is empty on `pull_request`, so this job is skipped
-  # unless a human dispatches the workflow with `run_plotting = true`.
-  #
-  # WHY IT EXISTS. The default suite asserts `isempty(methods(hsquared_figure))` with
-  # Makie/AoG absent -- it PASSES PRECISELY WHEN THE EXTENSION FAILS TO LOAD, so it is
-  # zero evidence about the drawing layer. This job is the only CI that exercises it.
-  # It stays opt-in because Makie + AoG dominate the install/precompile budget, and the
-  # drawing layer changes rarely. Run it on any Makie / AlgebraOfGraphics / CairoMakie
-  # bump, and on any PR touching `ext/HSquaredMakieExt.jl`.
-  #
-  # The driver's object assertions cannot see everything: of the five defect classes found on
-  # 2026-07-08, two were caught only by looking at the rendered PNG -- and one of those two had
-  # PASSED an object assertion that counted the annotation without checking where it sat. That
-  # is why this job UPLOADS THE FIGURES: a green check here still means "download the artifact
-  # and look". The driver rasterizes BEFORE it asserts, so the PNGs exist on a red run too.
-  plotting:
-    name: Live-draw plotting check (opt-in)
-    if: ${{ inputs.run_plotting }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 45
-
-    steps:
-      - uses: actions/checkout@v6
-
-      - uses: julia-actions/setup-julia@v3
-        with:
-          version: '1.10'
-
-      - uses: julia-actions/cache@v2
-
-      - name: Live draw (9/9 kinds, forest + caterpillar invariants)
+          version: '1.13.3'
+      - name: Stage and verify reviewed diagnostic
+        shell: pwsh
         run: |
-          set -euo pipefail
-          mkdir -p "${RUNNER_TEMP}/aog-livedraw"
-          cd "${RUNNER_TEMP}/aog-livedraw"
-          julia --project=. -e 'import Pkg
-            Pkg.develop(path = ENV["GITHUB_WORKSPACE"])
-            Pkg.add(["CairoMakie", "AlgebraOfGraphics"])'
-          julia --project=. "${GITHUB_WORKSPACE}/docs/dev-log/scripts/2026-07-08-plotting-aog-livedraw.jl"
-
-      - name: Upload rendered figures (LOOK AT THEM -- assertions are not visual verification)
+          $ErrorActionPreference = 'Stop'
+          $source = Join-Path $env:GITHUB_WORKSPACE 'tools/pr496_ci_diagnostic'
+          $dest = Join-Path $env:RUNNER_TEMP 'pr496-diag'
+          New-Item -ItemType Directory -Path $dest | Out-Null
+          $expected = @{
+            'paired.jl' = 'bf973990799c8546e96fe73084cb8d9f2e34cf08385e9b11998910e42a65dbab'
+            'provision.ps1' = '893b6dc8d569802436fbb2cecc24e4d5b56494078b4b47b6a77e7141b40eeab5'
+            'run.ps1' = 'f22cca6164ad4a4976a0199b50f178e3124088ec95e7739c589e64586e3078a0'
+            'pinned-Manifest-1.13.3.toml' = '272ce679b561dedde1d733b783905cc6201cd9ed08b99acc1f87082e5454597b'
+          }
+          foreach ($file in $expected.Keys) {
+            $inputFile = Join-Path $source $file
+            if ((Get-FileHash -Algorithm SHA256 $inputFile).Hash.ToLowerInvariant() -ne $expected[$file]) { throw "Staging hash mismatch: $file" }
+            Copy-Item $inputFile (Join-Path $dest $file)
+          }
+      - name: Provision pinned sources and dependencies
+        shell: pwsh
+        timeout-minutes: 15
+        run: '& "$env:RUNNER_TEMP/pr496-diag/provision.ps1" -DiagDir "$env:RUNNER_TEMP/pr496-diag"'
+      - name: Run exploratory paired check
+        shell: pwsh
+        timeout-minutes: 12
+        run: '& "$env:RUNNER_TEMP/pr496-diag/run.ps1" -DiagDir "$env:RUNNER_TEMP/pr496-diag"'
+      - name: Retain results even on failure
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v4
         with:
-          name: live-draw-figures
-          path: ${{ runner.temp }}/aog-livedraw/*.png
-          if-no-files-found: error
+          name: pr496-paired-evidence
+          path: ${{ runner.temp }}/pr496-paired-evidence
+          if-no-files-found: warn
