@@ -71,7 +71,12 @@ end
     @test sparse.variance_components.sigma_e2 /
           (sparse.variance_components.sigma_a2 + sparse.variance_components.sigma_e2) <=
           HSquared._AI_REML_RESIDUAL_BOUNDARY_SHARE
-    @test sparse.likelihood.loglik > fit.likelihood.loglik
+    # After the monotone step (#488) AI-REML no longer stops short of the
+    # residual-boundary optimum. The warning still fires because the Ve score
+    # never vanishes, so this is not a certified AI-REML optimum. The two
+    # log-likelihoods agree to the 5e-3 bar used by the monotone test; either
+    # side can be slightly ahead at Ve ~ 0.
+    @test abs(sparse.likelihood.loglik - fit.likelihood.loglik) < 5e-3
 
     # The Mrode-3 records above have a residual-boundary REML optimum. The
     # 8-animal pedigree used by the Phase 1 AI-REML recovery tests is interior.
