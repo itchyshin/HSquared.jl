@@ -1,0 +1,36 @@
+{
+  "assessment_performed": true,
+  "draft_sha256": "0696ddb1b655c8101ca527ff54e5b6355422b3b8dcc47eca088cb8d3aa1a889d",
+  "draft_version": "v1",
+  "requested_mode": "independent",
+  "assessor_type": "self",
+  "reviewer": "Codex self-assessment",
+  "method": "Manual post-draft review against retained command outputs, source hashes, and focused test results; no extra model call.",
+  "genre": "Software-engineering after-task report",
+  "coverage": "Whole report",
+  "score": 2,
+  "style_status": "scored",
+  "score_reason": "The report is specific and evidence-led, with repeated section scaffolding required by the repository report format.",
+  "confidence": "medium",
+  "confidence_reason": "The draft is short and its technical claims are tied to retained outputs, but this is not an independent human style judgment.",
+  "examples": [
+    {
+      "location": "Section 2, paragraph 2",
+      "cue": "These timings rule out history decoding, data identity, and v4 certificate recomputation as the earlier long pole.",
+      "impact": "Connects the measured stages to the remaining diagnosis.",
+      "repair": "No change needed; the next sentence names the still-open JSON transport issue.",
+      "line": 7,
+      "quote": "These timings rule out history decoding, data identity, and v4 certificate recomputation as the earlier long pole."
+    }
+  ],
+  "evidence_none_reason": null,
+  "science_gate": "not_applicable",
+  "science_gate_reason": "The report makes no biological inference or scientific coverage claim.",
+  "facts_gate": "pass",
+  "facts_gate_reason": "Times, output size, source hashes, artifact hash, and test counts were compared with retained command output and source files.",
+  "references_gate": "not_applicable",
+  "references_gate_reason": "The report contains no external references.",
+  "date": "2026-10-11",
+  "calibration_status": "No style calibration controls were reviewed this turn; score is an uncertain self-judgment.",
+  "interpretation": "perceived_style_not_authorship"
+}

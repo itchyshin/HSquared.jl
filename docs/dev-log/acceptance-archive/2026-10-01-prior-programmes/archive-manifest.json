@@ -1,0 +1,30 @@
+[
+  {
+    "original": "GATES.md",
+    "archive": "docs/dev-log/acceptance-archive/2026-10-01-prior-programmes/fixed-fa-gllvm-ledger.md",
+    "sha256": "6d0c27a9caa31d13b7c3dbfbb18d1017b4b9896319042297bbb1ae5cf9aeabdd",
+    "bytes": 57918,
+    "scope": "completed bounded V3, source 365f173f; current-source attestation is outside this historical scope"
+  },
+  {
+    "original": ".unlazy/auto-fa-rank-design-20261001/GATES.md",
+    "archive": "docs/dev-log/acceptance-archive/2026-10-01-prior-programmes/automatic-rank-design-scope.md",
+    "sha256": "ed77301e86cd28751576082c516e98023a420be1141ee51fc1c4a053639d9d89",
+    "bytes": 417,
+    "scope": "completed V0 design at 56536532"
+  },
+  {
+    "original": ".unlazy/auto-fa-rank-design-20261001/gates/leaf-design.md",
+    "archive": "docs/dev-log/acceptance-archive/2026-10-01-prior-programmes/automatic-rank-design-leaf.md",
+    "sha256": "55a05c27f32b1be920d988a8ca43cd8c1628936a525d16391ac231a6b6812980",
+    "bytes": 2155,
+    "scope": "completed V0 design; successful 2026-10-01 gate replay retained"
+  },
+  {
+    "original": ".unlazy/h2-twin-0.5.0/GATES.md",
+    "archive": "docs/dev-log/acceptance-archive/2026-10-01-prior-programmes/historical-0.5-plan.md",
+    "sha256": "c32f851b50e6ffc59fc094ac04ef36893fed2550340c28c359fa60a75f0e8e6c",
+    "bytes": 2483,
+    "scope": "historical 0.5 planning table; not an active execution ledger or current release authority"
+  }
+]

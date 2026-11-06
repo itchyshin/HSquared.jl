@@ -1,0 +1,14 @@
+{
+  "utc": "2026-10-01T17:35:13.855912+00:00",
+  "command": [
+    "python3",
+    "tools/check_final_programme_evidence.py",
+    "docs",
+    "--root",
+    "/Users/z3437171/.codex/worktrees/hsquared-fa-gllvm-foundations/HSquared.jl"
+  ],
+  "exit_code": 0,
+  "stdout": "HSQ_FINAL_DOCS_PASS\n",
+  "stderr": "",
+  "r_materialization_sha": "e82f5c95e514028a7126fdd667c4ac7a840c9e6b"
+}

@@ -1,0 +1,27 @@
+test_complete_rank_pilot_and_confirmation_emit_distinct_markers (__main__.Arc1ScientificGateTests) ... ok
+test_complete_repeatability_confirmation_uses_coverage_confidence_interval (__main__.Arc1ScientificGateTests) ... ok
+test_complete_repeatability_pilot_emits_only_pilot_qualification (__main__.Arc1ScientificGateTests) ... ok
+test_fa_pilot_requires_all_nested_endpoint_comparisons (__main__.Arc1ScientificGateTests) ... ok
+test_g2_confirmation_requires_all_nine_cells_reference_audits_and_k1_witness (__main__.Arc1ScientificGateTests) ... ok
+test_g3_null_selection_rule_applies_to_each_sample_size (__main__.Arc1ScientificGateTests) ... ok
+test_g5_confirmation_cannot_pass_without_zero_diagnostic_receipts (__main__.Arc1ScientificGateTests) ... ok
+test_g5_exact_zero_diagnostic_cells_are_complete_but_noninferential (__main__.Arc1ScientificGateTests) ... ok
+test_gate_entrypoint_requires_every_cell_and_calls_integrity_verifier (__main__.Arc1ScientificGateTests) ... ok
+test_native_julia_reference_json_is_accepted_by_aggregator (__main__.Arc1ScientificGateTests) ... ok
+test_rank_confirmation_uses_all_attempts_and_holds_failed_eligibility (__main__.Arc1ScientificGateTests) ... ok
+test_reference_audit_binds_full_parameter_vectors_to_start_definitions (__main__.Arc1ScientificGateTests) ... ok
+test_reference_audit_preserves_legitimate_failed_scheduled_start (__main__.Arc1ScientificGateTests) ... ok
+test_reference_audit_rejects_all_reviewed_provenance_bypasses (__main__.Arc1ScientificGateTests) ... ok
+test_reference_audit_rejects_every_unsupported_row_schedule (__main__.Arc1ScientificGateTests) ... ok
+test_reference_audit_rejects_failed_comparison_and_accepts_unavailable_rank_only_as_na (__main__.Arc1ScientificGateTests) ... ok
+test_reference_audit_rejects_nonchronological_retained_maxima (__main__.Arc1ScientificGateTests) ... ok
+test_reference_audit_rejects_rank_wide_duplicate_orders_and_extra_rank_rows (__main__.Arc1ScientificGateTests) ... ok
+test_reference_audit_sees_earlier_retained_maximum_and_exact_schedule_multiplicity (__main__.Arc1ScientificGateTests) ... ok
+test_reference_audit_uses_retained_y_scale_and_native_tagged_matrices (__main__.Arc1ScientificGateTests) ... ok
+test_reference_flags_follow_frozen_selector_mapping_and_refusals_are_flagged (__main__.Arc1ScientificGateTests) ... ok
+test_repeatability_pilot_checks_each_estimand_and_counts_failures (__main__.Arc1ScientificGateTests) ... ok
+
+----------------------------------------------------------------------
+Ran 22 tests in 31.750s
+
+OK

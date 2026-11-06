@@ -1,0 +1,18 @@
+{
+  "schema": "hsquared-arc1-check-result-v1",
+  "executed_at_utc": "2026-10-12T07:27:13Z",
+  "cwd": "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl",
+  "environment": {
+    "PYTHONDONTWRITEBYTECODE": "1"
+  },
+  "python_executable": "/Users/z3437171/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+  "python_version": "3.12.14",
+  "argv": [
+    "/Users/z3437171/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+    "LOOP/lanes/arc1-gaussian-reliability-20261002/evidence/g2-development-n80-null-outer34-v18/test_candidate.py"
+  ],
+  "exit_code": 0,
+  "stdout": "PASS: exact seed, blocked singleton scope, denominator, source lock, and no-execution flags\n",
+  "stderr": "",
+  "scope_note": "candidate structural assertions passed; no fit started."
+}

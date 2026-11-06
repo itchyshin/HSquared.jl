@@ -1,0 +1,27 @@
+Test Summary:                                               | Pass  Total  Time
+automatic FA independent ordering and confounding witnesses |    5      5  2.8s
+Test Summary:                                                     | Pass  Total  Time
+automatic FA production selector preserves animal and trait order |   23     23  3.1s
+Test Summary:                                           | Pass  Total  Time
+automatic FA selector dense REML and criterion contract |   18     18  0.1s
+Test Summary:                                          | Pass  Total  Time
+automatic FA matched floor and injected failure ledger |   39     39  1.4s
+Test Summary:                                     | Pass  Total  Time
+automatic FA rejects corrupted optimizer receipts |   28     28  0.6s
+Test Summary:                                                     | Pass  Total  Time
+automatic FA selected K1 fit uses same-covariance dense objective |   13     13  1.2s
+Test Summary:                                                     | Pass  Total  Time
+automatic FA refuses non-PD covariance receipts and sole survivor |   17     17  0.5s
+Test Summary:                                                    | Pass  Total  Time
+automatic FA near-floor flags and persistent non-nesting refusal |   21     21  0.6s
+Test Summary:                                   | Pass  Total  Time
+automatic FA bounded retry and interrupt ledger |   19     19  0.4s
+Test Summary:                                                     | Pass  Total  Time
+automatic FA better-unconverged retry trigger and bounded refusal |    7      7  0.3s
+Test Summary:                                             | Pass  Total  Time
+automatic FA interruption at each initial and retry start |   28     28  0.1s
+Test Summary:                                                       | Pass  Total  Time
+automatic FA rejects forbidden data and confounded pedigree designs |   23     23  0.7s
+Test Summary:                                           | Pass  Total  Time
+automatic FA selector public shape and refusal contract |    8      8  0.0s
+AUTO_FA_ENGINE_ACCEPTANCE_PASS

@@ -1,0 +1,11 @@
+# G5 retained artifact reavailability audit
+
+On 2026-10-09, a read-only check over the existing Totoro control socket confirmed that the outer-2 artifact remains at `/home/snakagaw/hsq_work/arc1-g5-n320-dev-prerun-v2-20261007/results/attempt-v2/repeatability/development/N320/near_zero_additive/attempts/0002.full.jls`, size 130,851,693 bytes. This matches the path and size in `evidence/g5-n320-dev-prerun-v2/outer2-raw-artifact-inspection.json`, SHA-256 `4cad63ed733d6932edba63a060c3aba22f2beafe8e1fcc452080aff6b13e1295`.
+
+Original admission SHA-256: `95b806468958a01e3727615f49b22993f3aa5aee81f1e59d936a17a2dae024ac`. Current `sim/arc1/inspect_artifacts.jl` SHA-256: `fc58f9444affe63c21ec854212ae00220728bf2f933735fd73e4cf71faf6b206`. Compared the original G5 admission's 194 source pins against the current checkout. Fifteen pins differ and none are missing. Therefore the old admission cannot be reused to rerun the current inspector. The artifact's earlier outer-2 integrity review remains valid only for its stated scope; the raw inspection timeout still means that semantic identity and recomputed certificate checks are incomplete.
+
+Candidate v1's read-only review verified all 194 pins and held replay because a copied source root changes the absolute project and engine paths checked by the inspector. Candidate v2 manifest SHA-256 `e5f1c858228f8b6af1f534a40a76fb3fb1f192bb121bcb00e6f150850f880b26` passed review for copying only the current inspector to a new temporary sibling script under the original run's `source/sim/arc1`. It preserves original absolute paths without changing a pinned file, subject to exact output, runtime, timeout, source-pin and cleanup checks.
+
+Candidate v3 manifest `/private/tmp/arc1-g5-inspector-candidate-v1/candidate-v3.json` SHA-256 `58628f9e398b617965dcc80a495ad17a77ca615ec98097579b63ea4d7784ca29` incorporates those conditions and enumerates exact success flags. Its exact review is pending.
+
+G5 remains open. No fit, seed, study attempt, denominator, interval criterion, or public status changed. After candidate-v3 review, consider a read-only replay of this retained artifact under the 900-second cap. No pilot or confirmation evidence can result from this inspection.

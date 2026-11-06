@@ -1,0 +1,33 @@
+test_exact_candidate_lock_manifest_and_failure_receipt (__main__.CandidateV17Tests.test_exact_candidate_lock_manifest_and_failure_receipt) ... FAIL
+test_future_exact_receipts_allow_one_mocked_outer33_call_only (__main__.CandidateV17Tests.test_future_exact_receipts_allow_one_mocked_outer33_call_only) ... ok
+test_ingest_cli_emits_receipt_without_launch_or_approval (__main__.CandidateV17Tests.test_ingest_cli_emits_receipt_without_launch_or_approval) ... ok
+test_ingest_complete_success_and_denominator_once (__main__.CandidateV17Tests.test_ingest_complete_success_and_denominator_once) ... ok
+test_ingest_missing_result_is_consumed_but_unresolved (__main__.CandidateV17Tests.test_ingest_missing_result_is_consumed_but_unresolved) ... ok
+test_ingest_solver_failure_with_reason_is_denominator_outcome (__main__.CandidateV17Tests.test_ingest_solver_failure_with_reason_is_denominator_outcome) ... ok
+test_ingest_tampered_output_refuses (__main__.CandidateV17Tests.test_ingest_tampered_output_refuses) ... ok
+test_ingest_wrong_identity_refuses (__main__.CandidateV17Tests.test_ingest_wrong_identity_refuses) ... ok
+test_locked_source_drift_refuses (__main__.CandidateV17Tests.test_locked_source_drift_refuses) ... ok
+test_nine_cell_allocation_and_all_attempt_denominator (__main__.CandidateV17Tests.test_nine_cell_allocation_and_all_attempt_denominator) ... ok
+test_no_launch_default_and_direct_runner_admission_refusal (__main__.CandidateV17Tests.test_no_launch_default_and_direct_runner_admission_refusal) ... ok
+test_only_outer33_admitted_outer31_and_32_permanently_refused (__main__.CandidateV17Tests.test_only_outer33_admitted_outer31_and_32_permanently_refused) ... ok
+test_outer33_seed_is_canonical_and_exported_admissions_are_blocked (__main__.CandidateV17Tests.test_outer33_seed_is_canonical_and_exported_admissions_are_blocked) ... ok
+test_path_collision_refuses_before_runner (__main__.CandidateV17Tests.test_path_collision_refuses_before_runner) ... ok
+test_receipt_drift_and_wrong_scope_never_call_runner (__main__.CandidateV17Tests.test_receipt_drift_and_wrong_scope_never_call_runner) ... ok
+test_v17_paths_are_freshly_isolated_and_do_not_reuse_source_symlink (__main__.CandidateV17Tests.test_v17_paths_are_freshly_isolated_and_do_not_reuse_source_symlink) ... ok
+
+======================================================================
+FAIL: test_exact_candidate_lock_manifest_and_failure_receipt (__main__.CandidateV17Tests.test_exact_candidate_lock_manifest_and_failure_receipt)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/LOOP/lanes/arc1-gaussian-reliability-20261002/evidence/g2-development-nine-cell-admission-v17/test_candidate.py", line 53, in test_exact_candidate_lock_manifest_and_failure_receipt
+    self.assertEqual(sha(ROOT / relative), digest, relative)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: '73ab2a1eb0b2a93727b556cf68cb50c90f495db81fcd86fd190709373e3eb185' != '913eec3f1e20e8b9451a01d61ad4cbd1c10cf1517276f71ee579b45be2a9277e'
+- 73ab2a1eb0b2a93727b556cf68cb50c90f495db81fcd86fd190709373e3eb185
++ 913eec3f1e20e8b9451a01d61ad4cbd1c10cf1517276f71ee579b45be2a9277e
+ : LOOP/lanes/arc1-gaussian-reliability-20261002/checkpoint.md
+
+----------------------------------------------------------------------
+Ran 16 tests in 57.524s
+
+FAILED (failures=1)

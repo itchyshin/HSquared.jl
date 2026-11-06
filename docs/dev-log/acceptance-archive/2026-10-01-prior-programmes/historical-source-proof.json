@@ -1,0 +1,15 @@
+{
+  "design_no_source_change": {
+    "from": "28f90e09",
+    "to": "56536532",
+    "exit": 0,
+    "matches": true
+  },
+  "v3_source_matches_refresh": {
+    "from": "365f173f",
+    "to": "28f90e09",
+    "exit": 0,
+    "matches": true
+  },
+  "frozen_contract_pins_match": true
+}

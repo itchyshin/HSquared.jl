@@ -1,0 +1,20 @@
+{
+  "schema": "hsquared-arc1-check-result-v1",
+  "recorded_at_utc": "2026-10-12T07:52:11Z",
+  "execution_time_capture": "recorded after terminal command result",
+  "cwd": "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/LOOP/lanes/arc1-gaussian-reliability-20261002/evidence/g2-development-n80-null-outer34-v18",
+  "environment": {
+    "PYTHONDONTWRITEBYTECODE": "1"
+  },
+  "python_executable": "/Library/Frameworks/Python.framework/Versions/3.13/bin/python3",
+  "python_version": "3.13.15",
+  "argv": [
+    "/Library/Frameworks/Python.framework/Versions/3.13/bin/python3",
+    "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/LOOP/lanes/arc1-gaussian-reliability-20261002/evidence/g2-development-n80-null-outer34-v18/test_candidate.py"
+  ],
+  "exit_code": 0,
+  "stdout_summary": "PASS: exact seed, blocked singleton scope, denominator, source lock, and no-execution flags.",
+  "raw_log_sha256": "816897cc024a85670c7eba73a3a011bcaf01419f02e48a626482b6ec38381fc5",
+  "test_script_sha256": "16c4dc4486d42ebdc2a89a3cb8b0ad7dd2ac91fd4503c2af10c9afb352fd65f1",
+  "scope_note": "Current candidate structural contract passed. No fit was launched; the candidate remains blocked from launch pending exact separate approval and required fresh receipts."
+}

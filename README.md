@@ -178,6 +178,11 @@ Implemented now:
   genetic covariance (`diag`, `lowrank`, `fa`), local extractors, opt-in
   recovery harnesses, and a serialized target fixture for future R-lane
   comparator work;
+- bounded experimental Arc1 controls for four-trait Gaussian FA rank
+  selection, univariate repeatability profile intervals, and full-reselection
+  bootstrap intervals. These are opt-in engine routes; Arc1 studies have not
+  run, all G0-G8 gates remain open, and no reliability or calibration claim is
+  supported. See the [Arc1 usage and limits](docs/design/arc1-experimental-usage.md);
 - honest placeholder entry points;
 - team, memory, roadmap, and capability-status documentation.
 

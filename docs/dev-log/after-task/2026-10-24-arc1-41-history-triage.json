@@ -1,0 +1,390 @@
+{
+  "candidate_seed_count": 240,
+  "files": [
+    {
+      "bytes": 918,
+      "candidate_literal_hits": [],
+      "name": "0003-run.toml",
+      "seed_field_names": [
+        "seed_derivation"
+      ],
+      "sha256": "3b578bf467510de9e93a324d8620d540972b264da38253c67adf059a4a6a5abb"
+    },
+    {
+      "bytes": 4418,
+      "candidate_literal_hits": [],
+      "name": "0004-current-composite-source-inventory-candidate-v1.json",
+      "seed_field_names": [],
+      "sha256": "e6235eb9d8623fe7a62d062c2fc6c0f7c7c55367534006b2998121cec3de1691"
+    },
+    {
+      "bytes": 1397,
+      "candidate_literal_hits": [],
+      "name": "0005-current-composite-source-inventory-review-v1.json",
+      "seed_field_names": [],
+      "sha256": "75ab9abc888b1625a4b920aab70183b1916c35c5cc4e3242b438b11eba5f5406"
+    },
+    {
+      "bytes": 921,
+      "candidate_literal_hits": [],
+      "name": "0006-current-source-map-candidate-v1-review.json",
+      "seed_field_names": [],
+      "sha256": "5088168f10ecaca394df6e408bdfa6e88b7f3efaa175e8e1e4a88fd8cbf3041b"
+    },
+    {
+      "bytes": 87782,
+      "candidate_literal_hits": [],
+      "name": "0007-current-source-map-candidate-v1.json",
+      "seed_field_names": [
+        "sim/arc1/manifests/arc1_outer_seeds.csv",
+        "sim/arc1/manifests/arc1_seed_manifest.json",
+        "sim/drac/phase4_v5_reseed.sbatch",
+        "sim/phase4_v5_mv_recovery_reseed.jl"
+      ],
+      "sha256": "bb30e52e5afa15c887c42d711cc11583e5c15c344e63c8e284018ba63dce223e"
+    },
+    {
+      "bytes": 88012,
+      "candidate_literal_hits": [],
+      "name": "0008-current-source-map-candidate-v2.json",
+      "seed_field_names": [
+        "sim/arc1/manifests/arc1_outer_seeds.csv",
+        "sim/arc1/manifests/arc1_seed_manifest.json",
+        "sim/drac/phase4_v5_reseed.sbatch",
+        "sim/phase4_v5_mv_recovery_reseed.jl"
+      ],
+      "sha256": "91c0cacecb11881ca5efde82e6c4c69aeefeee08aa56084e6eec879ad8499263"
+    },
+    {
+      "bytes": 88164,
+      "candidate_literal_hits": [],
+      "name": "0009-current-source-map-candidate-v3.json",
+      "seed_field_names": [
+        "sim/arc1/manifests/arc1_outer_seeds.csv",
+        "sim/arc1/manifests/arc1_seed_manifest.json",
+        "sim/drac/phase4_v5_reseed.sbatch",
+        "sim/phase4_v5_mv_recovery_reseed.jl"
+      ],
+      "sha256": "e109d93e451fd94041f4c14fbcb8e7f1dea1f8fa6bb3dd895bd16bf5e7d8585c"
+    },
+    {
+      "bytes": 88205,
+      "candidate_literal_hits": [],
+      "name": "0010-current-source-map-candidate-v4.json",
+      "seed_field_names": [
+        "sim/arc1/manifests/arc1_outer_seeds.csv",
+        "sim/arc1/manifests/arc1_seed_manifest.json",
+        "sim/drac/phase4_v5_reseed.sbatch",
+        "sim/phase4_v5_mv_recovery_reseed.jl"
+      ],
+      "sha256": "e7f3afddfc2fc056a4e216b168730b16fd231cf24cfa233499080de17bde0993"
+    },
+    {
+      "bytes": 88208,
+      "candidate_literal_hits": [],
+      "name": "0011-current-source-map-candidate-v5.json",
+      "seed_field_names": [
+        "sim/arc1/manifests/arc1_outer_seeds.csv",
+        "sim/arc1/manifests/arc1_seed_manifest.json",
+        "sim/drac/phase4_v5_reseed.sbatch",
+        "sim/phase4_v5_mv_recovery_reseed.jl"
+      ],
+      "sha256": "4be2d699f6ceed9571ef716fa19f07b03947ff5be24811e5b5ece83338ba104c"
+    },
+    {
+      "bytes": 88269,
+      "candidate_literal_hits": [],
+      "name": "0012-current-source-map-candidate-v6.json",
+      "seed_field_names": [
+        "sim/arc1/manifests/arc1_outer_seeds.csv",
+        "sim/arc1/manifests/arc1_seed_manifest.json",
+        "sim/drac/phase4_v5_reseed.sbatch",
+        "sim/phase4_v5_mv_recovery_reseed.jl"
+      ],
+      "sha256": "1aa8dd7fd2e6ef9e1b586d8a687a9ca0f0af0b97961aba72a2736a7d5e147974"
+    },
+    {
+      "bytes": 88565,
+      "candidate_literal_hits": [],
+      "name": "0013-current-source-map-candidate-v7.json",
+      "seed_field_names": [
+        "sim/arc1/manifests/arc1_outer_seeds.csv",
+        "sim/arc1/manifests/arc1_seed_manifest.json",
+        "sim/drac/phase4_v5_reseed.sbatch",
+        "sim/phase4_v5_mv_recovery_reseed.jl"
+      ],
+      "sha256": "cbf8f959634d629d3fb7029fb0a00c194dec2adbea43c399deb2163aa67bdca3"
+    },
+    {
+      "bytes": 2147,
+      "candidate_literal_hits": [],
+      "name": "0017-frontend-lock-candidate-v3-20261022.json",
+      "seed_field_names": [],
+      "sha256": "97e70d5f261e0025a890fe15c5fcc70b44f84485512833be189f8b4da82a93ac"
+    },
+    {
+      "bytes": 1912,
+      "candidate_literal_hits": [],
+      "name": "0018-g6-candidate-v7-independent-review-20261022.json",
+      "seed_field_names": [],
+      "sha256": "28517f7a5bd91b064b783255e2bbda89a38765ad9d795aa4f41feb7a49b2fefb"
+    },
+    {
+      "bytes": 1280,
+      "candidate_literal_hits": [],
+      "name": "0019-g6-candidate-v8-runner-selftest-20261023.json",
+      "seed_field_names": [],
+      "sha256": "f4095b19ab1ca70416c2ee1bc09d27163075f86661432c10407804b0f4387e8e"
+    },
+    {
+      "bytes": 30742,
+      "candidate_literal_hits": [],
+      "name": "0020-g6-current-source-freeze-candidate-v3-20261022.json",
+      "seed_field_names": [],
+      "sha256": "21e7102f5191b5d2b70930239e1c747c216e80ab4eb4ddf1bfe822b490ef3d80"
+    },
+    {
+      "bytes": 30785,
+      "candidate_literal_hits": [],
+      "name": "0021-g6-current-source-freeze-candidate-v4-20261022.json",
+      "seed_field_names": [],
+      "sha256": "c1fed3c5e55f3a973ba1ca8ac5c6d3957200b645c90ec9c5c575406426139634"
+    },
+    {
+      "bytes": 30801,
+      "candidate_literal_hits": [],
+      "name": "0022-g6-current-source-freeze-candidate-v5-20261022.json",
+      "seed_field_names": [],
+      "sha256": "a3934391fe8408c79651ed2d2ae87e61fbb3aa7507e90f13bbddce9df93cc4bb"
+    },
+    {
+      "bytes": 30732,
+      "candidate_literal_hits": [],
+      "name": "0023-g6-current-source-freeze-candidate-v6-20261022.json",
+      "seed_field_names": [],
+      "sha256": "f82f69b18c8cd928569b0235d64793ff2217bec7b35684fa0c5b014234c2a78f"
+    },
+    {
+      "bytes": 30745,
+      "candidate_literal_hits": [],
+      "name": "0024-g6-current-source-freeze-candidate-v7-20261022.json",
+      "seed_field_names": [],
+      "sha256": "0e88a2816d21af4e2c77f5babdc187cf2604907fc2a6d062c79b4673017ce306"
+    },
+    {
+      "bytes": 30739,
+      "candidate_literal_hits": [],
+      "name": "0025-g6-current-source-freeze-candidate-v8-20261023.json",
+      "seed_field_names": [],
+      "sha256": "858a6aa78b30e2aab45d51b85d8a77e1740a6134dcd63307095a196fb24bae39"
+    },
+    {
+      "bytes": 1654,
+      "candidate_literal_hits": [],
+      "name": "0026-g6-current-source-freeze-review-v3-20261022.json",
+      "seed_field_names": [
+        "model_fits_or_seed_runs"
+      ],
+      "sha256": "312cd32e9d78f83e9d854f7f77d1f410377cc26025f20604a6978c46aae8901c"
+    },
+    {
+      "bytes": 132735,
+      "candidate_literal_hits": [],
+      "name": "0027-g6-g7-current-source-inventory-candidate.json",
+      "seed_field_names": [
+        "docs/dev-log/recovery-checkpoints/2026-06-22-mv-reml-predeclared-48seed.md",
+        "docs/dev-log/recovery-checkpoints/2026-06-30-mv-3trait-48seed.md",
+        "docs/dev-log/recovery-checkpoints/2026-06-30-mv-fullsib-48seed.md",
+        "docs/dev-log/recovery-checkpoints/2026-07-01-gamma-recovery-48seed.md",
+        "docs/dev-log/recovery-checkpoints/2026-07-01-ordinal-recovery-48seed.md",
+        "docs/dev-log/recovery-checkpoints/2026-09-24-k-effect-coverage-366-seeds.txt",
+        "sim/arc1/manifests/arc1_outer_seeds.csv",
+        "sim/arc1/manifests/arc1_seed_manifest.json",
+        "sim/drac/phase4_v5_reseed.sbatch",
+        "sim/phase4_v5_mv_recovery_reseed.jl",
+        "tools/mv_h3_rg_seed_audit.py",
+        "tools/test_mv_h3_rg_seed_audit.py"
+      ],
+      "sha256": "7751118f6c684bc6280dae9b62b16ee8afb4f95b0d690c4bc724253ef5535c34"
+    },
+    {
+      "bytes": 2259,
+      "candidate_literal_hits": [],
+      "name": "0028-g7-package-checks-synthetic-selftest-20261023.json",
+      "seed_field_names": [],
+      "sha256": "6d84a9683f68d28da9c8580024c8827519612325e9d801e503983f83b6ec6fa1"
+    },
+    {
+      "bytes": 1155,
+      "candidate_literal_hits": [],
+      "name": "0029-restored-fa-factor-source-v1.json",
+      "seed_field_names": [],
+      "sha256": "2f08837541abed32859137fd4c1004d650d1c2dc3743bdc36a1c5f98ed30dfc7"
+    },
+    {
+      "bytes": 918,
+      "candidate_literal_hits": [],
+      "name": "0032-run.toml",
+      "seed_field_names": [
+        "seed_derivation"
+      ],
+      "sha256": "3b578bf467510de9e93a324d8620d540972b264da38253c67adf059a4a6a5abb"
+    },
+    {
+      "bytes": 3323,
+      "candidate_literal_hits": [],
+      "name": "0033-undeclared-eight-current-candidate-review-20261022.json",
+      "seed_field_names": [],
+      "sha256": "c2e6ffd8411a82affd8446de9d78dc08f8174a583d2d825e3e46516cdb69a1cb"
+    },
+    {
+      "bytes": 113814,
+      "candidate_literal_hits": [],
+      "name": "0035-current-seed-audit-recompute-20261023.json",
+      "seed_field_names": [
+        "candidate_seed_recomputation",
+        "distinct_seed_context_literal_count",
+        "distinct_seed_context_literals",
+        "exact_seed_values_persisted",
+        "unique_seeds"
+      ],
+      "sha256": "4fdb7067592b4bdf9dba0139583c392c1908d614a0ffa0731c6d69b9dcd3df1c"
+    },
+    {
+      "bytes": 88302,
+      "candidate_literal_hits": [],
+      "name": "0036-current-source-map-candidate-v10-20261023.json",
+      "seed_field_names": [
+        "sim/arc1/manifests/arc1_outer_seeds.csv",
+        "sim/arc1/manifests/arc1_seed_manifest.json",
+        "sim/drac/phase4_v5_reseed.sbatch",
+        "sim/phase4_v5_mv_recovery_reseed.jl"
+      ],
+      "sha256": "bd1a1d3376c73247ae7e7f1fb0cd835f861cece4792048c6aa8d8b13a41fc873"
+    },
+    {
+      "bytes": 87856,
+      "candidate_literal_hits": [],
+      "name": "0037-current-source-map-candidate-v11-20261023.json",
+      "seed_field_names": [
+        "sim/arc1/manifests/arc1_outer_seeds.csv",
+        "sim/arc1/manifests/arc1_seed_manifest.json",
+        "sim/drac/phase4_v5_reseed.sbatch",
+        "sim/phase4_v5_mv_recovery_reseed.jl"
+      ],
+      "sha256": "64126627420f54952e3d95fc851a26cdcc8311125224cb45607f30127b8ed565"
+    },
+    {
+      "bytes": 89064,
+      "candidate_literal_hits": [],
+      "name": "0038-current-source-map-candidate-v8-20261023.json",
+      "seed_field_names": [
+        "sim/arc1/manifests/arc1_outer_seeds.csv",
+        "sim/arc1/manifests/arc1_seed_manifest.json",
+        "sim/drac/phase4_v5_reseed.sbatch",
+        "sim/phase4_v5_mv_recovery_reseed.jl"
+      ],
+      "sha256": "b00d1ed8dc1083c919224b206b342b8af6cfd25bfa12f91573017d0fe9f79c4b"
+    },
+    {
+      "bytes": 88884,
+      "candidate_literal_hits": [],
+      "name": "0039-current-source-map-candidate-v9-20261023.json",
+      "seed_field_names": [
+        "sim/arc1/manifests/arc1_outer_seeds.csv",
+        "sim/arc1/manifests/arc1_seed_manifest.json",
+        "sim/drac/phase4_v5_reseed.sbatch",
+        "sim/phase4_v5_mv_recovery_reseed.jl"
+      ],
+      "sha256": "3c6be1d83084bb1a4009baac89d99e36342f23bb757efd84ca4469bbea555288"
+    },
+    {
+      "bytes": 4031,
+      "candidate_literal_hits": [],
+      "name": "0040-current-source-map-v11-live-inventory-check-20261023.json",
+      "seed_field_names": [],
+      "sha256": "1ad3bab13fc42dc6fc7518246d6b758918de4070fc2c91915d3d580df52b529d"
+    },
+    {
+      "bytes": 7589,
+      "candidate_literal_hits": [],
+      "name": "0041-current-source-map-v8-six-path-reconciliation-20261023.json",
+      "seed_field_names": [],
+      "sha256": "a066d4507cdb935b6aef5ab8f74c85ec624b5fd9f080f09dab60862ba50f5b06"
+    },
+    {
+      "bytes": 8773,
+      "candidate_literal_hits": [],
+      "name": "0042-candidate-pending-review.json",
+      "seed_field_names": [],
+      "sha256": "6c76739ab00fe66f0fbfef5ac604ea1fa41b911b58a719dcdcbae0d93615eb1b"
+    },
+    {
+      "bytes": 9257,
+      "candidate_literal_hits": [],
+      "name": "0043-candidate-reviewed.json",
+      "seed_field_names": [],
+      "sha256": "2e8cad7b326f10fb110381fd2a07637fbd259ac804c599e23fb30182eaecdfe5"
+    },
+    {
+      "bytes": 2621,
+      "candidate_literal_hits": [],
+      "name": "0044-independent-review-receipt.json",
+      "seed_field_names": [],
+      "sha256": "625696b1dcdc29a30c0e67dff6aa459b3aca39f053c677a3f1d98bdac9ff67b3"
+    },
+    {
+      "bytes": 15227,
+      "candidate_literal_hits": [],
+      "name": "0045-preflight.json",
+      "seed_field_names": [],
+      "sha256": "53814b98393f77f0e33bc4dc2ea369ee83cafc918daaab5c16c203df85d524fa"
+    },
+    {
+      "bytes": 118374,
+      "candidate_literal_hits": [],
+      "name": "0046-seed-audit-candidate-verification-20261023.json",
+      "seed_field_names": [
+        "candidate_seed_list_sha256",
+        "candidate_seed_recomputation",
+        "distinct_seed_context_literal_count",
+        "distinct_seed_context_literals",
+        "exact_seed_values_persisted",
+        "unique_seeds"
+      ],
+      "sha256": "d0558f640ea35dd5cbe5378c86dd600d6d8b413515b7b1ee08a440496b94d13d"
+    },
+    {
+      "bytes": 3349,
+      "candidate_literal_hits": [],
+      "name": "0047-pilot-candidate-seed-collision-screen.json",
+      "seed_field_names": [
+        "/private/tmp/HSquared.jl-arc1-recovery-20261015/sim/arc1/manifests/arc1_outer_seeds.csv",
+        "/private/tmp/HSquared.jl-arc1-recovery-20261015/sim/arc1/manifests/arc1_seed_manifest.json",
+        "all_batch_seeds_match_canonical_pilot_allocation",
+        "candidate_seed_duplicates",
+        "collisions_with_current_seed_context_literals",
+        "collisions_with_frozen_historical_seed_context_literals",
+        "historical_seed_audit_sha256",
+        "unique_seeds"
+      ],
+      "sha256": "1d865acc9e553649704a2c33a99566525178db00704987497e62429acb1bce69"
+    },
+    {
+      "bytes": 977,
+      "candidate_literal_hits": [],
+      "name": "0048-arc1-474-totoro-history-followup-20261024.md",
+      "seed_field_names": [],
+      "sha256": "95312d8334d3a821e3c82010e4531464562689f9c9ec4a5492aeaf60dc8f8c87"
+    },
+    {
+      "bytes": 15221,
+      "candidate_literal_hits": [],
+      "name": "0100-source_sha256.tsv",
+      "seed_field_names": [],
+      "sha256": "427f10d2ad9c276375bb9a2850a152c9835d94af78b9ba5641a6e2bf20526c98"
+    }
+  ],
+  "files_count": 41,
+  "schema": "arc1-unparsed-history-triage-v1"
+}

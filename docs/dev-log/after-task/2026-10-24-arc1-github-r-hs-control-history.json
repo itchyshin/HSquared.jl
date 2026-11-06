@@ -1,0 +1,309 @@
+{
+  "schema": "arc1-github-file-history-hash-audit-v1",
+  "repository": "itchyshin/hsquared",
+  "path": "R/hs_control.R",
+  "ref": "main plus all commits returned by /commits?path=R/hs_control.R&per_page=100",
+  "expected_sha256": "0951333cb8541a1c6615ba0131db5c98f8b5a59bccc24ab3358d4a47d85146f4",
+  "github_main_sha256": "f1c8c17ba5646da8b208cd716e21967c981476c76e9ca8ac422cb54a25393ffb",
+  "commit_count": 59,
+  "content_versions_hashed": 59,
+  "exact_matches": 0,
+  "unavailable_commits": [],
+  "per_commit": [
+    {
+      "commit": "ef46343658b2af36d0c11626b4f76ad798b7eceb",
+      "date": "2026-10-23T01:25:37Z",
+      "sha256": "86e7d9d76fd037d5e861fa7e9802d5f88cc78d84e1105f2e15b57a1b4d716109"
+    },
+    {
+      "commit": "646f19062506101efce1dfd08a4675fcc255fa5c",
+      "date": "2026-10-19T20:01:31Z",
+      "sha256": "97c98f697d4942f6d0c9440d26e78de7fba638c19c580191c2d599efe22476ea"
+    },
+    {
+      "commit": "995e0666e21b211da401378479201b501a4bcd18",
+      "date": "2026-10-18T20:20:11Z",
+      "sha256": "0a08bf1b76477316d5eda5817c2a0d46d7d3cc4fe34193164b5a2992f63e0e8a"
+    },
+    {
+      "commit": "df169e4ff653dd313d4e8270aacc28253f113328",
+      "date": "2026-10-04T18:34:10Z",
+      "sha256": "71cd526145ddccf269695cf2af6523f861713ee483912922da047a16fad9e7b2"
+    },
+    {
+      "commit": "734ab368760f8296c39cb8e700c5326fd1d0461f",
+      "date": "2026-10-04T18:30:16Z",
+      "sha256": "2778130f1bcfe81d4671d0a6bbe14587476e5bfde8310d63860a6b2b083b3056"
+    },
+    {
+      "commit": "5dd38dad0d5fd9fc03a09cf8eeb5d1f225ff6976",
+      "date": "2026-10-04T17:56:45Z",
+      "sha256": "71cd526145ddccf269695cf2af6523f861713ee483912922da047a16fad9e7b2"
+    },
+    {
+      "commit": "0aa58bfb85571f2b84bb334bfb02bf10e1b6fb67",
+      "date": "2026-10-04T17:44:31Z",
+      "sha256": "c665701e6327141aafa11dc93619e22a68300a1808ed0847100e0ce3a8f57690"
+    },
+    {
+      "commit": "34f2e263d16746b99f9670be1599584b9f3f07dd",
+      "date": "2026-10-04T17:43:02Z",
+      "sha256": "146fd2b4a4b9f8d73cd6601b5db74db491a5e7ae1fc72338fd12ae4b0f6b27d3"
+    },
+    {
+      "commit": "b80b49ff670f220765b8be74be5e1b10cace8c70",
+      "date": "2026-10-04T17:38:23Z",
+      "sha256": "355cb672fd0e8526e709703ab784f45a35ff1673237be78986d7ca3c07800c89"
+    },
+    {
+      "commit": "2bea047ee98feaccfb5f3658c105823625d83afc",
+      "date": "2026-10-04T13:49:51Z",
+      "sha256": "56ad8c92233ba0dd4e5052bb51108f6443de5724881f6746e3aa1da46d4a8743"
+    },
+    {
+      "commit": "5efe0ec41d84d5c82dfbe52e1f4e89b52fa4deb7",
+      "date": "2026-09-30T23:01:25Z",
+      "sha256": "046245873504ef6228486383a4139b1d73c1a24a9033cf754fd2c585eb6c9891"
+    },
+    {
+      "commit": "e11f2675074fdbaf68d3aa2d56b5c624df70c229",
+      "date": "2026-09-27T23:42:09Z",
+      "sha256": "17f273883f2b58086abe2c0358868c5874ddfacd3adf9f8c04aeb3037787ef41"
+    },
+    {
+      "commit": "d63283eea19b79c721dd4ab4213bf30e6c457cb7",
+      "date": "2026-09-27T21:26:11Z",
+      "sha256": "c50f2d3aee307708df66500b71414ac4f7f81fad7cf8d736f4223cc7400bee50"
+    },
+    {
+      "commit": "1e5e9cb997dc7acd3f7b607ef249ed5881e8258b",
+      "date": "2026-09-26T15:46:21Z",
+      "sha256": "32c71375ed12acdaf563cb0e6d4cef09859732fd8f05a8d12e3e691533d1f7e3"
+    },
+    {
+      "commit": "2b1d5dbde51c196ae7db963137aa5b2d15d8de64",
+      "date": "2026-09-24T23:14:10Z",
+      "sha256": "b3ac7e2f2625717c9f1ffd15c0befaf0bf5c53e08e4dbf29ccebad104f9746d7"
+    },
+    {
+      "commit": "35f91502888eca623e83a2f86375ceb0807396db",
+      "date": "2026-09-20T21:12:49Z",
+      "sha256": "3dd082c4c05b8d9dcaa1b19aa05a1481eb4583896cda1e9d8fdfb1bfde3965d4"
+    },
+    {
+      "commit": "fd10dca988aa2f7d2a9957491395ccaf6b9ecf40",
+      "date": "2026-09-20T19:49:31Z",
+      "sha256": "f368aa6e4ca7391814216981ce57cf81e8caaad69a30d3f27efbcf4faf881c39"
+    },
+    {
+      "commit": "e28ba19ce02b6169cbfd5c229bd111baa8d3a034",
+      "date": "2026-09-16T00:11:32Z",
+      "sha256": "74a91530b8830ed52fa845091b6bdd7bbd70fda7daa05b0a3fcb4969db843870"
+    },
+    {
+      "commit": "c4dc59266990f7e31cd86bf6534556bc851f5e4b",
+      "date": "2026-09-15T21:25:29Z",
+      "sha256": "f6005fac66b1b485cfd13b6f9823ee303bffa01a9b81c40410854d3c4e5d24ec"
+    },
+    {
+      "commit": "35faaa1538b1ad0f98c6ccabaa66770825e1198f",
+      "date": "2026-09-13T20:28:45Z",
+      "sha256": "82ecb0fb9ad0fb2c3911502c7ed6e1fb5bda1fbd0fc668f2e51e38d9f7fe50f7"
+    },
+    {
+      "commit": "1a1f4a6755289fb810e9b33b27252faba0bd6a35",
+      "date": "2026-09-13T19:56:48Z",
+      "sha256": "2085f91ff6239b653ceb2abeb6159b93dd27c5a8b72136b58daee7e5f909dfb0"
+    },
+    {
+      "commit": "f62ce52aff296945230cac5abc61a2282063df72",
+      "date": "2026-09-13T19:41:45Z",
+      "sha256": "03eb257706ad75ff9e2e22d2602bc9995d7cbe1c6147c035c2c2e4a5e5f6b277"
+    },
+    {
+      "commit": "fb5987f201668fa4dde794e25f42d7249863e870",
+      "date": "2026-09-11T23:54:46Z",
+      "sha256": "92a0700db92af1f652296f8fd67ce9169001658e606bb776451ff0ee217412bc"
+    },
+    {
+      "commit": "ae1246553a3413ce6ff3a6550211399c6d19dd2b",
+      "date": "2026-09-04T12:32:09Z",
+      "sha256": "e3e27afbf559cd82c50217b7e5a1ec16f5e169276f350d750c6d0fb9e1288118"
+    },
+    {
+      "commit": "b7c25654b36fc0cbb7ab6981a20df55d6c5b7e55",
+      "date": "2026-09-03T12:28:02Z",
+      "sha256": "eeefd63a6082df6ce62e28cceec2a42e5677908119ccd942c2690928f04babaf"
+    },
+    {
+      "commit": "e44c26b691e21030d5333d8a16cc26a75b2b70ad",
+      "date": "2026-09-03T00:50:11Z",
+      "sha256": "fadc5387ba8c3943da03ff67464a1be33883556792a101696164700470d4080f"
+    },
+    {
+      "commit": "a5ff39375e185b36d5c88aecd6c808c5c441d893",
+      "date": "2026-09-02T23:21:30Z",
+      "sha256": "69e591ce28d0be206aa44a9899a85a66872425a89eaf1f2cae14db0c5790e903"
+    },
+    {
+      "commit": "385a1e3573af89a94323d2e5972d497e92c07c3a",
+      "date": "2026-09-02T12:19:08Z",
+      "sha256": "bcc80118edff2775583625ed9876ecf37016ffe96b45c5f6e7bbc5f51f0b638d"
+    },
+    {
+      "commit": "cd13ac946272f2e9333fb18a2aa81ea919792bad",
+      "date": "2026-09-02T12:06:25Z",
+      "sha256": "7caea85bd8f4978e5e07db1f194fe0fd2d10cf80c864972a524b799df7762b71"
+    },
+    {
+      "commit": "14f5a7b7f2327cce2f6487add49bb125cbdd70c0",
+      "date": "2026-09-02T06:26:20Z",
+      "sha256": "6685f877399f23cc2c6b5b28ff6b8a67051493d325c87c85fe3ceee703a9af4e"
+    },
+    {
+      "commit": "73b50dcc68158c9202e9e62b2ee12cc24d842265",
+      "date": "2026-07-13T12:34:40Z",
+      "sha256": "7a4f602042177dbb3fa0831976afda4b1c3ccd87634fda6e8bee90e63d212f1f"
+    },
+    {
+      "commit": "8a30d9000d90aa95f75208f276cac544512d7d89",
+      "date": "2026-07-13T01:03:48Z",
+      "sha256": "23c6bc712a0fb9d2850a570a75050ff424dde7d93b943deafd8c5681411ba7bf"
+    },
+    {
+      "commit": "2f8ed528016c2dd0e44c501d40d63fba8b1a63bd",
+      "date": "2026-07-13T00:20:38Z",
+      "sha256": "24de562d036469268c87241302a10cdaef002f4d1f1ae57ccafd1baf7a3923d4"
+    },
+    {
+      "commit": "4fa4b16cfcc5369b73a9cc078bdf6eb04e872bee",
+      "date": "2026-06-24T12:49:44Z",
+      "sha256": "125d8802105fff97e54f8fd47931570b2ec0df29b842f897c2288bded14162ed"
+    },
+    {
+      "commit": "c7ed07b3f20df567a0fe49c35195c39dd3d69440",
+      "date": "2026-06-21T18:06:24Z",
+      "sha256": "e327a9273e4bce0113a437dee9af8b4c89c4cd08376a39e8fc455b761d00f9a5"
+    },
+    {
+      "commit": "2d27231ac8804dd07775138d3eefc2afb127dfc9",
+      "date": "2026-06-21T16:24:22Z",
+      "sha256": "8228390ff6b0dfd1f586031a20306dc78165fc4cf9f4ae5d9d4e88d23d8c4495"
+    },
+    {
+      "commit": "4ae0736be13adfe983abd167ea36f2e5a1bda4cb",
+      "date": "2026-06-21T14:31:34Z",
+      "sha256": "886c8e9dc782c7bf59fce90ea027d218b08a444a55cea24038bb0ba3a6e82d72"
+    },
+    {
+      "commit": "e279b26e6d60300894f6ce026065f2acf499bd56",
+      "date": "2026-06-21T03:03:56Z",
+      "sha256": "7b7aa34c923808755f9332eb3802fe3969eb8e183034b190fb262a0ec2efc0dd"
+    },
+    {
+      "commit": "5f0e25f97b38cbee63b891f02d01d45b76e446e7",
+      "date": "2026-06-21T01:41:52Z",
+      "sha256": "6f35e49e6420e8940bcafa698d605fbabe74bcfab5825025255c58a0f32256f6"
+    },
+    {
+      "commit": "0cfe823648fbf42314f3b58c15231d622df8e4d6",
+      "date": "2026-06-19T03:02:16Z",
+      "sha256": "50fbfe938df581afd14b0276156421a6190507b0aa03796370490a3975f2b83e"
+    },
+    {
+      "commit": "53994f02b5046fd0763e98a34f79fd1554dfcc99",
+      "date": "2026-06-18T23:40:10Z",
+      "sha256": "21caa0bd987bde436113e39e8d1bf021772ab97a952b0cdb7d640c4ee5c1746f"
+    },
+    {
+      "commit": "3e12fa1fdcd4677f0e1762cfadee93e6547814d8",
+      "date": "2026-06-14T17:57:47Z",
+      "sha256": "248f0f09930deb51ac5e35e67a1b29fd06258ab2695b09b4fed968da0b765674"
+    },
+    {
+      "commit": "774284f3e547f0410b1ad272cea37dead8a873e2",
+      "date": "2026-06-14T17:49:38Z",
+      "sha256": "f20487603db7f4fd6e2ac200d68f57cb57ad461d8b7c69f28551cbae21aa644e"
+    },
+    {
+      "commit": "835e8c2233494da10e40f15cfae2a051e7474296",
+      "date": "2026-06-14T12:05:48Z",
+      "sha256": "57fb9d725f7ce3ad9c0f33a86c5c80cc9f69d42b161e15a4fc4a769dd1930371"
+    },
+    {
+      "commit": "27e30c2ca2d84082c9bcf98a21898864fa4fdc30",
+      "date": "2026-06-14T02:56:00Z",
+      "sha256": "15aa75f2cc0966498cac7e3e672c09cd0393c1c8988cd0b848b918811ec1b570"
+    },
+    {
+      "commit": "d03a98735630d06a23c721d57a8d2d8e3ad5bb30",
+      "date": "2026-06-14T02:25:45Z",
+      "sha256": "031bf54d48009aa4b2a43152a2c88183e94811f99182579a3554a90b69ed8e3b"
+    },
+    {
+      "commit": "bbd527df756e4962a30b278a667def678b6a77c2",
+      "date": "2026-06-14T01:59:49Z",
+      "sha256": "f21bb2a9ab0d94f8db7bc31c5768ab37b24a0214c86f7ab0be7d2a4240802c68"
+    },
+    {
+      "commit": "8930323ce7b6cc0e6c36ecedcf00f840ca131495",
+      "date": "2026-06-14T01:39:31Z",
+      "sha256": "f38da05b3cc67890c34592587870114103bb6d7c057731b44a76220a4a143eb5"
+    },
+    {
+      "commit": "803793d434f8742f5ef055572de2ebc876191986",
+      "date": "2026-06-14T01:08:12Z",
+      "sha256": "b1b3dfe2d55465e116d7422f5f1aa11ed9b911ccc042b50161f65794a2b02951"
+    },
+    {
+      "commit": "e7026a9abd1b4b28264fa49d1c91d43b60505d7d",
+      "date": "2026-06-14T00:41:00Z",
+      "sha256": "c5cb884102475f5e9676683a25edf08a7c9555461c62b12f64c75eb93fd931d9"
+    },
+    {
+      "commit": "f408fb2cee3414e489aaec87e998199042de4935",
+      "date": "2026-06-14T00:15:04Z",
+      "sha256": "aaf457f11f099837adb3b43d0c9e42a8266989c78ed2e98cc81f2d63b7ece246"
+    },
+    {
+      "commit": "fd7975e46e1fa6c1f34f67d0389b6c7ead84f8ea",
+      "date": "2026-06-13T21:58:41Z",
+      "sha256": "43952ccb21188d1d70e06cea6313b3b417975b029e1832b4301fdd9e45962e22"
+    },
+    {
+      "commit": "eba8711cd7ac97f2238cc82497a90e491ddf7dd8",
+      "date": "2026-06-13T16:52:56Z",
+      "sha256": "67e1b0020857617ec8d7b67741146d5a773635bf47719bf2ae79dd26f6512bba"
+    },
+    {
+      "commit": "6add692cf5c32c545e58aa5475da001c6d1e1f05",
+      "date": "2026-06-13T13:42:43Z",
+      "sha256": "94d93cd753cb5f6b771ea1ef806cdf874b07760793f5f5e2fddc846d4901867c"
+    },
+    {
+      "commit": "99d974a7fdc0af051fcb58d5f41f346dcd1874b9",
+      "date": "2026-06-13T09:18:19Z",
+      "sha256": "1d027e675407a6709bfa59fec84724f86e058a1ac6f12374f180e2bad6400c32"
+    },
+    {
+      "commit": "5feac1f0e26e175be1808750226a3bb3bde81d0d",
+      "date": "2026-06-13T05:34:26Z",
+      "sha256": "fa600a48cf80b047e0b9b782ca821b6d9bf13db1a9bd8bf3652e9c382ed08398"
+    },
+    {
+      "commit": "2a9ba37cb296d65e7dcf511d6828d492467449d0",
+      "date": "2026-06-13T04:59:57Z",
+      "sha256": "a685c906715255d422d0b64a35371ea11e293cbfcdc8e410a3cf8a30c37573f3"
+    },
+    {
+      "commit": "9eabf0da1570497b07d99bb35e515f4084141b17",
+      "date": "2026-06-13T04:43:38Z",
+      "sha256": "1f541402a63686c01c75ff49e9bca560a5843f8df0f54c0773c5b24d814be400"
+    },
+    {
+      "commit": "d956a25954e926896440b133cda9066a3d293ce3",
+      "date": "2026-06-13T01:22:09Z",
+      "sha256": "a5521fef23f52ddebc2ffdd14f93011ffc383b6e42125e52b3be93893388dd54"
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "assessment_performed": true,
+  "draft_sha256": "9d2674109fcc137e43be5faa3a5f857865b32bc143e1990feb3f5da3d6109393",
+  "draft_version": "v4",
+  "requested_mode": "independent",
+  "assessor_type": "self",
+  "reviewer": "Codex self-assessment",
+  "method": "Manual post-draft review against exact executor test output, current source, retained gate ledger and failure records; no extra model call.",
+  "genre": "Software-engineering after-task report",
+  "coverage": "Whole report",
+  "score": 2,
+  "style_status": "scored",
+  "score_reason": "The report distinguishes the corrected full test pass from earlier failed attempts and keeps scientific gates explicitly open.",
+  "confidence": "medium",
+  "confidence_reason": "The full executor output and focused adversarial output were checked directly; G7 and scientific validation remain unrun.",
+  "examples": [
+    {
+      "location": "Follow-up section",
+      "cue": "The corrected full executor file then passed 541/541 assertions",
+      "impact": "Gives a concrete final verification result while preserving the earlier test failures as history.",
+      "repair": "No change needed.",
+      "line": null,
+      "quote": "The corrected full executor file then passed 541/541 assertions, reference-admission tests 19/19, diagnostic identity tests 25/25, and framing tests 7/7, in 20m50.8s total."
+    }
+  ],
+  "evidence_none_reason": null,
+  "science_gate": "not_applicable",
+  "science_gate_reason": "The report makes no biological inference or scientific coverage claim.",
+  "facts_gate": "pass",
+  "facts_gate_reason": "Changed claims were matched to the final Julia/Python test output and current source.",
+  "references_gate": "not_applicable",
+  "references_gate_reason": "The report contains no external references.",
+  "date": "2026-10-11",
+  "calibration_status": "No style calibration controls were reviewed this turn; the score is an uncertain self-judgment.",
+  "interpretation": "perceived_style_not_authorship"
+}

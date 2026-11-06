@@ -1,0 +1,13 @@
+Retained command status for 2026-10-09-g5-v4-residual-scalar-predicates-zero-exit.log
+
+Command:
+setopt pipefail
+JULIA_DEPOT_PATH=/private/tmp/hsq-arc1-julia-depot:/Users/z3437171/.julia JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 julia --project=. --startup-file=no -e 'using Test, HSquared; include("test/arc1_simulation_executor.jl")' 2>&1 | tee docs/dev-log/check-log.d/2026-10-09-g5-v4-residual-scalar-predicates-zero-exit.log
+
+Observed tool exit status: 0
+Observed executor: 513/513 in 17m45.0s
+Observed reference admission: 19/19
+Observed UTF-8 identity: 15/15
+Observed container framing: 7/7
+Test source SHA-256: 25d43c7be49227010404df99a6bbc114bbf2c0a6950b3fdc8fd6f73be9fdd181
+Output log SHA-256: f56d87095067e23c1a0f574fa677c786ae860b45fc45747668682ce5c39f3bd2

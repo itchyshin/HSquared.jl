@@ -1,0 +1,4 @@
+matched_loglik=169.31943819446093
+unmatched_loglik=233.39503731603875
+absolute_discrepancy=64.07559912157782
+refusal_threshold=1e-8

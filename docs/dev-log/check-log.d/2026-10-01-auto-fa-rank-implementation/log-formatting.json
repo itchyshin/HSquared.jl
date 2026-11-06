@@ -1,0 +1,86 @@
+[
+  {
+    "path": "r-package-check-current-project-failure-testthat.Rout.fail",
+    "original_sha256": "33bc94f76340087ed025515e0b067d448732cdf5ae4a5f3ebcc2ce60de142ae4",
+    "tracked_copy_sha256": "8ad6bb615ac60832523577c9a1b82ba00e0203d812de5f2c22f551cbe6a887ed",
+    "format": "terminal carriage returns expanded; trailing terminal whitespace trimmed"
+  },
+  {
+    "path": "r-package-check-testthat.Rout",
+    "original_sha256": "14ce86b801795651c403672499210dc93e3ffb4d5366ada8fd0cbc3528a8328e",
+    "tracked_copy_sha256": "f772cd6a3c1657715eeae6be94eb0a11314adc10a2338562738d1ee7c8491bae",
+    "format": "terminal carriage returns expanded; trailing terminal whitespace trimmed"
+  },
+  {
+    "path": "r-gate-run.log",
+    "original_sha256": "a8cf3d3bff9f9d60488479bbb20ff974a0ce042970dc5fa61ba3153ce019c08b",
+    "tracked_copy_sha256": "a8cf3d3bff9f9d60488479bbb20ff974a0ce042970dc5fa61ba3153ce019c08b",
+    "format": "terminal carriage returns expanded; trailing terminal whitespace trimmed"
+  },
+  {
+    "path": "engine-gate-run.log",
+    "original_sha256": "8c261a9bd25127bb00568e86b76fe62fcccbc12e13d5d1826c80a76d5c59f8a4",
+    "tracked_copy_sha256": "8c261a9bd25127bb00568e86b76fe62fcccbc12e13d5d1826c80a76d5c59f8a4",
+    "format": "terminal carriage returns expanded; trailing terminal whitespace trimmed"
+  },
+  {
+    "path": "engine-gate-final.log",
+    "original_sha256": "0537b63fe3254f22817ca4d753a6ecea3bd9bbec7519cf732a5622f38a77541f",
+    "tracked_copy_sha256": "0537b63fe3254f22817ca4d753a6ecea3bd9bbec7519cf732a5622f38a77541f",
+    "format": "terminal carriage returns expanded; trailing terminal whitespace trimmed"
+  },
+  {
+    "path": "r-package-check-00check.log",
+    "original_sha256": "a016f836adc36865f3605cd752b34e9a476acb437af093596a05c5715c977544",
+    "tracked_copy_sha256": "a016f836adc36865f3605cd752b34e9a476acb437af093596a05c5715c977544",
+    "format": "terminal carriage returns expanded; trailing terminal whitespace trimmed"
+  },
+  {
+    "path": "r-full-gate-final.log",
+    "original_sha256": "917628050f04cf2502e8fa6a376ea6e7d498591a3685ce7bbcee25ad8aa4252f",
+    "tracked_copy_sha256": "917628050f04cf2502e8fa6a376ea6e7d498591a3685ce7bbcee25ad8aa4252f",
+    "format": "terminal carriage returns expanded; trailing terminal whitespace trimmed"
+  },
+  {
+    "path": "k1-ordinary-witness.log",
+    "original_sha256": "0715ca866ed48a37142467c9b93db8fbc4d0a66c9269df478739da312e41400b",
+    "tracked_copy_sha256": "0715ca866ed48a37142467c9b93db8fbc4d0a66c9269df478739da312e41400b",
+    "format": "terminal carriage returns expanded; trailing terminal whitespace trimmed"
+  },
+  {
+    "path": "julia-full-gate-run.log",
+    "original_sha256": "c8a1e0dac60d0f565bb7daea5d933bb5c1a363f621ba308c75ecdafff780e3b9",
+    "tracked_copy_sha256": "c8a1e0dac60d0f565bb7daea5d933bb5c1a363f621ba308c75ecdafff780e3b9",
+    "format": "terminal carriage returns expanded; trailing terminal whitespace trimmed"
+  },
+  {
+    "path": "r-interrupt-worker-live.log",
+    "original_sha256": "1739082d856995aa0155797f06f27b493474d3080b74328c4dbd6007bdf18c46",
+    "tracked_copy_sha256": "9e352e7aa21adeb31b2b5713ad4222bb438705254c83ad9f1054ecb2dc3f50a0",
+    "format": "terminal carriage returns expanded; trailing terminal whitespace trimmed"
+  },
+  {
+    "path": "r-gate-final.log",
+    "original_sha256": "025eff29f16a5dc9034ebba8c3cadd5e75d5422b98f650a0b3565a1413e88e31",
+    "tracked_copy_sha256": "025eff29f16a5dc9034ebba8c3cadd5e75d5422b98f650a0b3565a1413e88e31",
+    "format": "terminal carriage returns expanded; trailing terminal whitespace trimmed"
+  },
+  {
+    "path": "graft-refresh.log",
+    "original_sha256": "c08d4afd5cd15f22cc4dc86aaac85a54a38bbeb52cf17d50112bb40f32ec37be",
+    "tracked_copy_sha256": "095427bbcd2c861851c71c52ddf8e5cea4a605e1898ac6330fe6ee579c4f625a",
+    "format": "terminal carriage returns expanded; trailing terminal whitespace trimmed"
+  },
+  {
+    "path": "r-package-check-current-project-failure-00check.log",
+    "original_sha256": "81a822668690e9d39da1e2e717d68a57bcf1be2be46273839459a4411a3db905",
+    "tracked_copy_sha256": "1add252d7973eabce4ded3ceb8686f300d18ae9e2e60940c9606cb27edb8f9bc",
+    "format": "terminal carriage returns expanded; trailing terminal whitespace trimmed"
+  },
+  {
+    "path": "julia-full-gate-final.log",
+    "original_sha256": "17bb2ebe57f17952f229233a8ad60520738ebeec9d1b9c4a1e92b256c36a1651",
+    "tracked_copy_sha256": "17bb2ebe57f17952f229233a8ad60520738ebeec9d1b9c4a1e92b256c36a1651",
+    "format": "terminal carriage returns expanded; trailing terminal whitespace trimmed"
+  }
+]

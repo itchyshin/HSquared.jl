@@ -1,0 +1,28 @@
+{
+  "queried_at_utc": "2026-10-01T17:30:43.856674+00:00",
+  "command": [
+    "gh",
+    "pr",
+    "view",
+    "1337",
+    "--repo",
+    "itchyshin/gllvmTMB",
+    "--json",
+    "url,state,headRefName,headRefOid,baseRefName,mergeCommit,mergedAt,statusCheckRollup"
+  ],
+  "exit_code": 0,
+  "stdout": "{\"baseRefName\":\"claude/lane-auto-d-r-20260926\",\"headRefName\":\"claude/lane-auto-d-recovery\",\"headRefOid\":\"0fccbe14f63356ec7628ec92230835476ac5b614\",\"mergeCommit\":{\"oid\":\"0039fe737379fff3e568edaf7a28aef2a9f02120\"},\"mergedAt\":\"2026-10-01T12:34:29Z\",\"state\":\"MERGED\",\"statusCheckRollup\":[],\"url\":\"https://github.com/itchyshin/gllvmTMB/pull/1337\"}\n",
+  "stderr": "",
+  "data": {
+    "baseRefName": "claude/lane-auto-d-r-20260926",
+    "headRefName": "claude/lane-auto-d-recovery",
+    "headRefOid": "0fccbe14f63356ec7628ec92230835476ac5b614",
+    "mergeCommit": {
+      "oid": "0039fe737379fff3e568edaf7a28aef2a9f02120"
+    },
+    "mergedAt": "2026-10-01T12:34:29Z",
+    "state": "MERGED",
+    "statusCheckRollup": [],
+    "url": "https://github.com/itchyshin/gllvmTMB/pull/1337"
+  }
+}

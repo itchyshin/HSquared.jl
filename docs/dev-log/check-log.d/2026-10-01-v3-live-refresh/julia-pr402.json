@@ -1,0 +1,96 @@
+{
+  "queried_at_utc": "2026-10-01T17:30:40.244993+00:00",
+  "command": [
+    "gh",
+    "pr",
+    "view",
+    "402",
+    "--repo",
+    "itchyshin/HSquared.jl",
+    "--json",
+    "url,state,headRefName,headRefOid,baseRefName,mergeCommit,mergedAt,statusCheckRollup"
+  ],
+  "exit_code": 0,
+  "stdout": "{\"baseRefName\":\"main\",\"headRefName\":\"codex/hsquared-v3-closeout-20261001\",\"headRefOid\":\"d7d50e9bd124666300d0ca577dfd9f8246f0484c\",\"mergeCommit\":{\"oid\":\"570f49bab59cb337b06d32331bc4a14012164f3b\"},\"mergedAt\":\"2026-10-01T12:03:49Z\",\"state\":\"MERGED\",\"statusCheckRollup\":[{\"__typename\":\"CheckRun\",\"completedAt\":\"2026-10-01T11:57:34Z\",\"conclusion\":\"SUCCESS\",\"detailsUrl\":\"https://github.com/itchyshin/HSquared.jl/actions/runs/36857440276/job/110353206275\",\"name\":\"Julia 1.10 - ubuntu-latest\",\"startedAt\":\"2026-10-01T11:46:16Z\",\"status\":\"COMPLETED\",\"workflowName\":\"CI\"},{\"__typename\":\"CheckRun\",\"completedAt\":\"2026-10-01T11:49:43Z\",\"conclusion\":\"SUCCESS\",\"detailsUrl\":\"https://github.com/itchyshin/HSquared.jl/actions/runs/36857440330/job/110353206793\",\"name\":\"docs\",\"startedAt\":\"2026-10-01T11:46:16Z\",\"status\":\"COMPLETED\",\"workflowName\":\"Documenter\"},{\"__typename\":\"CheckRun\",\"completedAt\":\"2026-10-01T11:57:47Z\",\"conclusion\":\"SUCCESS\",\"detailsUrl\":\"https://github.com/itchyshin/HSquared.jl/actions/runs/36857440276/job/110353206239\",\"name\":\"Julia 1.10 - windows-latest\",\"startedAt\":\"2026-10-01T11:46:16Z\",\"status\":\"COMPLETED\",\"workflowName\":\"CI\"},{\"__typename\":\"CheckRun\",\"completedAt\":\"2026-10-01T11:56:18Z\",\"conclusion\":\"SUCCESS\",\"detailsUrl\":\"https://github.com/itchyshin/HSquared.jl/actions/runs/36857440276/job/110353206379\",\"name\":\"Julia 1 - ubuntu-latest\",\"startedAt\":\"2026-10-01T11:46:16Z\",\"status\":\"COMPLETED\",\"workflowName\":\"CI\"},{\"__typename\":\"CheckRun\",\"completedAt\":\"2026-10-01T12:02:19Z\",\"conclusion\":\"SUCCESS\",\"detailsUrl\":\"https://github.com/itchyshin/HSquared.jl/actions/runs/36857440276/job/110353206452\",\"name\":\"Julia 1 - windows-latest\",\"startedAt\":\"2026-10-01T11:46:18Z\",\"status\":\"COMPLETED\",\"workflowName\":\"CI\"},{\"__typename\":\"CheckRun\",\"completedAt\":\"2026-10-01T11:46:14Z\",\"conclusion\":\"SKIPPED\",\"detailsUrl\":\"https://github.com/itchyshin/HSquared.jl/actions/runs/36857440276/job/110353207564\",\"name\":\"Live-draw plotting check (opt-in)\",\"startedAt\":\"2026-10-01T11:46:14Z\",\"status\":\"COMPLETED\",\"workflowName\":\"CI\"},{\"__typename\":\"StatusContext\",\"context\":\"documenter/deploy\",\"startedAt\":\"2026-10-01T11:49:35Z\",\"state\":\"SUCCESS\",\"targetUrl\":\"https://itchyshin.github.io/HSquared.jl/previews/PR402/\"}],\"url\":\"https://github.com/itchyshin/HSquared.jl/pull/402\"}\n",
+  "stderr": "",
+  "data": {
+    "baseRefName": "main",
+    "headRefName": "codex/hsquared-v3-closeout-20261001",
+    "headRefOid": "d7d50e9bd124666300d0ca577dfd9f8246f0484c",
+    "mergeCommit": {
+      "oid": "570f49bab59cb337b06d32331bc4a14012164f3b"
+    },
+    "mergedAt": "2026-10-01T12:03:49Z",
+    "state": "MERGED",
+    "statusCheckRollup": [
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-10-01T11:57:34Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/itchyshin/HSquared.jl/actions/runs/36857440276/job/110353206275",
+        "name": "Julia 1.10 - ubuntu-latest",
+        "startedAt": "2026-10-01T11:46:16Z",
+        "status": "COMPLETED",
+        "workflowName": "CI"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-10-01T11:49:43Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/itchyshin/HSquared.jl/actions/runs/36857440330/job/110353206793",
+        "name": "docs",
+        "startedAt": "2026-10-01T11:46:16Z",
+        "status": "COMPLETED",
+        "workflowName": "Documenter"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-10-01T11:57:47Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/itchyshin/HSquared.jl/actions/runs/36857440276/job/110353206239",
+        "name": "Julia 1.10 - windows-latest",
+        "startedAt": "2026-10-01T11:46:16Z",
+        "status": "COMPLETED",
+        "workflowName": "CI"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-10-01T11:56:18Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/itchyshin/HSquared.jl/actions/runs/36857440276/job/110353206379",
+        "name": "Julia 1 - ubuntu-latest",
+        "startedAt": "2026-10-01T11:46:16Z",
+        "status": "COMPLETED",
+        "workflowName": "CI"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-10-01T12:02:19Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/itchyshin/HSquared.jl/actions/runs/36857440276/job/110353206452",
+        "name": "Julia 1 - windows-latest",
+        "startedAt": "2026-10-01T11:46:18Z",
+        "status": "COMPLETED",
+        "workflowName": "CI"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-10-01T11:46:14Z",
+        "conclusion": "SKIPPED",
+        "detailsUrl": "https://github.com/itchyshin/HSquared.jl/actions/runs/36857440276/job/110353207564",
+        "name": "Live-draw plotting check (opt-in)",
+        "startedAt": "2026-10-01T11:46:14Z",
+        "status": "COMPLETED",
+        "workflowName": "CI"
+      },
+      {
+        "__typename": "StatusContext",
+        "context": "documenter/deploy",
+        "startedAt": "2026-10-01T11:49:35Z",
+        "state": "SUCCESS",
+        "targetUrl": "https://itchyshin.github.io/HSquared.jl/previews/PR402/"
+      }
+    ],
+    "url": "https://github.com/itchyshin/HSquared.jl/pull/402"
+  }
+}

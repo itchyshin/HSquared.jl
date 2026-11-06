@@ -1,0 +1,412 @@
+{
+ "schema": "r-lineage-git-blob-search/v1",
+ "r_repo_head": "82d8d20c33c738c2b4d5278d81bbca3f493ae7c3",
+ "refs_searched": "--all (local + all origin branches fetched 2026-11-04)",
+ "maps": {
+  "v8": {
+   "paths": 289,
+   "paths_with_blob_anywhere_in_history": 249,
+   "paths_never_in_history": [
+    ".Rbuildignore",
+    "NAMESPACE",
+    "R/arc1-uncertainty.R",
+    "R/extractors.R",
+    "R/fa-rank-selection.R",
+    "R/hs_control.R",
+    "R/hsquared.R",
+    "R/julia-bridge.R",
+    "R/qg-effects.R",
+    "evidence/recovery-20261018/g6-combined-bisection/auto-fa-rank-required-live.log",
+    "evidence/recovery-20261018/g6-combined-bisection/controls-live-parity-diagnostic.log",
+    "evidence/recovery-20261018/g6-combined-bisection/controls-with-uncertainty-live.log",
+    "evidence/recovery-20261018/g6-combined-bisection/current-five-file-traced.log",
+    "evidence/recovery-20261018/g6-combined-bisection/diagnose-controls-live-parity.R",
+    "evidence/recovery-20261018/g6-combined-bisection/diagnose-current-five-file.R",
+    "evidence/recovery-20261018/g6-combined-bisection/diagnose-profile-v2.R",
+    "evidence/recovery-20261018/g6-combined-bisection/four-file-traced-replay.log",
+    "evidence/recovery-20261018/g6-combined-bisection/live-parity-with-uncertainty-live.log",
+    "evidence/recovery-20261018/g6-combined-bisection/profile-v2-diagnostic.log",
+    "evidence/recovery-20261018/g6-combined-bisection/required-live-five-file-20261018.log",
+    "evidence/recovery-20261018/g6-combined-bisection/required-live-five-file-20261018.raw.log.gz",
+    "evidence/recovery-20261018/g6-combined-bisection/required-live-five-file-20261018.receipt.json",
+    "evidence/recovery-20261018/g6-combined-bisection/required-live-source-after-20261018.json",
+    "evidence/recovery-20261018/g6-combined-bisection/required-live-source-before-20261018.json",
+    "man/arc1_uncertainty.Rd",
+    "man/hs_control.Rd",
+    "man/hsquared.Rd",
+    "man/hsquared_fa_rank_selection.Rd",
+    "man/inference_blocks.Rd",
+    "man/qg_effect_markers.Rd",
+    "tests/testthat/fixtures/auto_fa_rank/ordinary_start.tsv",
+    "tests/testthat/test-arc1-controls.R",
+    "tests/testthat/test-arc1-live-parity.R",
+    "tests/testthat/test-arc1-profile-v4-controls.R",
+    "tests/testthat/test-arc1-profile-v4-live.R",
+    "tests/testthat/test-arc1-profile-v4-transport-isolation.R",
+    "tests/testthat/test-arc1-uncertainty-controls.R",
+    "tests/testthat/test-arc1-uncertainty-live.R",
+    "tests/testthat/test-auto-fa-rank-optin.R",
+    "tests/testthat/test-multivariate.R"
+   ],
+   "top_commits": [
+    {
+     "commit": "e82f5c95e514028a7126fdd667c4ac7a840c9e6b",
+     "matches": 249,
+     "subject": "2026-09-30 Merge pull request #259 from itchyshin/codex/hsquared-fa-gllvm-20260927",
+     "on_refs": [
+      "*",
+      "main",
+      "remotes/origin/HEAD",
+      "->",
+      "origin/main",
+      "remotes/origin/claude/bridge-option-guards-9vbent"
+     ]
+    },
+    {
+     "commit": "5efe0ec41d84d5c82dfbe52e1f4e89b52fa4deb7",
+     "matches": 249,
+     "subject": "2026-09-30 feat: harden bounded FA and GLLVM twin candidate",
+     "on_refs": [
+      "*",
+      "main",
+      "remotes/origin/HEAD",
+      "->",
+      "origin/main",
+      "remotes/origin/claude/bridge-option-guards-9vbent"
+     ]
+    },
+    {
+     "commit": "2bea047ee98feaccfb5f3658c105823625d83afc",
+     "matches": 248,
+     "subject": "2026-10-04 fix: error when hsquared would ignore an argument",
+     "on_refs": [
+      "*",
+      "main",
+      "remotes/origin/HEAD",
+      "->",
+      "origin/main",
+      "remotes/origin/claude/bridge-option-guards-9vbent"
+     ]
+    },
+    {
+     "commit": "abbdb150c218a16926b90d757b837c0d755a8a5a",
+     "matches": 245,
+     "subject": "2026-10-04 fix: error when interval extractors would ignore an argument",
+     "on_refs": [
+      "*",
+      "main",
+      "remotes/origin/HEAD",
+      "->",
+      "origin/main",
+      "remotes/origin/claude/bridge-option-guards-9vbent"
+     ]
+    },
+    {
+     "commit": "0b7be603a4c1536b85bfea86bae592fcdd4b9a69",
+     "matches": 244,
+     "subject": "2026-10-04 fix: error when predict would ignore newdata",
+     "on_refs": [
+      "*",
+      "main",
+      "remotes/origin/HEAD",
+      "->",
+      "origin/main",
+      "remotes/origin/claude/bridge-option-guards-9vbent"
+     ]
+    }
+   ],
+   "best_commit_mismatched_paths": [
+    ".Rbuildignore",
+    "NAMESPACE",
+    "R/arc1-uncertainty.R",
+    "R/extractors.R",
+    "R/fa-rank-selection.R",
+    "R/hs_control.R",
+    "R/hsquared.R",
+    "R/julia-bridge.R",
+    "R/qg-effects.R",
+    "evidence/recovery-20261018/g6-combined-bisection/auto-fa-rank-required-live.log",
+    "evidence/recovery-20261018/g6-combined-bisection/controls-live-parity-diagnostic.log",
+    "evidence/recovery-20261018/g6-combined-bisection/controls-with-uncertainty-live.log",
+    "evidence/recovery-20261018/g6-combined-bisection/current-five-file-traced.log",
+    "evidence/recovery-20261018/g6-combined-bisection/diagnose-controls-live-parity.R",
+    "evidence/recovery-20261018/g6-combined-bisection/diagnose-current-five-file.R",
+    "evidence/recovery-20261018/g6-combined-bisection/diagnose-profile-v2.R",
+    "evidence/recovery-20261018/g6-combined-bisection/four-file-traced-replay.log",
+    "evidence/recovery-20261018/g6-combined-bisection/live-parity-with-uncertainty-live.log",
+    "evidence/recovery-20261018/g6-combined-bisection/profile-v2-diagnostic.log",
+    "evidence/recovery-20261018/g6-combined-bisection/required-live-five-file-20261018.log",
+    "evidence/recovery-20261018/g6-combined-bisection/required-live-five-file-20261018.raw.log.gz",
+    "evidence/recovery-20261018/g6-combined-bisection/required-live-five-file-20261018.receipt.json",
+    "evidence/recovery-20261018/g6-combined-bisection/required-live-source-after-20261018.json",
+    "evidence/recovery-20261018/g6-combined-bisection/required-live-source-before-20261018.json",
+    "man/arc1_uncertainty.Rd",
+    "man/hs_control.Rd",
+    "man/hsquared.Rd",
+    "man/hsquared_fa_rank_selection.Rd",
+    "man/inference_blocks.Rd",
+    "man/qg_effect_markers.Rd",
+    "tests/testthat/fixtures/auto_fa_rank/ordinary_start.tsv",
+    "tests/testthat/test-arc1-controls.R",
+    "tests/testthat/test-arc1-live-parity.R",
+    "tests/testthat/test-arc1-profile-v4-controls.R",
+    "tests/testthat/test-arc1-profile-v4-live.R",
+    "tests/testthat/test-arc1-profile-v4-transport-isolation.R",
+    "tests/testthat/test-arc1-uncertainty-controls.R",
+    "tests/testthat/test-arc1-uncertainty-live.R",
+    "tests/testthat/test-auto-fa-rank-optin.R",
+    "tests/testthat/test-multivariate.R"
+   ]
+  },
+  "v10": {
+   "paths": 274,
+   "paths_with_blob_anywhere_in_history": 249,
+   "paths_never_in_history": [
+    ".Rbuildignore",
+    "NAMESPACE",
+    "R/arc1-uncertainty.R",
+    "R/extractors.R",
+    "R/fa-rank-selection.R",
+    "R/hs_control.R",
+    "R/hsquared.R",
+    "R/julia-bridge.R",
+    "R/qg-effects.R",
+    "man/arc1_uncertainty.Rd",
+    "man/hs_control.Rd",
+    "man/hsquared.Rd",
+    "man/hsquared_fa_rank_selection.Rd",
+    "man/inference_blocks.Rd",
+    "man/qg_effect_markers.Rd",
+    "tests/testthat/fixtures/auto_fa_rank/ordinary_start.tsv",
+    "tests/testthat/test-arc1-controls.R",
+    "tests/testthat/test-arc1-live-parity.R",
+    "tests/testthat/test-arc1-profile-v4-controls.R",
+    "tests/testthat/test-arc1-profile-v4-live.R",
+    "tests/testthat/test-arc1-profile-v4-transport-isolation.R",
+    "tests/testthat/test-arc1-uncertainty-controls.R",
+    "tests/testthat/test-arc1-uncertainty-live.R",
+    "tests/testthat/test-auto-fa-rank-optin.R",
+    "tests/testthat/test-multivariate.R"
+   ],
+   "top_commits": [
+    {
+     "commit": "e82f5c95e514028a7126fdd667c4ac7a840c9e6b",
+     "matches": 249,
+     "subject": "2026-09-30 Merge pull request #259 from itchyshin/codex/hsquared-fa-gllvm-20260927",
+     "on_refs": [
+      "*",
+      "main",
+      "remotes/origin/HEAD",
+      "->",
+      "origin/main",
+      "remotes/origin/claude/bridge-option-guards-9vbent"
+     ]
+    },
+    {
+     "commit": "5efe0ec41d84d5c82dfbe52e1f4e89b52fa4deb7",
+     "matches": 249,
+     "subject": "2026-09-30 feat: harden bounded FA and GLLVM twin candidate",
+     "on_refs": [
+      "*",
+      "main",
+      "remotes/origin/HEAD",
+      "->",
+      "origin/main",
+      "remotes/origin/claude/bridge-option-guards-9vbent"
+     ]
+    },
+    {
+     "commit": "2bea047ee98feaccfb5f3658c105823625d83afc",
+     "matches": 248,
+     "subject": "2026-10-04 fix: error when hsquared would ignore an argument",
+     "on_refs": [
+      "*",
+      "main",
+      "remotes/origin/HEAD",
+      "->",
+      "origin/main",
+      "remotes/origin/claude/bridge-option-guards-9vbent"
+     ]
+    },
+    {
+     "commit": "abbdb150c218a16926b90d757b837c0d755a8a5a",
+     "matches": 245,
+     "subject": "2026-10-04 fix: error when interval extractors would ignore an argument",
+     "on_refs": [
+      "*",
+      "main",
+      "remotes/origin/HEAD",
+      "->",
+      "origin/main",
+      "remotes/origin/claude/bridge-option-guards-9vbent"
+     ]
+    },
+    {
+     "commit": "0b7be603a4c1536b85bfea86bae592fcdd4b9a69",
+     "matches": 244,
+     "subject": "2026-10-04 fix: error when predict would ignore newdata",
+     "on_refs": [
+      "*",
+      "main",
+      "remotes/origin/HEAD",
+      "->",
+      "origin/main",
+      "remotes/origin/claude/bridge-option-guards-9vbent"
+     ]
+    }
+   ],
+   "best_commit_mismatched_paths": [
+    ".Rbuildignore",
+    "NAMESPACE",
+    "R/arc1-uncertainty.R",
+    "R/extractors.R",
+    "R/fa-rank-selection.R",
+    "R/hs_control.R",
+    "R/hsquared.R",
+    "R/julia-bridge.R",
+    "R/qg-effects.R",
+    "man/arc1_uncertainty.Rd",
+    "man/hs_control.Rd",
+    "man/hsquared.Rd",
+    "man/hsquared_fa_rank_selection.Rd",
+    "man/inference_blocks.Rd",
+    "man/qg_effect_markers.Rd",
+    "tests/testthat/fixtures/auto_fa_rank/ordinary_start.tsv",
+    "tests/testthat/test-arc1-controls.R",
+    "tests/testthat/test-arc1-live-parity.R",
+    "tests/testthat/test-arc1-profile-v4-controls.R",
+    "tests/testthat/test-arc1-profile-v4-live.R",
+    "tests/testthat/test-arc1-profile-v4-transport-isolation.R",
+    "tests/testthat/test-arc1-uncertainty-controls.R",
+    "tests/testthat/test-arc1-uncertainty-live.R",
+    "tests/testthat/test-auto-fa-rank-optin.R",
+    "tests/testthat/test-multivariate.R"
+   ]
+  },
+  "v11": {
+   "paths": 274,
+   "paths_with_blob_anywhere_in_history": 249,
+   "paths_never_in_history": [
+    ".Rbuildignore",
+    "NAMESPACE",
+    "R/arc1-uncertainty.R",
+    "R/extractors.R",
+    "R/fa-rank-selection.R",
+    "R/hs_control.R",
+    "R/hsquared.R",
+    "R/julia-bridge.R",
+    "R/qg-effects.R",
+    "man/arc1_uncertainty.Rd",
+    "man/hs_control.Rd",
+    "man/hsquared.Rd",
+    "man/hsquared_fa_rank_selection.Rd",
+    "man/inference_blocks.Rd",
+    "man/qg_effect_markers.Rd",
+    "tests/testthat/fixtures/auto_fa_rank/ordinary_start.tsv",
+    "tests/testthat/test-arc1-controls.R",
+    "tests/testthat/test-arc1-live-parity.R",
+    "tests/testthat/test-arc1-profile-v4-controls.R",
+    "tests/testthat/test-arc1-profile-v4-live.R",
+    "tests/testthat/test-arc1-profile-v4-transport-isolation.R",
+    "tests/testthat/test-arc1-uncertainty-controls.R",
+    "tests/testthat/test-arc1-uncertainty-live.R",
+    "tests/testthat/test-auto-fa-rank-optin.R",
+    "tests/testthat/test-multivariate.R"
+   ],
+   "top_commits": [
+    {
+     "commit": "e82f5c95e514028a7126fdd667c4ac7a840c9e6b",
+     "matches": 249,
+     "subject": "2026-09-30 Merge pull request #259 from itchyshin/codex/hsquared-fa-gllvm-20260927",
+     "on_refs": [
+      "*",
+      "main",
+      "remotes/origin/HEAD",
+      "->",
+      "origin/main",
+      "remotes/origin/claude/bridge-option-guards-9vbent"
+     ]
+    },
+    {
+     "commit": "5efe0ec41d84d5c82dfbe52e1f4e89b52fa4deb7",
+     "matches": 249,
+     "subject": "2026-09-30 feat: harden bounded FA and GLLVM twin candidate",
+     "on_refs": [
+      "*",
+      "main",
+      "remotes/origin/HEAD",
+      "->",
+      "origin/main",
+      "remotes/origin/claude/bridge-option-guards-9vbent"
+     ]
+    },
+    {
+     "commit": "2bea047ee98feaccfb5f3658c105823625d83afc",
+     "matches": 248,
+     "subject": "2026-10-04 fix: error when hsquared would ignore an argument",
+     "on_refs": [
+      "*",
+      "main",
+      "remotes/origin/HEAD",
+      "->",
+      "origin/main",
+      "remotes/origin/claude/bridge-option-guards-9vbent"
+     ]
+    },
+    {
+     "commit": "abbdb150c218a16926b90d757b837c0d755a8a5a",
+     "matches": 245,
+     "subject": "2026-10-04 fix: error when interval extractors would ignore an argument",
+     "on_refs": [
+      "*",
+      "main",
+      "remotes/origin/HEAD",
+      "->",
+      "origin/main",
+      "remotes/origin/claude/bridge-option-guards-9vbent"
+     ]
+    },
+    {
+     "commit": "0b7be603a4c1536b85bfea86bae592fcdd4b9a69",
+     "matches": 244,
+     "subject": "2026-10-04 fix: error when predict would ignore newdata",
+     "on_refs": [
+      "*",
+      "main",
+      "remotes/origin/HEAD",
+      "->",
+      "origin/main",
+      "remotes/origin/claude/bridge-option-guards-9vbent"
+     ]
+    }
+   ],
+   "best_commit_mismatched_paths": [
+    ".Rbuildignore",
+    "NAMESPACE",
+    "R/arc1-uncertainty.R",
+    "R/extractors.R",
+    "R/fa-rank-selection.R",
+    "R/hs_control.R",
+    "R/hsquared.R",
+    "R/julia-bridge.R",
+    "R/qg-effects.R",
+    "man/arc1_uncertainty.Rd",
+    "man/hs_control.Rd",
+    "man/hsquared.Rd",
+    "man/hsquared_fa_rank_selection.Rd",
+    "man/inference_blocks.Rd",
+    "man/qg_effect_markers.Rd",
+    "tests/testthat/fixtures/auto_fa_rank/ordinary_start.tsv",
+    "tests/testthat/test-arc1-controls.R",
+    "tests/testthat/test-arc1-live-parity.R",
+    "tests/testthat/test-arc1-profile-v4-controls.R",
+    "tests/testthat/test-arc1-profile-v4-live.R",
+    "tests/testthat/test-arc1-profile-v4-transport-isolation.R",
+    "tests/testthat/test-arc1-uncertainty-controls.R",
+    "tests/testthat/test-arc1-uncertainty-live.R",
+    "tests/testthat/test-auto-fa-rank-optin.R",
+    "tests/testthat/test-multivariate.R"
+   ]
+  }
+ }
+}

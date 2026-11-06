@@ -9,7 +9,7 @@ contract agree.
 **Programme plan (to completion):** see
 [`docs/design/18-programme-plan-2026-06.md`](docs/design/18-programme-plan-2026-06.md) — the durable
 cross-twin plan (phases, gates, distance-to-gate sequencing, dependency DAG, work-unit estimates).
-Live PR/commit state lives in the latest `docs/dev-log/handover/` doc and the generated `status.json`.
+Current bounded PR/commit evidence lives in [the V3 refresh report](docs/dev-log/after-task/2026-10-01-v3-live-refresh-and-rank-plan.md). Older handovers and generated status files need their own freshness check.
 
 > **Record status (2026-09-07):** The paired website and named honesty
 > documentation milestone is complete, and the ratified narrow 0.9 evidence
@@ -17,6 +17,17 @@ Live PR/commit state lives in the latest `docs/dev-log/handover/` doc and the ge
 > **7**. The release does not promote a capability, imply production readiness,
 > or create Julia General registration. See
 > [`docs/dev-log/decisions/2026-09-07-documentation-milestone-release-boundary.md`](docs/dev-log/decisions/2026-09-07-documentation-milestone-release-boundary.md).
+
+## Bounded FA/GLLVM programme, 2026-10-01
+
+Julia implementation landed at `829e86ce`; closure records landed at `570f49ba`.
+R implementation landed at `e82f5c95`. All three have exact merge-commit hosted evidence.
+The four-trait, one-factor Gaussian FA route and three-trait, two-factor
+Poisson-log genetic GLLVM route remain experimental. Public covered count
+stays seven. The frozen 200-attempt FA outcome is unchanged.
+
+The [automatic FA-rank design arc](docs/design/auto-fa-rank-design-plan-20261001.md) completed V0 contract review. The approved [paired implementation programme](docs/design/auto-fa-rank-implementation-arc-20261001.md) is locally accepted within its bounded experimental scope. The bounded Gaussian T4 pedigree K0/K1 Julia selector and explicit R expert route are implemented. Focused Julia acceptance passes 249 assertions across thirteen testsets after the real O1 comparator negative control was added. Fresh V7 numerical, bridge and evidence reviews all passed at eighteen matched source pins. Full package replay, final mechanical reconciliation and whole report validation pass all eight original gates. See [the experimental usage note](docs/design/auto-fa-rank-experimental-usage.md) for inputs and limits. Ordinary optimizer-driven K1 selection, rank reliability and selection-adjusted coverage remain untested; public covered count stays seven.
+The earlier fixed-rank FA/GLLVM closure evidence remains in [the refresh report](docs/dev-log/after-task/2026-10-01-v3-live-refresh-and-rank-plan.md).
 
 ## Current Status
 

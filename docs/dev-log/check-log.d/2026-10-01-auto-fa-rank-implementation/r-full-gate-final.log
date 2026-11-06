@@ -1,0 +1,5 @@
+  RUN  r-full-GATES:G6 shell=/bin/sh cwd=/private/tmp/hsquared-auto-fa-r-20261001 PATH=/Applications/ChatGPT.app/Contents/Resources/codex-cli/codex-path:/Users/z3437171/.antigravity-ide/antigravity-ide/bin:/Users/z3437171/.antigravity/antigravity/bin:/Users/z3437171/miniconda3/bin:/Users/z3437171/miniconda3/condabin:/Users/z3437171/.pyenv/shims:/Users/z3437171/.juliaup/bin:/opt/local/bin:/opt/local/sbin:/opt/homebrew/bin:/opt/homebrew/sbin:/Library/Frameworks/Python.framework/Versions/3.13/bin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/pkg/env/global/bin:/opt/X11/bin:/Library/Apple/usr/bin:/Library/TeX/texbin:/usr/local/sh...
+  PASS r-full-GATES:G6: R package check has no errors or warnings.
+       exit=0; EXPECT=matched; output=running command ''quarto' -V' had status 1 | AUTO_FA_R_FULL_PASS
+r-full-GATES.md: 1 gates
+ALL MET (1 met)

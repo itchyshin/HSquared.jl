@@ -1,0 +1,24 @@
+# 2026-10-12-g2-outer34-executor-authority-tests
+
+Executed UTC: 2026-10-12T07:27:13Z
+Working directory: /Users/z3437171/.codex/worktrees/b9ae/HSquared.jl
+Python executable: /Users/z3437171/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3
+Python version: 3.12.14
+Environment: PYTHONDONTWRITEBYTECODE=1
+Command: /Users/z3437171/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3 LOOP/lanes/arc1-gaussian-reliability-20261002/evidence/g2-development-n80-null-outer34-v18/test_execute_candidate.py
+Exit code: 0
+Standard output:
+test_exact_candidate_and_source_lock_load_and_dry_run (__main__.ExecuteAuthorityTests.test_exact_candidate_and_source_lock_load_and_dry_run) ... ok
+test_import_tree_is_checked_against_locked_source_map (__main__.ExecuteAuthorityTests.test_import_tree_is_checked_against_locked_source_map) ... ok
+test_launch_requires_exact_review_owner_approval_and_totoro_preflight (__main__.ExecuteAuthorityTests.test_launch_requires_exact_review_owner_approval_and_totoro_preflight) ... ok
+test_only_exact_outer34_and_fa_rank_output_path_are_accepted (__main__.ExecuteAuthorityTests.test_only_exact_outer34_and_fa_rank_output_path_are_accepted) ... ok
+test_receipt_drift_and_candidate_scope_drift_refuse (__main__.ExecuteAuthorityTests.test_receipt_drift_and_candidate_scope_drift_refuse) ... ok
+test_receipt_file_digest_is_required (__main__.ExecuteAuthorityTests.test_receipt_file_digest_is_required) ... ok
+test_runner_failures_and_unresolved_results_never_exit_zero (__main__.ExecuteAuthorityTests.test_runner_failures_and_unresolved_results_never_exit_zero) ... ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 0.074s
+
+OK
+Standard error: (empty)
+Scope: 7/7 executor authority tests passed; tests exercise dry-run/refusal behavior and did not launch a fit.

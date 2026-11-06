@@ -1,0 +1,63 @@
+APPROVAL REQUIRED GATES:G1
+    CHECK: env JULIA_DEPOT_PATH=/private/tmp/hsq-julia-depot:/Users/z3437171/.julia JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 julia --project=. test/auto_fa_rank_acceptance.jl
+    EXPECT: AUTO_FA_ENGINE_ACCEPTANCE_PASS
+    CWD: /Users/z3437171/.codex/worktrees/b9ae/HSquared.jl
+    SHELL: /bin/sh
+    PATH: /Users/z3437171/.juliaup/bin:/Users/z3437171/miniconda3/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
+    APPROVED: /private/tmp/hsq-auto-fa-final-approvals/4fffacae744d0a9aa31e923f3dc7929b7aa78a588e64a37c547e8c00a73e3a70.json
+APPROVAL REQUIRED GATES:G2
+    CHECK: env JULIA_DEPOT_PATH=/private/tmp/hsq-julia-depot:/Users/z3437171/.julia JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 julia --project=. -e 'using HSquared, Test, LinearAlgebra, SparseArrays; include("test/test_multivariate_fa_multistart.jl"); include("test/multivariate_contract_regression.jl"); println("AUTO_FA_FIXED_COMPATIBILITY_PASS")'
+    EXPECT: AUTO_FA_FIXED_COMPATIBILITY_PASS
+    CWD: /Users/z3437171/.codex/worktrees/b9ae/HSquared.jl
+    SHELL: /bin/sh
+    PATH: /Users/z3437171/.juliaup/bin:/Users/z3437171/miniconda3/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
+    APPROVED: /private/tmp/hsq-auto-fa-final-approvals/2b6c784737b48747eb7685ea306fe0ef52f033db2b9f2ffc2ae445b244fb6c83.json
+APPROVAL REQUIRED GATES:G3
+    CHECK: env PATH=/Users/z3437171/.juliaup/bin:/Users/z3437171/miniconda3/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin JULIA_DEPOT_PATH=/private/tmp/hsq-julia-depot:/Users/z3437171/.julia JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 Rscript -e 'devtools::test(filter="auto-fa-rank", stop_on_failure=TRUE); cat("AUTO_FA_R_ACCEPTANCE_PASS\n")'
+    EXPECT: AUTO_FA_R_ACCEPTANCE_PASS
+    CWD: /private/tmp/hsquared-auto-fa-r-20261001
+    SHELL: /bin/sh
+    PATH: /Users/z3437171/.juliaup/bin:/Users/z3437171/miniconda3/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
+    APPROVED: /private/tmp/hsq-auto-fa-final-approvals/564843fb27206142a112418b0911a38c6a1045dad663c4e995438dea4464a02f.json
+APPROVAL REQUIRED GATES:G4
+    CHECK: env PATH=/Users/z3437171/.juliaup/bin:/Users/z3437171/miniconda3/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin JULIA_DEPOT_PATH=/private/tmp/hsq-julia-depot:/Users/z3437171/.julia JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 HSQUARED_AUTO_FA_REQUIRE_LIVE=true HSQUARED_JULIA_PROJECT=/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl Rscript -e 'devtools::test(filter="auto-fa-rank", stop_on_failure=TRUE); cat("AUTO_FA_LIVE_TWIN_PASS\n")'
+    EXPECT: AUTO_FA_LIVE_TWIN_PASS
+    CWD: /private/tmp/hsquared-auto-fa-r-20261001
+    SHELL: /bin/sh
+    PATH: /Users/z3437171/.juliaup/bin:/Users/z3437171/miniconda3/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
+    APPROVED: /private/tmp/hsq-auto-fa-final-approvals/fff333436c4b2818ecc2e3792305335cfa4c3ac004770ec4c84c952df2910dbd.json
+APPROVAL REQUIRED GATES:G5
+    CHECK: env JULIA_DEPOT_PATH=/private/tmp/hsq-julia-depot:/Users/z3437171/.julia JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 julia --project=. -e 'using Pkg; Pkg.test(); println("AUTO_FA_JULIA_FULL_PASS")'
+    EXPECT: AUTO_FA_JULIA_FULL_PASS
+    CWD: /Users/z3437171/.codex/worktrees/b9ae/HSquared.jl
+    SHELL: /bin/sh
+    PATH: /Users/z3437171/.juliaup/bin:/Users/z3437171/miniconda3/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
+    APPROVED: /private/tmp/hsq-auto-fa-final-approvals/f7e69d16a281ddb484445e9734976dd30f7024fef7b39f311970b6e0077e1c18.json
+APPROVAL REQUIRED GATES:G6
+    CHECK: env PATH=/Users/z3437171/.juliaup/bin:/Users/z3437171/miniconda3/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin JULIA_DEPOT_PATH=/private/tmp/hsq-julia-depot:/Users/z3437171/.julia JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 HSQUARED_JULIA_PROJECT=/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl Rscript -e 'x <- devtools::check(document=FALSE, cran=FALSE, error_on="never", check_dir="/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/.unlazy/auto-fa-rank-implementation-20261001/r-package-check"); dput(list(errors=x$errors, warnings=x$warnings, notes=x$notes), file="/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/.unlazy/auto-fa-rank-implementation-20261001/r-package-check-result.R"); stopifnot(length(x$errors)==0L, length(x$warnings)==0L); cat("AUTO_FA_R_FULL_PASS\n")'
+    EXPECT: AUTO_FA_R_FULL_PASS
+    CWD: /private/tmp/hsquared-auto-fa-r-20261001
+    SHELL: /bin/sh
+    PATH: /Users/z3437171/.juliaup/bin:/Users/z3437171/miniconda3/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
+    APPROVED: /private/tmp/hsq-auto-fa-final-approvals/a70148be25e7a9aed4c1410be2c2bf242c0410e2b71c7eaf8cb4992be678764c.json
+  RUN  GATES:G1 shell=/bin/sh cwd=/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl PATH=/Users/z3437171/.juliaup/bin:/Users/z3437171/miniconda3/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
+  RUN  GATES:G2 shell=/bin/sh cwd=/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl PATH=/Users/z3437171/.juliaup/bin:/Users/z3437171/miniconda3/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
+  RUN  GATES:G3 shell=/bin/sh cwd=/private/tmp/hsquared-auto-fa-r-20261001 PATH=/Users/z3437171/.juliaup/bin:/Users/z3437171/miniconda3/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
+  RUN  GATES:G4 shell=/bin/sh cwd=/private/tmp/hsquared-auto-fa-r-20261001 PATH=/Users/z3437171/.juliaup/bin:/Users/z3437171/miniconda3/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
+  RUN  GATES:G5 shell=/bin/sh cwd=/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl PATH=/Users/z3437171/.juliaup/bin:/Users/z3437171/miniconda3/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
+  RUN  GATES:G6 shell=/bin/sh cwd=/private/tmp/hsquared-auto-fa-r-20261001 PATH=/Users/z3437171/.juliaup/bin:/Users/z3437171/miniconda3/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
+  PASS GATES:G1: Independent O1-O10 numerical and policy witnesses pass.
+       exit=0; EXPECT=matched; output=automatic FA selector public shape and refusal contract |    8      8  0.0s | AUTO_FA_ENGINE_ACCEPTANCE_PASS
+  PASS GATES:G2: Established fixed-rank regressions remain compatible.
+       exit=0; EXPECT=matched; output=Multivariate bounded contracts |  107    107  3.9s | AUTO_FA_FIXED_COMPATIBILITY_PASS
+  PASS GATES:G3: R expert-control and complete object/transport tests pass.
+       exit=0; EXPECT=matched; output=What you may report is listed on Can I fit and report this? -- not in validation_status(). Intervals are not coverage-calibrated. | See https://itchyshin.github.io/hsquared/articles/current-limits.html
+  PASS GATES:G4: Required live ordinary-start Julia/R parity and interruption pass without skips.
+       exit=0; EXPECT=matched; output=Activating project at `~/.codex/worktrees/b9ae/HSquared.jl` | Julia exit.
+  PASS GATES:G5: Current Julia full package tests pass.
+       exit=0; EXPECT=matched; output=PCG verifies true residual before stopping |   31     31  0.8s | Testing HSquared tests passed
+  PASS GATES:G6: R package check has no errors or warnings.
+       exit=0; EXPECT=matched; output=running command ''quarto' -V' had status 1 | AUTO_FA_R_FULL_PASS
+GATES.md: 8 gates
+UNMET: 2 (met: 6, reran: 6, previously met reverified: 0)
+  GATES:G7, GATES:G8

@@ -1,0 +1,81 @@
+{
+  "utc": "2026-10-02T03:48:23.865394+00:00",
+  "scope": "Programme-owned independent review routing, not whole-account daily composition or billing",
+  "records": [
+    {
+      "version": "v2",
+      "role": "numerical",
+      "model": "gpt-6-sol",
+      "effort": "high",
+      "context_mode": "fresh_ephemeral",
+      "status": 0,
+      "started_at": "2026-10-02T02:18:27Z",
+      "finished_at": "2026-10-02T02:26:54Z",
+      "dispatch_sha256": "c2724595f997bcfee71a9cd2996b7bf558303a8b09a41fc9c0a9794789286bba"
+    },
+    {
+      "version": "v2",
+      "role": "bridge",
+      "model": "gpt-6-luna",
+      "effort": "medium",
+      "context_mode": "fresh_ephemeral",
+      "status": 0,
+      "started_at": "2026-10-02T02:26:54Z",
+      "finished_at": "2026-10-02T02:29:20Z",
+      "dispatch_sha256": "8199d6f73a3fa4284c34ad4461c15d8232f9f13c0cc7b9486afc504e09e54a7f"
+    },
+    {
+      "version": "v2",
+      "role": "evidence",
+      "model": "gpt-6-luna",
+      "effort": "medium",
+      "context_mode": "fresh_ephemeral",
+      "status": 0,
+      "started_at": "2026-10-02T02:29:20Z",
+      "finished_at": "2026-10-02T02:34:16Z",
+      "dispatch_sha256": "eb84b99c3a7fda17ea928509198483156fdaf61fa25d9f063e777dabc328afd6"
+    },
+    {
+      "version": "v3",
+      "role": "numerical",
+      "model": "gpt-6-sol",
+      "effort": "high",
+      "context_mode": "fresh_ephemeral",
+      "status": 0,
+      "started_at": "2026-10-02T02:47:44Z",
+      "finished_at": "2026-10-02T02:54:32Z",
+      "dispatch_sha256": "162b85ccd31157a151dd266a200b144689c002edcc57080a14a6a142652472d0"
+    },
+    {
+      "version": "v3",
+      "role": "bridge",
+      "model": "gpt-6-luna",
+      "effort": "medium",
+      "context_mode": "fresh_ephemeral",
+      "status": 0,
+      "started_at": "2026-10-02T02:54:32Z",
+      "finished_at": "2026-10-02T02:57:53Z",
+      "dispatch_sha256": "fa5479efed4f462e1f0ed95ba6ec4ed0bc14d196e54d0b1aed2c84fa8915fdb3"
+    },
+    {
+      "version": "v3",
+      "role": "evidence",
+      "model": "gpt-6-luna",
+      "effort": "medium",
+      "context_mode": "fresh_ephemeral",
+      "status": 0,
+      "started_at": "2026-10-02T02:57:53Z",
+      "finished_at": "2026-10-02T03:00:39Z",
+      "dispatch_sha256": "8fbba87cd71164fe1d0f012801b51668356c349146e551c888dba750bb1e7552"
+    }
+  ],
+  "completed_panel_composition": "Each V2/V3 panel2Luna medium+1Sol high, source-review judgments separately preserved",
+  "native_producers": {
+    "engine": "GPT-6 Sol high",
+    "r": "GPT-6 Luna medium",
+    "tests": "GPT-6 Luna medium"
+  },
+  "parent": "GPT-6.1 Sol high from earlier actual-session efficiency receipt",
+  "final_panel": "V5 ready but never launched; no actual route/usage claim",
+  "daily_audit_scope": "Global October1composition audit fails for all sessions in account; October2receipts are required because dispatch timestamps are UTC. This does not change the owned batch manifests or make final G7 accepted."
+}

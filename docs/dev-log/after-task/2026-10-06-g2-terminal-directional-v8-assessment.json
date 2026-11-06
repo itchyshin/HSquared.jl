@@ -1,0 +1,44 @@
+{
+  "assessment_performed": true,
+  "draft_sha256": "61fc6f2f41245a4d5dfd55ac840e68376d6743f76a714e0e6d92d7483b6b4818",
+  "draft_version": "v1",
+  "requested_mode": "independent",
+  "assessor_type": "self",
+  "reviewer": "Codex self-review",
+  "method": "protocols/writing-naturalness.md manual post-draft assessment",
+  "genre": "technical after-task report",
+  "coverage": "whole draft",
+  "score": 2,
+  "style_status": "scored",
+  "score_reason": "Specific quantities and bounded claims keep the short report concrete; the headings create some procedural rhythm.",
+  "confidence": "medium",
+  "confidence_reason": "The report is short and source-linked, but style is an editorial judgment.",
+  "examples": [
+    {
+      "location": "section 7a, paragraph 1",
+      "cue": "The frozen curvature bound requires a trial slope",
+      "impact": "The exact threshold and observed miss make the rejection easy to check.",
+      "repair": "no change needed",
+      "line": 45,
+      "quote": "- Observed: the frozen curvature bound requires a trial slope of at least `-2.13034706689e-14`; the recorded value is `-2.30398618217e-14`, missing it by `1.73639115e-15`. The 256-bit finite differences reproduce this rejection, while sufficient decrease passes. This identifies the immediate Wolfe failure, not why the search produced this direction or reached the cap."
+    },
+    {
+      "location": "section 8, paragraph 1",
+      "cue": "The retained telemetry result does not include",
+      "impact": "This names the limit on the causal conclusion and prevents overclaiming.",
+      "repair": "no change needed",
+      "line": 50,
+      "quote": "The executed driver reads the same development-v1 outer10 full artifact and telemetry artifact that the reviewed lock pins. The supervisor verified post-run immutability. The calculation uses only the recorded direction, origin, step, and terminal trial; the finite differences call the exact high-precision REML reference. No selection or fit procedure is invoked. The retained telemetry result does not include the per-trial domain-rejection observations needed to reconstruct why the five cap reductions occurred. A bounded inspection confirmed the retained object has Wolfe summaries and terminal events only. No additional objective probe is justified by this missing record."
+    }
+  ],
+  "evidence_none_reason": null,
+  "science_gate": "pass",
+  "science_gate_reason": "The interpretation is limited to the exact immediate Wolfe rejection in one retained attempt; upstream cause and population behavior remain unresolved.",
+  "facts_gate": "pass",
+  "facts_gate_reason": "Quantities and scope were checked against the reviewed v8 TOML, source lock, supervisor receipt, and retained telemetry fields.",
+  "references_gate": "not_applicable",
+  "references_gate_reason": "No external references occur in the report.",
+  "date": "2026-10-06",
+  "calibration_status": "previous telemetry and report examples seen; not a held-out calibration exercise",
+  "interpretation": "perceived_style_not_authorship"
+}

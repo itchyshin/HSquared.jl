@@ -1,0 +1,45 @@
+{
+  "queried_at_utc": "2026-10-01T17:30:42.674384+00:00",
+  "command": [
+    "gh",
+    "run",
+    "list",
+    "--repo",
+    "itchyshin/hsquared",
+    "--branch",
+    "main",
+    "--limit",
+    "3",
+    "--json",
+    "databaseId,headSha,status,conclusion,workflowName,url"
+  ],
+  "exit_code": 0,
+  "stdout": "[{\"conclusion\":\"success\",\"databaseId\":36792696953,\"headSha\":\"e82f5c95e514028a7126fdd667c4ac7a840c9e6b\",\"status\":\"completed\",\"url\":\"https://github.com/itchyshin/hsquared/actions/runs/36792696953\",\"workflowName\":\"pkgdown\"},{\"conclusion\":\"success\",\"databaseId\":36792219254,\"headSha\":\"e82f5c95e514028a7126fdd667c4ac7a840c9e6b\",\"status\":\"completed\",\"url\":\"https://github.com/itchyshin/hsquared/actions/runs/36792219254\",\"workflowName\":\"R-CMD-check\"},{\"conclusion\":\"success\",\"databaseId\":36256894853,\"headSha\":\"86f40f41f6adc2aead6627bef9d2e7d341d7476e\",\"status\":\"completed\",\"url\":\"https://github.com/itchyshin/hsquared/actions/runs/36256894853\",\"workflowName\":\"pkgdown\"}]\n",
+  "stderr": "",
+  "data": [
+    {
+      "conclusion": "success",
+      "databaseId": 36792696953,
+      "headSha": "e82f5c95e514028a7126fdd667c4ac7a840c9e6b",
+      "status": "completed",
+      "url": "https://github.com/itchyshin/hsquared/actions/runs/36792696953",
+      "workflowName": "pkgdown"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 36792219254,
+      "headSha": "e82f5c95e514028a7126fdd667c4ac7a840c9e6b",
+      "status": "completed",
+      "url": "https://github.com/itchyshin/hsquared/actions/runs/36792219254",
+      "workflowName": "R-CMD-check"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 36256894853,
+      "headSha": "86f40f41f6adc2aead6627bef9d2e7d341d7476e",
+      "status": "completed",
+      "url": "https://github.com/itchyshin/hsquared/actions/runs/36256894853",
+      "workflowName": "pkgdown"
+    }
+  ]
+}

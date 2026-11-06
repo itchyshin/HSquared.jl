@@ -1,0 +1,1 @@
+Default Julia depot pidfile writes were refused by sandbox before assertions. Use writable temporary first depot and installed dependency fallback. Initial gate status parsed 8 unmet gates; no acceptance claimed. The slop checker anchors relative paths at brain root, so actual kit checks were rerun using absolute paths and passed.

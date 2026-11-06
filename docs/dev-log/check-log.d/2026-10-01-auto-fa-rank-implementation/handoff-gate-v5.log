@@ -1,0 +1,153 @@
+LANDING GATE -- run before writing a handoff. Across Claude<->Codex the next agent reads origin, not your disk.
+
+  XX   HSquared.jl        codex/h2-v3-refresh-auto-rank-plan-20261001 44 uncommitted; 10 UNPUSHED on HEAD; 181 UNPUSHED on other branch(es);
+          M .claude/settings.json
+          M .cursor/hooks.json
+          M AGENTS.md
+          M LOOP/lanes/auto-fa-rank-implementation-20261001/GOAL.md
+          M LOOP/lanes/auto-fa-rank-implementation-20261001/checkpoint.md
+          M ROADMAP.md
+          M docs/design/auto-fa-rank-implementation-arc-20261001.md
+          M docs/design/capability-status.md
+          M docs/design/validation-debt-register.md
+          M docs/dev-log/after-task/2026-10-01-auto-fa-rank-implementation.md
+          M docs/dev-log/check-log.d/2026-10-01-auto-fa-rank-implementation/GATES.md
+          M docs/dev-log/check-log.d/2026-10-01-auto-fa-rank-implementation/README.md
+         + 45ae9216 test: compare FA retry controls against finite K0 objective
+         + 81faa0e7 test: cover FA boundary and persistent nesting refusal
+         + 526c85b7 Fix rejected scores in experimental FA rank selection
+         + 5e67f641 Archive prior acceptance ledgers and preserve current gate receipts
+         + 5e2a15ed Record paired automatic FA checkpoint and remaining acceptance gates
+         + 61a9f82d Add experimental automatic FA rank selector and twin evidence
+         + 5eaabb16 docs: start complete paired automatic FA rank programme
+         + 737f5f59 docs: size paired automatic FA-rank implementation arc
+         ^ branch 'claude/adoring-germain-750929' has 3 unpushed
+         ^ branch 'claude/h2-auto-forwarding-20260915' has 2 unpushed
+         ^ branch 'claude/h2-auto-forwarding-records' has 1 unpushed
+         ^ branch 'claude/h2-charter-fix-20260913' has 1 unpushed
+         ^ branch 'claude/h2-fixer-j1' has 5 unpushed
+         ^ branch 'claude/h2-fixer-j2' has 4 unpushed
+         ^ branch 'claude/h2-fixer-j3' has 2 unpushed
+         ^ branch 'claude/h2-fixer-j4' has 2 unpushed
+         ^ branch 'claude/h2-fixer-j5' has 5 unpushed
+         ^ branch 'claude/h2-fixer-records' has 3 unpushed
+         ^ branch 'claude/h2-test-campaign-20260913' has 1 unpushed
+         ^ branch 'claude/h2-three-scale-naming-20260908' has 3 unpushed
+         ^ branch 'claude/h2-wave1-records-20260913' has 1 unpushed
+         ^ branch 'claude/h2-wave2-records-20260913' has 1 unpushed
+         ^ branch 'claude/h2-wave3-records-20260913' has 1 unpushed
+         ^ branch 'claude/h2-wave4-records-20260913' has 1 unpushed
+         ^ branch 'claude/selinv-defaults-350' has 8 unpushed
+         ^ branch 'codex/blupf90-packet-numeric-handoff' has 1 unpushed
+         ^ branch 'codex/claude-cross-lane-handover' has 2 unpushed
+         ^ branch 'codex/hsq09-a3-julia-plan-7770' has 17 unpushed
+         ^ branch 'codex/hsq09-a3a4-integration-20260910' has 6 unpushed
+         ^ branch 'codex/hsq09-h1t-telemetry-amendment' has 8 unpushed
+         ^ branch 'codex/hsq09-h1two-identified-20260909' has 43 unpushed
+         ^ branch 'codex/hsq09-h3-materialization-20260909' has 39 unpushed
+         ^ branch 'codex/hsq09-h3-prerun-20260909' has 38 unpushed
+         ^ branch 'codex/hsq09-h3-s10-replacement-20260909' has 42 unpushed
+         ^ branch 'codex/hsq09-h3-s11-authorized-20260910' has 52 unpushed
+         ^ branch 'codex/hsq09-h3-s11-prereg-20260909' has 43 unpushed
+         ^ branch 'codex/hsq09-ng-contract-julia' has 1 unpushed
+         ^ branch 'codex/hsq09-ng-contract-julia-repair' has 4 unpushed
+         ^ branch 'codex/hsq09-release-julia-20260911' has 3 unpushed
+         ^ branch 'codex/hsq09-release-julia-20260911-docs' has 13 unpushed
+         ^ branch 'codex/hsq09-s10-hardening-20260909' has 28 unpushed
+         ^ branch 'codex/hsq09-s2-evidence-infra' has 12 unpushed
+         ^ branch 'codex/hsq09-s2-full-input-materialization' has 13 unpushed
+         ^ branch 'codex/hsq09-s2-materialization' has 14 unpushed
+         ^ branch 'codex/hsq09-s8-julia-claim-surface' has 5 unpushed
+         ^ branch 'codex/hsq09-s9-evidence-manifest' has 6 unpushed
+         ^ branch 'codex/hsq09-s9a4-evidence-manifest' has 18 unpushed
+         ^ branch 'codex/innovation-gate-issue-sync' has 1 unpushed
+         ^ branch 'codex/metafounder-single-step-hgamma' has 1 unpushed
+         ^ branch 'codex/mv-comparator-evidence' has 1 unpushed
+         ^ branch 'codex/mv-second-comparator-target' has 1 unpushed
+         ^ branch 'codex/mv-validation-comparator-gate' has 1 unpushed
+         ^ branch 'codex/nongaussian-parity-fixture' has 3 unpushed
+         ^ branch 'codex/parent-issue-ledger-sync' has 1 unpushed
+         ^ branch 'codex/pev-reliability-ledger-closeout' has 1 unpushed
+         ^ branch 'codex/r-extractor-status-sync' has 1 unpushed
+         ^ branch 'cursor/366-s3-rose-fence-20260925' has 1 unpushed
+         ^ branch 'feat/2026-07-01-v06-mcmcglmm-h2-comparator' has 3 unpushed
+         ^ branch 'feat/2026-07-01-v06-ordinal-liability-h2' has 3 unpushed
+         ^ branch 'handover/2026-09-13-claude' has 2 unpushed
+         ^ branch 'shannon-install' has 1 unpushed
+         ^ branch 'sim/2026-07-09-c8-mv-recovery-breadth' has 1 unpushed
+  XX   HSquared.jl: acceptance ledger GATES.md -- GATES UNMET
+       -> ran in the repo ROOT. If this ledger belongs to a lane worktree, declare WORKTREE: in it.
+  XX   hsquared-auto-fa-r-20261001 codex/auto-fa-rank-implementation-20261001 1 uncommitted; 3 UNPUSHED on HEAD; 86 UNPUSHED on other branch(es);
+          M docs/dev-log/after-task/2026-10-01-auto-fa-rank-implementation.md
+         + 2108c0d Retain rejected optimizer diagnostics in the experimental rank bridge
+         + 35323ed Record paired acceptance ledger provenance in checkpoint report
+         + ab7aedc Add experimental automatic FA rank R interface
+         + fc96eff checkpoint(cran-submit-090): wait for repair CI
+         + c235076 plan(cran-submit-090): record release ledger
+         + e380e16 lane(cran-submit-090): scaffold LOOP/lanes/cran-submit-090/ kit
+         + a577fb2 docs: check-log entry and after-task for the search_boundary diagnostics slice (#232)
+         + 8d9b2a4 docs+test: boundary condition text names the two-start fence; NEWS states the FALSE reading; assertions pin "interior" (Rose O-1..O-3 on #232)
+         ^ branch 'claude/h2-boundary-initial-20260915' has 3 unpushed
+         ^ branch 'claude/h2-boundary-initial-records' has 1 unpushed
+         ^ branch 'claude/h2-fixer-r1' has 3 unpushed
+         ^ branch 'claude/h2-fixer-r2' has 2 unpushed
+         ^ branch 'claude/h2-fixer-r3' has 3 unpushed
+         ^ branch 'claude/h2-fixer-r4' has 3 unpushed
+         ^ branch 'claude/h2-fixer-r5' has 3 unpushed
+         ^ branch 'claude/h2-fixer-r6' has 3 unpushed
+         ^ branch 'claude/h2-fixer-records' has 3 unpushed
+         ^ branch 'claude/h2-search-boundary-20260915' has 2 unpushed
+         ^ branch 'claude/h2-search-boundary-records' has 1 unpushed
+         ^ branch 'claude/lane-cran-submit-090' has 3 unpushed
+         ^ branch 'codex/a3-fit-time-plot-data' has 1 unpushed
+         ^ branch 'codex/genomic-target-fixture-mirror' has 1 unpushed
+         ^ branch 'codex/hsdata-live-marshalling' has 1 unpushed
+         ^ branch 'codex/hsq09-a3-r-plan' has 12 unpushed
+         ^ branch 'codex/hsq09-a3a4-r-integration-20260910' has 10 unpushed
+         ^ branch 'codex/hsq09-h0-ratification' has 10 unpushed
+         ^ branch 'codex/hsq09-ng-contract-r' has 1 unpushed
+         ^ branch 'codex/hsq09-release-r-20260911' has 1 unpushed
+         ^ branch 'codex/innovation-issues-24-25-sync' has 1 unpushed
+         ^ branch 'codex/issue-10-body-sync' has 1 unpushed
+         ^ branch 'codex/issue-22-body-sync' has 1 unpushed
+         ^ branch 'codex/issue-23-body-sync' has 1 unpushed
+         ^ branch 'codex/issue-23-scan-sync' has 1 unpushed
+         ^ branch 'codex/issue-5-6-body-sync' has 1 unpushed
+         ^ branch 'codex/issue-5-extractor-sync' has 1 unpushed
+         ^ branch 'codex/issue-6-bridge-parent-sync' has 1 unpushed
+         ^ branch 'codex/issue-7-body-sync' has 1 unpushed
+         ^ branch 'codex/issue-9-roadmap-sync' has 1 unpushed
+         ^ branch 'codex/issue-map-close-19' has 1 unpushed
+         ^ branch 'codex/issue-map-close-2' has 1 unpushed
+         ^ branch 'codex/issue-map-close-20' has 1 unpushed
+         ^ branch 'codex/issue-map-close-21' has 1 unpushed
+         ^ branch 'codex/issue-map-close-8' has 1 unpushed
+         ^ branch 'codex/julia-138-mrode-sync' has 1 unpushed
+         ^ branch 'codex/julia-139-mrode31-sync' has 1 unpushed
+         ^ branch 'codex/julia-140-genomic-target-sync' has 1 unpushed
+         ^ branch 'codex/julia-141-pev-map-sync' has 1 unpushed
+         ^ branch 'codex/julia-147-validation-sync' has 1 unpushed
+         ^ branch 'codex/julia-148-extractor-mirror-sync' has 1 unpushed
+         ^ branch 'codex/julia-149-parent-ledger-sync' has 1 unpushed
+         ^ branch 'codex/julia-150-innovation-gate-sync' has 1 unpushed
+         ^ branch 'codex/julia-151-blupf90-packet-sync' has 1 unpushed
+         ^ branch 'codex/marker-scan-payload-fixture' has 1 unpushed
+         ^ branch 'codex/marker-scan-tool-availability' has 1 unpushed
+         ^ branch 'codex/metafounder-animal-supplied-bridge' has 1 unpushed
+         ^ branch 'codex/metafounder-hgamma-payload-gate' has 2 unpushed
+         ^ branch 'codex/metafounder-single-step-contract' has 1 unpushed
+         ^ branch 'codex/mi-miss-control-contract' has 1 unpushed
+         ^ branch 'codex/mv-published-target-scout' has 1 unpushed
+         ^ branch 'codex/pev-reliability-standard-fields' has 1 unpushed
+         ^ branch 'codex/public-claims-gwas-reconcile' has 1 unpushed
+         ^ branch 'codex/status-ledger-sync-144-143' has 1 unpushed
+         ^ branch 'codex/structured-diagonal-doc-reconcile' has 1 unpushed
+         ^ branch 'docs/2026-07-09-claude-handover' has 2 unpushed
+         ^ branch 'shannon-install' has 1 unpushed
+
+GATE FAIL -- 1 acceptance ledger(s) have UNMET gates.
+The repo(s) may be perfectly landed; that is a different question. Unmet gates mean the
+WORK is not finished, and a handoff written now would hand over a half-done slice with a
+confident report attached. Finish the slice, or mark the gate ABANDONED with its handoff
+note (an honest state) -- then re-run. Detail:
+  node "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/.unlazy/auto-fa-rank-implementation-20261001/final-gate-check.mjs" --status

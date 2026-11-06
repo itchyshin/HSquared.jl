@@ -1,0 +1,12 @@
+# Arc 1 R source-currentness audit, 2026-10-08
+
+- Current disposable parser candidate: `/private/tmp/hsquared-arc1-r-active-20261008`, HEAD `a563ea88f3076819a4a5d8966e2644489efd1688`.
+- Its focused parser test has retained offline and required-live passes and an exact-hash parser-only review. These results do not establish current paired Arc 1 parity.
+- The frozen oracle requires seven Arc 1 R test files. The candidate contains four. It lacks bootstrap-v2 live, profile-v4 live, and profile-v4 transport-isolation tests.
+- The old isolated scratch copy has the two profile-v4 tests but no bootstrap-v2 file and no Git metadata. Its uncertainty and bridge source hashes differ from the candidate.
+- Astra's independent read-only review confirmed that the dedicated bootstrap-v2 test coexisted with the embedded uncertainty-live block in the historical run and passed 20/20 expectations. Historical source hash: `d787d406d9227e3aea63f84fc6095551da56c64abdd42783485616e4581d19fb`; retained testthat RDS hash: `66e4d743655c14c38d03e5a3e1681c64120aba007c48a6ab55dd9f63ccb8bfba`. The bytes are unavailable in inspected Git object stores and evidence archives. Preserve all seven selected files and author/review a new explicitly labeled test at the missing path.
+- Astra held the reconstruction proposal on three details, now corrected there: per-file governing lock (historical oracle except the later transport-locked `R/julia-bridge.R`), successful v2 result fields (`selector_attempts`, candidate summaries, and all 19 starts rather than nonempty `selector_ledger`), and exact response capture/replay via `_arc1_bootstrap`'s injected selector.
+- The dirty Dropbox R checkout was read-only and has no Arc 1 source files on this branch. It remains untouched.
+- No gate status changed. G0 is met; G1-G8 are unmet in the live ledger. No tests, fits, or simulations were run during this audit.
+- Exact command contracts: `python3 tools/arc1_oracles.py --help` and `node /Users/z3437171/.codex/skills/unlazy/scripts/gate-check.mjs --status --scope arc1-gaussian-reliability`.
+- Resume by obtaining Astra's second review of the corrected proposal. If passed, reconstruct only in the disposable Git-backed R candidate, port the reviewed parser repair without losing v2 behavior, add the new seven-file-contract bootstrap test, and run offline checks. Obtain exact-source review and a new paired freeze before canonical G1/G6 checks. Keep all study gates closed.

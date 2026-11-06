@@ -1,0 +1,11 @@
+{
+  "exit": 2,
+  "command": [
+    "git",
+    "diff",
+    "--cached",
+    "--check"
+  ],
+  "finding": "New ArcCard template used two-space Markdown hard line breaks. Earlier unstaged diff excluded untracked file. Staged diff caught trailing spaces before commit.",
+  "resolution": "Strip trailing whitespace and use paragraph breaks. Rerun staged check; no whitelist or oracle change."
+}

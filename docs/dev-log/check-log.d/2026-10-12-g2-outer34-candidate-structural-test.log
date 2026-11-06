@@ -1,0 +1,13 @@
+# 2026-10-12-g2-outer34-candidate-structural-test
+
+Executed UTC: 2026-10-12T07:27:13Z
+Working directory: /Users/z3437171/.codex/worktrees/b9ae/HSquared.jl
+Python executable: /Users/z3437171/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3
+Python version: 3.12.14
+Environment: PYTHONDONTWRITEBYTECODE=1
+Command: /Users/z3437171/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3 LOOP/lanes/arc1-gaussian-reliability-20261002/evidence/g2-development-n80-null-outer34-v18/test_candidate.py
+Exit code: 0
+Standard output:
+PASS: exact seed, blocked singleton scope, denominator, source lock, and no-execution flags
+Standard error: (empty)
+Scope: candidate structural assertions passed; no fit started.

@@ -1,0 +1,11 @@
+# 2026-10-08 G7 v6 live-R failure and fixture repair
+
+The first v6 package invocation, `20261008T180318Z-33111d33f1`, stopped before tests because the runner's default R root did not equal the reviewed freeze root. It receives no gate credit. The canonical v6 run used the reviewed source freeze and explicit `HSQUARED_ARC1_R_ROOT=/private/tmp/hsquared-arc1-r-reconstruction-20261008`.
+
+Run `20261008T180338Z-2f8cf6b4e0` failed after 3,764.170 seconds. The Julia component passed in 857.530 seconds. The live-R component exited 1 after 2,586.455 seconds. Six of seven files passed: parity 50/50, bootstrap v2 71/71, profile v4 88/88, transport isolation 3/3, uncertainty controls 179/179, and uncertainty live 173/173. `test-arc1-controls.R` recorded 116 successes and one error at the arc1_v2 stale-source/false-eligibility test. The error reported missing selector-row fields `split`, `schedule_index`, `k0_anchor_start_id`, `initialization_status`, and `actual_optimizer_policy` before reaching the intended missing-actual-policy assertion.
+
+Root cause: the test helper `arc1_v2_attempt_row()` predated the adopted G2 split-transport schema. Its synthetic arc1_v2 attempt omitted required schedule metadata, so schema validation correctly stopped before the assertion's target branch. The helper now supplies `split = NA_real_`, `schedule_index = 1L`, `k0_anchor_start_id = "default"`, and `initialization_status = "ok"`; production validation is unchanged. The revised test hash is `4539340672dd39cbe0137062528da568f4bc8063c56dcd9d39bed531e9a979c1` (prior hash `194a13da0c717c3eac140986ab37df07fadcb4d5016c876cded949472be29d8f`).
+
+Focused reruns passed for `test-arc1-controls.R` and `test-fa-rank-g2-split-transport.R`. The G7 source candidate v7 now matches all 772 Julia and 275 R paths under the canonical inventory. Candidate SHA-256 is `01faa79889509c8db9735d2a3e33c48fdc8748d9ca21e5d1b65bbbf2ed31912b`; exact-source Astra review is pending. G7 remains open. No G2 study attempt or denominator changed.
+
+Resume: obtain exact-source PASS for v7, run the canonical full G7 package check with the reviewed R root explicitly set, then verify the retained receipt. Refresh G1/G6 source freezes and receipts after G7 if their exact source contracts still include the changed test file.

@@ -1,0 +1,21 @@
+{
+  "schema": "hsquared-arc1-check-result-v1",
+  "recorded_at_utc": "2026-10-12T07:42:27Z",
+  "execution_time_capture": "recorded immediately after successful command completion",
+  "cwd": "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/LOOP/lanes/arc1-gaussian-reliability-20261002/evidence/g5-n160-v4-refusal-replay-v2",
+  "environment": {
+    "PYTHONDONTWRITEBYTECODE": "1"
+  },
+  "python_executable": "/Library/Frameworks/Python.framework/Versions/3.13/bin/python3",
+  "python_version": "3.13.15",
+  "argv": [
+    "/Library/Frameworks/Python.framework/Versions/3.13/bin/python3",
+    "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/LOOP/lanes/arc1-gaussian-reliability-20261002/evidence/g5-n160-v4-refusal-replay-v2/test_supervise_profile_v4_retry.py"
+  ],
+  "exit_code": 0,
+  "stdout": "Ran 14 tests in 0.242s\nOK\n",
+  "stderr": "",
+  "test_script_sha256": "a5d82c0e1273a5e70f0fcda9d00776c1a48ee9118c236adb2267ec65ece9a014",
+  "raw_log_sha256": "6c63d395b2cfb9604c03a5b9822a376ab79c322e5089fb553a380392a0ee2c6d",
+  "scope_note": "Fourteen supervisor contract tests passed using fake processes and temporary fixtures. They exercise refusal, interruption, cleanup, and source-pin conditions. No real fit or allocated study attempt was launched; G5 remains open."
+}

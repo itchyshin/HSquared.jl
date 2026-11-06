@@ -1,0 +1,21 @@
+{
+  "schema": "hsquared-arc1-check-result-v1",
+  "recorded_at_utc": "2026-10-12T07:50:30Z",
+  "execution_time_capture": "recorded after terminal command result",
+  "cwd": "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/test",
+  "environment": {
+    "PYTHONDONTWRITEBYTECODE": "1"
+  },
+  "python_executable": "/Library/Frameworks/Python.framework/Versions/3.13/bin/python3",
+  "python_version": "3.13.15",
+  "argv": [
+    "/Library/Frameworks/Python.framework/Versions/3.13/bin/python3",
+    "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/test/test_arc1_scientific_gates.py"
+  ],
+  "exit_code": 0,
+  "stdout": "Ran 22 tests in 31.163s\nOK\n",
+  "stderr": "",
+  "raw_log_sha256": "10817b0bef4fe3e6c17258ca57a394ff3294c13339e3daa0b9251978c03f39ae",
+  "test_script_sha256": "4d117e71e6ef9f42db2076c56f9595f3dc443e278c703cb4128562ae896ccb78",
+  "scope_note": "All 22 synthetic scientific-gate checker tests passed. This verifies checker and aggregation mechanics for selection, interval, and failure-denominator rules only; no study datasets, model fits, or acceptance-level calibration evidence were generated."
+}

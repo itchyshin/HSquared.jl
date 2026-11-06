@@ -1,0 +1,18 @@
+# G4 fixed-bootstrap-prefix adversarial tests
+
+Recorded UTC: 2026-10-12T07:32:56Z
+Execution timestamp: not captured by the test runner; output was captured immediately before this record
+Working directory: /Users/z3437171/.codex/worktrees/b9ae/HSquared.jl
+Python executable: /Users/z3437171/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3
+Python version: 3.12.14
+Environment: PYTHONDONTWRITEBYTECODE=1
+Command: /Users/z3437171/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3 /Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/test/test_arc1_receipt_adversaries.py Arc1ReceiptAdversaries.test_pilot_199_failure_is_not_replaced_by_formed_999_extension Arc1ReceiptAdversaries.test_pilot_primary_interval_cannot_diverge_from_199_prefix_record
+Exit code: 0
+Standard output:
+..
+----------------------------------------------------------------------
+Ran 2 tests in 0.270s
+
+OK
+Standard error: (empty)
+Scope: Two synthetic adversarial tests passed. Three failures in the fixed 199 prefix prevent forming intervals even when the later 999 prefix qualifies; the primary interval must match the retained 199 prefix. No scientific study or fit ran.

@@ -1,0 +1,36 @@
+{
+  "assessment_performed": true,
+  "draft_sha256": "7e82901a7749526202af3ecfe8b5cc47a4f6b8cacd221b5f3df5205bf24d5c68",
+  "draft_version": "v2",
+  "requested_mode": "independent",
+  "assessor_type": "self",
+  "reviewer": "Codex self-assessment",
+  "method": "Manual post-draft review against retained source hashes, test output, and generated fixture output; no extra model call.",
+  "genre": "Software-engineering after-task report",
+  "coverage": "Whole report",
+  "score": 2,
+  "style_status": "scored",
+  "score_reason": "The report is specific and evidence-led, with the repository-required section structure.",
+  "confidence": "medium",
+  "confidence_reason": "Technical claims were checked against current command output and source, but this is not an independent human style judgment.",
+  "examples": [
+    {
+      "location": "Section 2, paragraph 2",
+      "cue": "The inspector now returns a compact, evidence-preserving summary by default",
+      "impact": "States the user-visible engineering result and its default behavior clearly.",
+      "repair": "No change needed; the following sentence gives the direct synthetic proof and the schema change that enabled it.",
+      "line": 7,
+      "quote": "The inspector now returns a compact, evidence-preserving summary by default and exposes full evidence only on the explicit checker path that requires it."
+    }
+  ],
+  "evidence_none_reason": null,
+  "science_gate": "not_applicable",
+  "science_gate_reason": "The report makes no biological inference or scientific coverage claim.",
+  "facts_gate": "pass",
+  "facts_gate_reason": "Measurements, source changes, and test counts were compared with current command output and repository source.",
+  "references_gate": "not_applicable",
+  "references_gate_reason": "The report contains no external references.",
+  "date": "2026-10-11",
+  "calibration_status": "No style calibration controls were reviewed this turn; the score is an uncertain self-judgment.",
+  "interpretation": "perceived_style_not_authorship"
+}

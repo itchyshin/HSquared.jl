@@ -1,0 +1,73 @@
+{
+  "utc": "2026-10-01T20:46:39.858933+00:00",
+  "link_prose_errors": [],
+  "checks": [
+    {
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "cwd": "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "bash",
+        "tools/preamble_cap.sh"
+      ],
+      "cwd": "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl",
+      "exit": 0,
+      "stdout": "PREAMBLE CAP -- AGENTS.md is @imported by CLAUDE.md, so this is paid every session.\n  size            :   9343 B  (~2335 tok)   cap 14000 B\n  snapshot entries:      1               cap 1\n\nCAP OK -- preamble within budget.\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "Rscript",
+        "/Users/z3437171/shinichi-brain/tools/check-after-task.R",
+        "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/docs/dev-log/after-task/2026-10-01-auto-fa-rank-design.md"
+      ],
+      "cwd": "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl",
+      "exit": 0,
+      "stdout": "",
+      "stderr": "after-task structure check passed\nacceptance ledger: 4 file(s), every gate satisfied\n"
+    },
+    {
+      "command": [
+        "python3",
+        "/Users/z3437171/shinichi-brain/tools/slop_check.py",
+        "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/docs/design/auto-fa-rank-contract.md",
+        "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/docs/design/auto-fa-rank-follow-on.md",
+        "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/docs/design/auto-fa-rank-validation-plan.md",
+        "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/docs/design/auto-fa-rank-design-plan-20261001.md",
+        "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/docs/dev-log/scout/2026-10-01-auto-fa-rank-design/engine-contract.md",
+        "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/docs/dev-log/scout/2026-10-01-auto-fa-rank-design/user-contract.md",
+        "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/docs/dev-log/scout/2026-10-01-auto-fa-rank-design/method-recommendation.md",
+        "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/docs/dev-log/check-log.d/2026-10-01-auto-fa-rank-design/method-review.md",
+        "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/docs/dev-log/check-log.d/2026-10-01-auto-fa-rank-design/user-review.md",
+        "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/docs/dev-log/check-log.d/2026-10-01-auto-fa-rank-design/acceptance-ledger.md",
+        "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/docs/dev-log/check-log.d/2026-10-01-auto-fa-rank-design/mechanical-review.md",
+        "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/docs/dev-log/source-review/2026-10-01-auto-fa-rank-design-independent.md",
+        "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/docs/dev-log/after-task/2026-10-01-auto-fa-rank-design.md"
+      ],
+      "cwd": "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl",
+      "exit": 0,
+      "stdout": " \u2705 /Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/docs/design/auto-fa-rank-contract.md: 6 hits / 1835 words = 3.3 per 1000 (em dashes 0/1000)\n        3 \u00d7 X-not-Y contrast\n            L22: K measures shared factors, not the rank of G, which is positive\n            L46: y budget is a check convention, not a proof of all floating-point o\n            L64: an objective evaluation at L=0, not a successful FA optimization cl\n        2 \u00d7 faux reveal\n            L26: ion; G and R remain confounded. This is a second deterministic refusal\n            L50: This is a restricted-likelihood covaria\n        1 \u00d7 banned word\n            L88: cellation; the future wrapper/harness must retain its partial attem\n \u2705 /Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/docs/design/auto-fa-rank-follow-on.md: 1 hits / 804 words = 1.2 per 1000 (em dashes 0/1000)\n        1 \u00d7 faux reveal\n            L24: the recorded integration. This is a design reference, not HSquare\n \u2705 /Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/docs/design/auto-fa-rank-validation-plan.md: 5 hits / 1577 words = 3.2 per 1000 (em dashes 0/1000)\n        3 \u00d7 X-not-Y contrast\n            L23: valuate identical returned G/R, not a truth-start optimum. | Return\n            L43: a future measurement proposal, not a run authorized by this design\n            L59: ell. This follows sqrt(0.25/m), not a statistical validity claim fo\n        1 \u00d7 banned word\n            L33: R reference and FA unit/order harness are scaffolding; their truth-\n        1 \u00d7 faux reveal\n            L43: served elapsed time and memory. This is a future measurement proposal,\n \u2705 /Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/docs/design/auto-fa-rank-design-plan-20261001.md: 1 hits / 1946 words = 0.5 per 1000 (em dashes 0/1000)\n        1 \u00d7 X-not-Y contrast\n            L22: y is a question for this model, not an inherited default. Its site-c\n \u2705 /Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/docs/dev-log/scout/2026-10-01-auto-fa-rank-design/engine-contract.md: 7 hits / 1432 words = 4.9 per 1000 (em dashes 0/1000)\n        3 \u00d7 X-not-Y contrast\n            L9: rait-specific genetic variance, not a no-genetic-signal model.\n            L33: useful validation scaffolding, not an automatic-rank test [docs/dev\n            L44: -Gaussian genetic-GLLVM fitter, not the multivariate Gaussian pedigre\n        2 \u00d7 faux reveal\n            L9: 693-723, 1041-1050, 1174-1190]. This is a diagonal genetic covariance w\n            L38: gative slack under the formula. This is a dimension screen only. The T=\n        2 \u00d7 banned word\n            L31: in the FA unit/order recovery harness that checks loglik, beta, and\n            L33: existing exact FA unit/order harness exercises complete T=4/K=1 pe\n \u2705 /Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/docs/dev-log/scout/2026-10-01-auto-fa-rank-design/user-contract.md: 6 hits / 2214 words = 2.7 per 1000 (em dashes 0/1000)\n        4 \u00d7 X-not-Y contrast\n            L3: rts the requested factor count, not an estimated covariance rank ().\n            L32: ust use the diagonal structure, not a zero-column FA workaround ().\n            L103: only. Values are placeholders, not a chosen criterion or tolerance\n        1 \u00d7 faux reveal\n            L97: rule among the eligible models. This is a model-selection result, not p\n        1 \u00d7 bold-label opener\n            L107: **Superseded example:** If K=1 has the lower value but lies at the uniqueness floor, mark \n \u2705 /Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/docs/dev-log/scout/2026-10-01-auto-fa-rank-design/method-recommendation.md: 8 hits / 1299 words = 6.2 per 1000 (em dashes 0/1000)\n        7 \u00d7 X-not-Y contrast\n            L7: er of *shared genetic factors*, not the rank of the whole genetic cov\n            L13: n a common REML contrast space, not a claim that ordinary AIC theor\n            L15: are **generic nominal** counts, not a certificate that a particular\n        1 \u00d7 faux reveal\n            L13: This is a covariance-structure comparis\n \u2705 /Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/docs/dev-log/check-log.d/2026-10-01-auto-fa-rank-design/method-review.md: 6 hits / 1267 words = 4.7 per 1000 (em dashes 0/1000)\n        3 \u00d7 faux reveal\n            L13: this design remains confounded. This is a stronger witness than A=I and\n            L25: greater than 4 away from ties. This is a nominal generic dimension, no\n            L31: .05, is arithmetically correct. This is a descriptive study plan, not a\n        3 \u00d7 X-not-Y contrast\n            L25: is a nominal generic dimension, not an effective degree of freedom a\n            L28: ared score-unit tie convention, not a calibrated uncertainty interv\n            L31: is is a descriptive study plan, not a success claim or coverage stu\n \u2705 /Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/docs/dev-log/check-log.d/2026-10-01-auto-fa-rank-design/user-review.md: 1 hits / 900 words = 1.1 per 1000 (em dashes 0/1000)\n        1 \u00d7 faux reveal\n            L3: the design packet review-ready. This is a documentation-consistency hol\n \u2705 /Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/docs/dev-log/check-log.d/2026-10-01-auto-fa-rank-design/acceptance-ledger.md: 0 hits / 179 words = 0.0 per 1000 (em dashes 0/1000)\n \u2705 /Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/docs/dev-log/check-log.d/2026-10-01-auto-fa-rank-design/mechanical-review.md: 1 hits / 475 words = 2.1 per 1000 (em dashes 0/1000)\n        1 \u00d7 bold-label opener\n            L7: **PASS ;  mechanical packet and preservation checks.** This does not discharge the separat\n \u2705 /Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/docs/dev-log/source-review/2026-10-01-auto-fa-rank-design-independent.md: 0 hits / 503 words = 0.0 per 1000 (em dashes 0/1000)\n \u2705 /Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/docs/dev-log/after-task/2026-10-01-auto-fa-rank-design.md: 0 hits / 1277 words = 0.0 per 1000 (em dashes 0/1000)\nFINDINGS: 0\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "python3",
+        "/Users/z3437171/shinichi-brain/tools/closeout.py",
+        "check",
+        "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/docs/dev-log/after-task/2026-10-01-auto-fa-rank-design.md"
+      ],
+      "cwd": "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl",
+      "exit": 1,
+      "stdout": "FAIL close-out compiler\n- gate failed: Rscript /Users/z3437171/Dropbox/Github Local/Shinichi/tools/check-after-task.R: Execution halted\n",
+      "stderr": ""
+    }
+  ]
+}

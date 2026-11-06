@@ -1,0 +1,18 @@
+{
+  "schema": "arc1-r-codex-worktree-copy-search-v1",
+  "root": "/Users/z3437171/.codex/worktrees",
+  "path_basename": "hs_control.R",
+  "expected_sha256": "0951333cb8541a1c6615ba0131db5c98f8b5a59bccc24ab3358d4a47d85146f4",
+  "method": "read-only os.walk, followlinks=false, excluding .git and node_modules directories; hash same-basename files",
+  "matches": [],
+  "different_files": [
+    {
+      "path": "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/LOOP/lanes/arc1-gaussian-reliability-20261002/evidence/g7-current-source-pkg-test-v29/r-check-replay-v1/hsquared.Rcheck/00_pkg_src/hsquared/R/hs_control.R",
+      "sha256": "91c2505822c8ac6b6b705a80c0c72987138d442ee996397c5afef4ced9c885aa"
+    },
+    {
+      "path": "/Users/z3437171/.codex/worktrees/arc1-g2-lineage/HSquared.jl/LOOP/lanes/arc1-gaussian-reliability-20261002/evidence/g7-current-source-pkg-test-v29/r-check-replay-v1/hsquared.Rcheck/00_pkg_src/hsquared/R/hs_control.R",
+      "sha256": "91c2505822c8ac6b6b705a80c0c72987138d442ee996397c5afef4ced9c885aa"
+    }
+  ]
+}

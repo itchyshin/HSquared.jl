@@ -1,0 +1,23 @@
+{
+  "queried_at_utc": "2026-10-01T17:30:41.762122+00:00",
+  "command": [
+    "gh",
+    "pr",
+    "view",
+    "259",
+    "--repo",
+    "itchyshin/hsquared",
+    "--json",
+    "url,state,mergeCommit"
+  ],
+  "exit_code": 0,
+  "stdout": "{\"mergeCommit\":{\"oid\":\"e82f5c95e514028a7126fdd667c4ac7a840c9e6b\"},\"state\":\"MERGED\",\"url\":\"https://github.com/itchyshin/hsquared/pull/259\"}\n",
+  "stderr": "",
+  "data": {
+    "mergeCommit": {
+      "oid": "e82f5c95e514028a7126fdd667c4ac7a840c9e6b"
+    },
+    "state": "MERGED",
+    "url": "https://github.com/itchyshin/hsquared/pull/259"
+  }
+}

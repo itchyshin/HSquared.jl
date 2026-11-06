@@ -66,6 +66,10 @@ export AMDGPUBackend,
     fit_gblup,
     fit_gblup_reml,
     fit_multivariate_reml,
+    arc1_profile_repeatability,
+    arc1_confint,
+    arc1_bootstrap,
+    select_fa_rank,
     fit_multivariate_repeatability_reml,
     fit_multi_effect_reml,
     fit_sparse_multi_effect_aireml,
@@ -248,6 +252,12 @@ include("likelihood.jl")
 include("iterative_solve.jl")
 include("postfit.jl")
 include("multivariate.jl")
+include("arc1_fa.jl")
+include("arc1_fa_factors.jl")
+include("fa_rank_selection.jl")
+include("arc1_profiles.jl")
+include("arc1_bootstrap.jl")
+include("arc1_interfaces.jl")
 include("evolvability.jl")
 include("random_regression.jl")
 include("nongaussian.jl")

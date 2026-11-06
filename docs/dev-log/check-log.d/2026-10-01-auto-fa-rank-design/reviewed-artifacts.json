@@ -1,0 +1,8 @@
+{
+  "utc": "2026-10-01T20:42:09.216753+00:00",
+  "files": {
+    "docs/design/auto-fa-rank-contract.md": "502be816b16cda4639881463db60005dcb0b0c63e909cd572e54849ff27e8156",
+    "docs/design/auto-fa-rank-validation-plan.md": "263d46ea023325463d5108ec16cc315954e1b701b28bb1a07eb6499dc3c3e367"
+  },
+  "notes": "Final core includes independently accepted fixes. Owner then clarified tau/2 units and explicit O7 mixed-start assertion without changing policy. Retained panel receipts normalize em-dash typography only."
+}

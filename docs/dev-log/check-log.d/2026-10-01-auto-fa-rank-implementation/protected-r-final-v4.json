@@ -1,0 +1,326 @@
+{
+  "utc": "2026-10-02T03:22:05.693224+00:00",
+  "root": "/Users/z3437171/Dropbox/Github Local/hsquared",
+  "head": "f5c0d46bdb2ae3c2dfb2cc932883610d88f67f77",
+  "recorded_entries_preserved": 39,
+  "whole_status_preservation_claim": false,
+  "additional_status": {
+    "docs/dev-log/inbox/": "??",
+    "graft/": "??",
+    "tests/graft/": "??"
+  },
+  "files": [
+    {
+      "status": " M",
+      "path": "R/extractors.R",
+      "sha256": "d4c1f6817ed056eff9de32ea24f13e92beaa5afb67429c5d08ea03531f645284",
+      "actual_sha256": "d4c1f6817ed056eff9de32ea24f13e92beaa5afb67429c5d08ea03531f645284",
+      "actual_status": " M",
+      "matches": true
+    },
+    {
+      "status": " M",
+      "path": "R/fit-object.R",
+      "sha256": "6e8508c406a20f5adc8efb45babff7987c2c9920f29e105a302ca1de95349aaf",
+      "actual_sha256": "6e8508c406a20f5adc8efb45babff7987c2c9920f29e105a302ca1de95349aaf",
+      "actual_status": " M",
+      "matches": true
+    },
+    {
+      "status": " M",
+      "path": "R/gwas.R",
+      "sha256": "473e7423ef508dc14d6b319c9e3e340ad8dbfb7c8c7ba2a5d25881c8912f396c",
+      "actual_sha256": "473e7423ef508dc14d6b319c9e3e340ad8dbfb7c8c7ba2a5d25881c8912f396c",
+      "actual_status": " M",
+      "matches": true
+    },
+    {
+      "status": " M",
+      "path": "R/julia-bridge.R",
+      "sha256": "c6917226b96e4255b9446f89dca8617a141837883c853834d4e40130a87bad7c",
+      "actual_sha256": "c6917226b96e4255b9446f89dca8617a141837883c853834d4e40130a87bad7c",
+      "actual_status": " M",
+      "matches": true
+    },
+    {
+      "status": " M",
+      "path": "R/validation-status.R",
+      "sha256": "e8fdef79fe73b672264f41f2295d603ab36a9c3ccbce5b4907124323d862d70b",
+      "actual_sha256": "e8fdef79fe73b672264f41f2295d603ab36a9c3ccbce5b4907124323d862d70b",
+      "actual_status": " M",
+      "matches": true
+    },
+    {
+      "status": " M",
+      "path": "data-raw/genomic-external-comparator-study.R",
+      "sha256": "e4dcb36d8a043178b39fad1053b2e5a2f49be2937becbd0d5234b2d41bf9dcdb",
+      "actual_sha256": "e4dcb36d8a043178b39fad1053b2e5a2f49be2937becbd0d5234b2d41bf9dcdb",
+      "actual_status": " M",
+      "matches": true
+    },
+    {
+      "status": " M",
+      "path": "inst/tools/v07_genomic_recovery_recompute.R",
+      "sha256": "22ff5a6ab849a47e57ce63891cbc0907006682303f5f67871afeec0f64441a2b",
+      "actual_sha256": "22ff5a6ab849a47e57ce63891cbc0907006682303f5f67871afeec0f64441a2b",
+      "actual_status": " M",
+      "matches": true
+    },
+    {
+      "status": " M",
+      "path": "sim/phase1_two_effect_live_parity.R",
+      "sha256": "d578cfabda5cc9fa2361f7b02669f3856ba017aef5f1c4ecea558295bda88a79",
+      "actual_sha256": "d578cfabda5cc9fa2361f7b02669f3856ba017aef5f1c4ecea558295bda88a79",
+      "actual_status": " M",
+      "matches": true
+    },
+    {
+      "status": " M",
+      "path": "sim/phase2_multi_effect_live_parity.R",
+      "sha256": "ea3adb6bf16429ee33868e7fe2af969da7be4c97221ba14e6f5be79c605cbb89",
+      "actual_sha256": "ea3adb6bf16429ee33868e7fe2af969da7be4c97221ba14e6f5be79c605cbb89",
+      "actual_status": " M",
+      "matches": true
+    },
+    {
+      "status": " M",
+      "path": "tests/fixtures/emit_payload_v2_fixtures.R",
+      "sha256": "ebb7088cf06ed8a3ea108a0941dff0f05041513726877f8bdddbc69e3f762c1f",
+      "actual_sha256": "ebb7088cf06ed8a3ea108a0941dff0f05041513726877f8bdddbc69e3f762c1f",
+      "actual_status": " M",
+      "matches": true
+    },
+    {
+      "status": " M",
+      "path": "tests/testthat/test-bridge-payload-v2.R",
+      "sha256": "55cf33726031f0de0dcb22826e5f9604b27e14d2ee908d71c12bd76ea088bf74",
+      "actual_sha256": "55cf33726031f0de0dcb22826e5f9604b27e14d2ee908d71c12bd76ea088bf74",
+      "actual_status": " M",
+      "matches": true
+    },
+    {
+      "status": " M",
+      "path": "tests/testthat/test-common-env.R",
+      "sha256": "989ff19f87ab4e01ba8eaf4dfae53e32643c42134a9a19f5bd5eb4acd542e385",
+      "actual_sha256": "989ff19f87ab4e01ba8eaf4dfae53e32643c42134a9a19f5bd5eb4acd542e385",
+      "actual_status": " M",
+      "matches": true
+    },
+    {
+      "status": " M",
+      "path": "tests/testthat/test-direct-maternal.R",
+      "sha256": "7d71c2f3c8fce2b8a12cdcdc9ba3915a158c1288b634b63391ad41fb3a9f86ae",
+      "actual_sha256": "7d71c2f3c8fce2b8a12cdcdc9ba3915a158c1288b634b63391ad41fb3a9f86ae",
+      "actual_status": " M",
+      "matches": true
+    },
+    {
+      "status": " M",
+      "path": "tests/testthat/test-genomic.R",
+      "sha256": "1b0b5cf89b3745ae47e3bf3c6b16adbe237df26f8102995aff1fbf194470a107",
+      "actual_sha256": "1b0b5cf89b3745ae47e3bf3c6b16adbe237df26f8102995aff1fbf194470a107",
+      "actual_status": " M",
+      "matches": true
+    },
+    {
+      "status": " M",
+      "path": "tests/testthat/test-gwas.R",
+      "sha256": "f04721351da312c1d115861e4410e80d29899f77e8e5a2021bc0848a3e722b05",
+      "actual_sha256": "f04721351da312c1d115861e4410e80d29899f77e8e5a2021bc0848a3e722b05",
+      "actual_status": " M",
+      "matches": true
+    },
+    {
+      "status": " M",
+      "path": "tests/testthat/test-maternal.R",
+      "sha256": "8b3690a9235e6cd4640b392eb86758ecf57ab5f00746068406683f30d39fc970",
+      "actual_sha256": "8b3690a9235e6cd4640b392eb86758ecf57ab5f00746068406683f30d39fc970",
+      "actual_status": " M",
+      "matches": true
+    },
+    {
+      "status": " M",
+      "path": "tests/testthat/test-v07-genomic-boundary-oracle.R",
+      "sha256": "6d59d40acbb01345dd53eb900c74ed895ac5070788e82f09e370497f2818f5de",
+      "actual_sha256": "6d59d40acbb01345dd53eb900c74ed895ac5070788e82f09e370497f2818f5de",
+      "actual_status": " M",
+      "matches": true
+    },
+    {
+      "status": " M",
+      "path": "tests/testthat/test-v07-genomic-recovery-recompute.R",
+      "sha256": "a2d74fa28fedfefc85e33ac91d42d750aa3f7f71e80268805ec7dec947a9cdaa",
+      "actual_sha256": "a2d74fa28fedfefc85e33ac91d42d750aa3f7f71e80268805ec7dec947a9cdaa",
+      "actual_status": " M",
+      "matches": true
+    },
+    {
+      "status": " M",
+      "path": "tests/testthat/test-v07-genomic-recovery-v2.R",
+      "sha256": "001e911b282dd6a6db8d7724f25ee3ad23e2f96a28ed48dc5b630d057b273b1a",
+      "actual_sha256": "001e911b282dd6a6db8d7724f25ee3ad23e2f96a28ed48dc5b630d057b273b1a",
+      "actual_status": " M",
+      "matches": true
+    },
+    {
+      "status": " M",
+      "path": "tests/testthat/test-v07-genomic-recovery-v3-admission.R",
+      "sha256": "d0ba361a283378249a36814d3cd45dd23fbc4678ee4be06dabdd869c38804212",
+      "actual_sha256": "d0ba361a283378249a36814d3cd45dd23fbc4678ee4be06dabdd869c38804212",
+      "actual_status": " M",
+      "matches": true
+    },
+    {
+      "status": " M",
+      "path": "tests/testthat/test-v07-genomic-recovery-v3-downstream-contract.R",
+      "sha256": "b864cc0c0e1a90c6200ea7f437f482d406953e6b542c0fcdf4f572d1cdbfc229",
+      "actual_sha256": "b864cc0c0e1a90c6200ea7f437f482d406953e6b542c0fcdf4f572d1cdbfc229",
+      "actual_status": " M",
+      "matches": true
+    },
+    {
+      "status": " M",
+      "path": "tests/testthat/test-v07-genomic-recovery-v3-driver.R",
+      "sha256": "f6d0ff9d6ea763e6907278fcbc5c799b2c0f8f2f372aa6fd81f7e041ef3cc75c",
+      "actual_sha256": "f6d0ff9d6ea763e6907278fcbc5c799b2c0f8f2f372aa6fd81f7e041ef3cc75c",
+      "actual_status": " M",
+      "matches": true
+    },
+    {
+      "status": " M",
+      "path": "tests/testthat/test-v07-genomic-recovery-v3-preseal.R",
+      "sha256": "c3699cbed3876d86cd075b743abf816c0a22fec333c01f07e17902a714286f1b",
+      "actual_sha256": "c3699cbed3876d86cd075b743abf816c0a22fec333c01f07e17902a714286f1b",
+      "actual_status": " M",
+      "matches": true
+    },
+    {
+      "status": " M",
+      "path": "tests/testthat/test-v07-genomic-recovery-v3-recompute.R",
+      "sha256": "08bdf9ee0c723353823522392acd0638262d63c92859b4aefaed66274066a84b",
+      "actual_sha256": "08bdf9ee0c723353823522392acd0638262d63c92859b4aefaed66274066a84b",
+      "actual_status": " M",
+      "matches": true
+    },
+    {
+      "status": " M",
+      "path": "tests/testthat/test-v07-genomic-recovery-v3-retry7-mutations.R",
+      "sha256": "060ff5b427762f6088507ba9fdb2c7f000d8b57aae989188a0825224271f4b79",
+      "actual_sha256": "060ff5b427762f6088507ba9fdb2c7f000d8b57aae989188a0825224271f4b79",
+      "actual_status": " M",
+      "matches": true
+    },
+    {
+      "status": " M",
+      "path": "tests/testthat/test-v07-genomic-recovery-v3-tooling.R",
+      "sha256": "b0b3275d31a934330c546f38247e9e551c5a7124960934e0e02e4c04f2bfefa7",
+      "actual_sha256": "b0b3275d31a934330c546f38247e9e551c5a7124960934e0e02e4c04f2bfefa7",
+      "actual_status": " M",
+      "matches": true
+    },
+    {
+      "status": " M",
+      "path": "tests/testthat/test-v07-recovery-v3-run-one-arity.R",
+      "sha256": "5b061ee4f3059b291ad89ac5bb7ae630a2e3ca43a12b0ac3d796831092444312",
+      "actual_sha256": "5b061ee4f3059b291ad89ac5bb7ae630a2e3ca43a12b0ac3d796831092444312",
+      "actual_status": " M",
+      "matches": true
+    },
+    {
+      "status": " M",
+      "path": "tools/v07_genomic_boundary_oracle.R",
+      "sha256": "fb08713fca6f5892ca2bed608175397915532d7f18b87bbcc539b45e4c7b1c5f",
+      "actual_sha256": "fb08713fca6f5892ca2bed608175397915532d7f18b87bbcc539b45e4c7b1c5f",
+      "actual_status": " M",
+      "matches": true
+    },
+    {
+      "status": " M",
+      "path": "tools/v07_genomic_recovery_recompute.R",
+      "sha256": "729e5a4c0a51e2c64cf9e4d8762998f8f60b96c4d08acb7063330738ca1faafe",
+      "actual_sha256": "729e5a4c0a51e2c64cf9e4d8762998f8f60b96c4d08acb7063330738ca1faafe",
+      "actual_status": " M",
+      "matches": true
+    },
+    {
+      "status": " M",
+      "path": "tools/v07_genomic_recovery_v2.R",
+      "sha256": "72f6905d380cb34d1d5954f19e3a5a7813b15b679876920a0053e0f7124af18f",
+      "actual_sha256": "72f6905d380cb34d1d5954f19e3a5a7813b15b679876920a0053e0f7124af18f",
+      "actual_status": " M",
+      "matches": true
+    },
+    {
+      "status": " M",
+      "path": "tools/v07_genomic_recovery_v2_recompute.R",
+      "sha256": "9b29f1f6d9bc636e36f1dd0ba4afa90b0e8847fa971db52ce683171629e49ad1",
+      "actual_sha256": "9b29f1f6d9bc636e36f1dd0ba4afa90b0e8847fa971db52ce683171629e49ad1",
+      "actual_status": " M",
+      "matches": true
+    },
+    {
+      "status": " M",
+      "path": "tools/v07_genomic_recovery_v3.R",
+      "sha256": "42fc288d39d19d279b9c4691a6469aee15b340fa353b7b645fc069b63a51b5e0",
+      "actual_sha256": "42fc288d39d19d279b9c4691a6469aee15b340fa353b7b645fc069b63a51b5e0",
+      "actual_status": " M",
+      "matches": true
+    },
+    {
+      "status": " M",
+      "path": "tools/v07_genomic_recovery_v3_admission.R",
+      "sha256": "195e8e17e67228c3224c8147378980b42e9b44851d75383dc5a3531cfd6a8a0d",
+      "actual_sha256": "195e8e17e67228c3224c8147378980b42e9b44851d75383dc5a3531cfd6a8a0d",
+      "actual_status": " M",
+      "matches": true
+    },
+    {
+      "status": " M",
+      "path": "tools/v07_genomic_recovery_v3_downstream_contract.R",
+      "sha256": "d486f99d54f5f188c0132b30e828f21c8796f270c8a159dfde3fb1d5eb385650",
+      "actual_sha256": "d486f99d54f5f188c0132b30e828f21c8796f270c8a159dfde3fb1d5eb385650",
+      "actual_status": " M",
+      "matches": true
+    },
+    {
+      "status": " M",
+      "path": "tools/v07_genomic_recovery_v3_preseal.R",
+      "sha256": "0706ff6ac48ab1669af240288654b2a646c8585f888da8cbefe83be7efbdd55e",
+      "actual_sha256": "0706ff6ac48ab1669af240288654b2a646c8585f888da8cbefe83be7efbdd55e",
+      "actual_status": " M",
+      "matches": true
+    },
+    {
+      "status": " M",
+      "path": "tools/v07_genomic_recovery_v3_recompute.R",
+      "sha256": "96029e7de672d1482c2b765d78ff9ec4a2f9646aae32c6f4af7a525912529531",
+      "actual_sha256": "96029e7de672d1482c2b765d78ff9ec4a2f9646aae32c6f4af7a525912529531",
+      "actual_status": " M",
+      "matches": true
+    },
+    {
+      "status": " M",
+      "path": "tools/v07_genomic_recovery_v3_seed_lock.R",
+      "sha256": "31d63dad8be97dcb84ae85ed97387898b904171e882f5f9b5d020660abcf9af3",
+      "actual_sha256": "31d63dad8be97dcb84ae85ed97387898b904171e882f5f9b5d020660abcf9af3",
+      "actual_status": " M",
+      "matches": true
+    },
+    {
+      "status": "??",
+      "path": ".claude/agents/shannon.md",
+      "sha256": "e2dda660778cd34801385f70ca956f8dc393d52f1a5188613aac561bc44f06dd",
+      "actual_sha256": "e2dda660778cd34801385f70ca956f8dc393d52f1a5188613aac561bc44f06dd",
+      "actual_status": "??",
+      "matches": true
+    },
+    {
+      "status": "??",
+      "path": ".ignore",
+      "sha256": "5b345696ac9daf0b07ce5b9c56d5ec914815e395286f4c9f9ac3ec8ec83bf507",
+      "actual_sha256": "5b345696ac9daf0b07ce5b9c56d5ec914815e395286f4c9f9ac3ec8ec83bf507",
+      "actual_status": "??",
+      "matches": true
+    }
+  ]
+}

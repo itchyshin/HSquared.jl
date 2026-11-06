@@ -1,0 +1,133 @@
+# PR 498 source-identity portability checkpoint
+
+## 1. Goal
+
+Prepare a focused correction for PR #498's Windows source-identity failure and
+retain the existing fail-closed source boundary.
+
+## 2. Implemented
+
+The extension test now uses the manifest's forward-slash path convention.
+The source snapshot rejects resolved paths outside the admitted root and paths
+inside the root that resolve outside `src`. Adversarial tests cover both slash
+styles, absolute and traversal paths, and a POSIX symlink escape.
+
+## 3a. Decisions and Rejected Alternatives
+
+The correction keeps the canonical manifest format and does not reorder any
+FA selector or scientific guard. Assumption: `src` identities must resolve
+inside the admitted `src` directory, as the existing path contract states.
+
+## 4. Files Touched
+
+`sim/arc1/execution_identity.jl`, `sim/arc1/execute_attempt.jl`,
+`test/arc1_simulation_identity.jl`, `test/arc1_optimizer_contracts.jl`,
+`test/test_auto_fa_rank.jl`, `test/test_arc1_cross_drive_paths.py`,
+`tools/arc1_package_checks.py`, `.github/workflows/CI.yml`, and this report.
+
+## 5. Checks Run
+
+The focused no-fit identity test file passed under Julia 1.10.12 and 1.12.6 on
+macOS with one BLAS thread and at most two Julia threads. The source-directory
+negative check failed before the fix and passed afterwards. Windows CI and
+full package tests have not run for this commit.
+
+## 6. Tests of the Tests
+
+The root-contained `src/../outside.jl` adversarial case was accepted by the
+old code and rejected by the change. Both slash forms and absolute paths are
+tested. The real symlink test runs on POSIX; Windows symlink creation and a
+real cross-drive case are not covered.
+
+## 7a. Issue Ledger
+
+PR #498 has a Julia 1.10 Windows source-path failure and separate latest-Julia
+FA retry-fixture failures. This patch targets the former and strengthens source
+containment. The FA fixture candidate passed focused local checks; Windows CI and the seed
+guards remain open.
+
+## 8. Consistency Audit
+
+The expected identity inventory remains canonical forward-slash paths. The
+production check continues to reject unrecognized inventory paths and hash
+mismatches. Independent review found no source symlinks in this checkout.
+Memory receipt: lane preflight and the scoped lease isolated the two source
+files; historical execution identities remain unchanged. Golden Set: not run;
+no hub guard changed.
+
+## 9. What Did Not Go Smoothly
+
+The historical guard suite remains fail-closed and the original PR remains a
+draft. Native Windows behavior cannot be checked on this macOS host.
+
+## 10. Known Residuals
+
+Windows CI, full test suite, model-fit tests, FA fixture, seed guard policy,
+and scientific gates remain open. This branch has no merge or release claim.
+
+## 11. Team Learning
+
+A canonical serialized path and a native filesystem path are different
+representations; validate both the spelling in the inventory and the resolved
+containment. Independent review checked the patch and its test boundaries.
+
+## 12. Cross-Product Coverage
+
+Covered: no-fit source identity and containment on macOS Julia 1.10 and 1.12,
+plus both separator strings. This does NOT cover native Windows execution,
+Windows symlinks, real cross-drive paths, broad numerical fit parity or
+scientific gates.
+
+A focused Julia 1.13.3 attempt using a copied Julia 1.10 manifest refused a
+loaded `Statistics` extension absent from that manifest. That run does not
+establish a defect in a freshly resolved Julia 1.13 environment. It records a
+source/environment mismatch; Windows and latest-Julia CI are still required.
+
+A rerun on Julia 1.13.3 passed both focused no-fit testsets using a fresh
+Julia 1.13-resolved manifest with SHA-256
+`272ce679b561dedde1d733b783905cc6201cd9ed08b99acc1f87082e5454597b`.
+The source was an export of code commit `db48d9754af1a6f9b06b304925a2022778e01174`.
+Package-manager precompilation briefly exceeded the intended Mac CPU budget;
+future runs should cap precompile tasks as well as Julia and BLAS threads.
+
+For the separate FA retry-fixture failure, a no-fit matrix check confirmed on
+Julia 1.10.12 and 1.13.3 that zero FA loadings reproduce the diagonal covariance
+under the current parameterization. This supports the proposed fixture repair
+but does not exercise the selector or establish that its test passes.
+
+A candidate test-only change now uses zero loadings for the balanced start in
+the FA retry fixture. The full `test/test_auto_fa_rank.jl` file passed with 249 assertions on both
+Julia 1.10.12 and 1.13.3, including the previously failing retry case. The
+Julia 1.13 run used the freshly resolved manifest identified above. Native
+Windows and the full package suite remain to be checked in PR CI.
+
+The 1.13 CI run also exposed two optimizer contract tests whose seeded data
+differ across Julia versions. Only those two tests now use the captured Julia
+1.10.12 test matrix. The complete optimizer contract file passed 668 assertions
+on Julia 1.10.12 and 1.13.3; the original thresholds and guard assertions
+were retained. This is test evidence, not a scientific gate.
+
+A separate cross-drive correction rejects absolute escaped symlink targets
+and recognizes a disjoint output root on another drive. It also normalizes
+nested directory-symlink rows and restores the generated self-check extraction.
+The no-fit path tests passed under Julia 1.10 and 1.13, and the existing
+no-install preflight self-test passed. Windows CI now includes the path tests.
+Real second-drive and Windows symlink cases remain unverified.
+
+The latest-Julia profile test generated different normal variates from the
+historical Julia 1.10 stream. The N80 test now reads a portable export of the
+retained engineering input, while keeping the original response fingerprint,
+likelihood checks and tolerances. The fixture README records input and TSV
+hashes and the limits of the provenance claim. Independent review matched the
+response, pedigree, incidence and record mappings against the retained input.
+The full profile test file passed 1,295 assertions on each of Julia 1.10.12
+and 1.13.3; the Julia 1.13.3 run used the fresh manifest recorded above.
+
+The Windows 1.10 job failed in a fake-engine test because the fixture searched
+for a function signature followed by LF, while the checkout used CRLF. The
+fixture now searches for the signature independently of line endings, rejects
+missing or duplicated signatures, and tests LF and CRLF. Native Windows CI is
+needed to confirm this fix. Neither change earns scientific gate credit.
+The isolated LF/CRLF and missing/duplicate-hook tests passed 6/6 on Julia
+1.10.12. A full local executor test was started separately; its result is not
+included in this commit's claims.

@@ -1,0 +1,133 @@
+ℹ Testing hsquared
+hsquared is an experimental 0.9.0 release (not production; CRAN availability is tracked separately). Default fitting needs Julia + HSquared.jl; preview with hs_control(engine = "validate").
+What you may report is listed on Can I fit and report this? -- not in validation_status(). Intervals are not coverage-calibrated.
+See https://itchyshin.github.io/hsquared/articles/current-limits.html
+✔ | F W  S  OK | Context
+
+⠏ |          0 | multivariate-engine-parity                                     
+⠴ |          6 | multivariate-engine-parity                                     
+⠦ |   1      6 | multivariate-engine-parity                                     
+⠧ |   1      7 | multivariate-engine-parity                                     
+⠦ |   2     25 | multivariate-engine-parity                                     
+⠧ |   2     26 | multivariate-engine-parity                                     
+⠏ |   3     37 | multivariate-engine-parity                                     
+⠼ |   4     41 | multivariate-engine-parity                                     
+✔ |   4     44 | multivariate-engine-parity [12.3s]
+────────────────────────────────────────────────────────────────────────────────
+Warning ('test-multivariate-engine-parity.R:153:3'): Tier B1/B2: the bridge reproduces the serialized k=2 target element-wise
+The data have repeated records per individual (80 records for 20 individuals), but the model has no `permanent(1 | ...)` term. The additive variance will ABSORB the permanent-environment variance, so `animal` and the heritability derived from it are inflated -- they are not narrow-sense quantities here.
+To identify Va vs Vpe on a multi-trait repeated-measures model, add `permanent(1 | <id>)` to the cbind() formula (hsquared#237; experimental; public_covered_count stays 7):
+  hsquared(
+    cbind(<t1>, <t2>) ~ <fixed> + animal(1 | <id>, pedigree = ped) + permanent(1 | <id>),
+    data = <data>
+  )
+That route calls HSquared.fit_multivariate_repeatability_reml (HSquared.jl#398). If this checkout lacks the export, the call names the missing fitter instead of absorbing PE into G0. Univariate `target = "repeatability"` remains the covered-scale PE path. See docs/design/57-mv-pe-cbind-permanent-237.md.
+Suppress with suppressWarnings() if the animal-only cbind model is intended.
+Backtrace:
+    ▆
+ 1. └─hsquared (local) hs_a26_fit(ped, pheno, initial = hs_a26_engine_start(pheno)) at test-multivariate-engine-parity.R:153:3
+ 2.   └─hsquared::hsquared(...) at test-multivariate-engine-parity.R:56:3
+ 3.     └─hsquared:::hs_warn_unmodelled_repeated_records(spec) at hsquared-arc1-r-20261003/R/hsquared.R:126:3
+
+Warning ('test-multivariate-engine-parity.R:205:3'): Tier B1/B2: the bridge reproduces the serialized k=2 target element-wise
+The data have repeated records per individual (80 records for 20 individuals), but the model has no `permanent(1 | ...)` term. The additive variance will ABSORB the permanent-environment variance, so `animal` and the heritability derived from it are inflated -- they are not narrow-sense quantities here.
+To identify Va vs Vpe on a multi-trait repeated-measures model, add `permanent(1 | <id>)` to the cbind() formula (hsquared#237; experimental; public_covered_count stays 7):
+  hsquared(
+    cbind(<t1>, <t2>) ~ <fixed> + animal(1 | <id>, pedigree = ped) + permanent(1 | <id>),
+    data = <data>
+  )
+That route calls HSquared.fit_multivariate_repeatability_reml (HSquared.jl#398). If this checkout lacks the export, the call names the missing fitter instead of absorbing PE into G0. Univariate `target = "repeatability"` remains the covered-scale PE path. See docs/design/57-mv-pe-cbind-permanent-237.md.
+Suppress with suppressWarnings() if the animal-only cbind model is intended.
+Backtrace:
+    ▆
+ 1. └─hsquared (local) hs_a26_fit(ped, pheno) at test-multivariate-engine-parity.R:205:3
+ 2.   └─hsquared::hsquared(...) at test-multivariate-engine-parity.R:56:3
+ 3.     └─hsquared:::hs_warn_unmodelled_repeated_records(spec) at hsquared-arc1-r-20261003/R/hsquared.R:126:3
+
+Warning ('test-multivariate-engine-parity.R:272:5'): Tier B3: the fit is invariant to pedigree row order
+The data have repeated records per individual (80 records for 20 individuals), but the model has no `permanent(1 | ...)` term. The additive variance will ABSORB the permanent-environment variance, so `animal` and the heritability derived from it are inflated -- they are not narrow-sense quantities here.
+To identify Va vs Vpe on a multi-trait repeated-measures model, add `permanent(1 | <id>)` to the cbind() formula (hsquared#237; experimental; public_covered_count stays 7):
+  hsquared(
+    cbind(<t1>, <t2>) ~ <fixed> + animal(1 | <id>, pedigree = ped) + permanent(1 | <id>),
+    data = <data>
+  )
+That route calls HSquared.fit_multivariate_repeatability_reml (HSquared.jl#398). If this checkout lacks the export, the call names the missing fitter instead of absorbing PE into G0. Univariate `target = "repeatability"` remains the covered-scale PE path. See docs/design/57-mv-pe-cbind-permanent-237.md.
+Suppress with suppressWarnings() if the animal-only cbind model is intended.
+Backtrace:
+    ▆
+ 1. └─hsquared (local) hs_a26_fit(permuted, pheno, initial = initial) at test-multivariate-engine-parity.R:272:5
+ 2.   └─hsquared::hsquared(...) at test-multivariate-engine-parity.R:56:3
+ 3.     └─hsquared:::hs_warn_unmodelled_repeated_records(spec) at hsquared-arc1-r-20261003/R/hsquared.R:126:3
+
+Warning ('test-multivariate-engine-parity.R:272:5'): Tier B3: the fit is invariant to pedigree row order
+The data have repeated records per individual (80 records for 20 individuals), but the model has no `permanent(1 | ...)` term. The additive variance will ABSORB the permanent-environment variance, so `animal` and the heritability derived from it are inflated -- they are not narrow-sense quantities here.
+To identify Va vs Vpe on a multi-trait repeated-measures model, add `permanent(1 | <id>)` to the cbind() formula (hsquared#237; experimental; public_covered_count stays 7):
+  hsquared(
+    cbind(<t1>, <t2>) ~ <fixed> + animal(1 | <id>, pedigree = ped) + permanent(1 | <id>),
+    data = <data>
+  )
+That route calls HSquared.fit_multivariate_repeatability_reml (HSquared.jl#398). If this checkout lacks the export, the call names the missing fitter instead of absorbing PE into G0. Univariate `target = "repeatability"` remains the covered-scale PE path. See docs/design/57-mv-pe-cbind-permanent-237.md.
+Suppress with suppressWarnings() if the animal-only cbind model is intended.
+Backtrace:
+    ▆
+ 1. └─hsquared (local) hs_a26_fit(permuted, pheno, initial = initial) at test-multivariate-engine-parity.R:272:5
+ 2.   └─hsquared::hsquared(...) at test-multivariate-engine-parity.R:56:3
+ 3.     └─hsquared:::hs_warn_unmodelled_repeated_records(spec) at hsquared-arc1-r-20261003/R/hsquared.R:126:3
+────────────────────────────────────────────────────────────────────────────────
+
+══ Results ═════════════════════════════════════════════════════════════════════
+Duration: 12.4 s
+
+[ FAIL 0 | WARN 4 | SKIP 0 | PASS 44 ]
+ℹ Testing hsquared
+hsquared is an experimental 0.9.0 release (not production; CRAN availability is tracked separately). Default fitting needs Julia + HSquared.jl; preview with hs_control(engine = "validate").
+What you may report is listed on Can I fit and report this? -- not in validation_status(). Intervals are not coverage-calibrated.
+See https://itchyshin.github.io/hsquared/articles/current-limits.html
+✔ | F W  S  OK | Context
+
+⠏ |          0 | multivariate-permanent-237                                     
+⠴ |          6 | multivariate-permanent-237                                     Validated the v0.1 animal-model contract; no model was fitted (`engine = "validate"`). Julia fit target: `HSquared.fit_multivariate_repeatability_reml(Y, X, Z, Ainv; method = :REML)`. The validated spec is returned invisibly as a named list; assign it to inspect the parsed contract (e.g. `spec$bridge$target`).
+
+⠏ |         20 | multivariate-permanent-237                                     
+✔ |         26 | multivariate-permanent-237
+
+══ Results ═════════════════════════════════════════════════════════════════════
+[ FAIL 0 | WARN 0 | SKIP 0 | PASS 26 ]
+ℹ Testing hsquared
+hsquared is an experimental 0.9.0 release (not production; CRAN availability is tracked separately). Default fitting needs Julia + HSquared.jl; preview with hs_control(engine = "validate").
+What you may report is listed on Can I fit and report this? -- not in validation_status(). Intervals are not coverage-calibrated.
+See https://itchyshin.github.io/hsquared/articles/current-limits.html
+✔ | F W  S  OK | Context
+
+⠏ |          0 | multivariate-permanent-recovery-237                            
+⠋ |          1 | multivariate-permanent-recovery-237                            
+✔ |         11 | multivariate-permanent-recovery-237 [13.7s]
+
+══ Results ═════════════════════════════════════════════════════════════════════
+Duration: 13.7 s
+
+[ FAIL 0 | WARN 0 | SKIP 0 | PASS 11 ]
+
+You are a coding rockstar!
+ℹ Testing hsquared
+hsquared is an experimental 0.9.0 release (not production; CRAN availability is tracked separately). Default fitting needs Julia + HSquared.jl; preview with hs_control(engine = "validate").
+What you may report is listed on Can I fit and report this? -- not in validation_status(). Intervals are not coverage-calibrated.
+See https://itchyshin.github.io/hsquared/articles/current-limits.html
+✔ | F W  S  OK | Context
+
+⠏ |          0 | multivariate-permanent-comparator-237                          
+⠋ |          1 | multivariate-permanent-comparator-237                          
+⠹ |          3 | multivariate-permanent-comparator-237                          
+✔ |          4 | multivariate-permanent-comparator-237 [14.9s]
+
+══ Results ═════════════════════════════════════════════════════════════════════
+Duration: 14.9 s
+
+[ FAIL 0 | WARN 0 | SKIP 0 | PASS 4 ]
+
+You are a coding rockstar!
+Julia exit.
+  Activating project at `~/.codex/worktrees/b9ae/HSquared.jl`
+  Activating project at `~/.codex/worktrees/b9ae/HSquared.jl`
+  Activating project at `~/.codex/worktrees/b9ae/HSquared.jl`
+  Activating project at `~/.codex/worktrees/b9ae/HSquared.jl`

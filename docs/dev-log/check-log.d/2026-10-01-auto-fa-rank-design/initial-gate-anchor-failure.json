@@ -1,0 +1,7 @@
+{
+  "command": "node /Users/z3437171/.codex/skills/unlazy/scripts/gate-check.mjs --reverify .unlazy/auto-fa-rank-design-20261001/gates/leaf-design.md --approve",
+  "exit": 1,
+  "result": "UNMET 3, met 2, reran 4",
+  "resolved_cwd": "ledger parent .unlazy/auto-fa-rank-design-20261001/gates",
+  "finding": "D1 D2 D4 presence paths unresolved because explicitly named leaf anchors beside ledger by default. D3 git paths were also relative to that anchor, so its first PASS is not accepted as source-preservation evidence. Independent root diff and protection snapshot already pass. Correct every runnable anchor via explicit --cwd repository root; no oracle outcome or CHECK/EXPECT changed."
+}

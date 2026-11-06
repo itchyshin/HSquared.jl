@@ -766,6 +766,8 @@ block** — nor does DRM.jl, nor the R twin `hsquared`, whose `AGENTS.md` carrie
   R-bridge + single-step H^Γ (gated on #61 Q1–Q4); scout cadence #56; Phase 7/8
   hardware-gated.
 
+
+## Archived during V3 live refresh, 2026-10-01
 ## Archived snapshot, 2026-10-01
 
 - **As of 2026-09-07 (Path FULL 0.9 finish — R-lane Layer B honesty PRs #191/#192 MERGED;
@@ -795,3 +797,33 @@ block** — nor does DRM.jl, nor the R twin `hsquared`, whose `AGENTS.md` carrie
   START HERE: `docs/dev-log/handover/2026-09-07-codex-handover.md` (this repo's pointer doc;
   it sends you to `hsquared/docs/dev-log/handover/2026-09-07-codex-handover.md` — the sibling
   repo, same Dropbox parent — for the full Path FULL narrative and Landing State ledger).
+
+
+## Archived on 2026-10-01 before automatic-rank implementation checkpoint
+
+- **As of 2026-10-01 (bounded FA/GLLVM V3 landing verified).** Candidate `365f173f` landed through PR #401; closure PR #402 merged at `570f49ba`. Live GitHub receipts confirm four Julia OS/runtime jobs and documentation deployment passed at the implementation and closure merge commits. Final source and tests match the candidate. Fixed-rank Gaussian FA T4/K1 and Poisson-log genetic GLLVM T3/K2 remain experimental; `public_covered_count` remains 7. Automatic FA rank selection is a separate design arc; its plan is `docs/design/auto-fa-rank-design-plan-20261001.md`. No GPU, release, tag, registry, submission, capability promotion, or protected sibling-lane work. START HERE: `docs/dev-log/after-task/2026-10-01-v3-live-refresh-and-rank-plan.md`.
+
+## Archived on 2026-10-11 after the current-source G7 replay
+
+- **As of 2026-10-03 (non-GPU H2 Ultra Plan handoff).** The bounded automatic FA-rank design contract and validation plan are complete. The wider Gaussian-reliability Arc 1 remains incomplete with G0–G8 open. Latest fork stopped after profile-v4 Astra HOLD and a canonical G7 preflight failure before tests; three engineering attempts are consumed, with no pilot or confirmation study. Preserve Julia, isolated R, and protected settings state. Capability remains experimental; covered count stays seven. START HERE: `docs/dev-log/coordination-board.md` Active Lane Split and `docs/dev-log/handover/2026-10-03-codex-handover.md`.
+
+## Archived on 2026-10-11 after the current Totoro no-launch preflight
+
+- **As of 2026-10-11 (non-GPU Arc 1 continuation).** The bounded automatic FA-rank design contract and validation plan are complete. Arc 1 G0, G1, G6, and G7 are met; G2-G5 and G8 remain open. The approved v14 N80/null outer32 attempt failed during serialization and remains counted with no gate credit. No pilot or confirmation study has passed. The v17 outer33 candidate has an independent review PASS but remains non-executable pending intended-host Totoro preflight and separate owner approval. Capability remains experimental; covered count stays seven. START HERE: `docs/dev-log/coordination-board.md` Active Lane Split, `LOOP/lanes/arc1-gaussian-reliability-20261002/checkpoint.md`, and `.unlazy/arc1-gaussian-reliability/GATES.md`.
+
+
+## Replaced during final automatic FA rank verification, 2026-10-01
+
+- **As of 2026-10-01 (automatic FA rank candidate locally tested; final review OPEN).** The bounded T4 Gaussian pedigree K0/K1 Julia selector and explicit R expert route pass focused, required-live and current full package checks. Final live R acceptance has 116 assertions and no skips; R package check is Status OK. Fresh independent source review awaits explicit payload authorization after automatic approval review rejected the CLI dispatch. The paired goal remains active, with final root/report acceptance open. Fixed-rank FA/GLLVM remain experimental and earlier V3 landing receipts remain scoped to that work. Public covered count stays 7. No reliability campaign, GPU, release, tag, registry, submission, push or capability promotion. START HERE: `docs/dev-log/after-task/2026-10-01-auto-fa-rank-implementation.md` and `LOOP/lanes/auto-fa-rank-implementation-20261001/checkpoint.md`.
+
+- **As of 2026-10-01 (automatic FA rank final candidate; independent acceptance OPEN).** The bounded T4 Gaussian pedigree K0/K1 Julia selector and explicit R expert route are implemented. Final focused acceptance passes 236 assertions across 13 testsets after independent-review and parent-audit repairs. The V4 paired root replay passed all six technical gates, including full Julia tests and R Status OK with zero errors, warnings or notes. Affected V5 Julia replay passed; engine and R sources are unchanged. Final source panel is prepared but automatic approval review rejected its launches and refused the retrieved earlier human approval; a new exact source-review question is pending. G7/G8 remain open. Public covered count stays 7; fixed-rank FA/GLLVM remain experimental. No campaign, GPU, default activation, promotion, release, registry, submission, push or deployment. START HERE: `docs/dev-log/after-task/2026-10-01-auto-fa-rank-implementation.md` and `LOOP/lanes/auto-fa-rank-implementation-20261001/checkpoint.md`.
+
+- **As of 2026-10-02, 5 a.m. Edmonton (automatic FA rank checkpoint; G7/G8 OPEN).** The bounded Gaussian T4 pedigree K0/K1 Julia selector and explicit R expert route remain implemented and locally tested. Six technical gates pass, including 236 focused Julia assertions across 13 testsets and clean R package check. The new explicit source-review approval was accepted; final V5 numerical review passed. Bridge review was interrupted at the user deadline, evidence review had not started, and the owned review processes are terminal. Further work awaits extension of the work window. Public covered count stays 7; no campaign, default activation, promotion, release, registry, submission, push or deployment. START HERE: `docs/dev-log/handover/2026-10-02-auto-fa-rank-0500.md` and the current lane checkpoint.
+
+- **As of 2026-10-02 (automatic FA rank final O1 repair; G8 pending).** The human extended work until all original gates pass. The bounded Gaussian T4 pedigree K0/K1 Julia selector and explicit R expert route are implemented. Focused acceptance passes 249 assertions across 13 testsets at Julia 3ef362b1/R 2108c0d. Fresh V7 numerical, bridge and evidence reviewers all PASS at eighteen matched source pins. Core engine/R files are unchanged; full paired replay passed G1-G6; mechanical/reconciliation/report closeout remains pending. Public covered count stays 7; no campaign, default activation, promotion, release, registry, submission, push or deployment. START HERE: `docs/dev-log/after-task/2026-10-01-auto-fa-rank-implementation.md` and the current lane checkpoint.
+
+- **As of 2026-10-02 (automatic FA rank bounded paired programme COMPLETE locally).** All eight original gates pass: 249 focused Julia assertions across 13 testsets, full Julia and clean R checks, mandatory live twin parity/interruption, three fresh V7 source judgments, final mechanical reconciliation and whole report CLI exit zero. Tested source is Julia 3ef362b1/R 2108c0d; final commits contain docs/receipts only. Protected original R and Julia configuration work is preserved. Capability stays experimental; covered count stays 7. Ordinary optimizer-driven K1 selection, reliability and selection-adjusted coverage remain untested. No campaign, default activation, promotion, release, registry, push or deployment. START HERE: `docs/dev-log/after-task/2026-10-01-auto-fa-rank-implementation.md` and `docs/dev-log/handover/2026-10-02-auto-fa-rank-final.md`.
+
+## Archived from origin/main during the 2026-11-04 handover merge trial
+
+- **As of 2026-10-01 (bounded FA/GLLVM twin programme closed; auto-rank design next).** Julia PR #401 landed at `829e86ce`; closeout PR #402 merged at `570f49ba`, closing V3 with the exact hosted receipts in `docs/dev-log/after-task/2026-10-01-bounded-twin-final-closeout.md`. Gaussian FA T4/K1 and Poisson-log genetic GLLVM T3/K2 remain experimental; `public_covered_count` remains 7. No GPU, new submission, registry action, release tag, or capability promotion. Next: a separate automatic FA rank design/coordination arc, beginning with read-only GLLVM.jl and gllvmTMB contract refresh; HSquared implementation and validation remain queued. START HERE: `docs/dev-log/handover/2026-10-01-codex-handover.md`.

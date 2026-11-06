@@ -1,0 +1,112 @@
+using Test
+using SHA
+
+@testset "Arc1 Julia source and environment provenance adversaries" begin
+    mktempdir(prefix="arc1-identity-fixture-") do temp
+        root = joinpath(temp, "fake-hsquared")
+        mkpath(joinpath(root, "src"))
+        write(joinpath(root, "Project.toml"), """
+        name = "HSquared"
+        uuid = "a0667dea-0f38-44e8-9150-4fda00624eac"
+        version = "0.1.0"
+        """)
+        write(joinpath(root, "Manifest.toml"), """
+        julia_version = "$(VERSION)"
+        manifest_format = "2.0"
+        project_hash = "0000000000000000000000000000000000000000"
+        """)
+        engine_path = joinpath(root, "src", "HSquared.jl")
+        write(engine_path, "module HSquared\nconst load_marker = :original\nend\n")
+        helper = joinpath(@__DIR__, "..", "sim", "arc1", "execution_identity.jl")
+        script = joinpath(temp, "adversary.jl")
+        write(script, raw"""
+        using Test, SHA
+        include(ARGS[2])
+        source_root = ARGS[1]
+        # Exercise either separator on every host, including CI on Unix.
+        @test _arc1_path_escapes(raw"..\outside.jl")
+        @test _arc1_path_escapes("../outside.jl")
+        @test !_arc1_path_escapes("src/HSquared.jl")
+        @test _arc1_path_escapes(abspath(joinpath(source_root, "src")))
+        write(joinpath(dirname(source_root), "outside.jl"), "outside")
+        escaped = try
+            _arc1_snapshot(source_root, Dict("src/../../outside.jl" => repeat("0", 64)))
+            nothing
+        catch err
+            err
+        end
+        @test escaped isa ErrorException
+        @test occursin("source path escaped admitted root", sprint(showerror, escaped))
+        wrong_dir = try
+            _arc1_snapshot(source_root, Dict("src/../Project.toml" => repeat("0", 64)))
+            nothing
+        catch err
+            err
+        end
+        @test wrong_dir isa ErrorException
+        @test occursin("source path escaped admitted src directory", sprint(showerror, wrong_dir))
+        if !Sys.iswindows()
+            symlink(joinpath(dirname(source_root), "outside.jl"), joinpath(source_root, "src", "link.jl"))
+            @test_throws ErrorException _arc1_snapshot(source_root, Dict("src/link.jl" => repeat("0", 64)))
+            rm(joinpath(source_root, "src", "link.jl"))
+        end
+        hashfile(path) = bytes2hex(sha256(read(path)))
+        engine_hashes = Dict("src/HSquared.jl" => hashfile(joinpath(source_root, "src", "HSquared.jl")))
+        environment_hashes = Dict("Project.toml" => hashfile(joinpath(source_root, "Project.toml")),
+                                  "Manifest.toml" => hashfile(joinpath(source_root, "Manifest.toml")))
+        loaded = arc1_load_admitted_engine(source_root, engine_hashes, environment_hashes)
+        identity = arc1_execution_identity(loaded, engine_hashes, environment_hashes)
+        @test identity.engine_package_uuid == "a0667dea-0f38-44e8-9150-4fda00624eac"
+        @test identity.environment_sha256 == environment_hashes
+        @test identity.active_project == joinpath(realpath(source_root), "Project.toml")
+        @test identity.dependency_environment_verified
+        @test_throws ErrorException arc1_load_admitted_engine(source_root, engine_hashes, environment_hashes)
+
+        wrong_environment = copy(environment_hashes)
+        wrong_environment["Manifest.toml"] = repeat("0", 64)
+        @test_throws ErrorException arc1_execution_identity(loaded, engine_hashes, wrong_environment)
+
+        # Simulate a stale loaded module with freshly edited bytes on disk.
+        open(joinpath(source_root, "src", "HSquared.jl"), "a") do stream
+            write(stream, "# changed after module load\n")
+        end
+        @test_throws ErrorException arc1_execution_identity(loaded, engine_hashes, environment_hashes)
+        """)
+        depot = joinpath(temp, "depot")
+        mkpath(depot)
+        depot_path = string(depot, Sys.iswindows() ? ';' : ':', first(DEPOT_PATH))
+        command = addenv(`$(Base.julia_cmd()) --startup-file=no --threads=1 --project=$root $script $root $helper`,
+                         "JULIA_DEPOT_PATH" => depot_path)
+        output = read(command, String)
+        @test isempty(output)
+    end
+end
+
+@testset "Arc1 runtime identity accepts declared package extensions" begin
+    root = normpath(joinpath(@__DIR__, ".."))
+    helper = joinpath(root, "sim", "arc1", "execution_identity.jl")
+    script = joinpath(mktempdir(prefix="arc1-extension-identity-"), "check.jl")
+    write(script, raw"""
+    using Test, SHA, Pkg
+    include(ARGS[1])
+    root = ARGS[2]
+    src = joinpath(root, "src")
+    # Source manifests use forward slashes on every platform.
+    canonical_source_path(path) = replace(path, '\\' => '/')
+    @test canonical_source_path(raw"src\HSquared.jl") == "src/HSquared.jl"
+    engine_hashes = Dict(canonical_source_path(relpath(joinpath(dir, name), root)) =>
+        bytes2hex(sha256(read(joinpath(dir, name))))
+        for (dir, _, names) in walkdir(src) for name in names if endswith(name, ".jl"))
+    environment_hashes = Dict(name => bytes2hex(sha256(read(joinpath(root, name))))
+        for name in ("Project.toml", "Manifest.toml"))
+    loaded = arc1_load_admitted_engine(root, engine_hashes, environment_hashes)
+    @test any(pkgid.name == "FillArraysStatisticsExt" for (pkgid, _) in Base.loaded_modules)
+    identity = arc1_execution_identity(loaded, engine_hashes, environment_hashes)
+    @test identity.dependency_environment_verified
+    println("ARC1_DECLARED_EXTENSIONS_ACCEPTED")
+    """)
+    command = addenv(`$(Base.julia_cmd()) --startup-file=no --threads=1 --project=$root $script $helper $root`,
+                     "OPENBLAS_NUM_THREADS" => "1")
+    output = read(command, String)
+    @test occursin("ARC1_DECLARED_EXTENSIONS_ACCEPTED", output)
+end

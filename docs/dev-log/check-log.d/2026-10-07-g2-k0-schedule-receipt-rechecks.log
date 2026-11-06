@@ -1,0 +1,3 @@
+ARC1_RETAINED_RECEIPT_REFUSED gate=G1: current Julia/R source inventory differs from the externally pinned freeze
+ARC1_RETAINED_RECEIPT_REFUSED gate=G6: current Julia/R source inventory differs from the externally pinned freeze
+ARC1_RETAINED_RECEIPT_REFUSED gate=G7: current Julia/R source inventory differs from the externally pinned freeze

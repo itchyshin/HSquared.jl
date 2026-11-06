@@ -1,0 +1,12 @@
+test_exact_candidate_and_source_lock_load_and_dry_run (__main__.ExecuteAuthorityTests.test_exact_candidate_and_source_lock_load_and_dry_run) ... ok
+test_import_tree_is_checked_against_locked_source_map (__main__.ExecuteAuthorityTests.test_import_tree_is_checked_against_locked_source_map) ... ok
+test_launch_requires_exact_review_owner_approval_and_totoro_preflight (__main__.ExecuteAuthorityTests.test_launch_requires_exact_review_owner_approval_and_totoro_preflight) ... ok
+test_only_exact_outer34_and_fa_rank_output_path_are_accepted (__main__.ExecuteAuthorityTests.test_only_exact_outer34_and_fa_rank_output_path_are_accepted) ... ok
+test_receipt_drift_and_candidate_scope_drift_refuse (__main__.ExecuteAuthorityTests.test_receipt_drift_and_candidate_scope_drift_refuse) ... ok
+test_receipt_file_digest_is_required (__main__.ExecuteAuthorityTests.test_receipt_file_digest_is_required) ... ok
+test_runner_failures_and_unresolved_results_never_exit_zero (__main__.ExecuteAuthorityTests.test_runner_failures_and_unresolved_results_never_exit_zero) ... ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 0.180s
+
+OK

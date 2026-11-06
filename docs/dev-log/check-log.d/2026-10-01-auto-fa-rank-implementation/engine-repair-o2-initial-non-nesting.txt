@@ -1,0 +1,13 @@
+Failed controlled-witness setup receipt (2026-10-01)
+
+Command: JULIA_DEPOT_PATH=/private/tmp/hsq-auto-fa-test-depot:/Users/z3437171/.julia JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 julia --project=. test/auto_fa_rank_acceptance.jl
+Working directory: /Users/z3437171/.codex/worktrees/b9ae/HSquared.jl
+
+Observed focused testset:
+  automatic FA production selector preserves animal and trait order
+  Failed at the initial canonical `base.selection_status == :selected` assertion.
+
+Independent diagnostic command: JULIA_DEPOT_PATH=/private/tmp/hsq-auto-fa-test-depot:/Users/z3437171/.julia JULIA_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 julia --project=. /private/tmp/debug_auto_fa_o2.jl
+Observed selector reason: "FA likelihood remains non-nested below the diagonal fit".
+Candidate logliks: K0=-69.42473860944432; K1=-69.47763541139614.
+The injected rank-1 covariance was the generating FA covariance, but on this finite n=12 realization it scored 0.05289680195182 loglik units below the diagonal candidate. The retry returned the same injected result. This was a bad order-witness fixture; no source defect was established. The test was revised to use an exactly nested L=0 K1 receipt for the order-only transformation checks.

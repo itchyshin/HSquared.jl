@@ -1,0 +1,9 @@
+{
+  "utc": "2026-10-01T22:36:36.483850+00:00",
+  "reviewer": "rank_impl_acceptance_plan, actual native GPT-6 Luna medium",
+  "mode": "read-only Arc Card review, one correction follow-up",
+  "initial_verdict": "HOLD for experimental R expert control versus excluded production grammar wording",
+  "resolution": "Card now explicitly includes the human-selected experimental R expert control API, excludes ordinary cov=fa(K) syntax and default/production promotion. Prior human choice was Julia and R together with experimental transport and mandatory parity.",
+  "final_verdict": "PASS under clarified scope",
+  "checked": "450-minute ladder arithmetic; inferred engineering range; no implementation/test claim; 10-minute owned first-fit cap separate from >3-hour compute approval"
+}

@@ -1,0 +1,10 @@
+{
+  "shared_validator_inventory": [
+    ".unlazy/auto-fa-rank-implementation-20261001/GATES.md",
+    "GATES.md"
+  ],
+  "canonical_executable_ledger": ".unlazy/auto-fa-rank-implementation-20261001/GATES.md",
+  "root_is_scope_index": true,
+  "required_gates": 8,
+  "review_and_final_acceptance_still_open": true
+}

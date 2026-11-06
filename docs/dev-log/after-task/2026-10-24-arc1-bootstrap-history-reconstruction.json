@@ -1,0 +1,212 @@
+{
+  "bootstrap_seeds": [
+    {
+      "inner": 1,
+      "outer": 2,
+      "seed": 9341616700986101380
+    },
+    {
+      "inner": 2,
+      "outer": 2,
+      "seed": 14003081789614919586
+    },
+    {
+      "inner": 3,
+      "outer": 2,
+      "seed": 1170965947719973141
+    },
+    {
+      "inner": 4,
+      "outer": 2,
+      "seed": 15349559898057022255
+    },
+    {
+      "inner": 5,
+      "outer": 2,
+      "seed": 9197116458387333481
+    },
+    {
+      "inner": 6,
+      "outer": 2,
+      "seed": 6635979950598772788
+    },
+    {
+      "inner": 7,
+      "outer": 2,
+      "seed": 2239925172792685018
+    },
+    {
+      "inner": 8,
+      "outer": 2,
+      "seed": 12634540146742634182
+    },
+    {
+      "inner": 9,
+      "outer": 2,
+      "seed": 17370458747335498999
+    },
+    {
+      "inner": 10,
+      "outer": 2,
+      "seed": 11043453441956713532
+    },
+    {
+      "inner": 1,
+      "outer": 14,
+      "seed": 17337805185332554296
+    },
+    {
+      "inner": 2,
+      "outer": 14,
+      "seed": 1729039354673880073
+    },
+    {
+      "inner": 3,
+      "outer": 14,
+      "seed": 3582623340307426199
+    },
+    {
+      "inner": 4,
+      "outer": 14,
+      "seed": 17676232374656888546
+    },
+    {
+      "inner": 5,
+      "outer": 14,
+      "seed": 2534556845216021657
+    },
+    {
+      "inner": 6,
+      "outer": 14,
+      "seed": 3501515142086664805
+    },
+    {
+      "inner": 7,
+      "outer": 14,
+      "seed": 9903741158042271897
+    },
+    {
+      "inner": 8,
+      "outer": 14,
+      "seed": 13464637493889451300
+    },
+    {
+      "inner": 9,
+      "outer": 14,
+      "seed": 16457566525846343574
+    },
+    {
+      "inner": 10,
+      "outer": 14,
+      "seed": 10861830536612035544
+    }
+  ],
+  "candidate_seed_count": 240,
+  "candidate_seed_intersection": [],
+  "candidate_seed_intersection_count": 0,
+  "candidate_seed_ordered_sha256": "f75d7693bda1f0fa8528c5321a09e97a9885bd4c4c8a6588fafb9b01e446b289",
+  "candidate_seed_unique_count": 240,
+  "consumed_seed_count": 22,
+  "execution_authorized": false,
+  "gate_credit": false,
+  "inputs": {
+    "candidate_batch": {
+      "path": "inputs/pilot-batch.json",
+      "recovery_path": "/private/tmp/arc1-pilot-admission-candidate-20261024-env-scope-fix/batch.json",
+      "sha256": "84c2a6faa713720723d36f2ca2597b034d317c47c15cf9addc68dcca7c66fbdc"
+    },
+    "historical_seed_implementation": {
+      "path": "inputs/tools/arc1_manifest.py",
+      "recovery_path": "/private/tmp/HSquared.jl-arc1-recovery-20261015/tools/arc1_manifest.py",
+      "sha256": "b132e2eed8f5ab5adfb097ff69181d7e10e5e56edba06ed638f3ff16ddbbee34"
+    },
+    "historical_seed_list": {
+      "path": "inputs/fa-interval-diagnostic-prerun-seeds-v1.json",
+      "recovery_path": "/private/tmp/HSquared.jl-arc1-recovery-20261015/LOOP/lanes/arc1-gaussian-reliability-20261002/evidence/recovery-20261022/fa-interval-diagnostic-prerun-seeds-v1.json",
+      "sha256": "239dc91c95cd5ac91013cf06937ddde3c8ff685dcc259104f47744cb28a973f9"
+    },
+    "raw_history_archive": {
+      "path": "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/docs/dev-log/after-task/2026-10-24-arc1-41-history-raw.tar.gz",
+      "sha256": "5241836baeb220bda3dfbc4af70ffedb4e13987905eebbd7565c63cd724d726b"
+    }
+  },
+  "limitations": [
+    "The source seed-list JSON contains a stale NOT STARTED execution field alongside completed status and outcomes; completed status is supported by the run summaries and retained result evidence, not that field.",
+    "This reconstructs the two diagnostic outers described by the summaries, not two independent runs; the two summary copies are byte-identical.",
+    "The recorded run source hash for sim/arc1/execute_attempt.jl differs from the candidate batch source hash; model-execution source parity is unverified.",
+    "The 41-file archive is not an exhaustive retained-root inventory.",
+    "Historical source-map targets and other attempt stores remain unenumerated.",
+    "The reconstruction accounts for these two diagnostic outers only and does not make the candidate batch admissible.",
+    "Failed bootstrap replicates remain part of their run summaries; no attempts were rerun or replaced."
+  ],
+  "ordered_bootstrap_seed_sha256": "1455741d28a11ce9370ecbbe6f5eac22fbe0a6a073a625f3c30865b41352a4a6",
+  "outer_data_seeds": [
+    {
+      "outer": 2,
+      "seed": 9348221611535869429
+    },
+    {
+      "outer": 14,
+      "seed": 615821728690168049
+    }
+  ],
+  "pilot_admission": false,
+  "protocol_sha256": "5ff8c489f263f72eb2762ed9345b0c8f2f9ff333fb32fc37eeae254a86aaae4d",
+  "reproduction_bundle": {
+    "bytes": 1606024,
+    "members": [
+      "inputs/41-history-raw.tar.gz",
+      "inputs/fa-interval-diagnostic-prerun-seeds-v1.json",
+      "inputs/pilot-batch.json",
+      "inputs/tools/arc1_manifest.py"
+    ],
+    "path": "/Users/z3437171/.codex/worktrees/b9ae/HSquared.jl/docs/dev-log/after-task/2026-10-24-arc1-bootstrap-history-reconstruction.tar.gz",
+    "sha256": "5a4c65a9ab02477fa67e09317be07f758056eb55a890dbea1f821486f12cf0ac"
+  },
+  "run_summaries": [
+    {
+      "bytes": 918,
+      "evidence_member": "inputs/41-history-raw.tar.gz",
+      "name": "0003-run.toml",
+      "outers": [
+        2,
+        14
+      ],
+      "protocol_sha256": "5ff8c489f263f72eb2762ed9345b0c8f2f9ff333fb32fc37eeae254a86aaae4d",
+      "sha256": "3b578bf467510de9e93a324d8620d540972b264da38253c67adf059a4a6a5abb",
+      "status": "completed_diagnostic_prerun_only",
+      "usable_B": {
+        "14": 10,
+        "2": 7
+      }
+    },
+    {
+      "bytes": 918,
+      "evidence_member": "inputs/41-history-raw.tar.gz",
+      "name": "0032-run.toml",
+      "outers": [
+        2,
+        14
+      ],
+      "protocol_sha256": "5ff8c489f263f72eb2762ed9345b0c8f2f9ff333fb32fc37eeae254a86aaae4d",
+      "sha256": "3b578bf467510de9e93a324d8620d540972b264da38253c67adf059a4a6a5abb",
+      "status": "completed_diagnostic_prerun_only",
+      "usable_B": {
+        "14": 10,
+        "2": 7
+      }
+    }
+  ],
+  "schema": "arc1-diagnostic-bootstrap-consumed-seed-reconstruction-v1",
+  "scope": "reconstruct deterministic seeds for the two completed diagnostic fa_interval outers named by the retained run summaries; compare with the 240 candidate pilot outer seeds",
+  "source_identity_comparison": {
+    "candidate_execute_attempt_sha256": "9395f338015ceb8db6ea622d33df2bafd788c655e3a2a54c5fc38ea00be8f971",
+    "execute_attempt_matches": false,
+    "interpretation": "Seed derivation identity matches the candidate source pin. The recorded runner identity differs, so this reconstruction establishes consumed seed identities and collision status only; it does not establish model-execution source parity.",
+    "recorded_run_execute_attempt_sha256": "f3482e64f9406f0abb48a1b5f3c25a12ddd98711675f178851b4343ed60e72e9",
+    "seed_derivation_tool_matches": true,
+    "seed_derivation_tool_sha256_embedded": "b132e2eed8f5ab5adfb097ff69181d7e10e5e56edba06ed638f3ff16ddbbee34",
+    "seed_derivation_tool_sha256_in_candidate": "b132e2eed8f5ab5adfb097ff69181d7e10e5e56edba06ed638f3ff16ddbbee34"
+  },
+  "status": "bounded_reconstruction_complete_history_admission_open"
+}

@@ -1,0 +1,114 @@
+{
+  "scope": "Original approved bounded whole paired programme, not a reliability/default/release claim",
+  "requirements": [
+    {
+      "requirement": "O1 shape/floor",
+      "witness": "Matched-floor positive receipt and finite wrong no-floor production comparator refusal; qG/qR mappings",
+      "evidence": "o1-repair-focused-v6-counts.json; o1-score-probe-v6.log; V7 numerical/evidence PASS",
+      "status": "proved for the original bounded scope; final receipt/status local commit records the result"
+    },
+    {
+      "requirement": "O2 vector/order",
+      "witness": "Independent record-major covariance, animal and trait permutations and deliberate ordering corruptions",
+      "evidence": "Focused independent ordering and production ordering testsets; G1/G4",
+      "status": "proved for the original bounded scope; final receipt/status local commit records the result"
+    },
+    {
+      "requirement": "O3 objective",
+      "witness": "Independent dense Cholesky GLS REML at same G/R, discrepancy refusals for corrupted receipts/design",
+      "evidence": "Focused dense REML contract and corrupted optimizer receipts testsets; G1",
+      "status": "proved for the original bounded scope; final receipt/status local commit records the result"
+    },
+    {
+      "requirement": "O4 penalty/score",
+      "witness": "Nominal 14/18 counts, hand scores/sign and deliberate wrong penalty controls",
+      "evidence": "Focused dense REML/criterion and K1 same-covariance testsets; V7 numerical PASS",
+      "status": "proved for the original bounded scope; final receipt/status local commit records the result"
+    },
+    {
+      "requirement": "O5 ties",
+      "witness": "Exact/near numerical ties select K0; genuine K1 witness retains both rows",
+      "evidence": "Focused criterion and same-covariance K1 testsets; V7 numerical PASS",
+      "status": "proved for the original bounded scope; final receipt/status local commit records the result"
+    },
+    {
+      "requirement": "O6 failures",
+      "witness": "Nonfinite/nonconverged/non-PD/failed/unattempted cases, no sole survivor winner, retained rows",
+      "evidence": "Focused matched-floor/failure, corrupted receipts and non-PD/sole-survivor testsets; G1/G3/G4",
+      "status": "proved for the original bounded scope; final receipt/status local commit records the result"
+    },
+    {
+      "requirement": "O7 retry/nesting",
+      "witness": "Nonzero diagonal-derived retry, higher unconverged trigger, bounded retry and persistent non-nesting refusal",
+      "evidence": "Focused retry, better-unconverged and near-floor/persistent nesting testsets; G1/G2",
+      "status": "proved for the original bounded scope; final receipt/status local commit records the result"
+    },
+    {
+      "requirement": "O8 identification",
+      "witness": "Projected kernel SVD and identity/half-sib refusal with independent covariance confounding references",
+      "evidence": "Focused ordering/confounding and forbidden/confounded testsets; G1",
+      "status": "proved for the original bounded scope; final receipt/status local commit records the result"
+    },
+    {
+      "requirement": "O9 scope/compatibility",
+      "witness": "Complete T4 Gaussian pedigree admission; forbidden input refusal and unchanged fixed-rank behavior",
+      "evidence": "Focused scope testset; G2 107 multivariate contracts; full G5/G6 regressions",
+      "status": "proved for the original bounded scope; final receipt/status local commit records the result"
+    },
+    {
+      "requirement": "O10 interruption",
+      "witness": "Controlled initial/retry cancellation and request-local partial candidate/attempt ledger without winner",
+      "evidence": "Focused interruption at each start testset and bounded retry ledger; mandatory live G4",
+      "status": "proved for the original bounded scope; final receipt/status local commit records the result"
+    },
+    {
+      "requirement": "O11 transport",
+      "witness": "Plain R/Julia tables, missing scores/reasons, ragged starts, ordering, fit/null and full interruption round trips",
+      "evidence": "G3 expert tests and G4 mandatory actual live parity/interruption without accepted skips",
+      "status": "proved for the original bounded scope; final receipt/status local commit records the result"
+    },
+    {
+      "requirement": "Ordinary optimizer selected fit",
+      "witness": "At least one ordinary selected-fit fixture required by approved implementation card; actual K0 selected fit witnessed",
+      "evidence": "Frozen ordinary_start.tsv; G4; V7 bridge/evidence PASS",
+      "status": "proved for the original bounded scope; final receipt/status local commit records the result"
+    },
+    {
+      "requirement": "Full packages",
+      "witness": "Current full Julia suite and R CMD check required; R zero errors/warnings/notes",
+      "evidence": "G5/G6 terminal replay and final whole validator",
+      "status": "proved for the original bounded scope; final receipt/status local commit records the result"
+    },
+    {
+      "requirement": "Independent judgment",
+      "witness": "Fresh numerical, bridge and evidence acceptance at exact repaired source pins",
+      "evidence": "review-v7-receipts.json, 3ef362b1/R2108c0d, eighteen exact pins",
+      "status": "proved for the original bounded scope; final receipt/status local commit records the result"
+    },
+    {
+      "requirement": "Mechanical/reconcile",
+      "witness": "Cheap fresh mechanical verification plus six axes reconciled; raw routing discrepancy adjudicated",
+      "evidence": "mechanical-reconcile-v7-receipts.json; assigned Luna medium outer launcher exit 0",
+      "status": "proved for the original bounded scope; final receipt/status local commit records the result"
+    },
+    {
+      "requirement": "Artifacts/commits",
+      "witness": "Usage, contract, capability/debt, reports, ledgers, check evidence, handover, local Julia/R commits",
+      "evidence": "Current paired report, dated receipt folder, scoped branch history; final receipt/status commits after validator",
+      "status": "proved for the original bounded scope; final receipt/status local commit records the result"
+    },
+    {
+      "requirement": "Protected scope",
+      "witness": "Original R 39 hashes/statuses and Julia pre-existing configurations preserved; count seven and all deferred scope unchanged",
+      "evidence": "protected-r-final-v7.json; git scope; capability/debt and final report",
+      "status": "proved for the original bounded scope; final receipt/status local commit records the result"
+    }
+  ],
+  "full_validator_session": 98015,
+  "not_complete_until": "Actual whole validator exit zero, final receipts/docs/commits, protected-state/source reconfirmation",
+  "utc": "2026-10-02T12:42:49.487795+00:00",
+  "whole_validator_exit": 0,
+  "no_abandoned_gate": true,
+  "remaining_original_requirements": [],
+  "scientific_debts_not_scope": "Ordinary optimizer-driven K1 selection, rank reliability/recovery and selection-adjusted inference; defaults, promotion and external publication deferred"
+}

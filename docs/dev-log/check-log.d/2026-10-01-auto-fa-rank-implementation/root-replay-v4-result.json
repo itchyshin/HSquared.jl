@@ -1,0 +1,44 @@
+{
+  "utc": "2026-10-02T03:29:53.340892+00:00",
+  "scope": "V4 exact-source root technical replay before parent audit test-only repair",
+  "exit": 1,
+  "technical_gates_passed": [
+    "G1",
+    "G2",
+    "G3",
+    "G4",
+    "G5",
+    "G6"
+  ],
+  "unmet_manual_gates": [
+    "G7",
+    "G8"
+  ],
+  "julia_candidate": "81faa0e7",
+  "r_candidate": "2108c0d",
+  "freeze": "final-check-source-freeze-v4.json",
+  "r_check_errors_warnings_notes": [
+    0,
+    0,
+    0
+  ],
+  "r_full_test_counts": [
+    0,
+    26,
+    48,
+    3871
+  ],
+  "not_final_acceptance": "Two independently confirmed weak cross-rank test comparisons are queued for repair; G1/G5 reopen. No source defect or R interface change.",
+  "receipts": {
+    "final-root-replay-v4.log": "1766e4a5cfd149355417aa7030fba73b4c0f9198604f60c4cd0d0018574e2b33",
+    "GATES-v4-passing-technical-snapshot.md": "c440d8e74d4c5ae6c84023067753a4c8bbe053d9427d6cf4fcf2c476c34e222d",
+    "r-package-check-result-v4.R": "b6b2d28d94b1c43ad3c93b39aed8d3481adc1cf71aec55e6aef7c2a11f5d38a4",
+    "r-package-check-v4.log": "f8c181cee7b89dce6636bf3aeed126415a12bb37bb2e2fc5cc255326fec8f7bf",
+    "r-package-testthat-v4.Rout.json": "6ca9687ea272861ab6be78e7c6229d64d8313b8f5e2d82165625ba5d5f17f0dd"
+  },
+  "raw_testthat_storage": {
+    "file": "r-package-testthat-v4.Rout.json",
+    "original_sha256": "4862701060128a60fd45de1041e2eca9baeb4a42b34805f5d646223c63c8c0a5",
+    "raw_bytes_preserved": true
+  }
+}

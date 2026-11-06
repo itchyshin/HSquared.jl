@@ -1,0 +1,2 @@
+FAIL close-out compiler
+- gate failed: Rscript /Users/z3437171/Dropbox/Github Local/Shinichi/tools/check-after-task.R: Execution halted
