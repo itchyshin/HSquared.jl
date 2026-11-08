@@ -1,5 +1,13 @@
 Current status (2026-10-01T11:39:00+00:00): Julia PR #401 and R PR #259 are merged. Exact merge-commit Julia Linux/Windows jobs on Julia 1.10/latest, Julia Documenter deployment, R CMD check, and R pkgdown passed. The three installed exact-source evidence modes passed on the reviewed candidate; final source and runner hashes match the Julia merge tree. V3 is closed within the bounded programme scope; A2/E1 dispositions and residual findings remain as recorded. Numerical source aggregate 59d4a803 is unchanged by the reviewed test corrections. Public covered count remains seven, and no capability promotion or release action occurred. Historical states below retain their original scope and timestamps.
 
+## 2026-11-08: Codecov First5 CI lane (isolated)
+
+Lane: `cursor/codecov-first5-0f83`. CI/coverage/config/docs only. Touches
+`.github/workflows/CI.yml`, `codecov.yml`, and `docs/dev-log/*`. Does **not**
+touch `src/`, `test/`, fixtures, scientific results, or draft PR #498.
+No merge to `main`. Independent of sibling First5 PRs (hsquared #364,
+DRModels.jl #1269, drmTMB #1686, gllvmTMB #1742).
+
 # Coordination Board
 
 ## Current integrated validation, 2026-09-30T22:11:16.946429+00:00
