@@ -2,11 +2,12 @@ Current status (2026-10-01T11:39:00+00:00): Julia PR #401 and R PR #259 are merg
 
 ## 2026-11-08: Codecov First5 CI lane (isolated)
 
-Lane: `cursor/codecov-first5-0f83`. CI/coverage/config/docs only. Touches
-`.github/workflows/CI.yml`, `codecov.yml`, and `docs/dev-log/*`. Does **not**
-touch `src/`, `test/`, fixtures, scientific results, or draft PR #498.
-No merge to `main`. Independent of sibling First5 PRs (hsquared #364,
-DRModels.jl #1269, drmTMB #1686, gllvmTMB #1742).
+Lane: `cursor/codecov-first5-0f83` (PR #499). CI/coverage/config/docs only.
+Producer is Ubuntu Julia 1.10 `lcov` (version-specific, not a Julia 1 timing
+fix). Touches `.github/workflows/CI.yml`, `codecov.yml`, and `docs/dev-log/*`.
+Does **not** touch `src/`, `test/`, fixtures, scientific results, or draft
+PR #498. No merge to `main`. Independent of sibling First5 PRs (hsquared
+#364, DRModels.jl #1269, drmTMB #1686, gllvmTMB #1742).
 
 # Coordination Board
 

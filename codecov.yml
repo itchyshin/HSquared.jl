@@ -1,10 +1,12 @@
 # Codecov config for HSquared.jl.
 #
 # Uploads come from CI.yml's non-required `codecov` job: one Ubuntu /
-# current-stable Julia 1 lcov file, flag `julia-linux-1`. The other three
-# matrix cells (Julia 1.10 Ubuntu/Windows, Julia 1 Windows) still run the
-# full suite but do not upload, so the same src/ lines are not counted
-# four times.
+# Julia 1.10 (compat LTS) lcov file, flag `julia-linux-1.10`. That is
+# version-specific coverage from the supported julia-runtest +
+# julia-processcoverage producer, not a Julia-1 timing-bar fix. The other
+# three matrix cells (Julia 1.10 Windows, Julia 1 Ubuntu/Windows) still run
+# the full suite as visible checks but do not upload, so the same src/ lines
+# are not counted four times.
 #
 # Status checks are informational so they cannot become accidental merge
 # blockers. Do not treat this file as proof that Codecov accepted an upload.
@@ -37,5 +39,5 @@ flag_management:
   default_rules:
     carryforward: true
   individual_flags:
-    - name: julia-linux-1
+    - name: julia-linux-1.10
       carryforward: true

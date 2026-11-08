@@ -1,5 +1,15 @@
 # Check Log
 
+## 2026-11-08 Codecov First5 follow-up (Ubuntu Julia 1.10 producer)
+
+Coordinator slot on PR #499. Coverage producer is Ubuntu Julia 1.10
+(`julia-runtest` + `julia-processcoverage@v1`); Julia 1 stays a visible
+matrix check with no continue-on-error. Absent lcov is classified before
+`codecov-action`. YAML parse and preamble cap are the local checks; `julia`
+is missing so there is no local coverage number. Upload/report vs `main`
+remains NOT_VERIFIED until the next `codecov` job log is read.
+Shard: [`check-log.d/2026-11-08-codecov-ci-1.10.md`](check-log.d/2026-11-08-codecov-ci-1.10.md).
+
 ## 2026-11-08 Codecov First5 CI wiring
 
 Coverage collection and one Codecov OIDC upload wired onto the existing

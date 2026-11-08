@@ -3,6 +3,23 @@
 Personas: **Grace** (CI), **Rose** (claim-vs-evidence), **Shannon** (lane isolation).
 Spawned subagents: none. Review lenses only.
 
+## Follow-up (coordinator slot, same PR #499)
+
+Coordinator assigned a CI-only repair after run `42526561564`. Producer
+moved to the **Ubuntu Julia 1.10** cell using the supported
+`julia-runtest` + `julia-processcoverage@v1` path. That is version-specific
+LTS coverage, **not** a Julia 1 timing-bar fix: Julia 1 Ubuntu/Windows stay
+in the matrix with no `continue-on-error`, no skip, no assertion/timing
+change. `codecov` classifies a missing `coverage-lcov-julia-1-10-ubuntu`
+artefact as `ABSENT_COVERAGE_ARTEFACT` and does not run `codecov-action`
+(so that miss cannot be read as OIDC auth failure or as an accepted
+upload). Flag `julia-linux-1.10`. No `src/` / test / badge / token change.
+No merge.
+
+First-pass CI wake remains: Ubuntu Julia 1 failed
+`test/test_issue_421_sparse_laplace.jl:193` (`14.575s < 10.0`); artefact
+never produced; uploader never ran.
+
 ## 1. Goal
 
 First5 Codecov rollout, HSquared.jl lane only. Wire real Julia test-coverage
@@ -19,14 +36,14 @@ DRModels.jl #1269, drmTMB #1686, gllvmTMB #1742.
 
 ## 3. Files changed
 
-- `.github/workflows/CI.yml` — after `julia-runtest`, Ubuntu + Julia `1`
+- `.github/workflows/CI.yml` — after `julia-runtest`, Ubuntu + Julia `1.10`
   runs `julia-processcoverage@v1`, records event/checkout/PR-head SHAs,
   prints an lcov line-hit summary, and uploads artefact
-  `coverage-lcov-julia1-ubuntu`. New non-required `codecov` job downloads
-  that file and uploads once with `codecov/codecov-action@v5`,
-  `use_oidc: true`, job-scoped `id-token: write`.
+  `coverage-lcov-julia-1-10-ubuntu`. Non-required `codecov` job classifies
+  that artefact (absent vs present) then, only if present, uploads once with
+  `codecov/codecov-action@v5`, `use_oidc: true`, job-scoped `id-token: write`.
 - `codecov.yml` — informational project/patch status; ignore
-  test/docs/bench/tools/sim/comparator; carryforward flag `julia-linux-1`.
+  test/docs/bench/tools/sim/comparator; carryforward flag `julia-linux-1.10`.
 - this report, `docs/dev-log/check-log.d/2026-11-08-codecov-ci.md`,
   `docs/dev-log/check-log.md` pointer, `docs/dev-log/coordination-board.md`
   lane note.
@@ -65,7 +82,8 @@ No badge. No covered-count, version, GPU, registry, or capability claim.
 
 No `test_*.jl` added, skipped, or weakened. The four-leg matrix still runs
 the full suite on Julia 1.10/1 × Ubuntu/Windows. Coverage processing is
-gated to Ubuntu + Julia `1` so the same suite is not uploaded four times.
+gated to Ubuntu + Julia `1.10` so the same suite is not uploaded four times.
+Julia 1 remains a visible matrix check.
 
 ## 7. Coordination notes
 
