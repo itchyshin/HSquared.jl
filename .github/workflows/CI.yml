@@ -55,7 +55,161 @@ jobs:
 
       - uses: julia-actions/julia-buildpkg@v1
 
+      # Instrumentation only on the lcov producer cell; other legs run without
+      # --code-coverage so wall-time assertions stay comparable to pre-Codecov CI.
       - uses: julia-actions/julia-runtest@v1
+        with:
+          coverage: ${{ matrix.os == 'ubuntu-latest' && matrix.version == '1.10' }}
+
+      # Supported producer: julia-actions/julia-runtest (coverage=true on
+      # Ubuntu 1.10 writes .cov) then julia-processcoverage@v1 → lcov.info.
+      # Processed on ONE cell only: Ubuntu + Julia 1.10 (compat LTS). That is
+      # version-specific coverage, not a Julia-1 timing-bar fix. The four-leg
+      # matrix still runs the full suite on every OS/version with no
+      # continue-on-error. Each cell runs the same tests, so uploading Julia 1
+      # or Windows as well would count the same src/ lines twice.
+      - uses: julia-actions/julia-processcoverage@v1
+        if: matrix.os == 'ubuntu-latest' && matrix.version == '1.10'
+
+      - name: Record coverage SHAs
+        if: matrix.os == 'ubuntu-latest' && matrix.version == '1.10'
+        run: |
+          set -euo pipefail
+          echo "producer=ubuntu-julia-1.10"
+          echo "event_name=${GITHUB_EVENT_NAME}"
+          echo "github.sha (event SHA; pull_request is often the synthetic merge) = ${GITHUB_SHA}"
+          echo "checked_out HEAD = $(git rev-parse HEAD)"
+          echo "pr.head.sha (branch head, empty when not a PR) = ${{ github.event.pull_request.head.sha }}"
+          echo "pr.base.sha = ${{ github.event.pull_request.base.sha }}"
+
+      - name: Summarise Ubuntu Julia 1.10 lcov
+        if: matrix.os == 'ubuntu-latest' && matrix.version == '1.10'
+        run: |
+          set -euo pipefail
+          test -f lcov.info
+          awk '
+            /^DA:/ {
+              split($0, a, /[:,]/)
+              total++
+              if (a[3] + 0 > 0) hit++
+            }
+            END {
+              if (total == 0) { print "lcov.info has no DA: lines"; exit 1 }
+              printf "ubuntu Julia 1.10: %d/%d lines hit = %.2f%%\n",
+                     hit, total, 100.0 * hit / total
+            }
+          ' lcov.info
+
+      - name: Upload Ubuntu Julia 1.10 lcov artefact
+        if: matrix.os == 'ubuntu-latest' && matrix.version == '1.10'
+        uses: actions/upload-artifact@v6
+        with:
+          name: coverage-lcov-julia-1-10-ubuntu
+          path: lcov.info
+          if-no-files-found: error
+          retention-days: 1
+
+  # Codecov upload is a separate, NON-required job. Do not add `codecov` to
+  # branch protection: an OIDC/auth miss must not become a merge blocker.
+  # One upload of the Ubuntu Julia 1.10 lcov file. Julia 1 and Windows cells
+  # do not upload (same suite, would double-count). Julia 1 remains a visible
+  # required matrix check (no continue-on-error).
+  #
+  # Absent artefact is classified BEFORE codecov-action: that is a producer
+  # miss, not Codecov auth failure and not an accepted upload.
+  #
+  # PR vs default-branch: this job also runs on pull_request, so a PR can
+  # produce a commit report. A functional Codecov *compare-to-main* / project
+  # baseline still needs an accepted upload on `main` after an owner merge.
+  # This workflow does not merge, force-push, or rewrite history.
+  codecov:
+    name: codecov
+    needs: test
+    if: >-
+      always() &&
+      (github.event_name != 'pull_request' ||
+       github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      actions: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Record upload SHAs
+        run: |
+          set -euo pipefail
+          echo "event_name=${GITHUB_EVENT_NAME}"
+          echo "github.sha (event SHA; pull_request is often the synthetic merge) = ${GITHUB_SHA}"
+          echo "checked_out HEAD = $(git rev-parse HEAD)"
+          echo "pr.head.sha (branch head, empty when not a PR) = ${{ github.event.pull_request.head.sha }}"
+          echo "pr.base.sha = ${{ github.event.pull_request.base.sha }}"
+
+      - name: Classify coverage artefact (absent producer vs present)
+        id: cov
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p coverage
+          names="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/artifacts" --jq '.artifacts[].name' || true)"
+          echo "run artefacts:"
+          if [[ -z "${names}" ]]; then
+            echo "  <none>"
+          else
+            printf '%s\n' "${names}" | sed 's/^/  /'
+          fi
+          if ! printf '%s\n' "${names}" | grep -qx 'coverage-lcov-julia-1-10-ubuntu'; then
+            echo "::error::ABSENT_COVERAGE_ARTEFACT: Ubuntu Julia 1.10 producer did not upload lcov.info. codecov-action will not run. This is NOT a Codecov OIDC/auth failure and NOT an accepted upload."
+            echo "present=false" >> "${GITHUB_OUTPUT}"
+            exit 1
+          fi
+          echo "present=true" >> "${GITHUB_OUTPUT}"
+
+      - name: Download Ubuntu Julia 1.10 lcov artefact
+        if: steps.cov.outputs.present == 'true'
+        uses: actions/download-artifact@v6
+        with:
+          name: coverage-lcov-julia-1-10-ubuntu
+          path: coverage
+
+      - name: Combined lcov line counts
+        if: steps.cov.outputs.present == 'true'
+        run: |
+          set -euo pipefail
+          test -f coverage/lcov.info || {
+            echo "::error::ABSENT_COVERAGE_ARTEFACT: artefact downloaded but coverage/lcov.info missing. codecov-action will not run. This is NOT a Codecov OIDC/auth failure."
+            ls -la coverage || true
+            exit 1
+          }
+          awk '
+            /^DA:/ {
+              split($0, a, /[:,]/)
+              total++
+              if (a[3] + 0 > 0) hit++
+            }
+            END {
+              if (total == 0) { print "lcov.info has no DA: lines"; exit 1 }
+              printf "upload file ubuntu Julia 1.10: %d/%d lines hit = %.2f%%\n",
+                     hit, total, 100.0 * hit / total
+            }
+          ' coverage/lcov.info
+
+      - name: Upload coverage to Codecov
+        if: steps.cov.outputs.present == 'true'
+        uses: codecov/codecov-action@v5
+        with:
+          files: coverage/lcov.info
+          disable_search: true
+          flags: julia-linux-1.10
+          name: julia-linux-1.10
+          use_oidc: true
+          fail_ci_if_error: true
+          verbose: true
 
   # OPT-IN, OFF BY DEFAULT. `inputs` is empty on `pull_request`, so this job is skipped
   # unless a human dispatches the workflow with `run_plotting = true`.
