@@ -1,5 +1,9 @@
 # Check Log
 
+## 2026-11-09 SE information switch (`information = :ai | :observed`)
+
+Added an `information` keyword to the univariate and K-effect SE functions plus a K-effect average-information matrix, so hsquared can report ASReml-matching AI SEs by default and observed-information SEs on request. Julia defaults unchanged. Focused `julia --project=. -e 'include("test/test_se_information_switch.jl")'`: 10/10 + 9/9. Full `julia --project=. -e 'using Pkg; Pkg.test()'` on Julia 1.12.6: exit 0, `Testing HSquared tests passed`, 28 min 43 s (12:00:15-12:28:58 CET). Live hsquared check: AI SEs equal ASReml-R 4.2 on the great tit data to every printed digit. No validation_status, capability, or claim change. Report: [`after-task/2026-11-09-se-information-switch.md`](after-task/2026-11-09-se-information-switch.md).
+
 ## 2026-10-23 PR 477 Windows test portability
 
 Removed hard-coded numeric snapshots from the simulated direct-maternal interval test after PR #477's Julia 1.10 Windows CI showed material point-estimate differences from the recorded values. Same-run model consistency, interval ordering/width checks, and deterministic comparison of the upper-triangle Hessian to the former full loop remain. `git diff --check` passed. Local Julia was unavailable, so the revised test still requires current-head hosted CI. No production code, public claim, capability status, Arc 1 gate, or release state changed. Report: [`after-task/2026-10-23-pr-477-windows-test-portability.md`](after-task/2026-10-23-pr-477-windows-test-portability.md).
