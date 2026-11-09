@@ -1,20 +1,18 @@
 # HJ1 — nongaussian.jl kernel and family-resolution tail.
 
 using HSquared
+using Distributions
 using Test
 
 @testset "nongaussian tail kernels (HJ1)" begin
     H = HSquared
+    Z = Normal()
+    Φ(a, b) = cdf(Z, b) - cdf(Z, a)
+
     @testset "_ordered_interval_prob branches" begin
-        # Left tail: both bounds ≤ 0
-        @test H._ordered_interval_prob(-2.0, -1.0) ≈
-              exp(H._norm_logcdf(-1.0)) - exp(H._norm_logcdf(-2.0)) atol = 1e-12
-        # Right tail: both bounds ≥ 0
-        @test H._ordered_interval_prob(1.0, 2.0) ≈
-              exp(H._norm_logcdf(-1.0)) - exp(H._norm_logcdf(-2.0)) atol = 1e-12
-        # Straddle 0
-        @test H._ordered_interval_prob(-0.5, 0.5) ≈
-              exp(H._norm_logcdf(0.5)) - exp(H._norm_logcdf(-0.5)) atol = 1e-12
+        @test H._ordered_interval_prob(-2.0, -1.0) ≈ Φ(-2.0, -1.0) atol = 1e-12
+        @test H._ordered_interval_prob(1.0, 2.0) ≈ Φ(1.0, 2.0) atol = 1e-12
+        @test H._ordered_interval_prob(-0.5, 0.5) ≈ Φ(-0.5, 0.5) atol = 1e-12
         @test H._ordered_interval_prob(0.0, 0.0) == 0.0
     end
 
