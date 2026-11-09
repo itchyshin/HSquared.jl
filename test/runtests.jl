@@ -11419,3 +11419,12 @@ include(joinpath(@__DIR__, "test_issue_50_genetic_gllvm_export_payload.jl"))
 include("test_issue_411_interval_from_fit.jl")
 include("test_issue_266_skip_pev_reliability.jl")
 include("test_issue_411_409_no_redensify_no_rebuild.jl")
+
+# HJ1 — src/ tail coverage (tests only).
+include("test_coverage_validation_status.jl")
+include("test_coverage_likelihood_helpers.jl")
+include("test_coverage_bridge_payload_tail.jl")
+include("test_coverage_data_show.jl")
+include("test_coverage_nongaussian_tail.jl")
+include("test_coverage_multivariate_gamma.jl")
+include("test_coverage_iterative_mc_helpers.jl")
