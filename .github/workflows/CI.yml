@@ -55,10 +55,14 @@ jobs:
 
       - uses: julia-actions/julia-buildpkg@v1
 
+      # Instrumentation only on the lcov producer cell; other legs run without
+      # --code-coverage so wall-time assertions stay comparable to pre-Codecov CI.
       - uses: julia-actions/julia-runtest@v1
+        with:
+          coverage: ${{ matrix.os == 'ubuntu-latest' && matrix.version == '1.10' }}
 
-      # Supported producer: julia-actions/julia-runtest (default
-      # coverage=true writes .cov) then julia-processcoverage@v1 → lcov.info.
+      # Supported producer: julia-actions/julia-runtest (coverage=true on
+      # Ubuntu 1.10 writes .cov) then julia-processcoverage@v1 → lcov.info.
       # Processed on ONE cell only: Ubuntu + Julia 1.10 (compat LTS). That is
       # version-specific coverage, not a Julia-1 timing-bar fix. The four-leg
       # matrix still runs the full suite on every OS/version with no
