@@ -1,5 +1,9 @@
 # Check Log
 
+## 2026-11-09 SE information switch (`information = :ai | :observed`)
+
+Added an `information` keyword to the univariate and K-effect SE functions plus a K-effect average-information matrix, so hsquared can report ASReml-matching AI SEs by default and observed-information SEs on request. Julia defaults unchanged. Focused `julia --project=. -e 'include("test/test_se_information_switch.jl")'`: 10/10 + 9/9. Full `julia --project=. -e 'using Pkg; Pkg.test()'` on Julia 1.12.6: exit 0, `Testing HSquared tests passed`, 28 min 43 s (12:00:15-12:28:58 CET). Live hsquared check: AI SEs equal ASReml-R 4.2 on the great tit data to every printed digit. No validation_status, capability, or claim change. Report: [`after-task/2026-11-09-se-information-switch.md`](after-task/2026-11-09-se-information-switch.md).
+
 ## 2026-11-08 Codecov First5 follow-up (Ubuntu Julia 1.10 producer)
 
 Coordinator slot on PR #499. Coverage producer is Ubuntu Julia 1.10

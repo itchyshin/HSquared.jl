@@ -2839,13 +2839,28 @@ function _multi_effect_variance_component_covariance(
     sigma_e2::Real;
     fd_step::Real = 1e-4,
     unavailable::Symbol = :throw,
+    information::Symbol = :observed,
 )
     unavailable in (:throw, :nothing) ||
         throw(ArgumentError("unavailable must be :throw or :nothing"))
+    _validate_information(information)
     K = length(effects)
     K >= 1 || throw(ArgumentError("at least one random effect is required"))
     fd_step = _validate_uncertainty_fd_step(fd_step)
     theta = _uncertainty_variance_vector(sigmas, sigma_e2, K)
+
+    if information === :ai
+        ws = _multi_reml_workspace(y, X, effects)
+        info = _multi_reml_ai_information!(ws, theta[1:K], theta[K + 1])
+        if !(all(isfinite, info) && isposdef(info))
+            unavailable === :nothing && return nothing
+            throw(ArgumentError(
+                "average information is not finite positive-definite at the " *
+                "estimate (flat/boundary optimum); standard errors are unavailable",
+            ))
+        end
+        return inv(info)
+    end
 
     # `_reml_fd_information` perturbs coordinate i by at most 2·h[i] (the i == j
     # diagonal term). A component near the boundary would be pushed non-positive
@@ -2879,10 +2894,14 @@ end
 
 """
     multi_effect_variance_component_covariance(y, X, effects, sigmas, sigma_e2;
-                                               fd_step = 1e-4)
+                                               fd_step = 1e-4,
+                                               information = :observed)
 
 Asymptotic covariance of the estimated `[σ_1², …, σ_K², σ_e²]` for a K-effect
-REML fit: the inverse of the observed information, formed as the central
+REML fit. `information = :ai` inverts the average-information matrix
+(`1/2 wᵢ'P wⱼ`, one factorisation; what ASReml/WOMBAT/BLUPF90 report).
+`information = :observed` (default, unchanged) inverts the observed
+information, formed as the central
 finite-difference Hessian of the REML log-likelihood at the estimate — the same
 machinery as [`multi_effect_ratio_interval`](@ref) and
 [`two_effect_ratio_interval`](@ref), and the K-block analogue of
@@ -2905,9 +2924,11 @@ function multi_effect_variance_component_covariance(
     sigmas::AbstractVector,
     sigma_e2::Real;
     fd_step::Real = 1e-4,
+    information::Symbol = :observed,
 )
     return _multi_effect_variance_component_covariance(
         y, X, effects, sigmas, sigma_e2; fd_step = fd_step, unavailable = :throw,
+        information = information,
     )
 end
 
@@ -2926,10 +2947,12 @@ function multi_effect_variance_component_standard_errors(
     sigmas::AbstractVector,
     sigma_e2::Real;
     fd_step::Real = 1e-4,
+    information::Symbol = :observed,
 )
     K = length(effects)
     cov = multi_effect_variance_component_covariance(
         y, X, effects, sigmas, sigma_e2; fd_step = fd_step,
+        information = information,
     )
     return _vc_se_from_cov(cov, K)
 end
@@ -3014,9 +3037,11 @@ function multi_effect_sum_ratio_interval(
     level::Real = 0.95,
     fd_step::Real = 1e-4,
     boundary_tol::Real = 1e-6,
+    information::Symbol = :observed,
 )
     0 < level < 1 || throw(ArgumentError("level must be in (0, 1)"))
     boundary_tol = _validate_boundary_tol(boundary_tol)
+    _validate_information(information)
     K = length(effects)
     idx = _validate_uncertainty_selection(which, K)
     fd_step = _validate_uncertainty_fd_step(fd_step)
@@ -3032,6 +3057,7 @@ function multi_effect_sum_ratio_interval(
 
     cov = _multi_effect_variance_component_covariance(
         y, X, effects, sigmas, sigma_e2; fd_step = fd_step, unavailable = :nothing,
+        information = information,
     )
     cov === nothing && return na
 
@@ -3058,10 +3084,12 @@ function multi_effect_ratio_standard_errors(
     sigmas::AbstractVector,
     sigma_e2::Real;
     fd_step::Real = 1e-4,
+    information::Symbol = :observed,
 )
     K = length(effects)
     cov = multi_effect_variance_component_covariance(
         y, X, effects, sigmas, sigma_e2; fd_step = fd_step,
+        information = information,
     )
     theta = vcat(Float64.(collect(sigmas)), Float64(sigma_e2))
     return _ratio_se_from_cov(cov, theta, K)
@@ -3073,7 +3101,8 @@ end
                              fd_step = 1e-4, boundary_tol = 1e-6)
 
 Every asymptotic uncertainty product of a `K`-effect REML fit, from ONE
-information matrix. Returns a `NamedTuple` with
+information matrix (`information = :observed` by default, or `:ai`; see
+[`multi_effect_variance_component_covariance`](@ref)). Returns a `NamedTuple` with
 
   * `covariance` — the `(K+1)×(K+1)` asymptotic covariance of
     `[σ₁²,…,σ_K², σ_e²]` ([`multi_effect_variance_component_covariance`](@ref));
@@ -3119,16 +3148,18 @@ function multi_effect_uncertainty(
     level::Real = 0.95,
     fd_step::Real = 1e-4,
     boundary_tol::Real = 1e-6,
+    information::Symbol = :observed,
 )
     0 < level < 1 || throw(ArgumentError("level must be in (0, 1)"))
     boundary_tol = _validate_boundary_tol(boundary_tol)
+    _validate_information(information)
     K = length(effects)
     idx = _validate_uncertainty_selection(which, K)
     fd_step = _validate_uncertainty_fd_step(fd_step)
     theta = _uncertainty_variance_vector(sigmas, sigma_e2, K)
 
     cov = multi_effect_variance_component_covariance(
-        y, X, effects, sigmas, sigma_e2; fd_step = fd_step,
+        y, X, effects, sigmas, sigma_e2; fd_step = fd_step, information = information,
     )
     total = sum(theta)
     ratio = sum(theta[i] for i in idx) / total
@@ -3418,6 +3449,32 @@ function _multi_reml_loglik!(ws::_MultiREMLWorkspace, sigmas::AbstractVector,
     loglik = -0.5 * ((n - nfixed) * log(2 * pi) + logdetR + logdetG + logdetC + quad)
     _likelihood_result_finite(loglik, beta, us...)
     return loglik, beta, us
+end
+
+# Average-information matrix of the K-effect REML objective at (sigmas, sigma_e2):
+# AI[i,j] = 1/2 wᵢ'P wⱼ with working variates wᵢ = Zᵢuᵢ/σᵢ² and w_e = e/σ_e², P
+# applied by MME re-solves that reuse the workspace factor. The same construction
+# as the `fit_sparse_multi_effect_aireml` iteration, evaluated once at the
+# estimate: one factorisation and K + 1 solves, against 24 factorisations for
+# the finite-difference observed information at K = 2.
+function _multi_reml_ai_information!(ws::_MultiREMLWorkspace, sigmas::AbstractVector,
+                                     sigma_e2::Real)
+    _, beta, us = _multi_reml_loglik!(ws, sigmas, sigma_e2)
+    K = length(us)
+    e = copy(ws.yv)
+    e .-= ws.Xs * beta
+    W = Matrix{Float64}(undef, ws.n, K + 1)
+    for i in 1:K
+        zu = ws.Zs[i] * us[i]
+        e .-= zu
+        W[:, i] = zu ./ sigmas[i]
+    end
+    W[:, K + 1] = e ./ sigma_e2
+    PW = similar(W)
+    for j in 1:(K + 1)
+        PW[:, j] = _reml_project(ws.factor, ws.Xs, ws.Zf, W[:, j], sigma_e2, ws.nfixed)
+    end
+    return Symmetric(0.5 .* (transpose(W) * PW))
 end
 
 """
@@ -4893,6 +4950,40 @@ function _reml_information_matrix(spec::AnimalModelSpec, sigma_a2::Real, sigma_e
     return Symmetric(0.5 .* [dot(wa, Pwa) dot(wa, Pwe); dot(we, Pwa) dot(we, Pwe)])
 end
 
+# Which information matrix an asymptotic standard error is built from.
+#   :ai       — average information, 1/2 y'P Vi P Vj P y: the matrix AI-REML
+#               optimises with, and what ASReml, WOMBAT, BLUPF90 and DMU invert.
+#   :observed — observed information, -Hessian of the REML log-likelihood by
+#               central finite differences: what a large-sample posterior SD
+#               tracks (Bernstein-von Mises).
+# Both are consistent; on one dataset they differ (observed = 2 AI - expected for
+# a covariance linear in the components). See hsquared
+# dev-test/se-investigation/RESULTS.md for a measured comparison.
+function _validate_information(information::Symbol)
+    information in (:ai, :observed) || throw(ArgumentError(
+        "information must be :ai (average information) or :observed " *
+        "(finite-difference observed information); got :$information"))
+    return information
+end
+
+# Observed REML information for (sigma_a2, sigma_e2) of a univariate animal model:
+# -Hessian of `sparse_reml_loglik` by central finite differences, with the spec,
+# Ainv and log|Ainv| validated once and reused across the 12 evaluations.
+function _univariate_observed_information(spec::AnimalModelSpec, sigma_a2::Real,
+                                          sigma_e2::Real, fd_step::Real)
+    fd_step = _validate_uncertainty_fd_step(fd_step)
+    theta = [Float64(sigma_a2), Float64(sigma_e2)]
+    h = _uncertainty_component_steps(theta, fd_step)
+    all(theta .- 2 .* h .> 0) || throw(ArgumentError(
+        "a variance component is too close to zero for a finite-difference " *
+        "observed information (boundary optimum); use information = :ai"))
+    validated, factor = _likelihood_validated_spec(spec)
+    Ainv = sparse(Float64.(validated.Ainv))
+    ld = logdet(factor)
+    f(t) = _sparse_reml_loglik(validated, t[1], t[2], Ainv, ld).loglik
+    return _reml_fd_information(f, theta, fd_step)
+end
+
 function _require_converged_univariate_uncertainty(
     fit::AnimalModelFit,
     caller::AbstractString,
@@ -4913,7 +5004,7 @@ function _require_identified_information(info, caller::AbstractString)
     ev = eigvals(Symmetric(Matrix(info)))
     (all(isfinite, ev) && first(ev) > 1e-10 * last(ev)) ||
         throw(ArgumentError(
-            "$caller: the average-information matrix is singular, so the " *
+            "$caller: the information matrix is singular, so the " *
             "variance components are not identified (for example a " *
             "founders-only pedigree, A = I); no standard error is reported",
         ))
@@ -4924,19 +5015,24 @@ end
     variance_component_covariance(fit)
 
 Asymptotic covariance of the estimated `(sigma_a2, sigma_e2)` for a REML
-[`AnimalModelFit`](@ref): the inverse of the average-information matrix. This is a
-large-sample approximation and is unreliable on small samples, where the REML
-surface is flat and the matrix is ill-conditioned. Experimental; REML only.
+[`AnimalModelFit`](@ref): the inverse of an information matrix. With
+`information = :ai` (default) that is the average-information matrix; with
+`information = :observed` it is the observed information, the central
+finite-difference Hessian of the REML log-likelihood (step `fd_step`, relative).
+This is a large-sample approximation and is unreliable on small samples, where the
+REML surface is flat and the matrix is ill-conditioned. Experimental; REML only.
 """
-function variance_component_covariance(fit::AnimalModelFit)
+function variance_component_covariance(fit::AnimalModelFit;
+                                       information::Symbol = :ai,
+                                       fd_step::Real = 1e-4)
     _require_converged_univariate_uncertainty(fit, "variance_component_covariance")
     fit.spec.method == :REML ||
         throw(ArgumentError("variance_component_covariance requires a REML fit"))
-    info = _reml_information_matrix(
-        fit.spec,
-        fit.variance_components.sigma_a2,
-        fit.variance_components.sigma_e2,
-    )
+    _validate_information(information)
+    sa = fit.variance_components.sigma_a2
+    se = fit.variance_components.sigma_e2
+    info = information === :ai ? _reml_information_matrix(fit.spec, sa, se) :
+           _univariate_observed_information(fit.spec, sa, se, fd_step)
     _require_identified_information(info, "variance_component_covariance")
     return inv(info)
 end
@@ -4947,9 +5043,11 @@ end
 Asymptotic standard errors of `(sigma_a2, sigma_e2)` for a REML fit, as a
 `NamedTuple`. See [`variance_component_covariance`](@ref) for the caveats.
 """
-function variance_component_standard_errors(fit::AnimalModelFit)
+function variance_component_standard_errors(fit::AnimalModelFit;
+                                            information::Symbol = :ai,
+                                            fd_step::Real = 1e-4)
     _require_converged_univariate_uncertainty(fit, "variance_component_standard_errors")
-    cov = variance_component_covariance(fit)
+    cov = variance_component_covariance(fit; information = information, fd_step = fd_step)
     return (sigma_a2 = sqrt(cov[1, 1]), sigma_e2 = sqrt(cov[2, 2]))
 end
 
@@ -4960,10 +5058,13 @@ Delta-method asymptotic standard error of `h² = sigma_a2 / (sigma_a2 + sigma_e2
 for a REML fit, from [`variance_component_covariance`](@ref). Asymptotic; see the
 caveats there.
 """
-function heritability_standard_error(fit::AnimalModelFit)
+function heritability_standard_error(fit::AnimalModelFit;
+                                     information::Symbol = :ai,
+                                     fd_step::Real = 1e-4)
     _is_unidentified_ridge(fit) && return NaN
     _require_converged_univariate_uncertainty(fit, "heritability_standard_error")
-    return _heritability_se_from_cov(fit, variance_component_covariance(fit))
+    return _heritability_se_from_cov(fit, variance_component_covariance(
+        fit; information = information, fd_step = fd_step))
 end
 
 """
@@ -4982,8 +5083,12 @@ the `(0, 1)` boundary throws an `ArgumentError`, so a caller that needs each pro
 fail independently should keep the standalone calls. Experimental; asymptotic, see
 [`variance_component_covariance`](@ref) for the caveats.
 """
-function variance_component_uncertainty(fit::AnimalModelFit; level::Real = 0.95)
-    return _variance_component_uncertainty(fit, level, variance_component_covariance)
+function variance_component_uncertainty(fit::AnimalModelFit; level::Real = 0.95,
+                                       information::Symbol = :ai,
+                                       fd_step::Real = 1e-4)
+    _validate_information(information)
+    return _variance_component_uncertainty(fit, level,
+        f -> variance_component_covariance(f; information = information, fd_step = fd_step))
 end
 
 function _variance_component_uncertainty(fit::AnimalModelFit, level::Real, covariance_builder)
@@ -5246,8 +5351,10 @@ Nonfinite profile targets or an invalid point-estimate anchor throw an
 Both are large-sample approximations: on small samples the REML surface is flat,
 so the intervals are wide.
 """
-function heritability_interval(fit::AnimalModelFit; level::Real = 0.95, method::Symbol = :delta)
+function heritability_interval(fit::AnimalModelFit; level::Real = 0.95, method::Symbol = :delta,
+                               information::Symbol = :ai, fd_step::Real = 1e-4)
     0 < level < 1 || throw(ArgumentError("level must be in (0, 1)"))
+    _validate_information(information)
     method in (:delta, :profile) ||
         throw(ArgumentError("method must be :delta or :profile"))
     if _is_unidentified_ridge(fit)
@@ -5265,7 +5372,8 @@ function heritability_interval(fit::AnimalModelFit; level::Real = 0.95, method::
     method === :delta ||
         throw(ArgumentError("method must be :delta or :profile"))
     return _heritability_interval_delta(
-        fit, level, () -> variance_component_covariance(fit))
+        fit, level, () -> variance_component_covariance(
+            fit; information = information, fd_step = fd_step))
 end
 
 # Delta-method interval with the covariance supplied lazily, so a caller that
