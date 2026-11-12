@@ -2,8 +2,8 @@ using HSquared
 using LinearAlgebra
 using Test
 
-# Regression: String `information` must raise ArgumentError, not TypeError (#500 follow-up).
-@testset "issue 502: information kwarg type validation" begin
+# Regression: String `information` must raise ArgumentError, not TypeError (HSquared.jl #503).
+@testset "issue 503: information kwarg type validation" begin
     ids = string.(1:12)
     sire = ["0", "0", "0", "0", "1", "1", "2", "2", "3", "3", "5", "5"]
     dam = ["0", "0", "0", "0", "2", "3", "4", "4", "4", "2", "6", "7"]
@@ -25,7 +25,7 @@ using Test
     @test_throws ArgumentError variance_components_plot_data(fit; information = "observed")
 end
 
-@testset "issue 502: variance_components_plot_data honours information switch" begin
+@testset "issue 503: variance_components_plot_data honours information switch" begin
     ids = string.(1:12)
     sire = ["0", "0", "0", "0", "1", "1", "2", "2", "3", "3", "5", "5"]
     dam = ["0", "0", "0", "0", "2", "3", "4", "4", "4", "2", "6", "7"]
