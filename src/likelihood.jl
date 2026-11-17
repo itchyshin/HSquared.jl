@@ -2839,7 +2839,7 @@ function _multi_effect_variance_component_covariance(
     sigma_e2::Real;
     fd_step::Real = 1e-4,
     unavailable::Symbol = :throw,
-    information::Symbol = :observed,
+    information = :observed,
 )
     unavailable in (:throw, :nothing) ||
         throw(ArgumentError("unavailable must be :throw or :nothing"))
@@ -2924,7 +2924,7 @@ function multi_effect_variance_component_covariance(
     sigmas::AbstractVector,
     sigma_e2::Real;
     fd_step::Real = 1e-4,
-    information::Symbol = :observed,
+    information = :observed,
 )
     return _multi_effect_variance_component_covariance(
         y, X, effects, sigmas, sigma_e2; fd_step = fd_step, unavailable = :throw,
@@ -2947,7 +2947,7 @@ function multi_effect_variance_component_standard_errors(
     sigmas::AbstractVector,
     sigma_e2::Real;
     fd_step::Real = 1e-4,
-    information::Symbol = :observed,
+    information = :observed,
 )
     K = length(effects)
     cov = multi_effect_variance_component_covariance(
@@ -3037,7 +3037,7 @@ function multi_effect_sum_ratio_interval(
     level::Real = 0.95,
     fd_step::Real = 1e-4,
     boundary_tol::Real = 1e-6,
-    information::Symbol = :observed,
+    information = :observed,
 )
     0 < level < 1 || throw(ArgumentError("level must be in (0, 1)"))
     boundary_tol = _validate_boundary_tol(boundary_tol)
@@ -3084,7 +3084,7 @@ function multi_effect_ratio_standard_errors(
     sigmas::AbstractVector,
     sigma_e2::Real;
     fd_step::Real = 1e-4,
-    information::Symbol = :observed,
+    information = :observed,
 )
     K = length(effects)
     cov = multi_effect_variance_component_covariance(
@@ -3148,7 +3148,7 @@ function multi_effect_uncertainty(
     level::Real = 0.95,
     fd_step::Real = 1e-4,
     boundary_tol::Real = 1e-6,
-    information::Symbol = :observed,
+    information = :observed,
 )
     0 < level < 1 || throw(ArgumentError("level must be in (0, 1)"))
     boundary_tol = _validate_boundary_tol(boundary_tol)
@@ -4959,7 +4959,18 @@ end
 # Both are consistent; on one dataset they differ (observed = 2 AI - expected for
 # a covariance linear in the components). See hsquared
 # dev-test/se-investigation/RESULTS.md for a measured comparison.
-function _validate_information(information::Symbol)
+function _validate_information(information)
+    if information isa AbstractString
+        throw(ArgumentError(
+            "information must be a Symbol (:ai or :observed), not a String; " *
+            "got $(repr(information)) — use information = :$(lowercase(strip(information)))",
+        ))
+    end
+    information isa Symbol ||
+        throw(ArgumentError(
+            "information must be :ai (average information) or :observed " *
+            "(finite-difference observed information); got $(repr(information))",
+        ))
     information in (:ai, :observed) || throw(ArgumentError(
         "information must be :ai (average information) or :observed " *
         "(finite-difference observed information); got :$information"))
@@ -5023,7 +5034,7 @@ This is a large-sample approximation and is unreliable on small samples, where t
 REML surface is flat and the matrix is ill-conditioned. Experimental; REML only.
 """
 function variance_component_covariance(fit::AnimalModelFit;
-                                       information::Symbol = :ai,
+                                       information = :ai,
                                        fd_step::Real = 1e-4)
     _require_converged_univariate_uncertainty(fit, "variance_component_covariance")
     fit.spec.method == :REML ||
@@ -5044,7 +5055,7 @@ Asymptotic standard errors of `(sigma_a2, sigma_e2)` for a REML fit, as a
 `NamedTuple`. See [`variance_component_covariance`](@ref) for the caveats.
 """
 function variance_component_standard_errors(fit::AnimalModelFit;
-                                            information::Symbol = :ai,
+                                            information = :ai,
                                             fd_step::Real = 1e-4)
     _require_converged_univariate_uncertainty(fit, "variance_component_standard_errors")
     cov = variance_component_covariance(fit; information = information, fd_step = fd_step)
@@ -5059,7 +5070,7 @@ for a REML fit, from [`variance_component_covariance`](@ref). Asymptotic; see th
 caveats there.
 """
 function heritability_standard_error(fit::AnimalModelFit;
-                                     information::Symbol = :ai,
+                                            information = :ai,
                                      fd_step::Real = 1e-4)
     _is_unidentified_ridge(fit) && return NaN
     _require_converged_univariate_uncertainty(fit, "heritability_standard_error")
@@ -5084,7 +5095,7 @@ fail independently should keep the standalone calls. Experimental; asymptotic, s
 [`variance_component_covariance`](@ref) for the caveats.
 """
 function variance_component_uncertainty(fit::AnimalModelFit; level::Real = 0.95,
-                                       information::Symbol = :ai,
+                                       information = :ai,
                                        fd_step::Real = 1e-4)
     _validate_information(information)
     return _variance_component_uncertainty(fit, level,
@@ -5352,7 +5363,7 @@ Both are large-sample approximations: on small samples the REML surface is flat,
 so the intervals are wide.
 """
 function heritability_interval(fit::AnimalModelFit; level::Real = 0.95, method::Symbol = :delta,
-                               information::Symbol = :ai, fd_step::Real = 1e-4)
+                                            information = :ai, fd_step::Real = 1e-4)
     0 < level < 1 || throw(ArgumentError("level must be in (0, 1)"))
     _validate_information(information)
     method in (:delta, :profile) ||
@@ -5467,7 +5478,8 @@ function _plot_interval_failure_reason(err)
 end
 
 """
-    variance_components_plot_data(fit::AnimalModelFit; level = 0.95)
+    variance_components_plot_data(fit::AnimalModelFit; level = 0.95,
+                                  information = :ai, fd_step = 1e-4)
 
 Plot-ready data for the variance-component + heritability forest figure (plotting
 set B): tidy parallel vectors `(term, estimate, lo, hi, panel, level,
@@ -5482,14 +5494,20 @@ including interrupts and programming errors, are rethrown. `interval_status` is
 `"experimental_asymptotic"` (NOT coverage-calibrated) when any interval is present,
 else `"none"`. `interval_method` is a coarse roll-up tag (`"asymptotic_reml"`):
 the VC-row whiskers are normal-Wald on the raw variance scale, the `h2`-row whisker
-is the logit-delta back-transform — both asymptotic, both from the REML AI matrix.
+is the logit-delta back-transform — both asymptotic, from the same information
+matrix as [`variance_component_covariance`](@ref) (`information = :ai` by default,
+or `:observed`; see [`variance_component_standard_errors`](@ref)).
 `supplied = false` is the honest-status hinge — these are ESTIMATED, unlike the
 descriptive supplied-`K_g`/`G` plot-data sets. Intervals are REML-only; a non-REML
 fit degrades gracefully to points-only (`lo`/`hi` all `NaN`, `interval_status =
 "none"`).
 """
-function variance_components_plot_data(fit::AnimalModelFit; level::Real = 0.95)
-    return _variance_components_plot_data(fit, level, variance_component_covariance)
+function variance_components_plot_data(fit::AnimalModelFit; level::Real = 0.95,
+                                     information = :ai, fd_step::Real = 1e-4)
+    _validate_information(information)
+    cov_builder = fit ->
+        variance_component_covariance(fit; information = information, fd_step = fd_step)
+    return _variance_components_plot_data(fit, level, cov_builder)
 end
 
 function _variance_components_plot_data(fit::AnimalModelFit, level, covariance_builder)
