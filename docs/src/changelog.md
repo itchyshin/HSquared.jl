@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Fixed #503: post-fit SE helpers now validate `information` before Julia's
+  keyword typing, so a `String` (for example from a JSON bridge) raises a clear
+  `ArgumentError` instead of `TypeError`. `variance_components_plot_data` accepts
+  `information` and `fd_step` and uses the same matrix as
+  `variance_component_covariance`. Defaults unchanged; strings are not coerced.
+
 - Authorship: added co-authors Yefeng Yang (ORCID 0000-0002-8610-4016) and
   Szymon Drobniak (ORCID 0000-0001-8101-6247) in `Project.toml`, `CITATION.cff`,
   and Documenter `authors`; Shinichi Nakagawa remains primary contact. No
