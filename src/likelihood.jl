@@ -498,6 +498,33 @@ function _nelder_mead_converged(objective, result; kwargs...)
     return _nelder_mead_stationarity(objective, Optim.minimizer(result); kwargs...).stationary
 end
 
+# HSquared.jl #497: a NelderMead run that drifts down a flat log-variance
+# boundary never shrinks its simplex below `g_tol`, so it runs to the iteration
+# cap and Optim reports `converged = false` at a point that is the optimum.
+# A run that hit the cap with a variance share at or below this is treated as
+# settled on the boundary when (a) the interior coordinates pass the shared
+# stationarity check and (b) moving each boundary variance up to the
+# `_NELDER_MEAD_BOUNDARY_SHARE` scale does not improve the objective (the
+# boundary optimality condition). Otherwise `converged` stays false.
+const _NELDER_MEAD_COLLAPSED_SHARE = 1e-12
+
+function _two_variance_converged(objective, result)
+    x = Vector{Float64}(Optim.minimizer(result))
+    v = exp.(x)
+    free = _nelder_mead_interior(v)
+    _nelder_mead_converged(objective, result; free = free) && return true
+    (Optim.converged(result) || all(free)) && return false
+    minimum(v) / sum(v) <= _NELDER_MEAD_COLLAPSED_SHARE || return false
+    _nelder_mead_stationarity(objective, x; free = free).stationary || return false
+    base = objective(x)
+    for i in findall(.!free)
+        trial = copy(x)
+        trial[i] = log(_NELDER_MEAD_BOUNDARY_SHARE * sum(v))
+        objective(trial) >= base - 1e-10 || return false
+    end
+    return true
+end
+
 # Coordinates of a log-variance vector that are not at the zero-variance
 # boundary, the `free` mask for `_nelder_mead_converged`.
 _nelder_mead_interior(variances) =
@@ -601,8 +628,7 @@ function fit_variance_components(
 
     isfinite(Optim.minimum(result)) || throw(ArgumentError("dense optimizer did not find a finite objective"))
     # Checked before any local that `objective` also assigns is read again (#424).
-    converged = _nelder_mead_converged(objective, result;
-                                       free = _nelder_mead_interior(exp.(Optim.minimizer(result))))
+    converged = _two_variance_converged(objective, result)
     variances = _try_positive_exp(Optim.minimizer(result))
     variances === nothing && throw(ArgumentError("dense optimizer did not return finite positive variances"))
     sigma_a2, sigma_e2 = variances
@@ -640,7 +666,10 @@ fitting path, and not a production sparse solver.
 `converged` is the optimizer stopping flag combined with the shared gradient and
 curvature check at the optimum (HSquared.jl #424). A variance share at or below
 `1e-6` is a boundary and is left out of that check, so `converged` does not
-certify a closed-boundary optimum. Exact zero
+certify a closed-boundary optimum. A run that reaches the iteration cap while
+drifting onto the boundary (share at or below `1e-12`) is reported as converged
+only if the interior check passes and raising the boundary variance to the
+`1e-6` share does not improve the objective (HSquared.jl #497). Exact zero
 components are unavailable in this positive log-variance parameterization;
 nonfinite proposals are rejected and nonfinite final results raise an error.
 
@@ -696,8 +725,7 @@ function fit_sparse_reml(
 
     isfinite(Optim.minimum(result)) || throw(ArgumentError("sparse optimizer did not find a finite objective"))
     # Checked before any local that `objective` also assigns is read again (#424).
-    converged = _nelder_mead_converged(objective, result;
-                                       free = _nelder_mead_interior(exp.(Optim.minimizer(result))))
+    converged = _two_variance_converged(objective, result)
     variances = _try_positive_exp(Optim.minimizer(result))
     variances === nothing && throw(ArgumentError("sparse optimizer did not return finite positive variances"))
     sigma_a2, sigma_e2 = variances
