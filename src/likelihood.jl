@@ -1055,6 +1055,25 @@ function _fit_ai_reml_diagnostics(
         step = _ai_newton_step(information, [score_a, score_e])
         last_newton_step = (step[1], step[2])
 
+        # Newton-decrement stationarity (HSquared.jl #504). The score is a
+        # difference of O(n) terms and, with an ill-conditioned relationship
+        # precision (e.g. singular MZ blocks stabilised by a ridge), carries
+        # roundoff far above `tol` at a point that is already the REML optimum.
+        # The Newton decrement s' I^-1 s / 2 is the REML log-likelihood the next
+        # step could still gain; log-likelihood differences are unit-free, so it
+        # is compared with `tol` directly. This certifies an interior optimum
+        # only: it needs a positive-definite information, a tiny last update,
+        # and both variance shares above the boundary share.
+        newton_decrement = 0.5 * (score_a * step[1] + score_e * step[2])
+        if last_relative_change < tol &&
+           isfinite(newton_decrement) && 0 <= newton_decrement < tol &&
+           information[1, 1] > 0 && det(information) > 0 &&
+           min(sigma_a2, sigma_e2) / (sigma_a2 + sigma_e2) > _AI_REML_RESIDUAL_BOUNDARY_SHARE
+            converged = true
+            termination_reason = "newton_decrement"
+            break
+        end
+
         # Defense-in-depth for a genuinely NON-FINITE Newton step (NaN/Inf) from a degenerate
         # AI information matrix: stop at the current finite, positive variance components with
         # `converged = false` — the V1-REML boundary contract ("finite positive ... never
