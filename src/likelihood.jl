@@ -2005,10 +2005,17 @@ function _try_positive_exp(values)
 end
 
 function _two_effect_dense(y, X, Z1, A1, Z2, A2, sigma1, sigma2, sigma_e2)
+    return _two_effect_dense_pre(y, X, Z1, A1, Z1 * A1 * transpose(Z1),
+                                 Z2, A2, Z2 * A2 * transpose(Z2), sigma1, sigma2, sigma_e2)
+end
+
+# Same as `_two_effect_dense` with `G1 = Z1*A1*Z1'`, `G2 = Z2*A2*Z2'` supplied: they do not
+# depend on the variances, so the REML optimiser builds them once (#415).
+function _two_effect_dense_pre(y, X, Z1, A1, G1, Z2, A2, G2, sigma1, sigma2, sigma_e2)
     n = length(y)
     V = Symmetric(
-        sigma1 .* (Z1 * A1 * transpose(Z1)) .+
-        sigma2 .* (Z2 * A2 * transpose(Z2)) .+
+        sigma1 .* G1 .+
+        sigma2 .* G2 .+
         sigma_e2 .* Matrix(1.0I, n, n),
     )
     _likelihood_check_finite("marginal covariance", V)
@@ -2183,11 +2190,13 @@ function _fit_two_effect_reml_dense(
     e1ids = _likelihood_effect_ids(e1ids, n1, "ids1")
     e2ids = _likelihood_effect_ids(e2ids, n2, "ids2")
     _warn_weak_identifiability((Z1d, Z2d), (A1, A2), n, ("effect 1", "effect 2"))
+    G1 = Z1d * A1 * transpose(Z1d)
+    G2 = Z2d * A2 * transpose(Z2d)
     function objective(p)
         variances = _try_positive_exp(p)
         variances === nothing && return Inf
         try
-            value = -_two_effect_dense(yv, Xd, Z1d, A1, Z2d, A2, variances...)[1]
+            value = -_two_effect_dense_pre(yv, Xd, Z1d, A1, G1, Z2d, A2, G2, variances...)[1]
             return isfinite(value) ? value : Inf
         catch err
             _likelihood_proposal_failure(err) && return Inf
@@ -2467,7 +2476,9 @@ function _two_effect_ratio_interval_from_fit(
         (Float64.(y), Matrix{Float64}(X), Matrix{Float64}(Z1), _dense_relationship_inverse(Ainv1),
          Matrix{Float64}(Z2), _dense_relationship_inverse(Ainv2)) :
         (dense.yv, dense.Xd, dense.Z1d, dense.A1, dense.Z2d, dense.A2)
-    loglik(t) = _two_effect_dense(yv, Xd, Z1d, A1, Z2d, A2, t[1], t[2], t[3])[1]
+    G1 = Z1d * A1 * transpose(Z1d)
+    G2 = Z2d * A2 * transpose(Z2d)
+    loglik(t) = _two_effect_dense_pre(yv, Xd, Z1d, A1, G1, Z2d, A2, G2, t[1], t[2], t[3])[1]
 
     # observed information = −Hessian of the REML loglik (central finite differences)
     info = _reml_fd_information(loglik, theta, fd_step)
@@ -4334,11 +4345,14 @@ function _fit_repeatability_reml_dense(
     Xd = Matrix{Float64}(Xs)
     Zd = Matrix{Float64}(Zs)
     _warn_weak_identifiability_repeatability(Zd, A, n)
+    Ipe = Matrix(1.0I, size(A, 1), size(A, 1))
+    GA = Zd * A * transpose(Zd)
+    GI = Zd * Ipe * transpose(Zd)
     function objective(p)
         variances = _try_positive_exp(p)
         variances === nothing && return Inf
         try
-            value = -_repeatability_dense(yv, Xd, Zd, A, variances...)[1]
+            value = -_two_effect_dense_pre(yv, Xd, Zd, A, GA, Zd, Ipe, GI, variances...)[1]
             return isfinite(value) ? value : Inf
         catch err
             _likelihood_proposal_failure(err) && return Inf
@@ -4416,7 +4430,10 @@ function _repeatability_interval_from_fit(
     yv, Xd, Zd, A = dense === nothing ?
         (Float64.(y), Matrix{Float64}(X), Matrix{Float64}(Z), _dense_relationship_inverse(Ainv)) :
         (dense.yv, dense.Xd, dense.Zd, dense.A)
-    loglik(p) = _repeatability_dense(yv, Xd, Zd, A, p[1], p[2], p[3])[1]
+    Ipe = Matrix(1.0I, size(A, 1), size(A, 1))
+    GA = Zd * A * transpose(Zd)
+    GI = Zd * Ipe * transpose(Zd)
+    loglik(p) = _two_effect_dense_pre(yv, Xd, Zd, A, GA, Zd, Ipe, GI, p[1], p[2], p[3])[1]
     info = _reml_fd_information(loglik, theta, fd_step)
     if !(all(isfinite, info) && isposdef(info))
         return _repeatability_boundary_interval(t, level, true)
