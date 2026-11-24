@@ -2,7 +2,7 @@ Current status (2026-10-01T11:39:00+00:00): Julia PR #401 and R PR #259 are merg
 
 ## 2026-11-24: Issue #421 timing assertion
 
-On isolated branch `codex/issue-421-timing` at verified Julia main `b6830323`, removed only the fixed 10-second assertion from the sparse Laplace test. The focused regression passed 193 assertions and the full Julia 1.13.4 package suite passed. Correctness and allocation checks remain. The scoped change is committed locally; no push or PR has been made, so branch CI is pending. Public covered count remains seven; capability and validation records were not changed.
+On pushed branch `codex/issue-421-timing` at verified Julia main `b6830323`, removed only the fixed 10-second assertion from the sparse Laplace test. The focused regression passed 193 assertions and the full Julia 1.13.4 package suite passed. Correctness and allocation checks remain. Draft PR #510 is open; required CI jobs were queued at the time of this update. Public covered count remains seven; capability and validation records were not changed.
 
 ## 2026-11-08: Codecov First5 CI lane (isolated)
 
