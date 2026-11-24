@@ -1,5 +1,9 @@
 Current status (2026-10-01T11:39:00+00:00): Julia PR #401 and R PR #259 are merged. Exact merge-commit Julia Linux/Windows jobs on Julia 1.10/latest, Julia Documenter deployment, R CMD check, and R pkgdown passed. The three installed exact-source evidence modes passed on the reviewed candidate; final source and runner hashes match the Julia merge tree. V3 is closed within the bounded programme scope; A2/E1 dispositions and residual findings remain as recorded. Numerical source aggregate 59d4a803 is unchanged by the reviewed test corrections. Public covered count remains seven, and no capability promotion or release action occurred. Historical states below retain their original scope and timestamps.
 
+## 2026-11-24: Issue #421 timing assertion
+
+On pushed branch `codex/issue-421-timing` at verified Julia main `b6830323`, removed only the fixed 10-second assertion from the sparse Laplace test. The focused regression passed 193 assertions and the full Julia 1.13.4 package suite passed. Correctness and allocation checks remain. Draft PR #510 is open; required CI jobs were queued at the time of this update. Public covered count remains seven; capability and validation records were not changed.
+
 ## 2026-11-08: Codecov First5 CI lane (isolated)
 
 Lane: `cursor/codecov-first5-0f83` (PR #499). CI/coverage/config/docs only.
