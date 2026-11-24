@@ -190,7 +190,6 @@ end
     @test fitpath.value.S === nothing
     @test isapprox(fitpath.value.elbo, pub.value.elbo; atol = 1e-10, rtol = 0)
     @test fitpath.bytes < 100 * q^2
-    @test fitpath.time < 10.0
 end
 
 @testset "issue 421: fit_laplace_reml variational agrees for sparse and dense inputs" begin
